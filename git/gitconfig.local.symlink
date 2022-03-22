@@ -1,0 +1,5 @@
+[user]
+        name = Jordan Garcia
+        email = jordan.garcia@invitae.com
+[credential]
+        helper = osxkeychain
