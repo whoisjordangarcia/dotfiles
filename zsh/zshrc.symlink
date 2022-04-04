@@ -114,3 +114,7 @@ source /opt/homebrew/opt/powerlevel10k/powerlevel10k.zsh-theme
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+
+figlet -f smslant hack the world | lolcat --freq 0.1 --seed 1
