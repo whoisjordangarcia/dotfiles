@@ -29,4 +29,3 @@ sudo apt-get install -y git
 
 ```
 ./bootstrap.sh
-```
