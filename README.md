@@ -41,3 +41,7 @@
 13. brew install lolcat
 
 14. brew install figlet
+
+## (WSL) Ubuntu issues
+
+- chmod issues (https://alessandrococco.com/2021/01/wsl-how-to-resolve-operation-not-permitted-error-on-cloning-a-git-repository)
