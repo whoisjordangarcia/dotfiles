@@ -38,6 +38,7 @@
 
 12. sudo git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
 
+13. Update .zshrc file with `plugins=( [plugins...] zsh-syntax-highlighting zsh-autosuggestions)`
 13. brew install lolcat
 
 14. brew install figlet
