@@ -40,6 +40,10 @@
 brew install romkatv/powerlevel10k/powerlevel10k echo "source $(brew --prefix)/opt/powerlevel10k/powerlevel10k.zsh-theme" >>~/.zshrc
 ```
 
+13. Mac: brew install lolcat
+
+14. Mac: brew install figlet
+
 ## Continue for Ubuntu Windows 
 
 6, Install zsh (Ubuntu)
@@ -69,19 +73,15 @@ source ~/.zshrc
 ```
 
 
-10. `sudo chsh -s $(which zsh)` default zsh
+10. `chsh -s $(which zsh)` default zsh
 
-11. `sudo git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions`
+11. `git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions`
 
-12. `sudo git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting`
+12. `git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting`
 
-13. Update .zshrc file with `plugins=( [plugins...] zsh-syntax-highlighting zsh-autosuggestions)`
+13. Update `~/.zshrc` file with `plugins=( [plugins...] zsh-syntax-highlighting zsh-autosuggestions)`
 
-source ~/.zshrc
-
-13. Mac: brew install lolcat
-
-14. Mac: brew install figlet
+`source ~/.zshrc`
 
 ## (WSL) Ubuntu issues
 
