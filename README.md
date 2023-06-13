@@ -34,6 +34,12 @@
 
 8. Install `brew install zsh`
 
+9. Install powerlevel10k
+
+```
+brew install romkatv/powerlevel10k/powerlevel10k echo "source $(brew --prefix)/opt/powerlevel10k/powerlevel10k.zsh-theme" >>~/.zshrc
+```
+
 ## Continue for Ubuntu Windows 
 
 6, Install zsh (Ubuntu)
@@ -48,10 +54,10 @@ apt install zsh
 sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
 
-8. Install powerlevel10k 
+8. Install powerlevel10k (Ubuntu)
 
 ```
-brew install romkatv/powerlevel10k/powerlevel10k echo "source $(brew --prefix)/opt/powerlevel10k/powerlevel10k.zsh-theme" >>~/.zshrc
+git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
 ```
 
 9. Install nvm (Ubuntu)
