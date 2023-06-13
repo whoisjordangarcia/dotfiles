@@ -2,7 +2,7 @@
 
 # What will be installed?
 
-- iterm2 w/ dracula theme
+- iterm2 w/ dracula theme (mac only)
 - oh-my-zsh
 - dotfiles
 - powerlevel10k
