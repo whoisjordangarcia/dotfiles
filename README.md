@@ -30,6 +30,9 @@
 
 6. Install gh cli `brew install gh`
 
+7. Install nvm `brew install nvm`
+
+
 ## Continue for Ubuntu Windows 
 
 7. Install zsh 
@@ -45,7 +48,6 @@ brew install romkatv/powerlevel10k/powerlevel10k echo "source $(brew --prefix)/o
 ```
 
 9. Install nvm 
-Mac:`brew install nvm`
 Ubuntu:`curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash `
 source ~/.zshrc
 
