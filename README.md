@@ -32,10 +32,17 @@
 
 7. Install nvm `brew install nvm`
 
+8. Install `brew install zsh`
 
 ## Continue for Ubuntu Windows 
 
-7. Install zsh 
+6, Install zsh (Ubuntu)
+
+```
+apt install zsh
+```
+
+7. Install oh-my-zsh 
 
 ```
 sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
@@ -47,9 +54,12 @@ sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.
 brew install romkatv/powerlevel10k/powerlevel10k echo "source $(brew --prefix)/opt/powerlevel10k/powerlevel10k.zsh-theme" >>~/.zshrc
 ```
 
-9. Install nvm 
-Ubuntu:`curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash `
+9. Install nvm (Ubuntu)
+```
+curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
 source ~/.zshrc
+```
+
 
 10. `sudo chsh -s $(which zsh)` default zsh
 
