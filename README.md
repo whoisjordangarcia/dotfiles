@@ -8,7 +8,7 @@
 - powerlevel10k
 - Fira Code + MesloLGS NF fonts
 
-## Quick setup
+## Quick setup (for Mac)
 
 1. Install homebrew - `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 
@@ -23,6 +23,8 @@
    Select Import... from the list
    Select the Dracula.itermcolors file
    Select the Dracula from Color Presets...
+
+## Continue for Ubuntu Windows 
 
 6. Install zsh - `sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"`
 
