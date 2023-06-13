@@ -10,7 +10,11 @@
 
 ## Quick setup (for Mac)
 
-1. Install homebrew - `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+1. Install homebrew 
+
+```
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
 
 2. Install iTerm2 - `brew install --cask iterm2`
 
@@ -24,21 +28,21 @@
    Select the Dracula.itermcolors file
    Select the Dracula from Color Presets...
 
+6. Install gh cli `brew install gh`
+
 ## Continue for Ubuntu Windows 
 
-6. Install zsh 
+7. Install zsh 
 
 ```
 sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
 
-7. Install powerlevel10k 
+8. Install powerlevel10k 
 
 ```
 brew install romkatv/powerlevel10k/powerlevel10k echo "source $(brew --prefix)/opt/powerlevel10k/powerlevel10k.zsh-theme" >>~/.zshrc
 ```
-
-8. Install gh cli `brew install gh`
 
 9. Install nvm 
 Mac:`brew install nvm`
