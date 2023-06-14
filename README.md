@@ -6,6 +6,9 @@
 
 - iterm2 w/ dracula theme (mac only)
 - oh-my-zsh
+- zsh plugins:
+   - zsh-syntax-highlighting 
+   - zsh-autosuggestions
 - dotfiles
 - powerlevel10k
 - Fira Code + MesloLGS NF fonts
