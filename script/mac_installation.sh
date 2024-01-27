@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+source ./common/log.sh
 
 # Fail on any command.
 # set -eux pipefail
@@ -23,11 +25,17 @@ fi
 (cd ~/git && git https://github.com/dracula/iterm.git)
 
 # Check for Oh My Zsh and install if we don't have it
-if test ! $(which omz); then
-    echo "installing oh-my-zsh..."
-    echo "make sure to add correct credentials"
-    /bin/sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/HEAD/tools/install.sh)"
+if test ! $(which omz);
+then
+	info "omz exists!"
+else
+	info "installing oh-my-zsh..."
+	info "make sure to add correct credentials"
+	sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 fi
+
+
+
 
 # Setup Zsh
 ./script/zsh/setup.sh

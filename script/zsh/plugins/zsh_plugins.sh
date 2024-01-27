@@ -1,3 +1,6 @@
+#!/bin/bash
+source ../../common/log.sh
+
 info "Installing zsh plugins"
 
 # Install zsh-autosuggestions

@@ -1,3 +1,6 @@
+#!/bin/bash
+source ../common/log.sh
+
 ZSHRC_PATH="$HOME/.zshrc"
 
 # Get current date in YYYYMMDD format
@@ -7,7 +10,7 @@ ZAHRC_BACKUP_PATH="$HOME/.zshrc_backup_$DATE_SUFFIX"
 
 CURRENT_DIR=$(pwd)
 
-ZSHRC_SYMLINK_TARGET="$CURRENT_DIR/../configs/.zshrc"
+ZSHRC_SYMLINK_TARGET="$CURRENT_DIR/../../configs/.zshrc"
 
 if [ -f "$ZSHRC_PATH" ]; then
     info "Identified .zshrc exists creating backup"
@@ -22,4 +25,4 @@ info "Symlink created for $ZSHRC_PATH"
 
 
 # Install zsh plugins
-./zsh/plugins/zsh_plugin
+./script/zsh/plugins/zsh_plugin.sh
