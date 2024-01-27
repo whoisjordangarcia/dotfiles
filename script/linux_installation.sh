@@ -47,3 +47,10 @@ chsh -s $(which zsh)
 
 # Setup Zsh
 ./zsh/setup
+
+# Installs LSD
+apt install lsd
+
+# Override the config for .zshrc
+info "Defaulting copy .zshrc file over..."
+sudo cp configs/.zshrc ~/.zshrc
