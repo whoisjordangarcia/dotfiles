@@ -1,51 +1,30 @@
+#!/bin/sh
+
 # Fail on any command.
-set -eux pipefail
+# set -eux pipefail
 
-# Install Homebrew
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# Check for Homebrew and install if we don't have it
+if test ! $(which brew); then
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# Install iTerm2 
-brew install --cask iterm2
+  echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $HOME/.zprofile
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+# Install all our dependencies with bundle (See Brewfile)
+brew tap homebrew/bundle
+brew bundle --file Brewfile
 
 mkdir ~/git
 
 (cd ~/git && git https://github.com/dracula/iterm.git)
 
-# Install Github CLI
-brew install gh
+# Check for Oh My Zsh and install if we don't have it
+if test ! $(which omz); then
+    echo "installing oh-my-zsh..."
+    echo "make sure to add correct credentials"
+    /bin/sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/HEAD/tools/install.sh)"
+fi
 
-# Install NVM
-brew install nvm
-
-# Install zsh 
-brew install zsh
-
-# Install oh-my-zsh
-info "installing oh-my-zsh..."
-info "make sure to add correct credentials"
-sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-
-# Install zsh-autosuggestions
-info "Defaulting Installing zsh-autosuggestions..."
-git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-
-# Install zsh-syntax-highlighting
-info "Defaulting Installing zsh-syntax-highlighting..."
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-
-# Install fzf plugin
-info "Defaulting Installing fzf..."
-git clone --depth 1 https://github.com/unixorn/fzf-zsh-plugin.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/fzf-zsh-plugin
-
-# Install lolcat
-brew install lolcat
-
-# Install figlet
-brewq install figlet
-
-# Install fzf
-brew install fzf
-
-# Override the config for .zshrc
-info "Defaulting copy .zshrc file over..."
-sudo cp configs/.zshrc ~/.zshrc
+# Setup Zsh
+./zsh/setup
