@@ -1,56 +1,45 @@
-#!/bin/bash
+##!/bin/bash
 
-
-info () {
-  printf "\r  [ \033[00;34m..\033[0m ] $1\n"
-}
-
-user() {
-	printf "\r  [ \033[0;33m??\033[0m ] $1\n"
-}
-
-success() {
-	printf "\r\033[2K  [ \033[00;32mOK\033[0m ] $1\n"
-}
-
-fail() {
-	printf "\r\033[2K  [\033[0;31mFAIL\033[0m] $1\n"
-	echo ''
-	exit
-}
-
-# Fail on any command.
-set -eux pipefail
+source ./common/log.sh
 
 # Install ZSH
 info "installing zsh..."
 apt install zsh
 
 # Install oh-my-zsh
-info "installing oh-my-zsh..."
-info "make sure to add correct credentials"
-sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+if test ! $(which omz); then
+	info "omz exists!"
+else
+	info "installing oh-my-zsh..."
+	info "make sure to add correct credentials"
+	sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
-# Install powerlevel 10k
-info "installing powerlevel10k..."
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+	# Install powerlevel 10k
+	info "installing powerlevel10k..."
+	git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+fi
 
 # Install nvm
-info "installing nvm..."
-curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
+if [ -d "${HOME}/.nvm/.git" ]; then
+	info "nvm already installed..."
+else 
+	info "installing nvm..."
+	curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
+fi
 
-source ~/.zshrc
+# source $HOME/.zshrc
 
 # Default zsh
 info "Defaulting zsh..."
 chsh -s $(which zsh)
 
 # Setup Zsh
-./zsh/setup
+./script/zsh/setup.sh
+
+LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
+curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+tar xf lazygit.tar.gz lazygit
+sudo install lazygit /usr/local/bin
 
 # Installs LSD
 apt install lsd
-
-# Override the config for .zshrc
-info "Defaulting copy .zshrc file over..."
-sudo cp configs/.zshrc ~/.zshrc
