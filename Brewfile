@@ -5,6 +5,8 @@ brew 'zsh'
 brew 'lolcat'
 brew 'figlet'
 brew 'fzf'
+brew 'autojump'
+brew 'neovim'
 
 # Development
 
