@@ -15,7 +15,10 @@ fi
 brew tap homebrew/bundle
 brew bundle --file Brewfile
 
-mkdir ~/git
+
+if [ ! -d "~/git" ]; then
+  mkdir ~/git
+fi
 
 (cd ~/git && git https://github.com/dracula/iterm.git)
 
@@ -27,4 +30,4 @@ if test ! $(which omz); then
 fi
 
 # Setup Zsh
-./zsh/setup
+./script/zsh/setup.sh
