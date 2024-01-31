@@ -38,3 +38,6 @@ fi
 
 # Setup Zsh
 "$SCRIPT_DIR/zsh/setup.sh"
+
+# Setup setup vim
+"$SCRIPT_DIR/vim/setup.sh"
