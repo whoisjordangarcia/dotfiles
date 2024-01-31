@@ -1,5 +1,8 @@
 #!/bin/bash
-source ../common/log.sh
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+
+source "$SCRIPT_DIR/../common/log.sh"
 
 ZSHRC_PATH="$HOME/.zshrc"
 
@@ -8,9 +11,7 @@ DATE_SUFFIX=$(date +%Y%m%d)
 
 ZAHRC_BACKUP_PATH="$HOME/.zshrc_backup_$DATE_SUFFIX"
 
-CURRENT_DIR=$(pwd)
-
-ZSHRC_SYMLINK_TARGET="$CURRENT_DIR/../../configs/.zshrc"
+ZSHRC_SYMLINK_TARGET="$SCRIPT_DIR/../../configs/.zshrc"
 
 if [ -f "$ZSHRC_PATH" ]; then
     info "Identified .zshrc exists creating backup"
@@ -23,6 +24,5 @@ fi
 ln -s "$ZSHRC_SYMLINK_TARGET" "$ZSHRC_PATH"
 info "Symlink created for $ZSHRC_PATH"
 
-
 # Install zsh plugins
-./script/zsh/plugins/zsh_plugin.sh
+"$SCRIPT_DIR/plugins/zsh_plugins.sh"
