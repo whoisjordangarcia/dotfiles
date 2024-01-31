@@ -7,23 +7,15 @@
 - iterm2 w/ dracula theme (mac only)
 - oh-my-zsh
 - zsh plugins:
-   - zsh-syntax-highlighting 
-   - zsh-autosuggestions
+  - zsh-syntax-highlighting
+  - zsh-autosuggestions
 - dotfiles
 - powerlevel10k
-- Fira Code + MesloLGS NF fonts
-
-## Prerequisites
-```
-# Update your software repositories.
-sudo apt-get update
-sudo apt-get upgrade
-
-# Install Git.
-sudo apt-get install -y git
-
-# Install Fira Code and MesloLGS NF fonts
-```
+- gh
+- nvm
+- fzf
+- neovim
+- lazyvim
 
 ## Installation
 
