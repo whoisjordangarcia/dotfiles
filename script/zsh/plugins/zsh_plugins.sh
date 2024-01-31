@@ -1,3 +1,9 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+
+source "$SCRIPT_DIR/../../common/log.sh"
+
 info "Installing zsh plugins"
 
 # Install zsh-autosuggestions

@@ -1,4 +1,8 @@
-#!/bin/sh
+#!/bin/bash
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+
+source "$SCRIPT_DIR/common/log.sh"
 
 # Fail on any command.
 # set -eux pipefail
@@ -20,14 +24,20 @@ if [ ! -d "~/git" ]; then
   mkdir ~/git
 fi
 
-(cd ~/git && git https://github.com/dracula/iterm.git)
+(cd ~/git && git clone https://github.com/dracula/iterm.git)
 
 # Check for Oh My Zsh and install if we don't have it
-if test ! $(which omz); then
-    echo "installing oh-my-zsh..."
-    echo "make sure to add correct credentials"
-    /bin/sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/HEAD/tools/install.sh)"
+if test ! $(which omz);
+then
+	info "omz exists!"
+else
+	info "installing oh-my-zsh..."
+	info "make sure to add correct credentials"
+	sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 fi
 
 # Setup Zsh
-./script/zsh/setup.sh
+"$SCRIPT_DIR/zsh/setup.sh"
+
+# Setup setup vim
+"$SCRIPT_DIR/vim/setup.sh"
