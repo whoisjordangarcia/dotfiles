@@ -13,7 +13,7 @@
 - powerlevel10k
 - Fira Code + MesloLGS NF fonts
 
-## Prerequisites
+## Prerequisites - Debian
 ```
 # Update your software repositories.
 sudo apt-get update
