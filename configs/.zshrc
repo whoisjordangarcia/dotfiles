@@ -82,10 +82,12 @@ plugins=(
     zsh-syntax-highlighting 
     zsh-autosuggestions
     fzf-zsh-plugin
+    autojump
 )
 
 source $ZSH/oh-my-zsh.sh
 
+# Install fzf
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # User configuration
