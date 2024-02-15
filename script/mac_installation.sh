@@ -41,3 +41,18 @@ fi
 
 # Setup setup vim
 "$SCRIPT_DIR/vim/setup.sh"
+
+# Install fzf
+brew install fzf
+
+# Install lolcat
+brew install lolcat
+
+# Install figlet
+brewq install figlet
+
+# Install fzf
+brew install fzf
+
+# Install neovim
+brew install neovim
