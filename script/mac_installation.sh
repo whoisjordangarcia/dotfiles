@@ -56,3 +56,6 @@ brew install fzf
 
 # Install neovim
 brew install neovim
+
+# Install git-town
+brew install git-town
