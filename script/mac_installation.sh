@@ -61,3 +61,6 @@ brew install neovim
 
 # Install git-town
 brew install git-town
+
+# Install eza
+brew install eza

@@ -80,6 +80,7 @@ zstyle ':omz:update' mode auto      # update automatically without asking
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
+    poetry
     git 
     zsh-syntax-highlighting 
     zsh-autosuggestions
@@ -91,6 +92,9 @@ source $ZSH/oh-my-zsh.sh
 
 # Install fzf
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# Load work configuration
+[ -f ~/.zshrc-work ] && source ~/.zshrc-work
 
 # User configuration
 export PATH="${PATH}:${HOME}/.local/bin/"
@@ -117,5 +121,14 @@ alias dev="cd ~/mnt/h/dev/"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+decode_url() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: decode_url <url_to_decode>"
+    return 1
+  fi
+
+  python -c "import sys, urllib.parse as ul; print(ul.unquote_plus('$1'))"
+}
 
 figlet -f smslant hack the world | lolcat
