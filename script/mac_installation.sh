@@ -51,7 +51,7 @@ brew install fzf
 brew install lolcat
 
 # Install figlet
-brewq install figlet
+brew install figlet
 
 # Install fzf
 brew install fzf
