@@ -1,10 +1,10 @@
 ##!/bin/bash
 
-source ./common/log.sh
+source ./script/common/log.sh
 
 # Install ZSH
 info "installing zsh..."
-apt install zsh
+sudo apt install zsh
 
 # Install oh-my-zsh
 if test ! $(which omz); then
@@ -37,11 +37,17 @@ chsh -s $(which zsh)
 sudo apt install figlet
 sudo apt install lolcat
 
+# Install tmux
+sudo apt install tmux
+
 # Setup Zsh
 ./script/zsh/setup.sh
 
 # Setup vim
 ./script/vim/setup.sh
+
+# Setup tmux
+./script/tmux/setup.sh
 
 LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
 curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
