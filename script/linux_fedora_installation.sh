@@ -36,7 +36,12 @@ chsh -s $(which zsh)
 ./script/zsh/setup.sh
 
 # Setup Vim
-pkcon dnf install -y neovim python3-neovim
+pkcon install -y neovim python3-neovim
+
+pkcon install lolcat
+pkcon install figlet
+
+pkcon install autojump
 
 ./script/vim/setup.sh
 
