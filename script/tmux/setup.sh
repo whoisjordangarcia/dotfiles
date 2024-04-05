@@ -11,7 +11,7 @@ DATE_SUFFIX=$(date +%Y%m%d)
 
 TMUX_BACKUP_PATH="$HOME/.tmux.conf_backup_$DATE_SUFFIX"
 
-TMUX_SYMLINK_TARGET="$SCRIPT_DIR/../../configs/tmux/tmux.conf"
+TMUX_SYMLINK_TARGET="$SCRIPT_DIR/../../configs/tmux/.tmux.conf"
 
 if [ -f "$TMUX_PATH" ]; then
 	info "Identified .tmux.conf exists creating backup"

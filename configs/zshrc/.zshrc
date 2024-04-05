@@ -114,6 +114,7 @@ fi
 alias vim="nvim"
 alias reload="source ~/.zshrc"
 alias dev="cd ~/mnt/h/dev/"
+alias ls="eza --icons"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
