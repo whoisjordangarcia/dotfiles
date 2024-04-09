@@ -133,3 +133,10 @@ decode_url() {
 }
 
 figlet -f smslant hack the world | lolcat
+
+# bun completions
+[ -s "/home/jordan/.bun/_bun" ] && source "/home/jordan/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
