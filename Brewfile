@@ -7,6 +7,9 @@ brew 'figlet'
 brew 'fzf'
 brew 'autojump'
 brew 'neovim'
+brew 'git-town'
+brew 'eza'
+brew 'ripgrep'
 
 # Development
 
