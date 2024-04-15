@@ -43,24 +43,3 @@ fi
 # Install tmux
 brew install tmux
 "$SCRIPT_DIR/tmux/setup.sh"
-
-# Install fzf
-brew install fzf
-
-# Install lolcat
-brew install lolcat
-
-# Install figlet
-brew install figlet
-
-# Install fzf
-brew install fzf
-
-# Install neovim
-brew install neovim
-
-# Install git-town
-brew install git-town
-
-# Install eza
-brew install eza
