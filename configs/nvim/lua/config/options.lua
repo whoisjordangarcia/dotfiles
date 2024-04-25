@@ -12,9 +12,6 @@ vim.g.have_nerd_font = true
 -- Line numbers defautl
 vim.opt.number = true
 
--- Useful for jumping, but i'm not there yet
-vim.opt.relativenumber = false
-
 -- Enable mouse mode
 vim.opt.mouse = "a"
 
