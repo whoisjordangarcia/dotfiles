@@ -131,6 +131,10 @@ decode_url() {
   python -c "import sys, urllib.parse as ul; print(ul.unquote_plus('$1'))"
 }
 
+decode () {
+ jq -R 'split(".") | .[1] | @base64d | fromjson ' <<< "$1"
+}
+
 figlet -f smslant hack the world | lolcat
 
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
