@@ -41,6 +41,7 @@ pkcon install -y neovim python3-neovim
 pkcon install lolcat
 pkcon install figlet
 
+pkcon install ripgrep
 pkcon install autojump
 
 ./script/vim/setup.sh
