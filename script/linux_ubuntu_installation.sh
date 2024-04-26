@@ -40,6 +40,9 @@ sudo apt install lolcat
 # Install tmux
 sudo apt install tmux
 
+# Install reipgrep
+sudo apt install ripgrep
+
 # Setup Zsh
 ./script/zsh/setup.sh
 
