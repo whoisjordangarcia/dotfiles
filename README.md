@@ -1,29 +1,20 @@
 # Jordan's dotfiles
 
-![terminal](./images/screenshot.png)
+dotfiles are compatible for Fedora, Ubuntu, MacOS. This allows me to have the same devex on my main Windows 11 PC using WSL2, Personal laptop using Fedora, Work laptop using MacOS 
 
 # What will be installed?
 
-- iterm2 w/ dracula theme (mac only)
-- oh-my-zsh
+- zsh w/ oh-my-zsh
 - zsh plugins:
    - zsh-syntax-highlighting 
    - zsh-autosuggestions
-- dotfiles
+- neovim
 - powerlevel10k
-- Fira Code + MesloLGS NF fonts
-
-## Prerequisites - Debian
-```
-# Update your software repositories.
-sudo apt-get update
-sudo apt-get upgrade
-
-# Install Git.
-sudo apt-get install -y git
-
-# Install Fira Code and MesloLGS NF fonts
-```
+- tmux
+- ripgrep
+- autojump
+- eza
+- lolcat/figlet
 
 ## Installation
 
