@@ -4,9 +4,6 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 source "$SCRIPT_DIR/common/log.sh"
 
-# Fail on any command.
-# set -eux pipefail
-
 # Check for Homebrew and install if we don't have it
 if test ! $(which brew); then
 	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -19,27 +16,22 @@ fi
 brew tap homebrew/bundle
 brew bundle --file Brewfile
 
-if [ ! -d "~/git" ]; then
-	mkdir ~/git
-fi
+component_installation=(
+	zsh
+	vim
+	tmux
+)
+
+for component in "${component_installation[@]}"; do
+	info "-- Running $component installation. --"
+	script_path="./script/${component}/setup.sh"
+
+	#Check if the script exists before trying to run it
+	if [ -f "$script_path" ]; then
+		bash "$script_path"
+	else
+		info "Script for $component does not exist."
+	fi
+done
 
 (cd ~/git && git clone https://github.com/dracula/iterm.git)
-
-# Check for Oh My Zsh and install if we don't have it
-if test ! $(which omz); then
-	info "omz exists!"
-else
-	info "installing oh-my-zsh..."
-	info "make sure to add correct credentials"
-	sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-fi
-
-# Setup Zsh
-"$SCRIPT_DIR/zsh/setup.sh"
-
-# Setup setup vim
-"$SCRIPT_DIR/vim/setup.sh"
-
-# Install tmux
-brew install tmux
-"$SCRIPT_DIR/tmux/setup.sh"
