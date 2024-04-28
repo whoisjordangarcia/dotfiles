@@ -7,6 +7,8 @@ NVIM_PATH="$HOME/.config/nvim"
 
 NVIM_SYMLINK_TARGET="$SCRIPT_DIR/../../configs/nvim"
 
+mkdir -p "$HOME/.config.nvim"
+
 source "$SCRIPT_DIR/../common/log.sh"
 
 info "Backing up nvim files"

@@ -4,7 +4,8 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 source "$SCRIPT_DIR/../common/log.sh"
 
-TMUX_PATH = "$HOME/.tmux.conf"
+TMUX_PATH="$HOME/.config/tmux/.tmux.conf"
+mkdir -p "$HOME/.config/tmux"
 
 # Get current date in YYYYMMDD format
 DATE_SUFFIX=$(date +%Y%m%d)
@@ -12,6 +13,8 @@ DATE_SUFFIX=$(date +%Y%m%d)
 TMUX_BACKUP_PATH="$HOME/.tmux.conf_backup_$DATE_SUFFIX"
 
 TMUX_SYMLINK_TARGET="$SCRIPT_DIR/../../configs/tmux/.tmux.conf"
+
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 if [ -f "$TMUX_PATH" ]; then
 	info "Identified .tmux.conf exists creating backup"

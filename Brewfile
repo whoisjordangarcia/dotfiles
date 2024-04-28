@@ -1,17 +1,19 @@
 # Binaries
 brew 'gh'
-brew 'nvm'
 brew 'zsh'
 brew 'lolcat'
 brew 'figlet'
 brew 'fzf'
 brew 'autojump'
-brew 'neovim'
-brew 'git-town'
 brew 'eza'
 brew 'ripgrep'
+brew 'tmux'
+brew 'neovim'
 
 # Development
+brew 'nvm'
+brew 'git-town'
+brew 'jesseduffield/lazygit/lazygit'
 
 # Apps
 cask 'iterm2'
