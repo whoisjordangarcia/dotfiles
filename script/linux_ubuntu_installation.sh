@@ -2,19 +2,20 @@
 
 source ./script/common/log.sh
 
-# Installations
 sudo apt update
-sudo apt install \
+sudo apt install -y \
 	gcc \
 	zsh \
 	gh \
 	lolcat \
+	figlet \
 	tmux \
 	ripgrep \
 	autojump \
 	eza \
 	neovim \
-	tmux
+	tmux \
+	python3-neovim
 
 component_installation=(
 	zsh
