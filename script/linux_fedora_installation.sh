@@ -4,13 +4,16 @@ source ./script/common/log.sh
 
 pkcon install -y \
 	zsh \
-	neovim \
-	python3-neovim \
 	gh \
 	lolcat \
 	figlet \
+	tmux \
 	ripgrep \
-	autojump
+	autojump \
+	eza \
+	neovim \
+	tmux \
+	python3-neovim
 
 component_installation=(
 	zsh
