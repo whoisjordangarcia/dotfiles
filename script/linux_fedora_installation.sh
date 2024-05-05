@@ -21,6 +21,7 @@ component_installation=(
 	tmux
 	node
 	git
+	fonts/linux
 )
 
 for component in "${component_installation[@]}"; do

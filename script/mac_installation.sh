@@ -20,6 +20,7 @@ component_installation=(
 	zsh
 	vim
 	tmux
+	fonts/mac
 )
 
 for component in "${component_installation[@]}"; do
