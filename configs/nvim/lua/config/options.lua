@@ -9,8 +9,10 @@ vim.g.maplocalleader = " "
 -- Nerd Font installed
 vim.g.have_nerd_font = true
 
--- Line numbers defautl
+-- Line numbers default
 vim.opt.number = true
+
+vim.opt.relativenumber = false
 
 -- Enable mouse mode
 vim.opt.mouse = "a"
