@@ -155,3 +155,9 @@ export PATH=$PATH:$GOPATH/bin:/usr/local/go/bin
 if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
   tmux attach -t default || tmux new -s default
 fi
+
+### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
+export PATH="/Users/jordan.garcia/.rd/bin:$PATH"
+### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
+
+export PATH=$PATH:/Users/jordan.garcia/.spicetify

@@ -9,6 +9,7 @@ brew 'eza'
 brew 'ripgrep'
 brew 'tmux'
 brew 'neovim'
+brew 'htop'
 
 # Development
 brew 'nvm'
