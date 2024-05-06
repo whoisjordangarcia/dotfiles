@@ -12,7 +12,7 @@ config.window_padding = {
 	bottom = 0,
 	top = 10,
 }
-config.window_decorations = "NONE"
+config.window_decorations = "RESIZE"
 config.font = wezterm.font("JetBrainsMono Nerd Font")
 config.font_size = 20
 config.color_scheme = "Catppuccin Mocha"
@@ -20,4 +20,6 @@ config.window_background_opacity = 0.9
 config.show_tabs_in_tab_bar = false
 config.show_new_tab_button_in_tab_bar = false
 config.enable_tab_bar = false
+config.use_resize_increments = true
+config.adjust_window_size_when_changing_font_size = false
 return config
