@@ -21,6 +21,7 @@ component_installation=(
 	tmux
 	node
 	git
+	wezterm
 	fonts/linux
 )
 

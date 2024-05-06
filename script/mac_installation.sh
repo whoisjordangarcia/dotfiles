@@ -20,6 +20,7 @@ component_installation=(
 	zsh
 	vim
 	tmux
+	wezterm
 	fonts/mac
 )
 
