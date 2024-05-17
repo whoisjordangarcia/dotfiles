@@ -4,8 +4,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 source "$SCRIPT_DIR/../common/log.sh"
 
-TMUX_PATH="$HOME/.config/tmux/.tmux.conf"
-mkdir -p "$HOME/.config/tmux"
+TMUX_PATH="$HOME/.tmux.conf"
 
 # Get current date in YYYYMMDD format
 DATE_SUFFIX=$(date +%Y%m%d)
