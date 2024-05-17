@@ -19,7 +19,7 @@ if test ! $(which omz); then
 else
 	info "installing oh-my-zsh..."
 	info "make sure to add correct credentials"
-	sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+	sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 	# Install powerlevel 10k
 	info "installing powerlevel10k..."
@@ -40,9 +40,9 @@ fi
 ln -s "$ZSHRC_SYMLINK_TARGET" "$ZSHRC_PATH"
 info "Symlink created for $ZSHRC_PATH"
 
-# Install zsh plugins
-"$SCRIPT_DIR/plugins/zsh_plugins.sh"
-
 # Default zsh
 info "Defaulting zsh..."
 chsh -s $(which zsh)
+
+# Install zsh plugins
+"$SCRIPT_DIR/plugins/zsh_plugins.sh"
