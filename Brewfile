@@ -10,6 +10,7 @@ brew 'ripgrep'
 brew 'tmux'
 brew 'neovim'
 brew 'htop'
+brew 'zoxide'
 
 # Development
 brew 'nvm'

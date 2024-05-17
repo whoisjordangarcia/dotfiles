@@ -15,7 +15,8 @@ sudo apt install -y \
 	eza \
 	neovim \
 	tmux \
-	python3-neovim
+	python3-neovim \
+	zoxide
 
 component_installation=(
 	zsh
@@ -23,7 +24,7 @@ component_installation=(
 	tmux
 	node
 	git
-	weztern
+	wezterm
 	fonts/linux
 )
 

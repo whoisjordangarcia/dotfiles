@@ -13,7 +13,8 @@ pkcon install -y \
 	eza \
 	neovim \
 	tmux \
-	python3-neovim
+	python3-neovim \
+	zoxide
 
 component_installation=(
 	zsh
