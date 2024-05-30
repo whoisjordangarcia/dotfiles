@@ -12,7 +12,6 @@ config.window_padding = {
 	bottom = 0,
 	top = 10,
 }
-config.window_decorations = "RESIZE"
 config.font = wezterm.font("JetBrainsMono Nerd Font")
 config.font_size = 20
 config.color_scheme = "Catppuccin Mocha"
