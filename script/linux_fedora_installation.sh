@@ -16,7 +16,7 @@ pkcon install -y \
 	python3-neovim \
 	zoxide
 
-component_installation=(
+component_installation=
 	zsh
 	vim
 	tmux
@@ -24,6 +24,8 @@ component_installation=(
 	git
 	wezterm
 	fonts/linux
+  i3
+  polybar
 )
 
 for component in "${component_installation[@]}"; do
