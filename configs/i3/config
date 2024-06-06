@@ -2,16 +2,14 @@
 #
 # Please see https://i3wm.org/docs/userguide.html for a complete reference!
 
+exec_always --no-startup-id $HOME/.config/polybar/launch.sh --forest
+
 for_window [title="Desktop — Plasma"] kill, floating enable, border none
 for_window [class="plasmashell"] floating enable
 for_window [class="Plasma"] floating enable, border none
 for_window [title="plasma-desktop"] floating enable, border none
-for_window [title="win7"] floating enable, border none
 for_window [class="krunner"] floating enable, border none
-for_window [class="Kmix"] floating enable, border none
 for_window [class="Klipper"] floating enable, border none
-for_window [class="Plasmoidviewer"] floating enable, border none
-for_window [class="(?i)*nextcloud*"] floating disable
 for_window [class="plasmashell" window_type="notification"] floating enable, border none, move right 700px, move down 450px
 no_focus [class="plasmashell" window_type="notification"]
 
@@ -19,7 +17,7 @@ set $mod Mod4
 
 # Font for window titles. Will also be used by the bar unless a different font
 # is used in the bar {} block below.
-font pango: FiraCode Nerd Font Mono 16
+font pango: FiraCode Nerd Font Mono 12
 
 # This font is widely installed, provides lots of unicode glyphs, right-to-left
 # text rendering and scalability on retina/hidpi displays (thanks to pango).
@@ -28,6 +26,14 @@ font pango: FiraCode Nerd Font Mono 16
 # Start XDG autostart .desktop files using dex. See also
 # https://wiki.archlinux.org/index.php/XDG_Autostart
 exec --no-startup-id dex-autostart --autostart --environment i3
+
+exec_always xrandr --output eDP --mode 1920x1200
+exec_always feh --bg-scale ./Pictures/window11.jpg
+
+bindsym XF86MonBrightnessUp exec light -A 5
+bindsym XF86MonBrightnessDown exec light -U 5
+bindsym shift+XF86MonBrightnessUp exec light -A 25
+bindsym shift+XF86MonBrightnessDown exec light -U 25
 
 # The combination of xss-lock, nm-applet and pactl is a popular choice, so
 # they are included here as an example. Modify as you see fit.
@@ -194,7 +200,6 @@ mode "resize" {
 
 bindsym $mod+r mode "resize"
 
-
 hide_edge_borders smart 
 smart_borders on
 
@@ -205,9 +210,6 @@ smart_borders on
 #client.urgent               #2f343f #2f343f #d8dee8 #2f343f #2f343f
 #client.placeholder          #2f343f #2f343f #d8dee8 #2f343f #2f343f
 #client.background           #2f343f
-
-assign [class="kitty"] 1
-assign [class="firefox"] 2
 
 # Start i3bar to display a workspace bar (plus the system information i3status
 # finds out, if available)
