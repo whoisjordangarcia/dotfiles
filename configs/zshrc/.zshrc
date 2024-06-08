@@ -17,6 +17,7 @@ export ZSH="$HOME/.oh-my-zsh"
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
 ZSH_THEME="powerlevel10k/powerlevel10k"
 
+
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
 # a theme from this variable instead of looking in $ZSH/themes/
@@ -32,7 +33,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 
 # Uncomment one of the following lines to change the auto-update behavior
 # zstyle ':omz:update' mode disabled  # disable automatic updates
-zstyle ':omz:update' mode auto      # update automatically without asking
+# zstyle ':omz:update' mode auto      # update automatically without asking
 # zstyle ':omz:update' mode reminder  # just remind me to update when it's time
 
 # Uncomment the following line to change how often to auto-update (in days).
@@ -48,7 +49,7 @@ zstyle ':omz:update' mode auto      # update automatically without asking
 # DISABLE_AUTO_TITLE="true"
 
 # Uncomment the following line to enable command auto-correction.
-ENABLE_CORRECTION="true"
+# ENABLE_CORRECTION="true"
 
 # Uncomment the following line to display red dots whilst waiting for completion.
 # You can also set it to another string to have that shown instead of the default red dots.
@@ -78,12 +79,18 @@ ENABLE_CORRECTION="true"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
-    poetry
-    git 
-    zsh-syntax-highlighting 
-    zsh-autosuggestions
-    fzf-zsh-plugin
-    autojump
+  themes
+  archlinux
+  bun
+  poetry
+  aliases
+  git 
+  zsh-syntax-highlighting 
+  zsh-autosuggestions
+  fzf-zsh-plugin
+  autojump
+  zsh-interactive-cd
+  tmux
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -138,13 +145,7 @@ decode () {
 figlet -f smslant hack the world | lolcat
 
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
-
-# bun completions
-[ -s "/home/jordan/.bun/_bun" ] && source "/home/jordan/.bun/_bun"
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
+typeset -g POWERLEVEL9K_KUBECONTEXT_SHOW_ON_COMMAND='kubectl|helm|kubens'
 
 # go
 export GOPATH=$HOME/go
@@ -156,8 +157,6 @@ if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
   tmux attach -t default || tmux new -s default
 fi
 
-# setup zoxide
-eval "$(zoxide init zsh)"
 
 ### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
 export PATH="/Users/jordan.garcia/.rd/bin:$PATH"
