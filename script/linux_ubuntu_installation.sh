@@ -16,7 +16,8 @@ sudo apt install -y \
 	neovim \
 	tmux \
 	python3-neovim \
-	zoxide
+	zoxide \
+	fzf
 
 component_installation=(
 	zsh
