@@ -4,8 +4,8 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 
 # What will be installed?
 
-- zsh w/ oh-my-zsh
-- zsh plugins:
+- zsh
+- oh-my-zsh plugins:
    - zsh-syntax-highlighting 
    - zsh-autosuggestions
 - neovim
