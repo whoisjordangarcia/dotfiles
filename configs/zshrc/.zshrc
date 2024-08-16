@@ -79,18 +79,11 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
-  themes
-  archlinux
-  bun
-  poetry
-  aliases
-  git 
-  zsh-syntax-highlighting 
-  zsh-autosuggestions
-  fzf-zsh-plugin
-  autojump
-  zsh-interactive-cd
-  tmux
+    poetry
+    git 
+    zsh-syntax-highlighting 
+    zsh-autosuggestions
+    fzf-zsh-plugin
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -148,14 +141,12 @@ typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 typeset -g POWERLEVEL9K_KUBECONTEXT_SHOW_ON_COMMAND='kubectl|helm|kubens'
 
 # go
-export GOPATH=$HOME/go
-export PATH=$PATH:$GOPATH/bin
-export PATH=$PATH:$GOPATH/bin:/usr/local/go/bin
+export PATH=$PATH:/usr/local/go/bin
 
 # startup tmux
-if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
-  tmux attach -t default || tmux new -s default
-fi
+# if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
+#   tmux attach -t default || tmux new -s default
+# fi
 
 
 ### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
@@ -163,3 +154,5 @@ export PATH="/Users/jordan.garcia/.rd/bin:$PATH"
 ### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
 
 export PATH=$PATH:/Users/jordan.garcia/.spicetify
+
+eval "$(zoxide init zsh)"
