@@ -19,6 +19,9 @@ elif [ "$ID" == "fedora" ]; then
 elif [ "$ID" == "ubuntu" ]; then
   success "On Ubuntu - Linux 👾 - Install dependencies"
   ./script/linux_ubuntu_installation.sh
+elif [ "$ID" == "arch" ]; then
+  success "On Arch - Linux 👾 - Install dependencies"
+  ./script/linux_arch_installation.sh
 else 
   fail "Unhandled Error" 
 fi
