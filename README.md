@@ -14,6 +14,10 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 - eza
 - lolcat/figlet
 
+## mac
+
+- iterm2
+
 ## Installation
 
 ```
