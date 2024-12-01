@@ -21,4 +21,5 @@ brew 'jesseduffield/lazygit/lazygit'
 cask 'iterm2'
 brew 'bartender'
 cask "nikitabobko/tap/aerospace"
-cask "FelixKratz/tap/sketchbar"
+tap "FelixKratz/formulae"
+brew "sketchybar"
