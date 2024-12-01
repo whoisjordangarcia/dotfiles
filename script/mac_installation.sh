@@ -38,3 +38,6 @@ done
 
 (cd ~/git 2>/dev/null || cd ~/dev && git clone https://github.com/dracula/iterm.git)
 info "-- dracula theme for iterm2 is complete. Install theme manually"
+
+curl -fsSL https://bun.sh/install | bash
+info "installed bun"
