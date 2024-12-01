@@ -83,13 +83,13 @@ plugins=(
     git 
     zsh-syntax-highlighting 
     zsh-autosuggestions
-    fzf-zsh-plugin
+    #fzf-zsh-plugin
 )
 
 source $ZSH/oh-my-zsh.sh
 
 # Install fzf
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+# [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Load work configuration
 [ -f ~/.zshrc-work ] && source ~/.zshrc-work
@@ -117,11 +117,9 @@ alias ls="eza --icons"
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm# quick decoder
 
-# quick decoder
 decode_url() {
   if [[ -z "$1" ]]; then
     echo "Usage: decode_url <url_to_decode>"
@@ -156,3 +154,11 @@ export PATH="/Users/jordan.garcia/.rd/bin:$PATH"
 export PATH=$PATH:/Users/jordan.garcia/.spicetify
 
 eval "$(zoxide init zsh)"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# bun completions
+[ -s "/Users/jordan/.bun/_bun" ] && source "/Users/jordan/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
