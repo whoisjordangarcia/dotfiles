@@ -17,6 +17,7 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 ## mac
 
 - iterm2
+- aerospace
 
 ## Installation
 
