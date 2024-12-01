@@ -25,9 +25,10 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 
 1. tmux source ~/.tmux.conf
 2. Install plugins with prefix + I <C-b> I
+3. p10k configure 
 ```
 
-## Notes for Arch installation 
+ Notes for Arch installation 
 - **OS** • [T2Linux]()
 - **Window Manager** • [Hyprland](https://github.com/hyprwm/Hyprland) 
 - **Shell** • [Zsh](https://www.zsh.org) [powerline10k](https://github.com/romkatv/powerlevel10k)
