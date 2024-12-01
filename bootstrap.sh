@@ -7,25 +7,26 @@ source "./script/common/log.sh"
 git config --global user.email "arickho@gmail.com"
 git config --global user.name "Jordan Garcia"
 
-source /etc/os-release
+# Check file used for Linux machines
+[ -f /etc/os-release ] && source /etc/os-release
 
 # If we're on a Mac, let's install and setup homebrew.
 if [ "$(uname -s)" == "Darwin" ]; then
-  success "On Mac 👾 - installing dependencies"
-  ./script/mac_installation.sh
+	success "On Mac 👾 - installing dependencies"
+	./script/mac_installation.sh
 elif [ "$ID" == "fedora" ]; then
-  success "On Linux - Fedora 👾 - Install dependencies"
-  ./script/linux_fedora_installation.sh
+	success "On Linux - Fedora 👾 - Install dependencies"
+	./script/linux_fedora_installation.sh
 elif [ "$ID" == "ubuntu" ]; then
-  success "On Ubuntu - Linux 👾 - Install dependencies"
-  ./script/linux_ubuntu_installation.sh
+	success "On Ubuntu - Linux 👾 - Install dependencies"
+	./script/linux_ubuntu_installation.sh
 elif [ "$ID" == "arch" ]; then
-  success "On Arch - Linux 👾 - Install dependencies"
-  ./script/linux_arch_installation.sh
-else 
-  fail "Unhandled Error" 
+	success "On Arch - Linux 👾 - Install dependencies"
+	./script/linux_arch_installation.sh
+else
+	fail "Unhandled Error"
 fi
 
 success "dependencies installed"
 
-success "All installed! ✨"
+success "✨✨ -- All installed! -- ✨✨"

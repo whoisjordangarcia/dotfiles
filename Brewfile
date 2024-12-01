@@ -19,3 +19,4 @@ brew 'jesseduffield/lazygit/lazygit'
 
 # Apps
 cask 'iterm2'
+cask "nikitabobko/tap/aerospace"
