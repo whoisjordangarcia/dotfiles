@@ -22,6 +22,7 @@ component_installation=(
 	tmux
 	wezterm
 	fonts/mac
+	aerospace
 )
 
 for component in "${component_installation[@]}"; do
@@ -36,8 +37,8 @@ for component in "${component_installation[@]}"; do
 	fi
 done
 
-(cd ~/git 2>/dev/null || cd ~/dev && git clone https://github.com/dracula/iterm.git)
-info "-- dracula theme for iterm2 is complete. Install theme manually"
+(cd ~/git 2>/dev/null || cd ~/dev && git clone https://github.com/catppuccin/iterm.git)
+info "-- catppuccin theme for iterm2 is complete. Install theme manually"
 
 curl -fsSL https://bun.sh/install | bash
 info "installed bun"
