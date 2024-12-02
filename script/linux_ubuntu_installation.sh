@@ -20,7 +20,7 @@ sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.lis
 sudo apt update
 sudo apt eza
 
-## upgrade neovim - ubuntu has an old version of nvim by default. We want to upgrade that.
+## neovim - Use the unstable version of nvim - lazy requires >0.8
 sudo add-apt-repository ppa:neovim-ppa/unstable
 sudo apt-get update
 sudo apt-get install neovim
