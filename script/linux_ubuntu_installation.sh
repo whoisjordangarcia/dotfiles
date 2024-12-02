@@ -18,6 +18,8 @@ sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.lis
 
 sudo apt update
 
+sudo apt upgrade neovim ## ubuntu has an old version of nvim by default. We want to upgrade that.
+
 sudo apt install -y \
 	gcc \
 	zsh \
@@ -27,7 +29,6 @@ sudo apt install -y \
 	ripgrep \
 	autojump \
 	eza \
-	neovim \
 	python3-neovim \
 	fzf
 
