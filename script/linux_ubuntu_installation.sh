@@ -22,6 +22,7 @@ sudo apt eza
 
 ## upgrade neovim - ubuntu has an old version of nvim by default. We want to upgrade that.
 sudo add-apt-repository ppa:neovim-ppa/stable
+sudo apt-get update
 sudo apt upgrade neovim
 
 sudo apt install -y \
