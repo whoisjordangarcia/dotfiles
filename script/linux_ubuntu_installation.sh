@@ -14,7 +14,6 @@ sudo apt install -y \
 	autojump \
 	eza \
 	neovim \
-	tmux \
 	python3-neovim \
 	zoxide \
 	fzf
