@@ -53,6 +53,11 @@ Notes for Arch installation
 - **Terminal** • [Wezterm](https://github.com/wez/wezterm)
 - **Panel** • [Polybar](https://github.com/polybar/polybar)
 
+## Notes for WSL
+
+- Copy wezterm.lua under Windows home directory (C:/Users/jordan/.wezterm.lua)
+- Tmux configuration requires updating
+  
 ## To try out in the future
 
 - Dunst - notify daemon
