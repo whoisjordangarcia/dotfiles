@@ -24,3 +24,4 @@ brew 'bartender'
 cask "nikitabobko/tap/aerospace"
 tap "FelixKratz/formulae"
 brew "sketchybar"
+brew "borders"
