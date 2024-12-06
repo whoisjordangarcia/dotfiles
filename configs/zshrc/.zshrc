@@ -83,7 +83,7 @@ plugins=(
     git 
     zsh-syntax-highlighting 
     zsh-autosuggestions
-    #fzf-zsh-plugin
+    fzf-zsh-plugin
 )
 
 source $ZSH/oh-my-zsh.sh
