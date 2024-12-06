@@ -11,7 +11,7 @@ SKETCHYBAR_PATH="$HOME/.config/sketchybar/sketchybarrc"
 SKETCHYBAR_SYMLINK_TARGET="$SCRIPT_DIR/../../../configs/aerospace/sketchybarrc"
 
 if [ -f "$AEROSPACE_PATH" ]; then
-	info "Identified .aerospce.toml exists. please delete manually"
+	fail "Identified .aerospce.toml exists. please delete manually"
 else
 	# Create a symlink if .aerospace.toml doesn't exist
 	ln -s "$AEROSPACE_SYMLINK_TARGET" "$AEROSPACE_PATH"

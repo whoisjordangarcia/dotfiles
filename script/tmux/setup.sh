@@ -16,13 +16,14 @@ TMUX_SYMLINK_TARGET="$SCRIPT_DIR/../../configs/tmux/.tmux.conf"
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 if [ -f "$TMUX_PATH" ]; then
-	info "Identified .tmux.conf exists creating backup"
-	# Backup the file
-	cp "$TMUX_PATH" "$TMUX_BACKUP_PATH"
-	echo "Backup created at $TMUX_BACKUP_PATH"
+	error "Identified .tmux.conf exists. Please delete $TMUX_PATH"
 
-	info "Deleting file $TMUX_PATH"
-	rm "$TMUX_PATH"
+	# Backup the file
+	#cp "$TMUX_PATH" "$TMUX_BACKUP_PATH"
+	#echo "Backup created at $TMUX_BACKUP_PATH"
+
+	#info "Deleting file $TMUX_PATH"
+	#rm "$TMUX_PATH"
 fi
 
 # Create a symlink if .zshrc doesn't exist

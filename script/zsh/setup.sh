@@ -23,19 +23,19 @@ info "installing powerlevel10k..."
 git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
 
 if [ -f "$ZSHRC_PATH" ]; then
-	info "Identified .zshrc exists creating backup"
-	# Backup the file
-	cp "$ZSHRC_PATH" "$ZSHRC_BACKUP_PATH"
-	echo "Backup created at $ZSHRC_BACKUP_PATH"
+	info "Identified .zshrc exists"
+else
+	# # Backup the file
+	# cp "$ZSHRC_PATH" "$ZSHRC_BACKUP_PATH"
+	# echo "Backup created at $ZSHRC_BACKUP_PATH"
+	#
+	# info "Deleting file $ZSHRC_PATH"
+	# rm "$ZSHRC_PATH"
 
-	info "Deleting file $ZSHRC_PATH"
-	rm "$ZSHRC_PATH"
+	# Create a symlink if .zshrc doesn't exist
+	ln -s "$ZSHRC_SYMLINK_TARGET" "$ZSHRC_PATH"
+	info "Symlink created for $ZSHRC_PATH"
 fi
-
-# Create a symlink if .zshrc doesn't exist
-ln -s "$ZSHRC_SYMLINK_TARGET" "$ZSHRC_PATH"
-info "Symlink created for $ZSHRC_PATH"
-
 # Default zsh
 info "Defaulting zsh..."
 chsh -s $(which zsh)
