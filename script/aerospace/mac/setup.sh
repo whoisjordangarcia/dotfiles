@@ -25,3 +25,9 @@ else
 	ln -s "$SKETCHYBAR_SYMLINK_TARGET" "$SKETCHYBAR_PATH"
 	info "Symlink created for $SKETCHYBAR_SYMLINK_TARGET"
 fi
+
+# allows to move windows by dragging any part of the window using Ctrl + Cmd
+defaults write -g NSWindowShouldDragOnGesture -bool tre
+
+# dusabbles windows opening animations
+defaults write -g NSAutomaticWindowAnimationsEnabled -bool false
