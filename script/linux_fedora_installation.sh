@@ -26,7 +26,7 @@ component_installation=
 	fonts/linux
   i3
   polybar
-  lazygit
+  linux/lazygit
 )
 
 for component in "${component_installation[@]}"; do
