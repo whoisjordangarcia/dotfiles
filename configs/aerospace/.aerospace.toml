@@ -126,3 +126,6 @@ l = 'resize width +50'
 enter = 'mode main'
 esc = 'mode main'
 
+[workspace-to-monitor-force-assignment]
+1 = 1
+6 = 'secondary'

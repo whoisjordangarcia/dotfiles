@@ -23,6 +23,7 @@ component_installation=(
 	wezterm
 	fonts/mac
 	aerospace
+	lazygit
 )
 
 for component in "${component_installation[@]}"; do

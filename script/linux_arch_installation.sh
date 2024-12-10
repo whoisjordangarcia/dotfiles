@@ -28,6 +28,7 @@ component_installation=(
 	node
 	git
 	wezterm
+	lazygit
 )
 
 for component in "${component_installation[@]}"; do

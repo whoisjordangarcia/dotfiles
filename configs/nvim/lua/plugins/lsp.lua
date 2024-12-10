@@ -3,9 +3,9 @@ return {
     "williamboman/mason.nvim",
     opts = function(_, opts)
       vim.list_extend(opts.ensure_installed, {
-        "tailwindcss-language-server",
+        --"tailwindcss-language-server",
         "typescript-language-server",
-        "css-lsp",
+        --"css-lsp",
       })
     end,
   },
@@ -22,14 +22,14 @@ return {
                 autoSearchPaths = true,
                 autoImportCompletions = true,
                 useLibraryCodeForTypes = true,
-                -- typeCheckingMode = "basic", -- ["off", "basic", "strict"]
-                -- diagnosticMode = "workspace", -- ["openFilesOnly", "workspace"]
-                -- diagnosticSeverityOverrides = {
-                --   reportDuplicateImport = "warning",
-                --   reportImportCycles = "warning",
-                --   reportMissingImports = "error",
-                --   reportMissingModuleSource = "error",
-                -- },
+                typeCheckingMode = "basic", -- ["off", "basic", "strict"]
+                diagnosticMode = "openFilesOnly", -- ["openFilesOnly", "workspace"]
+                diagnosticSeverityOverrides = {
+                  reportDuplicateImport = "warning",
+                  reportImportCycles = "warning",
+                  reportMissingImports = "error",
+                  reportMissingModuleSource = "error",
+                },
               },
               -- pythonPath = (function()
               --   if vim.fn.executable("pyenv") == 1 then
