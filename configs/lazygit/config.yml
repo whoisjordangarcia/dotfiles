@@ -1,0 +1,4 @@
+customCommands:
+  - key: c
+    description: Create pull request
+    command: gh pr create --fill
