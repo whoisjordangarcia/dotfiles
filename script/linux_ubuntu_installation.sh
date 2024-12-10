@@ -53,7 +53,7 @@ component_installation=(
 	git
 	wezterm
 	fonts/linux
-	lazygit
+	linux/lazygit
 )
 
 for component in "${component_installation[@]}"; do
