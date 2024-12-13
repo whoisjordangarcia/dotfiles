@@ -14,6 +14,12 @@ return {
     opts = {
       servers = {
         eslint = {},
+        tsserver = {
+          keys = {
+            { "<leader>co", "<cmd>TypescriptOrganizeImports<CR>", desc = "Organize Imports" },
+            { "<leader>cR", "<cmd>TypescriptRenameFile<CR>", desc = "Rename File" },
+          },
+        },
         pyright = {
           enabled = true,
           settings = {
