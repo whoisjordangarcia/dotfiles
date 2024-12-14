@@ -28,6 +28,7 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 1. tmux source ~/.tmux.conf
 2. Install plugins with prefix + I <C-b> I
 3. p10k configure
+4. source <(fzf --zsh)
 ```
 
 Notes for Arch installation
@@ -57,7 +58,7 @@ Notes for Arch installation
 
 - Copy wezterm.lua under Windows home directory (C:/Users/jordan/.wezterm.lua)
 - Tmux configuration requires updating
-  
+
 ## To try out in the future
 
 - Dunst - notify daemon
