@@ -89,7 +89,7 @@ plugins=(
 source $ZSH/oh-my-zsh.sh
 
 # Install fzf
-#[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Load work configuration
 #[ -f ~/.zshrc-work ] && source ~/.zshrc-work
