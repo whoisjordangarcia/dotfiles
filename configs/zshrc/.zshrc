@@ -1,9 +1,9 @@
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
+#if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+#  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+#fi
 
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
@@ -15,8 +15,8 @@ export ZSH="$HOME/.oh-my-zsh"
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="powerlevel10k/powerlevel10k"
-
+# ZSH_THEME="powerlevel10k/powerlevel10k"
+ZSH_THEME=""
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
@@ -89,10 +89,10 @@ plugins=(
 source $ZSH/oh-my-zsh.sh
 
 # Install fzf
-# [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+#[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Load work configuration
-[ -f ~/.zshrc-work ] && source ~/.zshrc-work
+#[ -f ~/.zshrc-work ] && source ~/.zshrc-work
 
 # User configuration
 export PATH="${PATH}:${HOME}/.local/bin/"
@@ -114,8 +114,11 @@ alias reload="source ~/.zshrc"
 alias dev="cd ~/mnt/h/dev/"
 alias ls="eza --icons"
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# Starship
+eval "$(starship init zsh)"
+
+# # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+# [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm# quick decoder
@@ -135,8 +138,8 @@ decode () {
 
 figlet -f smslant hack the world | lolcat
 
-typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
-typeset -g POWERLEVEL9K_KUBECONTEXT_SHOW_ON_COMMAND='kubectl|helm|kubens'
+#typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+#typeset -g POWERLEVEL9K_KUBECONTEXT_SHOW_ON_COMMAND='kubectl|helm|kubens'
 
 # go
 export PATH=$PATH:/usr/local/go/bin
@@ -151,6 +154,7 @@ export PATH=$PATH:/usr/local/go/bin
 export PATH="/Users/jordan.garcia/.rd/bin:$PATH"
 ### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
 
+# spicetify
 export PATH=$PATH:/Users/jordan.garcia/.spicetify
 
 eval "$(zoxide init zsh)"
@@ -162,3 +166,4 @@ eval "$(zoxide init zsh)"
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+export STARSHIP_CONFIG=~/.config/starship.toml

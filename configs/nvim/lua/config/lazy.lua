@@ -34,7 +34,6 @@ require("lazy").setup({
 
     { import = "lazyvim.plugins.extras.editor.mini-diff" },
     { import = "lazyvim.plugins.extras.coding.blink" },
-    --{ import = "lazyvim.plugins.extras.coding.nvim-cmp" },
 
     { import = "lazyvim.plugins.extras.lang.python" },
     { import = "lazyvim.plugins.extras.formatting.black" },

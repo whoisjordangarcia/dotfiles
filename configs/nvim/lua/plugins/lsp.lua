@@ -6,6 +6,7 @@ return {
         --"tailwindcss-language-server",
         "typescript-language-server",
         --"css-lsp",
+        "pyright",
       })
     end,
   },
@@ -50,6 +51,7 @@ return {
               -- end)(),
               -- venvPath = "/Users/jordan.garcia/.pyenv/versions",
               -- venv = "3.8.18",
+              pythonPath = vim.fn.system("poetry env info --path"):gsub("%s+", "") .. "/bin/python",
             },
           },
         },

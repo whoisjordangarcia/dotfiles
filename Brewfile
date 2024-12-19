@@ -18,7 +18,9 @@ brew 'git-town'
 brew 'jesseduffield/lazygit/lazygit'
 
 # Apps
-cask 'iterm2'
+# wezterm > iterm2 - 12/19/2024
+# cask 'iterm2'
+cask 'wezterm'
 cask 'raycast'
 brew 'bartender'
 cask "nikitabobko/tap/aerospace"
