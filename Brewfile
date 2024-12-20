@@ -11,6 +11,7 @@ brew 'tmux'
 brew 'neovim'
 brew 'htop'
 brew 'zoxide'
+brew 'yq' #tmux statusbar
 
 # Development
 brew 'nvm'
