@@ -17,7 +17,7 @@ SKETCHYBAR_TARGET="$HOME/.config/sketchybar/sketchybarrc"
 link_file "$SKETCHYBAR_SOURCE" "$SKETCHYBAR_TARGET"
 
 # allows to move windows by dragging any part of the window using Ctrl + Cmd
-defaults write -g NSWindowShouldDragOnGesture -bool tre
+run defaults write -g NSWindowShouldDragOnGesture -bool tre
 
 # disable windows opening animations
-defaults write -g NSAutomaticWindowAnimationsEnabled -bool false
+run defaults write -g NSAutomaticWindowAnimationsEnabled -bool false

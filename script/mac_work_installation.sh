@@ -11,7 +11,7 @@ component_installation=(
 	tmux
 	wezterm
 	fonts/mac
-	aerospace
+	aerospace/mac
 	lazygit/mac
 	bun/mac
 	starship
@@ -26,6 +26,6 @@ for component in "${component_installation[@]}"; do
 	if [ -f "$script_path" ]; then
 		bash "$script_path"
 	else
-		info "Script for $component does not exist."
+		fail "Script for $component does not exist."
 	fi
 done
