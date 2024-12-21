@@ -7,10 +7,10 @@ return {
     -- you can do it like this with a config function
     config = function()
       require("catppuccin").setup({
-        -- configurations
+        flavour = "macchiato",
+        transparent_background = true,
       })
     end,
-    -- or just use opts table
     opts = {
       -- configurations
     },

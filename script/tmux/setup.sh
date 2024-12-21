@@ -1,31 +1,22 @@
 #!/bin/bash
+set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 source "$SCRIPT_DIR/../common/log.sh"
+source "$SCRIPT_DIR/../common/symlink.sh"
 
-TMUX_PATH="$HOME/.tmux.conf"
+TMUX_SOURCE="$SCRIPT_DIR/../../configs/tmux/.tmux.conf"
+TMUX_TARGET="$HOME/.tmux.conf"
 
-# Get current date in YYYYMMDD format
-DATE_SUFFIX=$(date +%Y%m%d)
+link_file "$TMUX_SOURCE" "$TMUX_TARGET"
 
-TMUX_BACKUP_PATH="$HOME/.tmux.conf_backup_$DATE_SUFFIX"
+TPM_DIR="$HOME/.tmux/plugins/tpm"
 
-TMUX_SYMLINK_TARGET="$SCRIPT_DIR/../../configs/tmux/.tmux.conf"
-
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-
-if [ -f "$TMUX_PATH" ]; then
-	error "Identified .tmux.conf exists. Please delete $TMUX_PATH"
-
-	# Backup the file
-	#cp "$TMUX_PATH" "$TMUX_BACKUP_PATH"
-	#echo "Backup created at $TMUX_BACKUP_PATH"
-
-	#info "Deleting file $TMUX_PATH"
-	#rm "$TMUX_PATH"
+if [ -d "$TPM_DIR" ]; then
+	info "TPM is already installed at $TPM_DIR."
+else
+	info "TPM not found. Installing..."
+	git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
+	info "TPM successfully installed."
 fi
-
-# Create a symlink if .zshrc doesn't exist
-ln -s "$TMUX_SYMLINK_TARGET" "$TMUX_PATH"
-info "Symlink created for $TMUX_PATH"

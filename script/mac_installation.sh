@@ -4,26 +4,18 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 source "$SCRIPT_DIR/common/log.sh"
 
-# Check for Homebrew and install if we don't have it
-if test ! $(which brew); then
-	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-	echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>$HOME/.zprofile
-	eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
-
-# Install all our dependencies with bundle (See Brewfile)
-brew tap homebrew/bundle
-brew bundle --file Brewfile
-
 component_installation=(
+	apps/mac
 	zsh
 	vim
 	tmux
 	wezterm
 	fonts/mac
 	aerospace
-	mac/lazygit
+	lazygit/mac
+	bun/mac
+	#iterm2/mac
+	starship
 )
 
 for component in "${component_installation[@]}"; do
@@ -37,9 +29,3 @@ for component in "${component_installation[@]}"; do
 		info "Script for $component does not exist."
 	fi
 done
-
-(cd ~/git 2>/dev/null || cd ~/dev && git clone https://github.com/catppuccin/iterm.git)
-info "-- catppuccin theme for iterm2 is complete. Install theme manually"
-
-curl -fsSL https://bun.sh/install | bash
-info "installed bun"
