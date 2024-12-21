@@ -12,13 +12,15 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 - tmux
 - ripgrep
 - eza
+- zoxide
 - lolcat/figlet
 
 ## mac
 
-- iterm2
+- ~iterm2~ wezterm
 - aerospace
 - sketchybar
+- borders
 
 ## Installation
 
@@ -27,7 +29,7 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 
 1. tmux source ~/.tmux.conf
 2. Install plugins with prefix + I <C-b> I
-3. p10k configure
+3. ~p10k configure~
 4. source <(fzf --zsh)
 ```
 
@@ -65,3 +67,7 @@ Notes for Arch installation
 - Ranger - launcher
 - nvchad - gui ide
 - starship - shell
+
+## Notes for Windows
+
+- starship installation

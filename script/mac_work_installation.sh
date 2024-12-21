@@ -1,24 +1,25 @@
-##!/bin/bash
+#!/bin/bash
 
-source ./script/common/log.sh
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+
+source "$SCRIPT_DIR/common/log.sh"
 
 component_installation=(
-	apps/fedora
+	apps/mac
 	zsh
 	vim
 	tmux
-	node
-	git
 	wezterm
-	fonts/linux
-	i3
-	polybar
+	fonts/mac
+	aerospace
+	lazygit/mac
+	bun/mac
 	starship
-	lazygit/fedora
+	work/mac
 )
 
 for component in "${component_installation[@]}"; do
-	info "Running $component installation."
+	info "-- Running $component installation. --"
 	script_path="./script/${component}/setup.sh"
 
 	#Check if the script exists before trying to run it

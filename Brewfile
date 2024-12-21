@@ -12,6 +12,7 @@ brew 'neovim'
 brew 'htop'
 brew 'zoxide'
 brew 'yq' #tmux statusbar
+brew 'starship'
 
 # Development
 brew 'nvm'
@@ -23,7 +24,7 @@ brew 'jesseduffield/lazygit/lazygit'
 # cask 'iterm2'
 cask 'wezterm'
 cask 'raycast'
-brew 'bartender'
+cask 'bartender'
 cask "nikitabobko/tap/aerospace"
 tap "FelixKratz/formulae"
 brew "sketchybar"

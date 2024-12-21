@@ -6,7 +6,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 source "$SCRIPT_DIR/../common/log.sh"
 source "$SCRIPT_DIR/../common/symlink.sh"
 
-LAZYGIT_SOURCE="$SCRIPT_DIR/../../configs/lazygit/config.yml"
-LAZYGIT_TARGET="$HOME/.config/lazygit/config.yml"
+STARSHIP_SOURCE="$SCRIPT_DIR/../../configs/starship/starship.toml"
+STARSHIP_TARGET="$HOME/.config/starship.toml"
 
-link_file "$LAZYGIT_SOURCE" "$LAZYGIT_TARGET"
+link_file "$STARSHIP_SOURCE" "$STARSHIP_TARGET"
