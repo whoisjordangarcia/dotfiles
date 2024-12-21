@@ -14,7 +14,7 @@ link_file "$AEROSPACE_SOURCE" "$AEROSPACE_TARGET"
 SKETCHYBAR_SOURCE="$SCRIPT_DIR/../../../configs/aerospace/sketchybarrc"
 SKETCHYBAR_TARGET="$HOME/.config/sketchybar/sketchybarrc"
 
-link_file "$SKETCHYBAR_SOURCE" $SKETCHYBAR_TARGET""
+link_file "$SKETCHYBAR_SOURCE" "$SKETCHYBAR_TARGET"
 
 # allows to move windows by dragging any part of the window using Ctrl + Cmd
 defaults write -g NSWindowShouldDragOnGesture -bool tre
