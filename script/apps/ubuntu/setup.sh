@@ -36,7 +36,8 @@ sudo apt install -y \
 	ripgrep \
 	autojump \
 	python3-neovim \
-	fzf
+	fzf \
+  starship
 
 curl -sS https://webinstall.dev/zoxide | bash
 

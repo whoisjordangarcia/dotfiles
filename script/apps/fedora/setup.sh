@@ -10,4 +10,5 @@ pkcon install -y \
 	neovim \
 	tmux \
 	python3-neovim \
-	zoxide
+	zoxide \
+  starship
