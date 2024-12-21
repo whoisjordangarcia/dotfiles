@@ -89,7 +89,7 @@ plugins=(
 source $ZSH/oh-my-zsh.sh
 
 # Install fzf
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+#[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Load work configuration
 #[ -f ~/.zshrc-work ] && source ~/.zshrc-work
@@ -145,14 +145,9 @@ figlet -f smslant hack the world | lolcat
 export PATH=$PATH:/usr/local/go/bin
 
 # startup tmux
-# if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
-#   tmux attach -t default || tmux new -s default
-# fi
-
-
-### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
-export PATH="/Users/jordan.garcia/.rd/bin:$PATH"
-### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
+if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
+  tmux attach -t default || tmux new -s default
+fi
 
 # spicetify
 export PATH=$PATH:/Users/jordan.garcia/.spicetify
@@ -166,4 +161,5 @@ eval "$(zoxide init zsh)"
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
 export STARSHIP_CONFIG=~/.config/starship.toml
