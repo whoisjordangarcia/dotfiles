@@ -11,7 +11,7 @@ component_installation=(
 	tmux
 	wezterm
 	fonts/mac
-	aerospace
+	aerospace/mac
 	lazygit/mac
 	bun/mac
 	#iterm2/mac
