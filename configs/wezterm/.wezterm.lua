@@ -18,7 +18,10 @@ config.font = wezterm.font("JetBrainsMono Nerd Font")
 config.font_size = 20
 
 config.color_scheme = "Catppuccin Mocha"
-config.window_background_opacity = 0.9
+
+config.window_background_opacity = 0.8
+config.macos_window_background_blur = 10
+
 config.show_tabs_in_tab_bar = true
 config.show_new_tab_button_in_tab_bar = true
 config.enable_tab_bar = false
