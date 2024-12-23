@@ -5,12 +5,14 @@ start-at-login = true
 after-login-command = []
 
 after-startup-command = [
-     'exec-and-forget borders active_color=0xFFCBA6F7 inactive_color=0xFF1E1E2E width=4.0',
-     'exec-and-forget /opt/homebrew/opt/sketchybar/bin/sketchybar'
+  'exec-and-forget borders active_color=0xFFCBA6F7 inactive_color=0xFF1E1E2E width=4.0',
+  'exec-and-forget /opt/homebrew/opt/sketchybar/bin/sketchybar',
 ]
 
-exec-on-workspace-change = ['/bin/bash', '-c',
-    'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE'
+exec-on-workspace-change = [
+  '/bin/bash',
+  '-c',
+  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
 # Mouse follows focus when focused monitor changes
 # Annoying behavior
@@ -19,8 +21,8 @@ exec-on-workspace-change = ['/bin/bash', '-c',
 on-focus-changed = [
   # Annoying behavior
   #'move-mouse window-lazy-center',
-   # 'exec-and-forget /bin/bash -c /opt/homebrew/bin/sketchybar --trigger front_app_switched',
-   # 'exec-and-forget sketchybar --trigger update_windows'
+  # 'exec-and-forget /bin/bash -c /opt/homebrew/bin/sketchybar --trigger front_app_switched',
+  # 'exec-and-forget sketchybar --trigger update_windows'
 ]
 
 accordion-padding = 30
@@ -42,10 +44,10 @@ enable-normalization-opposite-orientation-for-nested-containers = false
 
 [gaps]
 #outer.bottom numbers have to match presentation.sh variables. built-in retina display is excluded from presentation mode, so this only works on external monitors.
-outer.bottom =        [{monitor.'^built-in retina display$' = 5 }, 5]
-outer.top =        [{monitor.'^built-in retina display$' = 25 }, 50]
-outer.left =       13
-outer.right =      13
+outer.bottom = [{ monitor.'^built-in retina display$' = 10 }, 5]
+outer.top = [{ monitor.'^built-in retina display$' = 15 }, 50]
+outer.left = 13
+outer.right = 13
 inner.horizontal = 10
 inner.vertical = 10
 
@@ -132,16 +134,16 @@ esc = 'mode main'
 
 [[on-window-detected]]
 if.app-id = 'com.apple.finder'
-run ='layout floating'
+run = 'layout floating'
 
 [[on-window-detected]]
 if.app-id = 'io.rancherdesktop.app'
-run ='layout floating'
+run = 'layout floating'
 
 [[on-window-detected]]
 if.app-id = 'com.cisco.secureclient.gui'
-run ='layout floating'
+run = 'layout floating'
 
 [[on-window-detected]]
 if.app-id = 'com.apple.systempreferences'
-run ='layout floating'
+run = 'layout floating'
