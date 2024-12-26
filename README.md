@@ -61,6 +61,10 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 - Copy wezterm.lua under Windows home directory (C:/Users/jordan/.wezterm.lua)
 - Tmux configuration requires updating
 
+## iOS
+
+- **OS** a-Shell
+
 ## To try out in the future
 
 - [ ] Dunst - notify daemon
