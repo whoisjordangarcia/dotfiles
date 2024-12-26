@@ -4,7 +4,7 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 
 # What will be installed?
 
-- zsh
+- zsh / oh-my-zsh
 - zsh plugins:
   - zsh-syntax-highlighting
   - zsh-autosuggestions
@@ -15,7 +15,7 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 - zoxide
 - lolcat/figlet
 
-## mac
+## MacOS
 
 - ~iterm2~ wezterm
 - aerospace
