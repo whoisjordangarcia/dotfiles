@@ -7,6 +7,6 @@ source "$SCRIPT_DIR/../../common/log.sh"
 source "$SCRIPT_DIR/../../common/symlink.sh"
 
 GHOSTTY_SOURCE="$SCRIPT_DIR/../../configs/ghostty/config"
-GHOSTTY_TARGET="$HOME/Library/Application Support/ghostty/config"
+GHOSTTY_TARGET="$HOME/Library/Application Support/com.mitchellh.ghostty/config"
 
 link_file "$GHOSTTY_SOURCE" "$GHOSTTY_TARGET"
