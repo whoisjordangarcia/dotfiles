@@ -33,11 +33,11 @@ sudo apt install -y \
 	zsh \
 	figlet \
 	tmux \
-	ripgrep \
-	autojump \
-	python3-neovim \
+	ripgrep
+##autojump
+python3-neovim \
 	fzf \
-  starship
+	starship
 
 curl -sS https://webinstall.dev/zoxide | bash
 

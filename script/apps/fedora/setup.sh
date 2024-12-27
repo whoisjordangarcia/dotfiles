@@ -4,11 +4,12 @@ pkcon install -y \
 	lolcat \
 	figlet \
 	tmux \
-	ripgrep \
-	autojump \
-	eza \
+	ripgrep
+##autojump
+eza \
 	neovim \
 	tmux \
 	python3-neovim \
 	zoxide \
-  starship
+	starship \
+	ghostty
