@@ -4,23 +4,16 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 
 # What will be installed?
 
-- zsh
+- zsh / oh-my-zsh
 - zsh plugins:
   - zsh-syntax-highlighting
   - zsh-autosuggestions
-- neovim
+- neovim, lazyvim
 - tmux
 - ripgrep
 - eza
 - zoxide
 - lolcat/figlet
-
-## mac
-
-- ~iterm2~ wezterm
-- aerospace
-- sketchybar
-- borders
 
 ## Installation
 
@@ -33,7 +26,14 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 4. source <(fzf --zsh)
 ```
 
-Notes for Arch installation
+## MacOS
+
+- **Terminal** ~iterm2~ [wezterm](https://github.com/wez/wezterm)
+- **Window Manager** aerospace, sketchybar
+- **Panel** sketchybar
+- **Shell prompt** ~powerline10k~ starship
+
+## ArchBtw
 
 - **OS** • [T2Linux]()
 - **Window Manager** • [Hyprland](https://github.com/hyprwm/Hyprland)
@@ -61,12 +61,16 @@ Notes for Arch installation
 - Copy wezterm.lua under Windows home directory (C:/Users/jordan/.wezterm.lua)
 - Tmux configuration requires updating
 
+## iOS
+
+- **OS** a-Shell
+
 ## To try out in the future
 
-- Dunst - notify daemon
-- Ranger - launcher
-- nvchad - gui ide
-- starship - shell
+- [ ] Dunst - notify daemon
+- [ ] Ranger - launcher
+- [ ] nvchad - gui ide
+- [x] starship - shell
 
 ## Notes for Windows
 

@@ -1,0 +1,13 @@
+font-size = 19
+mouse-hide-while-typing = true
+window-decoration = true 
+keybind = global:cmd+s=toggle_quick_terminal
+background-opacity = 0.9
+background-blur-radius = 20 
+window-padding-y = 0,0 
+working-directory = dev
+clipboard-read = allow
+clipboard-write = allow
+theme = catppuccin-mocha
+font-family = JetBrainsMono Nerd Font
+macos-titlebar-style = hidden
