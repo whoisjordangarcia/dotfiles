@@ -16,6 +16,7 @@ component_installation=(
 	bun/mac
 	#iterm2/mac
 	starship
+	ghostty/mac
 )
 
 for component in "${component_installation[@]}"; do

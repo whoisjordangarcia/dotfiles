@@ -4,7 +4,7 @@ brew 'zsh'
 brew 'lolcat'
 brew 'figlet'
 brew 'fzf'
-brew 'autojump'
+#brew 'autojump'
 brew 'eza'
 brew 'ripgrep'
 brew 'tmux'
@@ -13,6 +13,10 @@ brew 'htop'
 brew 'zoxide'
 brew 'yq' #tmux statusbar
 brew 'starship'
+brew 'htop'
+brew 'btop'
+brew 'yazi'
+brew 'jq'
 
 # Development
 brew 'nvm'
@@ -22,7 +26,9 @@ brew 'jesseduffield/lazygit/lazygit'
 # Apps
 # wezterm > iterm2 - 12/19/2024
 # cask 'iterm2'
-cask 'wezterm'
+# ghostty > wezterm - 12/26/2024
+#cask 'wezterm'
+cask 'ghostty'
 cask 'raycast'
 cask 'bartender'
 cask "nikitabobko/tap/aerospace"

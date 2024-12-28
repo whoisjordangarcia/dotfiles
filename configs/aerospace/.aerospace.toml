@@ -5,25 +5,29 @@ start-at-login = true
 after-login-command = []
 
 after-startup-command = [
-  'exec-and-forget /opt/homebrew/opt/borders/bin/borders active_color=c6a0f6 inactive_color=0x33434c5e width=4.0',
+  'exec-and-forget borders active_color=0xFFCBA6F7 inactive_color=0xFF1E1E2E width=4.0',
   'exec-and-forget /opt/homebrew/opt/sketchybar/bin/sketchybar',
 ]
 
 exec-on-workspace-change = [
   '/bin/bash',
   '-c',
-  'sketchybar --trigger aerospace_workspace_changed FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
+  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
-
 # Mouse follows focus when focused monitor changes
+# Annoying behavior
 #on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
 on-focus-changed = [
-  'exec-and-forget /bin/bash -c /opt/homebrew/bin/sketchybar --trigger front_app_switched',
-  'exec-and-forget sketchybar --trigger update_windows',
+  # Annoying behavior
+  #'move-mouse window-lazy-center',
+  # 'exec-and-forget /bin/bash -c /opt/homebrew/bin/sketchybar --trigger front_app_switched',
+  # 'exec-and-forget sketchybar --trigger update_windows'
 ]
 
 accordion-padding = 30
+
+automatically-unhide-macos-hidden-apps = false
 
 default-root-container-layout = 'tiles'
 
@@ -40,10 +44,10 @@ enable-normalization-opposite-orientation-for-nested-containers = false
 
 [gaps]
 #outer.bottom numbers have to match presentation.sh variables. built-in retina display is excluded from presentation mode, so this only works on external monitors.
-outer.bottom = [{ monitor.'^built-in retina display$' = 2 }, 5]
-outer.top = [{ monitor.'^built-in retina display$' = 30 }, 20]
-outer.left = 5
-outer.right = 5
+outer.bottom = [{ monitor.'^built-in retina display$' = 10 }, 5]
+outer.top = [{ monitor.'^built-in retina display$' = 10 }, 50]
+outer.left = 13
+outer.right = 13
 inner.horizontal = 10
 inner.vertical = 10
 
@@ -55,8 +59,8 @@ tell application "Wezterm"
     activate
 end tell'
 '''
-cmd-h = [] # Disable "hide application"
-cmd-alt-h = [] # Disable "hide others"
+#cmd-h = [] # Disable "hide application"
+#cmd-alt-h = [] # Disable "hide others"
 
 # i3 wraps focus by default
 alt-j = 'focus --boundaries-action wrap-around-the-workspace left'
@@ -127,3 +131,48 @@ esc = 'mode main'
 [workspace-to-monitor-force-assignment]
 1 = 1
 6 = 'secondary'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.finder'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'io.rancherdesktop.app'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.cisco.secureclient.gui'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.systempreferences'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.1password.1password'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.flexibits.fantastical2.mac'
+run = 'layout floating'
+
+# [[on-window-detected]]
+# if.app-id = 'com.github.wez.wezterm'
+# run = 'move-node-to-workspace 1'
+#
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+run = 'move-node-to-workspace 1'
+
+
+[[on-window-detected]]
+if.app-id = 'md.obsidian'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
+if.app-id = 'com.tinyspeck.slackmacgap'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'com.brave.Browser'
+run = 'move-node-to-workspace 2'
