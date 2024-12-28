@@ -3,17 +3,17 @@
 source ./script/common/log.sh
 
 component_installation=(
-	# apps/ubuntu
-	# zsh
-	# vim
-	# tmux
-	# node
-	# git
+	apps/ubuntu
+	zsh
+	vim
+	tmux
+	node
+	git
 	# wezterm
   wezterm/windows
-	# fonts/linux
-	# starship
-	# linux/lazygit
+	#fonts/linux
+	starship
+	linux/lazygit
 )
 
 for component in "${component_installation[@]}"; do

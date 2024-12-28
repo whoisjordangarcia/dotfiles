@@ -40,7 +40,8 @@ sudo apt install -y \
 ##autojump
 python3-neovim \
 	fzf \
-	starship
+	starship \
+  neofetch
 
 curl -sS https://webinstall.dev/zoxide | bash
 
