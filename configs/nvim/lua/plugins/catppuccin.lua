@@ -8,6 +8,12 @@ return {
     config = function()
       require("catppuccin").setup({
         transparent_background = true,
+        custom_highlights = function(colors)
+          return {
+            LineNr = { fg = colors.yellow },
+            CursorLineNr = { fg = colors.lavender, style = { "bold" } },
+          }
+        end,
       })
     end,
   },
