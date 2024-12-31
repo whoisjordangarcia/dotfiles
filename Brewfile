@@ -1,6 +1,6 @@
 # Binaries
 brew 'gh'
-brew 'zsh'
+brew 'zsh' 
 brew 'lolcat'
 brew 'figlet'
 brew 'fzf'
@@ -31,7 +31,20 @@ brew 'jesseduffield/lazygit/lazygit'
 cask 'ghostty'
 cask 'raycast'
 cask 'bartender'
-cask "nikitabobko/tap/aerospace"
-tap "FelixKratz/formulae"
-brew "sketchybar"
-brew "borders"
+cask 'nikitabobko/tap/aerospace'
+tap 'FelixKratz/formulae'
+brew 'sketchybar'
+brew 'borders'
+
+# Sketchybar
+brew 'lua'
+brew 'switchaudio-osx'
+brew 'nowplaying-cli'
+
+### Fonts
+cask 'sf-symbols'
+cask 'font-sf-mono'
+cask 'font-sf-pro'
+cask 'font-hack-nerd-font'
+cask 'font-jetbrains-mono'
+cask 'font-fira-code'
