@@ -1,3 +1,7 @@
+if true then
+  return {}
+end
+
 return {
   {
     "chipsenkbeil/org-roam.nvim",
@@ -20,4 +24,3 @@ return {
     end,
   },
 }
-
