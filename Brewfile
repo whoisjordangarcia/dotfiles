@@ -27,7 +27,7 @@ brew 'jesseduffield/lazygit/lazygit'
 # wezterm > iterm2 - 12/19/2024
 # cask 'iterm2'
 # ghostty > wezterm - 12/26/2024
-#cask 'wezterm'
+# cask 'wezterm'
 cask 'ghostty'
 cask 'raycast'
 cask 'bartender'
