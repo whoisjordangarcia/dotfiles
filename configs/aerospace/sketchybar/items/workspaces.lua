@@ -147,10 +147,10 @@ for workspace_index = 1, max_workspaces do
 		padding_right = 2,
 		padding_left = 2,
 		background = {
-			color = colors.bar.bg2,
+			color = colors.bg2,
 			border_width = 1,
 			height = 28,
-			border_color = colors.bg2,
+			border_color = colors.grey,
 		},
 		click_script = "aerospace workspace " .. workspace_index,
 	})
