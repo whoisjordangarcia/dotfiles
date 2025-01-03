@@ -9,7 +9,7 @@ component_installation=(
 	zsh
 	vim
 	tmux
-	wezterm
+	#wezterm
 	fonts/mac
 	aerospace/mac
 	lazygit/mac
