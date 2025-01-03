@@ -32,10 +32,15 @@ return {
                 typeCheckingMode = "basic", -- ["off", "basic", "strict"]
                 diagnosticMode = "openFilesOnly", -- ["openFilesOnly", "workspace"]
                 diagnosticSeverityOverrides = {
+                  -- https://microsoft.github.io/pyright/#/configuration?id=type-check-diagnostics-settings
                   reportDuplicateImport = "warning",
-                  reportImportCycles = "warning",
-                  reportMissingImports = "error",
-                  reportMissingModuleSource = "error",
+                  reportMissingTypeStubs = "warning",
+                  -- slows down type analysis
+                  -- reportImportCycles = "warning",
+                  reportUnusedImport = "warning",
+                  reportUnusedClass = "warning",
+                  reportUnusedFunction = "warning",
+                  reportUnusedVariable = "warning",
                 },
               },
               -- pythonPath = (function()
