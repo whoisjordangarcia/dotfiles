@@ -13,7 +13,7 @@ component_installation=(
 	fonts/mac
 	aerospace/mac
 	lazygit/mac
-	bun/mac
+	#bun/mac
 	#iterm2/mac
 	starship
 	ghostty/mac
