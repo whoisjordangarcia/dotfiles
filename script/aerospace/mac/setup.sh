@@ -27,3 +27,12 @@ defaults write -g NSWindowShouldDragOnGesture -bool tre
 
 # disable windows opening animations
 defaults write -g NSAutomaticWindowAnimationsEnabled -bool false
+
+# autohide dock
+defaults write com.apple.dock autohide -bool true
+
+# autohide status bar
+defaults write NSGlobalDomain _HIHideMenuBar -bool true
+
+killall Dock
+killall SystemUIServer
