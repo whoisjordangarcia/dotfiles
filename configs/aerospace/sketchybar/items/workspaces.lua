@@ -7,7 +7,6 @@ local query_workspaces =
 	"aerospace list-workspaces --all --format '%{workspace}%{monitor-appkit-nsscreen-screens-id}' --json"
 local workspace_monitor = {}
 
--- Add padding to the left
 sbar.add("item", {
 	icon = {
 		color = colors.with_alpha(colors.white, 0.3),
@@ -131,8 +130,7 @@ for workspace_index = 1, max_workspaces do
 	local workspace = sbar.add("item", {
 		icon = {
 			color = colors.with_alpha(colors.white, 0.3),
-			-- highlight_color = colors.red,
-			highlight_color = colors.white,
+			highlight_color = colors.red,
 			drawing = false,
 			font = { family = settings.font.numbers },
 			string = workspace_index,
@@ -141,8 +139,7 @@ for workspace_index = 1, max_workspaces do
 		},
 		label = {
 			padding_right = 10,
-			-- color = colors.grey,
-			color = colors.with_alpha(colors.white, 0.3),
+			color = colors.grey,
 			highlight_color = colors.white,
 			font = "sketchybar-app-font:Regular:16.0",
 			y_offset = -1,
@@ -150,7 +147,7 @@ for workspace_index = 1, max_workspaces do
 		padding_right = 2,
 		padding_left = 2,
 		background = {
-			color = colors.bg3,
+			color = colors.bar.bg2,
 			border_width = 1,
 			height = 28,
 			border_color = colors.bg2,
