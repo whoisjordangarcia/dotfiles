@@ -84,6 +84,7 @@ plugins=(
     zsh-syntax-highlighting 
     zsh-autosuggestions
     fzf-zsh-plugin
+    web-search
 )
 
 source $ZSH/oh-my-zsh.sh
