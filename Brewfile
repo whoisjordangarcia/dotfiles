@@ -23,6 +23,7 @@ brew 'go'
 brew 'nvm'
 brew 'git-town'
 brew 'jesseduffield/lazygit/lazygit'
+brew 'bat'
 
 # Apps
 # wezterm > iterm2 - 12/19/2024
