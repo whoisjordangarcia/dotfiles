@@ -7,6 +7,7 @@ component_installation=(
 	zsh
 	vim
 	tmux
+	fonts/linux
 	node
 	git
 	wezterm
