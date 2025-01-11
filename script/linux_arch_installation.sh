@@ -7,6 +7,7 @@ component_installation=(
 	zsh
 	vim
 	tmux
+	ghostty/linux
 	fonts/linux
 	node
 	git

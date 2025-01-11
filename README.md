@@ -16,7 +16,7 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 - lolcat/figlet
 
 ## Installation
-
+Don't prefix with sudo
 ```
 ./bootstrap.sh
 
