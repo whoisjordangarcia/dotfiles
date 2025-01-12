@@ -10,9 +10,12 @@ ZSHRC_SOURCE="$SCRIPT_DIR/../../configs/zshrc/.zshrc"
 ZSHRC_TARGET="$HOME/.zshrc"
 
 # Install oh-my-zsh
-#info "installing oh-my-zsh..."
-#info "make sure to add correct credentials"
-#sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+	info "Installing Oh My Zsh..."
+	sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+else
+	echo "Oh My Zsh is already installed."
+fi
 
 # Install powerlevel 10k
 # using starship 12/20/24
@@ -21,11 +24,11 @@ ZSHRC_TARGET="$HOME/.zshrc"
 
 link_file "$ZSHRC_SOURCE" "$ZSHRC_TARGET"
 
+# Install zsh plugins
+"$SCRIPT_DIR/../zsh/plugins/zsh_plugins.sh"
+
 # Default zsh
 info "Defaulting zsh..."
 chsh -s $(which zsh)
 
-# Install zsh plugins
-"$SCRIPT_DIR/../zsh/plugins/zsh_plugins.sh"
-
-source "~/.zshrc"
+source ~/.zshrc

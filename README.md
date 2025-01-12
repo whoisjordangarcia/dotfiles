@@ -28,7 +28,7 @@ Don't prefix with sudo
 
 ## MacOS
 
-- **Terminal** ~iterm2~ [wezterm](https://github.com/wez/wezterm)
+- **Terminal** ~iterm2~ ~[wezterm](https://github.com/wez/wezterm)~ [ghostty](https://ghostty.org/)
 - **Window Manager** aerospace, sketchybar
 - **Panel** sketchybar
 - **Shell prompt** ~powerline10k~ starship
@@ -38,7 +38,7 @@ Don't prefix with sudo
 - **OS** • [T2Linux]()
 - **Window Manager** • [Hyprland](https://github.com/hyprwm/Hyprland)
 - **Shell** • [Zsh](https://www.zsh.org) [powerline10k](https://github.com/romkatv/powerlevel10k)
-- **Terminal** • [Wezterm](https://github.com/wez/wezterm)
+- **Terminal** • ~[Wezterm](https://github.com/wez/wezterm)~ [Ghostty](https://ghostty.org/)
 - **Panel** • [Waybar]
 - **Launcher** • [Rofi]()
 - **File Manager** • [Dolphin]()
