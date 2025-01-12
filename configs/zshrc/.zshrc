@@ -114,6 +114,7 @@ alias vim="nvim"
 alias reload="source ~/.zshrc"
 alias dev="cd ~/mnt/h/dev/"
 alias ls="eza --icons"
+alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 
 # Starship
 eval "$(starship init zsh)"
@@ -158,6 +159,7 @@ eval "$(zoxide init zsh)"
 
 # bun completions
 [ -s "/Users/jordan/.bun/_bun" ] && source "/Users/jordan/.bun/_bun"
+
 
 # bun
 export BUN_INSTALL="$HOME/.bun"

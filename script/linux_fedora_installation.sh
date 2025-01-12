@@ -4,17 +4,18 @@ source ./script/common/log.sh
 
 component_installation=(
 	apps/fedora
+	# code
 	zsh
 	vim
 	tmux
 	node
 	git
-	wezterm
+	lazygit/fedora
+	# essentials
 	fonts/linux
 	i3
 	polybar
 	starship
-	lazygit/fedora
 )
 
 for component in "${component_installation[@]}"; do

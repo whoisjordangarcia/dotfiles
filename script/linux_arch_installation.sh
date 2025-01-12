@@ -4,16 +4,21 @@ source ./script/common/log.sh
 
 component_installation=(
 	apps/arch
+	# code
+	zsh
+	vim
+	tmux
+	node
+	git
+	lazygit/linux
+	# essentials
 	zsh
 	vim
 	tmux
 	ghostty/linux
 	fonts/linux
-	node
-	git
-	wezterm
-	lazygit/linux
 	starship
+	hypr/linux
 )
 
 for component in "${component_installation[@]}"; do

@@ -12,4 +12,3 @@ mouse-hide-while-typing = true
 theme = catppuccin-mocha
 window-decoration = false 
 window-padding-y = 0,0 
-working-directory = dev
