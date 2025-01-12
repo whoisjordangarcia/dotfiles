@@ -6,17 +6,18 @@ source "$SCRIPT_DIR/common/log.sh"
 
 component_installation=(
 	apps/mac
+	# essentials
 	zsh
 	vim
 	tmux
-	#wezterm
 	fonts/mac
 	aerospace/mac
+	starship
+	ghostty/mac
+	# code
 	lazygit/mac
 	#bun/mac
 	#iterm2/mac
-	starship
-	ghostty/mac
 )
 
 for component in "${component_installation[@]}"; do

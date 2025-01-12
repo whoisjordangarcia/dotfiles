@@ -9,9 +9,7 @@ component_installation=(
 	tmux
 	node
 	git
-	# wezterm
-  wezterm/windows
-	#fonts/linux
+	wezterm/windows
 	starship
 	linux/lazygit
 )
