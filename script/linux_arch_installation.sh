@@ -3,19 +3,19 @@
 source ./script/common/log.sh
 
 component_installation=(
-	# apps/arch
-	# # code
-	# node
-	# git
-	# lazygit/linux
-	# # essentials
-	# zsh
-	# vim
-	# tmux
-	# ghostty/linux
-	# fonts/linux
-	# starship
-	# hypr/linux
+	apps/arch
+	# code
+	node
+	git
+	lazygit/linux
+	# essentials
+	zsh
+	vim
+	tmux
+	ghostty/linux
+	fonts/linux
+	starship
+	hypr/linux
 	waybar/linux
 )
 
