@@ -13,7 +13,7 @@ link_file() {
 		read -r choice
 		case "$choice" in
 		[Oo])
-			rm -f "$target" && ln -s "$source" "$target"
+			rm -rf "$target" && ln -s "$source" "$target"
 			info "Overridden."
 			;;
 		[Bb])
@@ -28,6 +28,6 @@ link_file() {
 		esac
 	else
 		ln -s "$source" "$target"
-		info "Created new Symlink $source -> $target."
+		success "Created new Symlink $source -> $target."
 	fi
 }

@@ -181,3 +181,7 @@ if [ -d "$HOME/.pyenv" ] && [ -x "$HOME/.pyenv/bin/pyenv" ]; then
   export PATH="$PYENV_ROOT/bin:$PATH"
   eval "$(pyenv init - bash)"
 fi
+
+
+export ENABLE_FEATURES=UseOzonePlatform
+export OZONE_PLATFORM=wayland
