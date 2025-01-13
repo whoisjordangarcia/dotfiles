@@ -28,3 +28,6 @@ info "Installing and upgrading apps from Brewfile..."
 brew bundle --file=Brewfile
 
 brew services start borders
+
+# annoying things
+defaults write -g ApplePressAndHoldEnabled -bool false
