@@ -9,5 +9,8 @@ source "$SCRIPT_DIR/../../common/symlink.sh"
 LAZYGIT_SOURCE="$SCRIPT_DIR/../../configs/lazygit/config.yml"
 LAZYGIT_TARGET="$HOME/.config/lazygit/config.yml"
 
-mkdir ~/.config/lazygit
+if [ ! -f "$HOME/.config/lazygit/" ]; then
+	mkdir -p "$HOME/.config/lazygit/"
+fi
+
 link_file "$LAZYGIT_SOURCE" "$LAZYGIT_TARGET"
