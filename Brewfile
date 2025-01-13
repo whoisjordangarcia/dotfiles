@@ -18,6 +18,7 @@ brew 'btop'
 brew 'yazi'
 brew 'jq'
 brew 'go'
+brew 'glow'
 
 # Development
 brew 'nvm'
