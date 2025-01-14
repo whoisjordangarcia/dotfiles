@@ -31,4 +31,6 @@ link_file "$ZSHRC_SOURCE" "$ZSHRC_TARGET"
 info "Defaulting zsh..."
 chsh -s $(which zsh)
 
+chmod 600 ~/.zshrc
+
 source ~/.zshrc

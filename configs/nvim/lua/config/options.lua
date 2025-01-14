@@ -36,8 +36,8 @@ vim.opt.smartcase = true
 -- Keep signcolumn on by default
 vim.opt.signcolumn = "yes"
 
--- Decrease update time
-vim.opt.updatetime = 250
+-- Decrease update time for faster response
+vim.opt.updatetime = 200
 
 -- Decrease mapped sequence wait time
 -- Display which-key popup sooner
@@ -58,4 +58,20 @@ vim.opt.cursorline = true
 -- Show which line your cursor is on
 
 -- Minimal number of screen lines to keep above and below the cursor
-vim.opt.scrolloff = 10
+vim.opt.scrolloff = 8
+
+-- Enable true color support
+vim.opt.termguicolors = true
+
+-- views can only be fully collapsed with the global statusline
+-- used for avante.nvim plugin
+vim.opt.laststatus = 3
+
+-- Enable spell checking
+vim.opt.spell = true
+
+-- Set spell checking language to English
+vim.opt.spelllang = "en"
+
+-- Better completion experience
+vim.opt.completeopt = { "menuone", "noselect" }

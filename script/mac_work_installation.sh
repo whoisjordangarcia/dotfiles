@@ -13,6 +13,7 @@ component_installation=(
 	fonts/mac
 	aerospace/mac
 	lazygit/mac
+	git
 	#bun/mac
 	starship
 	work/mac

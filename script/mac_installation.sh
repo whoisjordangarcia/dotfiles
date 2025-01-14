@@ -5,20 +5,25 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 source "$SCRIPT_DIR/common/log.sh"
 
 component_installation=(
-	apps/mac
-	# essentials
-	zsh
-	vim
-	tmux
-	fonts/mac
-	aerospace/mac
-	starship
-	ghostty/mac
-	# code
-	lazygit/mac
-	#bun/mac
-	#iterm2/mac
+	git
 )
+
+# component_installation=(
+# 	apps/mac
+# 	# essentials
+# 	zsh
+# 	vim
+# 	tmux
+# 	fonts/mac
+# 	aerospace/mac
+# 	starship
+# 	ghostty/mac
+# 	git
+# 	# code
+# 	lazygit/mac
+# 	#bun/mac
+# 	#iterm2/mac
+# )
 
 for component in "${component_installation[@]}"; do
 	info "-- Running $component installation. --"

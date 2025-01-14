@@ -29,7 +29,6 @@ ZSH_THEME=""
 
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
-
 # Uncomment the following line to use hyphen-insensitive completion.
 # Case-sensitive completion must be off. _ and - will be interchangeable.
 # HYPHEN_INSENSITIVE="true"
@@ -96,7 +95,11 @@ source $ZSH/oh-my-zsh.sh
 #[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Load work configuration
-#[ -f ~/.zshrc-work ] && source ~/.zshrc-work
+[ -f ~/.zshrc-work ] && source ~/.zshrc-work
+
+# secrets
+#[ -f ~/.zshrc-sec ] && source ~/.zshrc-sec
+
 
 # User configuration
 export PATH="${PATH}:${HOME}/.local/bin/"

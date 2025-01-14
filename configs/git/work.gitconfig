@@ -1,0 +1,10 @@
+[user]
+  name = Jordan Garcia
+  email = jordan.arickhogarcia@labcorp.com
+
+[core]
+  excludefile = ~/.gitignore_global 
+
+[pull]
+  rebase = true
+
