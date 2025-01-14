@@ -1,0 +1,41 @@
+[user]
+  name = Jordan Garcia
+  email = arickho@gmail.com
+
+[core]
+  editor = nvim
+  autocrlf = input
+  safecrlf = true
+  filemode = false 
+  pager = less
+
+[color]
+  ui = auto
+
+[color "branch"]
+    current = yellow reverse
+    local = yellow
+    remote = green
+
+[color "diff"]
+    meta = yellow bold
+    frag = magenta bold
+    old = red bold
+    new = green bold
+
+[color "status"]
+    added = green
+    changed = yellow
+    untracked = red
+
+[push]
+  default = simple
+
+[pull]
+  rebase = false 
+
+[fetch]
+  prune = true
+
+[includeIf "gitdir:~/dev/work/"]
+  path = ~/dev/work/.gitconfig

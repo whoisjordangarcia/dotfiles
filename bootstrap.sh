@@ -2,10 +2,6 @@
 
 source "./script/common/log.sh"
 
-# bootstrap installs things.
-git config --global user.email "arickho@gmail.com"
-git config --global user.name "Jordan Garcia"
-
 # Check file used for Linux machines
 [ -f /etc/os-release ] && source /etc/os-release
 

@@ -1,0 +1,17 @@
+# Ignore system-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE-specific files
+.vscode/
+.idea/
+
+.metals
+
+# Ignore logs and temp files
+*.log
+*.tmp
+
+# AI
+*.avanterules
+*.cursorrules
