@@ -8,7 +8,7 @@ brew 'fzf'
 brew 'eza'
 brew 'ripgrep'
 brew 'tmux'
-brew 'neovim'
+brew 'neovim', head: true
 brew 'htop'
 brew 'zoxide'
 brew 'yq' #tmux statusbar
