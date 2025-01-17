@@ -5,7 +5,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 source "$SCRIPT_DIR/common/log.sh"
 
 component_installation=(
-	git
+	apps/mac
 )
 
 # component_installation=(

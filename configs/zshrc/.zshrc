@@ -193,4 +193,3 @@ export ENABLE_FEATURES=UseOzonePlatform
 export OZONE_PLATFORM=wayland
 
 bindkey '^X' create_completion
-
