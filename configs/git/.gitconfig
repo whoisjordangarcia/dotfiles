@@ -30,7 +30,8 @@
     untracked = red
 
 [push]
-  default = simple
+  default = current 
+  
 
 [pull]
   rebase = false 
