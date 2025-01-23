@@ -19,6 +19,7 @@ brew 'yazi'
 brew 'jq'
 brew 'go'
 brew 'glow'
+brew 'cmatrix'
 
 # Development
 brew 'nvm'
