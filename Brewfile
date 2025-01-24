@@ -8,7 +8,7 @@ brew 'fzf'
 brew 'eza'
 brew 'ripgrep'
 brew 'tmux'
-brew 'neovim'
+brew 'neovim', head: true
 brew 'htop'
 brew 'zoxide'
 brew 'yq' #tmux statusbar
@@ -25,6 +25,11 @@ brew 'nvm'
 brew 'git-town'
 brew 'jesseduffield/lazygit/lazygit'
 brew 'bat'
+brew 'black'
+brew 'tmuxinator'
+
+# fun
+brew 'cmatrix'
 
 # Apps
 # wezterm > iterm2 - 12/19/2024
