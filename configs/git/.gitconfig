@@ -8,6 +8,7 @@
   safecrlf = true
   filemode = false 
   pager = less
+  excludeFile = ~/.gitignore_global
 
 [color]
   ui = auto
@@ -29,7 +30,8 @@
     untracked = red
 
 [push]
-  default = simple
+  default = current 
+  
 
 [pull]
   rebase = false 

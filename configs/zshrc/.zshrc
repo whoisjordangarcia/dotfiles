@@ -87,6 +87,7 @@ plugins=(
     zsh-autosuggestions
     fzf-zsh-plugin
     web-search
+    zsh_codex
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -119,6 +120,7 @@ fi
 alias vim="nvim"
 alias reload="source ~/.zshrc"
 alias dev="cd ~/mnt/h/dev/"
+alias work="z work"
 alias ls="eza --icons"
 alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 
@@ -180,7 +182,7 @@ export PATH="/Users/jordan.garcia/.rd/bin:$PATH"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
-if [ -d "$HOME/.pyenv" ] && [ -x "$HOME/.pyenv/bin/pyenv" ]; then
+if [ -d "$HOME/.pyenv" ]; then
   export PYENV_ROOT="$HOME/.pyenv"
   export PATH="$PYENV_ROOT/bin:$PATH"
   eval "$(pyenv init - bash)"
@@ -189,3 +191,5 @@ fi
 
 export ENABLE_FEATURES=UseOzonePlatform
 export OZONE_PLATFORM=wayland
+
+bindkey '^X' create_completion
