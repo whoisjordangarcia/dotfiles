@@ -39,7 +39,7 @@ require("lazy").setup({
     { import = "lazyvim.plugins.extras.formatting.black" },
     --{ import = "lazyvim.plugins.extras.lang.go" },
 
-    { import = "lazyvim.plugins.extras.lang.scala" },
+    --{ import = "lazyvim.plugins.extras.lang.scala" },
     -- import/override with your plugins
     { import = "plugins" },
   },
