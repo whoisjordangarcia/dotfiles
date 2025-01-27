@@ -76,5 +76,6 @@ vim.opt.spelllang = "en"
 -- Better completion experience
 vim.opt.completeopt = { "menuone", "noselect" }
 
---vim.g.lazyvim_picker = "fzf"
-vim.g.lazyvim_picker = "snacks"
+vim.g.lazyvim_pickezr = "fzf"
+--vim.g.lazyvim_picker = "telescope"
+--vim.g.lazyvim_picker = "snacks"
