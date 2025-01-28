@@ -85,6 +85,9 @@ return {
         end,
       },
     },
+    windows = {
+      sidebar_header = { enabled = false },
+    },
   },
   -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
   build = "make",
