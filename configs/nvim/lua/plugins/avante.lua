@@ -5,18 +5,15 @@ return {
   lazy = false,
   version = false, -- set this to "*" if you want to always pull the latest change, false to update on release
   opts = {
-    -- add any opts here
-    --provider = "openai",
     -- work
-    -- copilot = {
-    --   model = "claude-3.5-sonnet",
-    -- },
-    -- provider = "copilot",
-    -- auto_suggestions_provider = "copilot",
+    provider = "copilotclaude",
+    auto_suggestions_provider = "copilotclaude",
 
-    provider = "lmstudio",
-    auto_suggestions_provider = "lmstudio",
+    -- personal
+    -- provider = "lmstudio",
+    -- auto_suggestions_provider = "lmstudio",
     vendors = {
+      -- work
       copilotclaude = {
         __inherited_from = "copilot",
         model = "claude-3.5-sonnet",
@@ -24,8 +21,9 @@ return {
         temperature = 0,
         max_tokens = 4096,
       },
+      -- personal
       lmstudio = {
-        ['local'] = true,
+        ["local"] = true,
         endpoint = "http://localhost:1234/v1",
         --model = "deepseek-coder-v2:16b",
         --model = "phi4:latest",
@@ -40,7 +38,7 @@ return {
             headers = {
               ["Accept"] = "application/json",
               ["Content-Type"] = "application/json",
-              ['x-api-key'] = 'lmstudio',
+              ["x-api-key"] = "lmstudio",
             },
             body = {
               model = opts.model,
@@ -55,7 +53,7 @@ return {
         end,
       },
       ollama = {
-        ['local'] = true,
+        ["local"] = true,
         endpoint = "http://localhost:11434/v1",
         --model = "deepseek-coder-v2:16b",
         --model = "phi4:latest",
@@ -70,7 +68,7 @@ return {
             headers = {
               ["Accept"] = "application/json",
               ["Content-Type"] = "application/json",
-              ['x-api-key'] = 'ollama',
+              ["x-api-key"] = "ollama",
             },
             body = {
               model = opts.model,
@@ -97,9 +95,9 @@ return {
     "nvim-lua/plenary.nvim",
     "MunifTanjim/nui.nvim",
     --- The below dependencies are optional,
-    "hrsh7th/nvim-cmp",            -- autocompletion for avante commands and mentions
+    "hrsh7th/nvim-cmp", -- autocompletion for avante commands and mentions
     "nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
-    "zbirenbaum/copilot.lua",      -- for providers='copilot'
+    "zbirenbaum/copilot.lua", -- for providers='copilot'
     {
       -- support for image pasting
       "HakonHarnes/img-clip.nvim",
