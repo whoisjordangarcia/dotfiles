@@ -79,3 +79,5 @@ vim.opt.completeopt = { "menuone", "noselect" }
 vim.g.lazyvim_pickezr = "fzf"
 --vim.g.lazyvim_picker = "telescope"
 --vim.g.lazyvim_picker = "snacks"
+--
+vim.opt.colorcolumn = "120" -- character length for python

@@ -12,6 +12,8 @@ return {
           return {
             LineNr = { fg = colors.yellow },
             CursorLineNr = { fg = colors.lavender, style = { "bold" } },
+            TabLineSel = { bg = colors.pink },
+            CursorLine = { bg = colors.crust },
           }
         end,
       })
