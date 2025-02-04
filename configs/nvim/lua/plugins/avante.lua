@@ -3,15 +3,22 @@ return {
   "yetone/avante.nvim",
   event = "VeryLazy",
   lazy = false,
-  version = false, -- set this to "*" if you want to always pull the latest change, false to update on release
+  version = "false",
+  branch = "main",
   opts = {
+    file_selector = {
+      provider = {
+        provider = "telescope",
+        provider_opts = {},
+      },
+    },
     -- work
-    provider = "copilotclaude",
-    auto_suggestions_provider = "copilotclaude",
+    --provider = "copilotclaude",
+    --auto_suggestions_provider = "copilotclaude",
 
     -- personal
-    -- provider = "lmstudio",
-    -- auto_suggestions_provider = "lmstudio",
+    provider = "lmstudio",
+    auto_suggestions_provider = "lmstudio",
     vendors = {
       -- work
       copilotclaude = {
@@ -25,13 +32,13 @@ return {
       lmstudio = {
         ["local"] = true,
         endpoint = "http://localhost:1234/v1",
-        --model = "deepseek-coder-v2:16b",
+        model = "deepseek-coder-v2:16b",
         --model = "phi4:latest",
         --model = "llama3.3:latest",
         --model = "qwen2.5:32b", -- issues
         --model = 'hhao/qwen2.5-coder-tools:32b',
         --model = "nezahatkorkmaz/deepseek-v3:latest",
-        model = "lmstudio-community/DeepSeek-Coder-V2-Lite-Instruct-GGUF",
+        --model = "lmstudio-community/DeepSeek-Coder-V2-Lite-Instruct-GGUF",
         parse_curl_args = function(opts, code_opts)
           return {
             url = opts.endpoint .. "/chat/completions",
@@ -95,10 +102,10 @@ return {
     "nvim-lua/plenary.nvim",
     "MunifTanjim/nui.nvim",
     --- The below dependencies are optional,
-    "echasnovski/mini.pick", -- for file_selector provider mini.pick
-    "nvim-telescope/telescope.nvim", -- for file_selector provider telescope
+    --"echasnovski/mini.pick", -- for file_selector provider mini.pick
+    --"nvim-telescope/telescope.nvim", -- for file_selector provider telescope
     "hrsh7th/nvim-cmp", -- autocompletion for avante commands and mentions
-    "ibhagwan/fzf-lua", -- for file_selector provider fzf
+    --"ibhagwan/fzf-lua", -- for file_selector provider fzf
     "nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
     "zbirenbaum/copilot.lua", -- for providers='copilot'
     {
@@ -125,6 +132,51 @@ return {
         file_types = { "markdown", "Avante" },
       },
       ft = { "markdown", "Avante" },
+    },
+    {
+      "saghen/blink.cmp",
+      dependencies = { "saghen/blink.compat" },
+      lazy = true,
+      opts = {
+        sources = {
+          default = { "avante_commands", "avante_mentions", "avante_files" },
+          compat = {
+            "avante_commands",
+            "avante_mentions",
+            "avante_files",
+          },
+          -- LSP score_offset is typically 60
+          providers = {
+            avante_commands = {
+              name = "avante_commands",
+              module = "blink.compat.source",
+              score_offset = 90,
+              opts = {},
+            },
+            avante_files = {
+              name = "avante_files",
+              module = "blink.compat.source",
+              score_offset = 100,
+              opts = {},
+            },
+            avante_mentions = {
+              name = "avante_mentions",
+              module = "blink.compat.source",
+              score_offset = 1000,
+              opts = {},
+            },
+          },
+        },
+      },
+    },
+    {
+      "folke/which-key.nvim",
+      optional = true,
+      opts = {
+        spec = {
+          { "<leader>a", group = "ai" },
+        },
+      },
     },
   },
 }
