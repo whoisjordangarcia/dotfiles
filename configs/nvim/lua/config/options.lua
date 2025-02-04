@@ -12,7 +12,8 @@ vim.g.have_nerd_font = true
 -- Line numbers default
 vim.opt.number = true
 
-vim.opt.relativenumber = false
+-- related line numbers
+vim.opt.relativenumber = true
 
 -- Enable mouse mode
 vim.opt.mouse = "a"
