@@ -4,7 +4,7 @@ brew 'zsh'
 brew 'lolcat'
 brew 'figlet'
 brew 'fzf'
-#brew 'autojump'
+#brew 'autojump' -- old. zoxide is better
 brew 'eza'
 brew 'ripgrep'
 brew 'tmux'
@@ -22,7 +22,7 @@ brew 'glow'
 
 # Development
 brew 'nvm'
-brew 'git-town'
+#brew 'git-town' -- meh. was ok
 brew 'jesseduffield/lazygit/lazygit'
 brew 'bat'
 brew 'black'
