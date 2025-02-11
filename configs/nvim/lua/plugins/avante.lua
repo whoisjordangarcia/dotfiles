@@ -13,12 +13,12 @@ return {
       },
     },
     -- work
-    --provider = "copilotclaude",
-    --auto_suggestions_provider = "copilotclaude",
+    provider = "copilotclaude",
+    auto_suggestions_provider = "copilotclaude",
 
     -- personal
-    provider = "lmstudio",
-    auto_suggestions_provider = "lmstudio",
+    --provider = "lmstudio",
+    --auto_suggestions_provider = "lmstudio",
     vendors = {
       -- work
       copilotclaude = {
