@@ -93,13 +93,13 @@ plugins=(
 source $ZSH/oh-my-zsh.sh
 
 # Install fzf
-#[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Load work configuration
 [ -f ~/.zshrc-work ] && source ~/.zshrc-work
 
 # secrets
-#[ -f ~/.zshrc-sec ] && source ~/.zshrc-sec
+[ -f ~/.zshrc-sec ] && source ~/.zshrc-sec
 
 
 # User configuration
@@ -124,7 +124,7 @@ alias work="z work"
 alias ls="eza --icons"
 alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 
-
+# using starship
 # # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 # [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
@@ -160,36 +160,28 @@ export PATH=$PATH:/usr/local/go/bin
 # spicetify
 export PATH=$PATH:/Users/jordan.garcia/.spicetify
 
+# zoxide
 eval "$(zoxide init zsh)"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-# bun completions
-[ -s "/Users/jordan/.bun/_bun" ] && source "/Users/jordan/.bun/_bun"
 
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
+# bun completions
+[ -s "/Users/jordan/.bun/_bun" ] && source "/Users/jordan/.bun/_bun"
+
 export STARSHIP_CONFIG=~/.config/starship.toml
 
 # Generated for envman. Do not edit.
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+
+bindkey '^X' create_completion
+
 ### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
 export PATH="/Users/jordan.garcia/.rd/bin:$PATH"
 ### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
-
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
-if [ -d "$HOME/.pyenv" ]; then
-  export PYENV_ROOT="$HOME/.pyenv"
-  export PATH="$PYENV_ROOT/bin:$PATH"
-  eval "$(pyenv init - bash)"
-fi
-
-
-export ENABLE_FEATURES=UseOzonePlatform
-export OZONE_PLATFORM=wayland
-
-bindkey '^X' create_completion
