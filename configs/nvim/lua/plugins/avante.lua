@@ -8,7 +8,7 @@ return {
   opts = {
     file_selector = {
       provider = {
-        provider = "telescope",
+        provider = "fzf",
         provider_opts = {},
       },
     },
@@ -26,38 +26,46 @@ return {
         model = "claude-3.5-sonnet",
         timeout = 30000,
         temperature = 0,
-        max_tokens = 4096,
+        max_tokens = 16000,
       },
       -- personal
       lmstudio = {
+        __inherited_from = "openai",
         ["local"] = true,
+        temperature = 0,
+        max_tokens = 16000,
         endpoint = "http://localhost:1234/v1",
-        model = "deepseek-coder-v2:16b",
+        --endpoint = "http://192.168.1.39:1234/v1",
+        --model = "deepseek-coder-v2:16b",
         --model = "phi4:latest",
         --model = "llama3.3:latest",
         --model = "qwen2.5:32b", -- issues
         --model = 'hhao/qwen2.5-coder-tools:32b',
         --model = "nezahatkorkmaz/deepseek-v3:latest",
-        --model = "lmstudio-community/DeepSeek-Coder-V2-Lite-Instruct-GGUF",
-        parse_curl_args = function(opts, code_opts)
-          return {
-            url = opts.endpoint .. "/chat/completions",
-            headers = {
-              ["Accept"] = "application/json",
-              ["Content-Type"] = "application/json",
-              ["x-api-key"] = "lmstudio",
-            },
-            body = {
-              model = opts.model,
-              messages = require("avante.providers").copilot.parse_messages(code_opts), -- you can make your own message, but this is very advanced
-              max_tokens = 6000,
-              stream = true,
-            },
-          }
-        end,
-        parse_response_data = function(data_stream, event_state, opts)
-          require("avante.providers").openai.parse_response(data_stream, event_state, opts)
-        end,
+        --model = "DeepSeek-Coder-V2-Lite-Instruct-GGUF",
+        --model = "DeepSeek-R1-Distill-Qwen-14B-GGUF",
+        --model = "unsloth/deepseek-r1-distill-qwen-14b", -- great for architect mode
+        --model = "qwen2.5-coder-14b-instruct", -- very fast
+        model = "unsloth/deepseek-r1-distill-qwen-14b",
+        -- parse_curl_args = function(opts, code_opts)
+        --   return {
+        --     url = opts.endpoint .. "/chat/completions",
+        --     headers = {
+        --       ["Accept"] = "application/json",
+        --       ["Content-Type"] = "application/json",
+        --       ["x-api-key"] = "lmstudio",
+        --     },
+        --     body = {
+        --       model = opts.model,
+        --       messages = require("avante.providers").copilot.parse_messages(code_opts), -- you can make your own message, but this is very advanced
+        --       max_tokens = 6000,
+        --       stream = true,
+        --     },
+        --   }
+        -- end,
+        --parse_response_data = function(data_stream, event_state, opts)
+        --require("avante.providers").openai.parse_response(data_stream, event_state, opts)
+        --end,
       },
       ollama = {
         ["local"] = true,
@@ -105,7 +113,7 @@ return {
     --"echasnovski/mini.pick", -- for file_selector provider mini.pick
     --"nvim-telescope/telescope.nvim", -- for file_selector provider telescope
     "hrsh7th/nvim-cmp", -- autocompletion for avante commands and mentions
-    --"ibhagwan/fzf-lua", -- for file_selector provider fzf
+    "ibhagwan/fzf-lua", -- for file_selector provider fzf
     "nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
     "zbirenbaum/copilot.lua", -- for providers='copilot'
     {
