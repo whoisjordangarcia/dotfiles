@@ -16,8 +16,10 @@ Started to organize my dotfiles, it uses symlinks (will try stow or nix in the f
 - lolcat/figlet
 
 ## Installation
+
 Don't prefix with sudo
-```
+
+```bash
 ./bootstrap.sh
 
 1. tmux source ~/.tmux.conf
@@ -35,19 +37,21 @@ Don't prefix with sudo
 
 ## ArchBtw
 
-- **OS** • [T2Linux]()
+- **OS** • [T2Linux](https://wiki.t2linux.org/)
 - **Window Manager** • [Hyprland](https://github.com/hyprwm/Hyprland)
 - **Shell** • [Zsh](https://www.zsh.org) [powerline10k](https://github.com/romkatv/powerlevel10k)
 - **Terminal** • ~[Wezterm](https://github.com/wez/wezterm)~ [Ghostty](https://ghostty.org/)
 - **Panel** • [Waybar]
-- **Launcher** • [Rofi]()
+- **Launcher** • [Rofi Wayland](https://wiki.archlinux.org/title/Rofi)
 - **File Manager** • [Dolphin]()
+- "Theme" • [HyDE](https://github.com/HyDE-Project/HyDE)
 
 ### Tips for Arch
 
 1. `apple-bce` requires manual `make` installation - https://github.com/t2linux/apple-bce-drv
 2. Install 1password `https://support.1password.com/install-linux/#arch-linux`
 3. Ensure systemd is using linux-t2
+4. Had a bug in HyDE where I couldn't open Rofi via keybindings. This was due to locale not been set.
 
 ## Notes for Fedora
 
