@@ -69,12 +69,6 @@ Don't prefix with sudo
 
 - **OS** a-Shell
 
-## To try out in the future
-
-- [ ] Dunst - notify daemon
-- [ ] Ranger - launcher
-- [ ] nvchad - gui ide
-- [x] starship - shell
 
 ## Notes for Windows
 
