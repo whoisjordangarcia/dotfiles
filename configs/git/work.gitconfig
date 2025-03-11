@@ -3,7 +3,8 @@
   email = jordan.arickhogarcia@labcorp.com
 
 [core]
-  excludefile = ~/.gitignore_global 
+  excludesfile = ~/.gitignore_global
+
 
 [pull]
   rebase = true

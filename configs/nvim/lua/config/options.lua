@@ -77,8 +77,11 @@ vim.opt.spelllang = "en"
 -- Better completion experience
 vim.opt.completeopt = { "menuone", "noselect" }
 
-vim.g.lazyvim_pickezr = "fzf"
+--vim.g.lazyvim_pickezr = "fzf"
 --vim.g.lazyvim_picker = "telescope"
---vim.g.lazyvim_picker = "snacks"
+vim.g.lazyvim_picker = "snacks"
 --
 vim.opt.colorcolumn = "120" -- character length for python
+
+--vim.g.python3_host_prog = "/Users/jordan.garcia/.pyenv/shims"
+--vim.g.python_host_prog = "/Users/jordan.garcia/.pyenv/shims"

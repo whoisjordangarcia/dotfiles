@@ -13,8 +13,8 @@ return {
       },
     },
     -- work
-    provider = "copilotclaude",
-    auto_suggestions_provider = "copilotclaude",
+    provider = "copilotclaudethreeseven",
+    auto_suggestions_provider = "copilotclaudethreeseven",
 
     -- personal
     --provider = "lmstudio",
@@ -28,6 +28,12 @@ return {
         temperature = 0,
         max_tokens = 16000,
       },
+      copilotclaudethreeseven = {
+        __inherited_from = "copilot",
+        model = "claude-3.7-sonnet",
+        disable_tools = false,
+      },
+
       -- personal
       lmstudio = {
         __inherited_from = "openai",
@@ -106,12 +112,13 @@ return {
   build = "make",
   -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
   dependencies = {
+    "nvim-treesitter/nvim-treesitter",
     "stevearc/dressing.nvim",
     "nvim-lua/plenary.nvim",
     "MunifTanjim/nui.nvim",
     --- The below dependencies are optional,
     --"echasnovski/mini.pick", -- for file_selector provider mini.pick
-    --"nvim-telescope/telescope.nvim", -- for file_selector provider telescope
+    "nvim-telescope/telescope.nvim", -- for file_selector provider telescope
     "hrsh7th/nvim-cmp", -- autocompletion for avante commands and mentions
     "ibhagwan/fzf-lua", -- for file_selector provider fzf
     "nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons

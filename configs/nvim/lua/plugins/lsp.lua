@@ -3,9 +3,9 @@ return {
     "williamboman/mason.nvim",
     opts = function(_, opts)
       vim.list_extend(opts.ensure_installed, {
-        --"tailwindcss-language-server",
+        "tailwindcss-language-server",
         "typescript-language-server",
-        --"css-lsp",
+        "css-lsp",
         "pyright",
       })
     end,
@@ -44,20 +44,31 @@ return {
                 },
               },
               -- reqrepo development
+              -- we use pyrightconfig.json for the root directory now
+              -- pythonPath = (function()
+              --   if vim.fn.executable("pyenv") == 1 then
+              --     return vim.fn.system(
+              --       "echo -n `pyenv which python`:/Users/jordan.garcia/dev/invitae-web-core/lib/reqrepo:$PYTHONPATH"
+              --     )
+              --   else
+              --     return vim.fn.system(
+              --       "echo -n `which python`:/Users/jordan.garcia/dev/invitae-web-core/lib/reqrepo:$PYTHONPATH"
+              --     )
+              --   end
+              -- end)(),
+              --
+              --venvPath = "/Users/jordan.garcia/.pyenv/versions",
+              -- venv = "3.9.18",
+              --
+              --pythonPath = vim.fn.system("poetry env info --path"):gsub("%s+", "") .. "/bin/python",
               pythonPath = (function()
                 if vim.fn.executable("pyenv") == 1 then
-                  return vim.fn.system(
-                    "echo -n `pyenv which python`:/Users/jordan.garcia/dev/invitae-web-core/lib/reqrepo:$PYTHONPATH"
-                  )
+                  return vim.fn.system("echo -n `pyenv which python`")
                 else
-                  return vim.fn.system(
-                    "echo -n `which python`:/Users/jordan.garcia/dev/invitae-web-core/lib/reqrepo:$PYTHONPATH"
-                  )
+                  return vim.fn.system("echo -n `which python`")
                 end
               end)(),
-              -- venvPath = "/Users/jordan.garcia/.pyenv/versions",
-              -- venv = "3.8.18",
-              -- pythonPath = vim.fn.system("poetry env info --path"):gsub("%s+", "") .. "/bin/python",
+              venvPath = "",
             },
           },
         },

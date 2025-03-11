@@ -1,13 +1,3 @@
-# Ignore system-specific files
-.DS_Store
-Thumbs.db
-
-# Ignore IDE-specific files
-.vscode/
-.idea/
-
-.metals
-
 # Ignore logs and temp files
 *.log
 *.tmp
@@ -15,3 +5,50 @@ Thumbs.db
 # AI
 *.avanterules
 *.cursorrules
+.aider*
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files #
+######################
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+pyrightconfig.json
+.rgignore
+.metals
+
+# Node #
+######################
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Python #
+######################
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+
