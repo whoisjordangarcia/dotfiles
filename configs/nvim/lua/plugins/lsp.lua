@@ -21,8 +21,33 @@ return {
             { "<leader>cR", "<cmd>TypescriptRenameFile<CR>", desc = "Rename File" },
           },
         },
-        pyright = {
+        basedpyright = {
           enabled = true,
+          settings = {
+            python = {
+              analysis = {
+                autoSearchPaths = true,
+                autoImportCompletions = true,
+                useLibraryCodeForTypes = true,
+                typeCheckingMode = "recommended", -- ["off", "basic", "strict", "recommended"]
+                diagnosticMode = "openFilesOnly", -- ["openFilesOnly", "workspace"]
+                diagnosticSeverityOverrides = {
+                  -- https://microsoft.github.io/pyright/#/configuration?id=type-check-diagnostics-settings
+                  reportDuplicateImport = "warning",
+                  reportMissingTypeStubs = "warning",
+                  -- slows down type analysis
+                  -- reportImportCycles = "warning",
+                  reportUnusedImport = "warning",
+                  reportUnusedClass = "warning",
+                  reportUnusedFunction = "warning",
+                  reportUnusedVariable = "warning",
+                },
+              },
+            },
+          },
+        },
+        pyright = {
+          enabled = false,
           settings = {
             python = {
               analysis = {
@@ -61,14 +86,14 @@ return {
               -- venv = "3.9.18",
               --
               --pythonPath = vim.fn.system("poetry env info --path"):gsub("%s+", "") .. "/bin/python",
-              pythonPath = (function()
-                if vim.fn.executable("pyenv") == 1 then
-                  return vim.fn.system("echo -n `pyenv which python`")
-                else
-                  return vim.fn.system("echo -n `which python`")
-                end
-              end)(),
-              venvPath = "",
+              -- pythonPath = (function()
+              --   if vim.fn.executable("pyenv") == 1 then
+              --     return vim.fn.system("echo -n `pyenv which python`")
+              --   else
+              --     return vim.fn.system("echo -n `which python`")
+              --   end
+              -- end)(),
+              -- venvPath = "",
             },
           },
         },
