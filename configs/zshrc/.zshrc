@@ -81,13 +81,9 @@ ZSH_THEME=""
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
-    #poetry
-    git 
     zsh-syntax-highlighting 
     zsh-autosuggestions
     fzf-zsh-plugin
-    web-search
-    zsh_codex
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -153,9 +149,9 @@ figlet -f smslant hack the world | lolcat
 export PATH=$PATH:/usr/local/go/bin
 
 # startup tmux
-# if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
-#   tmux attach -t default || tmux new -s default
-# fi
+if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
+  tmux attach -t default || tmux new -s default
+fi
 
 # spicetify
 export PATH=$PATH:/Users/jordan.garcia/.spicetify

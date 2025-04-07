@@ -6,19 +6,15 @@ return {
   version = false, -- set this to "*" if you want to always pull the latest change, false to update on release
   branch = "main",
   opts = {
-    file_selector = {
-      provider = {
-        provider = "fzf",
-        provider_opts = {},
-      },
-    },
     -- work
-    provider = "copilotclaudethreeseven",
-    auto_suggestions_provider = "copilotclaudethreeseven",
+    -- provider = "copilotclaudethreeseven",
+    -- auto_suggestions_provider = "copilotclaudethreeseven",
 
     -- personal
     --provider = "lmstudio",
     --auto_suggestions_provider = "lmstudio",
+    provider = "openrouter",
+    auto_suggestions_provider = nil,
     vendors = {
       -- work
       copilotclaude = {
@@ -35,6 +31,13 @@ return {
       },
 
       -- personal
+      openrouter = {
+        __inherited_from = "openai",
+        temperature = 0,
+        max_tokens = 16000,
+        endpoint = "https://openrouter.ai/api/v1",
+        model = "google/gemini-2.0-flash-001",
+      },
       lmstudio = {
         __inherited_from = "openai",
         ["local"] = true,
@@ -104,9 +107,9 @@ return {
         end,
       },
     },
-    windows = {
-      sidebar_header = { enabled = false },
-    },
+    -- windows = {
+    --   sidebar_header = { enabled = false },
+    -- },
   },
   -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
   build = "make",
@@ -117,8 +120,8 @@ return {
     "nvim-lua/plenary.nvim",
     "MunifTanjim/nui.nvim",
     --- The below dependencies are optional,
-    --"echasnovski/mini.pick", -- for file_selector provider mini.pick
-    "nvim-telescope/telescope.nvim", -- for file_selector provider telescope
+    "echasnovski/mini.pick", -- for file_selector provider mini.pick
+    --"nvim-telescope/telescope.nvim", -- for file_selector provider telescope
     "hrsh7th/nvim-cmp", -- autocompletion for avante commands and mentions
     "ibhagwan/fzf-lua", -- for file_selector provider fzf
     "nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
@@ -147,42 +150,6 @@ return {
         file_types = { "markdown", "Avante" },
       },
       ft = { "markdown", "Avante" },
-    },
-    {
-      "saghen/blink.cmp",
-      dependencies = { "saghen/blink.compat" },
-      lazy = true,
-      opts = {
-        sources = {
-          default = { "avante_commands", "avante_mentions", "avante_files" },
-          compat = {
-            "avante_commands",
-            "avante_mentions",
-            "avante_files",
-          },
-          -- LSP score_offset is typically 60
-          providers = {
-            avante_commands = {
-              name = "avante_commands",
-              module = "blink.compat.source",
-              score_offset = 90,
-              opts = {},
-            },
-            avante_files = {
-              name = "avante_files",
-              module = "blink.compat.source",
-              score_offset = 100,
-              opts = {},
-            },
-            avante_mentions = {
-              name = "avante_mentions",
-              module = "blink.compat.source",
-              score_offset = 1000,
-              opts = {},
-            },
-          },
-        },
-      },
     },
     {
       "folke/which-key.nvim",
