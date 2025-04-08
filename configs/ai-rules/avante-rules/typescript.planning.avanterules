@@ -1,10 +1,7 @@
-You are a senior TypeScript programmer with experience in the NestJS framework and a preference for clean programming and design patterns.
-
-Generate code, corrections, and refactorings that comply with the basic principles and nomenclature.
-
 ## TypeScript General Guidelines
 
 ### Basic Principles
+
 - Use English for all code and documentation.
 - Always declare the type of each variable and function (parameters and return value).
 - Avoid using any.
@@ -14,6 +11,7 @@ Generate code, corrections, and refactorings that comply with the basic principl
 - One export per file.
 
 ### Nomenclature
+
 - Use PascalCase for classes.
 - Use camelCase for variables, functions, and methods.
 - Use kebab-case for file and directory names.
@@ -30,6 +28,7 @@ Generate code, corrections, and refactorings that comply with the basic principl
     - req, res, next for middleware function parameters
 
 ### Functions
+
 - In this context, what is understood as a function will also apply to a method.
 - Write short functions with a single purpose. Less than 20 instructions.
 - Name functions with a verb and something else.
@@ -49,6 +48,7 @@ Generate code, corrections, and refactorings that comply with the basic principl
 - Use a single level of abstraction.
 
 ### Data
+
 - Don't abuse primitive types and encapsulate data in composite types.
 - Avoid data validations in functions and use classes with internal validation.
 - Prefer immutability for data.
@@ -56,6 +56,7 @@ Generate code, corrections, and refactorings that comply with the basic principl
   - Use as const for literals that don't change.
 
 ### Classes
+
 - Follow SOLID principles.
 - Prefer composition over inheritance.
 - Declare interfaces to define contracts.
@@ -65,6 +66,7 @@ Generate code, corrections, and refactorings that comply with the basic principl
   - Less than 10 properties.
 
 ### Exceptions
+
 - Use exceptions to handle errors you don't expect.
 - If you catch an exception, it should be to:
   - Fix an expected problem.
@@ -72,6 +74,7 @@ Generate code, corrections, and refactorings that comply with the basic principl
   - Otherwise, use a global handler.
 
 ### Testing
+
 - Follow the Arrange-Act-Assert convention for tests.
 - Name test variables clearly.
   - Follow the convention: inputX, mockX, actualX, expectedX, etc.
@@ -80,32 +83,3 @@ Generate code, corrections, and refactorings that comply with the basic principl
   - Except for third-party dependencies that are not expensive to execute.
 - Write acceptance tests for each module.
   - Follow the Given-When-Then convention.
-
-## Specific to NestJS
-
-### Basic Principles
-- Use modular architecture
-- Encapsulate the API in modules.
-  - One module per main domain/route.
-  - One controller for its route.
-  - And other controllers for secondary routes.
-  - A models folder with data types.
-    - DTOs validated with class-validator for inputs.
-    - Declare simple types for outputs.
-  - A services module with business logic and persistence.
-    - Entities with MikroORM for data persistence.
-    - One service per entity.
-- A core module for nest artifacts
-  - Global filters for exception handling.
-  - Global middlewares for request management.
-  - Guards for permission management.
-  - Interceptors for request management.
-- A shared module for services shared between modules.
-  - Utilities
-  - Shared business logic
-
-### Testing
-- Use the standard Jest framework for testing.
-- Write tests for each controller and service.
-- Write end to end tests for each api module.
-- Add a admin/test method to each controller as a smoke test.
