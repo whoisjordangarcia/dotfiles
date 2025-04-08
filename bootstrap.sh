@@ -6,19 +6,19 @@ source "./script/common/log.sh"
 [ -f /etc/os-release ] && source /etc/os-release
 
 if [ "$(uname -s)" == "Darwin" ]; then
-	success "On Mac 💻 - installing dotfiles"
+	success "Platform: MacOS 💻 - Initiating dotfiles installation."
 	./script/mac_installation.sh
 elif [ "$ID" == "fedora" ]; then
-	success "On Linux - Fedora 🎩 - Install dotfiles"
+	success "Platform: Fedora 🎩 - Initiating dotfiles installation."
 	./script/linux_fedora_installation.sh
 elif [ "$ID" == "ubuntu" ]; then
-	success "On Ubuntu - Linux 👾 - Install dotfiles"
+	success "Platform: Ubuntu 👾 - Initiating dotfiles installation."
 	./script/linux_ubuntu_installation.sh
 elif [ "$ID" == "arch" ]; then
-	success "On Arch   - Install dotfiles"
+	success "Platform: Arch   - Initiating dotfiles installation."
 	./script/linux_arch_installation.sh
 else
-	fail "Unhandled Error"
+	fail "Error: Unsupported platform."
 fi
 
-success "✨✨ -- All installed! -- ✨✨"
+success "✨✨ -- Dotfiles installation completed successfully! -- ✨✨"
