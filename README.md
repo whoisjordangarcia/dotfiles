@@ -41,17 +41,17 @@ Don't prefix with sudo
 - **Window Manager** • [Hyprland](https://github.com/hyprwm/Hyprland)
 - **Shell** • [Zsh](https://www.zsh.org) [powerline10k](https://github.com/romkatv/powerlevel10k)
 - **Terminal** • ~[Wezterm](https://github.com/wez/wezterm)~ [Ghostty](https://ghostty.org/)
-- **Panel** • [Waybar]
+- **Panel** • [Waybar](https://github.com/Alexays/Waybar)
 - **Launcher** • [Rofi Wayland](https://wiki.archlinux.org/title/Rofi)
-- **File Manager** • [Dolphin]()
+- **File Manager** • [Dolphin](https://kde.org/applications/system/org.kde.dolphin/)
 - "Theme" • [HyDE](https://github.com/HyDE-Project/HyDE)
 
 ### Tips for Arch
 
-1. `apple-bce` requires manual `make` installation - https://github.com/t2linux/apple-bce-drv
-2. Install 1password `https://support.1password.com/install-linux/#arch-linux`
-3. Ensure systemd is using linux-t2
-4. Had a bug in HyDE where I couldn't open Rofi via keybindings. This was due to locale not been set.
+1.  `apple-bce` requires manual `make` installation - <https://github.com/t2linux/apple-bce-drv>
+2.  Install 1password `https://support.1password.com/install-linux/#arch-linux`
+3.  Ensure systemd is using linux-t2
+4.  Had a bug in HyDE where I couldn't open Rofi via keybindings. This was due to locale not been set.
 
 ## Notes for Fedora
 
@@ -68,8 +68,3 @@ Don't prefix with sudo
 ## iOS
 
 - **OS** a-Shell
-
-
-## Notes for Windows
-
-- starship installation
