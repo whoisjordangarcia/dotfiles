@@ -7,14 +7,13 @@ return {
   branch = "main",
   opts = {
     -- work
-    -- provider = "copilotclaudethreeseven",
-    -- auto_suggestions_provider = "copilotclaudethreeseven",
-
+    provider = "copilotclaude",
+    auto_suggestions_provider = "copilotclaude",
     -- personal
     --provider = "lmstudio",
     --auto_suggestions_provider = "lmstudio",
-    provider = "openrouter",
-    auto_suggestions_provider = nil,
+    -- provider = "openrouter",
+    -- auto_suggestions_provider = nil,
     vendors = {
       -- work
       copilotclaude = {
