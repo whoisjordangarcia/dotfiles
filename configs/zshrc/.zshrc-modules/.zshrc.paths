@@ -1,0 +1,20 @@
+# ==============================================================================
+#  Path Configuration
+# ==============================================================================
+
+export PATH="${PATH}:${HOME}/.local/bin/:/usr/local/go/bin:/Users/jordan.garcia/.spicetify"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# pnpm
+export PNPM_HOME="/Users/jordan.garcia/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+
+### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
+export PATH="/Users/jordan.garcia/.rd/bin:$PATH"
+### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)

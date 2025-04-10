@@ -1,0 +1,17 @@
+# ==============================================================================
+#  Functions
+# ==============================================================================
+
+# quick decoder
+decode_url() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: decode_url <url_to_decode>"
+    return 1
+  fi
+
+  python -c "import sys, urllib.parse as ul; print(ul.unquote_plus('$1'))"
+}
+
+decode () {
+ jq -R 'split(".") | .[1] | @base64d | fromjson ' <<< "$1"
+}
