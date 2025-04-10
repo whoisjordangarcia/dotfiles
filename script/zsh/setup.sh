@@ -9,6 +9,9 @@ source "$SCRIPT_DIR/../common/symlink.sh"
 ZSHRC_SOURCE="$SCRIPT_DIR/../../configs/zshrc/.zshrc"
 ZSHRC_TARGET="$HOME/.zshrc"
 
+ZSHRC_MODULES_SOURCE="$SCRIPT_DIR/../../configs/zshrc/.zshrc-modules"
+ZSHRC_MODULES_TARGET="$HOME/.zshrc-modules"
+
 # Install oh-my-zsh
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
 	info "Installing Oh My Zsh..."
@@ -23,6 +26,8 @@ fi
 #git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
 
 link_file "$ZSHRC_SOURCE" "$ZSHRC_TARGET"
+
+link_file "$ZSHRC_MODULES_SOURCE" "$ZSHRC_MODULES_TARGET"
 
 # Install zsh plugins
 "$SCRIPT_DIR/../zsh/plugins/zsh_plugins.sh"

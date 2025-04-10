@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 source "$SCRIPT_DIR/log.sh"
@@ -7,9 +6,14 @@ source "$SCRIPT_DIR/log.sh"
 link_file() {
 	local source="$1"
 	local target="$2"
+	local type="file" # Default to file
+	if [ -d "$source" ]; then
+		type="directory"
+	fi
 
 	if [ -e "$target" ]; then
-		user "File $target exists. [O]verride/[B]ackup/[S]kip?"
+		# Add some verbosity to the prompt
+		user "The $type '$target' already exists. [O]verride/[B]ackup/[S]kip?"
 		read -r choice
 		case "$choice" in
 		[Oo])
@@ -19,7 +23,7 @@ link_file() {
 		[Bb])
 			# Get current date in YYYYMMDD format
 			DATE_SUFFIX=$(date +%Y%m%d)
-			mv "$target" "${target}_$DATE_SUFFIX.bak" && ln -s "$source" "$target"
+			mv "$target" "${target}_${DATE_SUFFIX}.bak" && ln -s "$source" "$target"
 			info "Backed up and linked."
 			;;
 		*)
