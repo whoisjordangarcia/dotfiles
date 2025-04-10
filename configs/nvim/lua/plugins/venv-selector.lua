@@ -1,19 +1,18 @@
-if true then
-  return {}
-end
-
 return {
   {
-    "stefanboca/venv-selector.nvim",
-    branch = "sb/push-rlpxsqmllxtz",
-    cmd = "VenvSelect",
+    "linux-cultist/venv-selector.nvim",
+    dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim", "mfussenegger/nvim-dap-python" },
     opts = {
-      settings = {
-        options = {
-          notify_user_on_venv_activation = true,
-          dependencies = { "nvim-telescope/telescope.nvim" },
-        },
-      },
+      -- Your options go here
+      -- name = "venv",
+      -- auto_refresh = false
+    },
+    event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
+    keys = {
+      -- Keymap to open VenvSelector to pick a venv.
+      { "<leader>cs", "<cmd>VenvSelect<cr>" },
+      -- Keymap to retrieve the venv from a cache (the one previously used for the same project directory).
+      { "<leader>cc", "<cmd>VenvSelectCached<cr>" },
     },
   },
 }
