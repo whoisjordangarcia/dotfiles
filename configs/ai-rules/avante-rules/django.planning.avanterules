@@ -22,6 +22,10 @@ Error Handling and Validation
 - Customize error pages (e.g., 404, 500) to improve user experience and provide helpful information.
 - Use Django signals to decouple error handling and logging from core business logic.
 
+Testing 
+- Make sure to use pytest best practices
+- use assert user.name == 'jordan' Over self.assert(user.name,'jordan')
+
 Dependencies
 - Django
 - Django REST Framework (for API development)
