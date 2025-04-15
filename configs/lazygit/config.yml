@@ -47,3 +47,7 @@ gui:
       - "#eed49f"
   authorColors:
     "*": "#b7bdf8"
+
+  showRandomTip: false
+  showNumstatInFilesView: true
+  nerdFontsVersion: "3"
