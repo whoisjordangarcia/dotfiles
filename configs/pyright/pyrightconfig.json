@@ -1,0 +1,19 @@
+{
+  "reportAny": false,
+  "reportAttributeAccessIssue": false,
+  "reportCallIssue": false,
+  "reportExplicitAny": false,
+  "reportImplicitOverride": false,
+  "reportIncompatibleMethodOverride": false,
+  "reportIncompatibleVariableOverride": false,
+  "reportMissingParameterType": false,
+  "reportMissingTypeStubs": false,
+  "reportUnannotatedClassAttribute": false,
+  "reportUnknownArgumentType": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownParameterType": false,
+  "reportUnknownVariableType": false,
+  "reportUnreachable": false,
+  "reportUntypedFunctionDecorator": false,
+  "reportUninitializedInstanceVariable": false
+}

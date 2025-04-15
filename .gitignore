@@ -1,2 +1,5 @@
 lazy-lock.json
+!pyrightconfig.json
 !*.avanterules
+!.aerospace.toml
+!*.aider*.yml
