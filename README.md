@@ -1,70 +1,104 @@
 # Jordan's dotfiles
 
-Started to organize my dotfiles, it uses symlinks (will try stow or nix in the future). My dotfiles are compatible for Arch, Fedora, Ubuntu, MacOS. This allows me to have the same devex on my main Windows 11 PC using WSL2, Personal laptop using ~Fedora~Arch Btw, Work laptop using MacOS. Feel free in trying it out yourself.
+A cross-platform dotfiles configuration that provides a consistent development experience across multiple operating systems including Arch Linux, Fedora, Ubuntu, macOS, and Windows (WSL2).
 
-# What will be installed?
+## 🚀 Features
 
-- zsh / oh-my-zsh
-- zsh plugins:
-  - zsh-syntax-highlighting
-  - zsh-autosuggestions
-- neovim, lazyvim
-- tmux
-- ripgrep
-- eza
-- zoxide
-- lolcat/figlet
+- Unified development environment across different platforms
+- Modular configuration using symlinks
+- Support for multiple operating systems
+- Modern terminal and development tools
 
-## Installation
+## 📦 Core Components
 
-Don't prefix with sudo
+- **Shell**: Zsh with Oh-my-zsh
+- **Terminal Multiplexer**: Tmux
+- **Editor**: Neovim with LazyVim
+- **Modern CLI Tools**:
+  - ripgrep (fast search)
+  - eza (modern ls replacement)
+  - zoxide (smart directory navigation)
+  - fzf (fuzzy finder)
+  - lolcat/figlet (terminal styling)
+
+### Zsh Plugins
+
+- zsh-syntax-highlighting
+- zsh-autosuggestions
+
+## 🛠 Installation
 
 ```bash
-./bootstrap.sh
+# Clone the repository
+git clone https://github.com/jordan.garcia/dotfiles.git
+cd dotfiles
 
-1. tmux source ~/.tmux.conf
-2. Install plugins with prefix + I <C-b> I
-3. ~p10k configure~
-4. source <(fzf --zsh)
+# Run the bootstrap script (do not use sudo)
+./bootstrap.sh
 ```
 
-## MacOS
+### Post-Installation Steps
 
-- **Terminal** ~iterm2~ ~[wezterm](https://github.com/wez/wezterm)~ [ghostty](https://ghostty.org/)
-- **Window Manager** aerospace, sketchybar
-- **Panel** sketchybar
-- **Shell prompt** ~powerline10k~ starship
+1. Load tmux configuration:
 
-## ArchBtw
+   ```bash
+   tmux source ~/.tmux.conf
+   ```
 
-- **OS** • [T2Linux](https://wiki.t2linux.org/)
-- **Window Manager** • [Hyprland](https://github.com/hyprwm/Hyprland)
-- **Shell** • [Zsh](https://www.zsh.org) [powerline10k](https://github.com/romkatv/powerlevel10k)
-- **Terminal** • ~[Wezterm](https://github.com/wez/wezterm)~ [Ghostty](https://ghostty.org/)
-- **Panel** • [Waybar](https://github.com/Alexays/Waybar)
-- **Launcher** • [Rofi Wayland](https://wiki.archlinux.org/title/Rofi)
-- **File Manager** • [Dolphin](https://kde.org/applications/system/org.kde.dolphin/)
-- "Theme" • [HyDE](https://github.com/HyDE-Project/HyDE)
+2. Install tmux plugins:
 
-### Tips for Arch
+   - Press `<C-b> I` (Ctrl+B, then Shift+I)
 
-1.  `apple-bce` requires manual `make` installation - <https://github.com/t2linux/apple-bce-drv>
-2.  Install 1password `https://support.1password.com/install-linux/#arch-linux`
-3.  Ensure systemd is using linux-t2
-4.  Had a bug in HyDE where I couldn't open Rofi via keybindings. This was due to locale not been set.
+3. Initialize fzf:
+   ```bash
+   source <(fzf --zsh)
+   ```
 
-## Notes for Fedora
+## 💻 Platform-Specific Configurations
 
-- **Window Manager** • [i3-wm](https://github.com/i3/i3)
-- **Shell** • [Zsh](https://www.zsh.org) [powerline10k](https://github.com/romkatv/powerlevel10k)
-- **Terminal** • [Wezterm](https://github.com/wez/wezterm)
-- **Panel** • [Polybar](https://github.com/polybar/polybar)
+### macOS
 
-## Notes for WSL
+- **Terminal**: [Ghostty](https://ghostty.org/)
+- **Window Manager**: Aerospace
+- **Status Bar**: Sketchybar
+- **Shell Prompt**: Starship
 
-- Copy wezterm.lua under Windows home directory (C:/Users/jordan/.wezterm.lua)
-- Tmux configuration requires updating
+### Arch Linux
 
-## iOS
+- **Base**: [T2Linux](https://wiki.t2linux.org/)
+- **Window Manager**: [Hyprland](https://github.com/hyprwm/Hyprland)
+- **Terminal**: [Ghostty](https://ghostty.org/)
+- **Panel**: [Waybar](https://github.com/Alexays/Waybar)
+- **Launcher**: [Rofi Wayland](https://wiki.archlinux.org/title/Rofi)
+- **File Manager**: [Dolphin](https://kde.org/applications/system/org.kde.dolphin/)
+- **Theme**: [HyDE](https://github.com/HyDE-Project/HyDE)
 
-- **OS** a-Shell
+#### Arch Setup Notes
+
+1. Manual installation required for `apple-bce`: [Instructions](https://github.com/t2linux/apple-bce-drv)
+2. Install 1Password: [Arch Linux Instructions](https://support.1password.com/install-linux/#arch-linux)
+3. Verify systemd is using linux-t2
+4. Note: If Rofi keybindings don't work in HyDE, check locale settings
+
+### Fedora
+
+- **Window Manager**: [i3-wm](https://github.com/i3/i3)
+- **Terminal**: [Wezterm](https://github.com/wez/wezterm)
+- **Panel**: [Polybar](https://github.com/polybar/polybar)
+
+### Windows (WSL)
+
+1. Copy wezterm.lua to Windows home directory: `C:/Users/jordan/.wezterm.lua`
+2. Note: Tmux configuration may need adjustments
+
+### iOS
+
+- Compatible with a-Shell
+
+## 🤝 Contributing
+
+Feel free to try it out and contribute improvements! Issues and pull requests are welcome.
+
+## 📝 License
+
+This project is open source and available under the MIT License.
