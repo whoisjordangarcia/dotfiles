@@ -70,6 +70,13 @@
                 "DEFAULT_SUBTASKS": "5",
                 "DEFAULT_PRIORITY": "medium"
             }
+        },
+        "sequential-thinking": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-sequential-thinking"
+            ]
         }
     }
 }
