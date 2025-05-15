@@ -1,0 +1,4 @@
+read: [./.aider-rules/nextjs-antd.md, ./.aider-rules/typescript.md]
+show-model-warnings: false
+map-refresh: always
+map-tokens: 8000
