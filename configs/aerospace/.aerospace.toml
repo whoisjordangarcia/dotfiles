@@ -5,7 +5,7 @@ start-at-login = true
 after-login-command = []
 
 after-startup-command = [
-  'exec-and-forget borders active_color=0xFFB7BDF8 inactive_color=0xFF1E1E2E width=4.0',
+  'exec-and-forget borders active_color=0xc0e2e2e3 inactive_color=0xc02c2e34 width=6.0',
   'exec-and-forget /usr/local/bin/sketchybar',
 ]
 
@@ -53,15 +53,15 @@ inner.horizontal = 10
 inner.vertical = 10
 
 [mode.main.binding]
-# See: https://nikitabobko.github.io/AeroSpace/goodies#open-a-new-window-with-applescript
-alt-enter = '''exec-and-forget osascript -e '
-tell application "Wezterm"
-    do script
-    activate
-end tell'
-'''
-#cmd-h = [] # Disable "hide application"
-#cmd-alt-h = [] # Disable "hide others"
+# # See: https://nikitabobko.github.io/AeroSpace/goodies#open-a-new-window-with-applescript
+# alt-enter = '''exec-and-forget osascript -e '
+# tell application "Ghostty"
+#     do script
+#     activate
+# end tell'
+# '''
+cmd-h = []     # Disable "hide application"
+cmd-alt-h = [] # Disable "hide others"
 
 # i3 wraps focus by default
 alt-j = 'focus --boundaries-action wrap-around-the-workspace left'
@@ -75,8 +75,8 @@ alt-shift-l = 'move up'
 alt-shift-semicolon = 'move right'
 
 # Consider using 'join-with' command as a 'split' replacement if you want to enable normalizations
-# alt-h = 'split horizontal'
-# alt-v = 'split vertical'
+#alt-h = 'split horizontal'
+#alt-v = 'split vertical'
 
 alt-f = 'fullscreen'
 
@@ -158,13 +158,8 @@ if.app-id = 'com.flexibits.fantastical2.mac'
 run = 'layout floating'
 
 # [[on-window-detected]]
-# if.app-id = 'com.github.wez.wezterm'
+# if.app-id = 'com.mitchellh.ghostty'
 # run = 'move-node-to-workspace 1'
-#
-[[on-window-detected]]
-if.app-id = 'com.mitchellh.ghostty'
-run = 'move-node-to-workspace 1'
-
 
 [[on-window-detected]]
 if.app-id = 'md.obsidian'
