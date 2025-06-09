@@ -19,6 +19,4 @@ eval "$(zoxide init zsh)"
 # Load envman
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
-# Load work and secrets configurations
-[ -f ~/.zshrc-work ] && source ~/.zshrc-work
-[ -f ~/.zshrc-sec ] && source ~/.zshrc-sec
+

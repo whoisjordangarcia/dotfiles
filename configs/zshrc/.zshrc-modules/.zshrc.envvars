@@ -18,4 +18,5 @@ fi
 # export ARCHFLAGS="-arch x86_64"
 
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+
 export PYENV_ROOT="$HOME/.pyenv"

@@ -1,14 +1,14 @@
-#background-blur-radius = 20 
-#background-opacity = 0.9
+background-blur-radius = 20 
+background-opacity = 0.95
 clipboard-read = allow
 clipboard-write = allow
 font-family = JetBrainsMono Nerd Font
 font-size = 14
-gtk-adwaita = false
-gtk-titlebar = false
+#gtk-adwaita = false
+#gtk-titlebar = false
 #keybind = global:cmd+s=toggle_quick_terminal
-macos-titlebar-style = hidden
+#macos-titlebar-style = hidden
 mouse-hide-while-typing = true
 theme = catppuccin-mocha
-window-decoration = false 
-window-padding-y = 0,0 
+#window-decoration = false 
+#window-padding-y = 0,0 
