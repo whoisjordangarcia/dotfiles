@@ -4,7 +4,5 @@
 
 alias vim="nvim"
 alias reload="source ~/.zshrc"
-alias dev="cd ~/mnt/h/dev/"
-alias work="z work"
 alias ls="eza --icons"
 alias hyprc="nvim ~/.config/hypr/hyprland.conf"
