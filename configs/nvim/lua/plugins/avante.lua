@@ -14,14 +14,16 @@ return {
     --auto_suggestions_provider = "lmstudio",
     -- provider = "openrouter",
     -- auto_suggestions_provider = nil,
-    vendors = {
+    providers = {
       -- work
       copilotclaude = {
         __inherited_from = "copilot",
         model = "claude-3.5-sonnet",
-        timeout = 30000,
-        temperature = 0,
-        max_tokens = 16000,
+        extra_request_body = {
+          timeout = 30000,
+          temperature = 0,
+          max_tokens = 16000,
+        },
       },
       copilotclaudethreeseven = {
         __inherited_from = "copilot",
@@ -32,17 +34,22 @@ return {
       -- personal
       openrouter = {
         __inherited_from = "openai",
-        temperature = 0,
-        max_tokens = 16000,
         endpoint = "https://openrouter.ai/api/v1",
         model = "google/gemini-2.0-flash-001",
+        extra_request_body = {
+          temperature = 0,
+          max_tokens = 16000,
+        },
       },
       lmstudio = {
         __inherited_from = "openai",
         ["local"] = true,
-        temperature = 0,
-        max_tokens = 16000,
         endpoint = "http://localhost:1234/v1",
+        extra_request_body = {
+          temperature = 0,
+          max_tokens = 16000,
+        },
+
         --endpoint = "http://192.168.1.39:1234/v1",
         --model = "deepseek-coder-v2:16b",
         --model = "phi4:latest",
