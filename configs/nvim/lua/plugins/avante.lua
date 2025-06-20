@@ -7,8 +7,8 @@ return {
   branch = "main",
   opts = {
     -- work
-    provider = "copilotclaude",
-    auto_suggestions_provider = "copilotclaude",
+    provider = "openrouter",
+    auto_suggestions_provider = "openrouter",
     -- personal
     --provider = "lmstudio",
     --auto_suggestions_provider = "lmstudio",
