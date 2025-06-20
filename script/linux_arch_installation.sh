@@ -15,8 +15,9 @@ component_installation=(
 	ghostty/linux
 	fonts/linux
 	starship
-	hypr/linux
-	waybar/linux
+	# now using HyDE
+	#hypr/linux
+	#waybar/linux
 )
 
 for component in "${component_installation[@]}"; do
