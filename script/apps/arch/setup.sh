@@ -6,18 +6,16 @@ pacman -S gh neovim
 
 pacman -S tmux ripgrep eza zoxide wl-clipboard fzf jq
 
-pacman -S dysk htop
+pacman -S dysk htop btop
 
 # Fun
-pacman -S lolcat figlet
-
-# Photos
-pacman -S darktable
+#pacman -S lolcat figlet
 
 # Fonts
 pacman -S ttf-jetbrains-mono-nerd
 
-yay -S cursor-bin ghostty-git spotify_player
+# Apps
+yay -S cursor-bin ghostty-git spotify_player darktable
 
 # Games
 pacman -S gamemode mangohud
