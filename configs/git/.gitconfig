@@ -7,7 +7,7 @@
   autocrlf = input
   safecrlf = true
   filemode = false 
-  pager = less
+	pager = bat
   excludesfile = ~/.gitignore_global
 
 [color]

@@ -4,7 +4,7 @@ pacman -S zsh starship
 # Development Tools
 pacman -S gh neovim
 
-pacman -S tmux ripgrep eza zoxide wl-clipboard fzf jq
+pacman -S tmux ripgrep eza zoxide wl-clipboard fzf jq bat
 
 pacman -S dysk htop btop
 
