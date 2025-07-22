@@ -36,12 +36,12 @@ sudo apt install -y \
 	zsh \
 	figlet \
 	tmux \
-	ripgrep \
+	ripgrep
 ##autojump
 python3-neovim \
 	fzf \
 	starship \
-  neofetch
+	fastfetch
 
 curl -sS https://webinstall.dev/zoxide | bash
 
