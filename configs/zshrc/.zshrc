@@ -12,9 +12,11 @@ source ~/.zshrc-modules/.zshrc.init
 source ~/.zshrc-modules/.zshrc.paths
 #source ~/.zshrc-modules/.zshrc.startup
 source ~/.zshrc-modules/.zshrc.appearance
+#source ~/.zshrc-modules/.zshrc.work
 
 export PATH="$HOME/.pyenv/shims:$PATH"
 
 
 source ~/.zshrc-sec
 source ~/.zshrc-work
+
