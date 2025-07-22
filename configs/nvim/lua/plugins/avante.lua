@@ -7,7 +7,7 @@ return {
   branch = "main",
   opts = {
     -- work
-    provider = "copilotclaude",
+    provider = "copilotgptfourone",
     auto_suggestions_provider = "copilotgptfourone",
     -- personal
     --provider = "lmstudio",
@@ -16,6 +16,10 @@ return {
     -- auto_suggestions_provider = nil,
     providers = {
       -- work
+      copilotsonnetfour = {
+        __inherited_from = "copilot",
+        model = "claude-sonnet-4",
+      },
       copilotopus = {
         __inherited_from = "copilot",
         model = "claude-opus-4",
