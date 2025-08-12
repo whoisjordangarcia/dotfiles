@@ -140,7 +140,6 @@ If there's no issues with code respond with only: <OK>
 ]]
     local avante_optimize_code = "Optimize the following code"
     local avante_summarize = "Summarize the following text"
-    local avante_translate = "Translate this into Chinese, but keep any code blocks inside intact"
     local avante_explain_code = "Explain the following code"
 
     -- Dynamically fetch filetype for completion prompts
@@ -194,13 +193,6 @@ If there's no issues with code respond with only: <OK>
               require("avante.api").ask({ question = avante_summarize })
             end,
             desc = " Summarize text (ask)",
-          },
-          {
-            "<leader>an",
-            function()
-              require("avante.api").ask({ question = avante_translate })
-            end,
-            desc = " Translate text (ask)",
           },
           {
             "<leader>ax",
