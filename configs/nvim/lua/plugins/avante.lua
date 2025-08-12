@@ -8,48 +8,16 @@ return {
     mode = "agentic",
 
     -- work
-    provider = "copilotgptfourone",
-    auto_suggestions_provider = "copilotgptfourone",
+    provider = "copilot",
+    model = "claude-sonnet-4",
+    -- OPTIONS
+    -- claude-opus-4
+    -- gpt-5.1
 
     -- personal
     -- provider = "openrouter",
-    -- auto_suggestions_provider = nil,
+    --
     providers = {
-      -- work
-      copilotsonnetfour = {
-        __inherited_from = "copilot",
-        model = "claude-sonnet-4",
-      },
-      copilotopus = {
-        __inherited_from = "copilot",
-        model = "claude-opus-4",
-        extra_request_body = {
-          timeout = 30000,
-          temperature = 0,
-        },
-      },
-      copilotclaude = {
-        __inherited_from = "copilot",
-        model = "claude-3.5-sonnet",
-        extra_request_body = {
-          timeout = 30000,
-          temperature = 0,
-          max_tokens = 16000,
-        },
-      },
-      copilotclaudethreeseven = {
-        __inherited_from = "copilot",
-        model = "claude-3.7-sonnet",
-      },
-      copilotgptfourone = {
-        __inherited_from = "copilot",
-        model = "gpt-4.1",
-      },
-      copilotgptfiveone = {
-        __inherited_from = "copilot",
-        model = "gpt-5.1",
-      },
-
       -- personal
       openrouter = {
         __inherited_from = "openai",
@@ -61,13 +29,13 @@ return {
         },
       },
     },
-    windows = {
-      width = 30,
-      input = {
-        prefix = "> ",
-        height = 10,
-      },
-    },
+    -- windows = {
+    --   width = 30,
+    --   input = {
+    --     prefix = "> ",
+    --     height = 10,
+    --   },
+    -- },
 
     input = {
       provider = "snacks",
