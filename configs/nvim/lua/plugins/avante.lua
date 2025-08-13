@@ -10,6 +10,7 @@ return {
     -- work
     provider = "copilot",
     model = "claude-sonnet-4",
+
     -- OPTIONS
     -- claude-opus-4
     -- gpt-5.1
