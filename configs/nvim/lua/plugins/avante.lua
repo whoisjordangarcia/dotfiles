@@ -17,7 +17,6 @@ return {
 
     -- personal
     -- provider = "openrouter",
-    --
     providers = {
       -- personal
       openrouter = {
@@ -66,7 +65,7 @@ return {
         name = "test",
         description = "Generate unit tests",
         details = "Create comprehensive unit tests covering edge cases, error scenarios, and various input conditions",
-        prompt = "Please generate comprehensive unit tests for this code, covering edge cases and error scenarios.",
+        prompt = "Please generate comprehensive unit tests for this code, covering edge cases and error scenarios, my sure it using unit test as pytest functions",
       },
     },
   },
