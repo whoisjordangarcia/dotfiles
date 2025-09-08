@@ -7,13 +7,14 @@ return {
   "yetone/avante.nvim",
   build = "make",
   event = "VeryLazy",
-  version = false, -- Never set this value to "*"! Never!
+  lazy = false,
+  version = false, -- set this to "*" if you want to always pull the latest change, false to update on release
   opts = {
     mode = "agentic",
 
     -- work
     provider = "copilot",
-    model = "claude-sonnet-4",
+    model = "gpt-5",
 
     -- OPTIONS
     -- claude-opus-4
@@ -21,13 +22,12 @@ return {
 
     -- personal
     -- provider = "openrouter",
-    --
     providers = {
       -- personal
       openrouter = {
         __inherited_from = "openai",
         endpoint = "https://openrouter.ai/api/v1",
-        model = "google/gemini-2.0-flash-001",
+        model = "google/gemini-2.5-flash",
         extra_request_body = {
           temperature = 0,
           max_tokens = 16000,
@@ -43,20 +43,20 @@ return {
     -- },
 
     input = {
-      provider = "snacks",
+      provider = "native",
       provider_opts = {
-        -- Additional snacks.input options
-        title = "Avante Input",
-        icon = " ",
+        title = "hihihihihihihi",
+        icon = "💩",
       },
     },
 
     selector = {
       --- @alias avante.SelectorProvider "native" | "fzf_lua" | "mini_pick" | "snacks" | "telescope" | fun(selector: avante.ui.Selector): nil
       --- @type avante.SelectorProvider
-      provider = "snacks",
+      provider = "native",
       -- Options override for custom providers
       provider_opts = {},
+      exclude_auto_select = { "node_modules", "migrations", "tests", "data", "api-tests", "templates" },
     },
 
     shortcuts = {
@@ -70,7 +70,7 @@ return {
         name = "test",
         description = "Generate unit tests",
         details = "Create comprehensive unit tests covering edge cases, error scenarios, and various input conditions",
-        prompt = "Please generate comprehensive unit tests for this code, covering edge cases and error scenarios.",
+        prompt = "Please generate comprehensive unit tests for this code, covering edge cases and error scenarios, my sure it using unit test as pytest functions",
       },
     },
   },

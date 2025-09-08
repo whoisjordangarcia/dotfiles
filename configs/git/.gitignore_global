@@ -6,6 +6,9 @@
 *.avanterules
 *.cursorrules
 .aider*
+avante.md
+CLAUDE.md
+.claude
 
 # OS generated files #
 ######################
@@ -52,3 +55,6 @@ ENV/
 #*.sql
 #*.sqlite
 
+
+# work specific
+requirements-filtered.txt

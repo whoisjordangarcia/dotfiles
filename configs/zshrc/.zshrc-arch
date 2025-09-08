@@ -1,3 +1,0 @@
-export ENABLE_FEATURES=UseOzonePlatform
-export OZONE_PLATFORM=wayland
-
