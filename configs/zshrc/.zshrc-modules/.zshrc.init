@@ -16,10 +16,5 @@ source /usr/share/nvm/init-nvm.sh
 # Load zoxide
 eval "$(zoxide init zsh)"
 
-# Load bun completions
-[ -s "/Users/jordan/.bun/_bun" ] && source "/Users/jordan/.bun/_bun"
-
-# Load envman
-[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
 

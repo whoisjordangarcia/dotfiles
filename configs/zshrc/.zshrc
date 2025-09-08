@@ -21,8 +21,8 @@ export TERM=xterm-256color
 
 # Define a list of special configuration files to check
 special_config_files=(
-    "$HOME/.zshrc-work"
-    "$HOME/.zshrc-sec"
+    "$HOME/.zshrc-work-mode"
+    "$HOME/.zshrc-arch-mode"
 )
 
 # Function to check and source a list of files
@@ -36,9 +36,8 @@ source_files() {
     return 1 # Indicate no files were sourced
 }
 
-# Attempt to source special configuration files
 if ! source_files "${special_config_files[@]}"; then
-    # Default to personal configuration if no special files were loaded
+    echo 'Could not find special config files. Defaulting to load .zshrc.personal'
     source ~/.zshrc-modules/.zshrc.personal
 fi
 
@@ -52,15 +51,8 @@ source ~/.zshrc-modules/.zshrc.functions
 source ~/.zshrc-modules/.zshrc.init
 source ~/.zshrc-modules/.zshrc.paths
 source ~/.zshrc-modules/.zshrc.appearance
-source ~/.zshrc-modules/.zshrc.work
 
 export PATH="$HOME/.pyenv/shims:$PATH"
 
 source ~/.zshrc-modules/.zshrc.sec
 source ~/.zshrc-sec
-source ~/.zshrc-work
-
-
-
-
-alias claude="/Users/jordan.garcia/.claude/local/claude"
