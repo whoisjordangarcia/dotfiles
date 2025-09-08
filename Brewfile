@@ -21,6 +21,9 @@ brew 'go'
 brew 'glow'
 brew 'fastfetch'
 tap  'sst/tap/opencode'
+brew 'dolphie'
+brew 'lazydocker'
+brew 'yewtube'
 
 # Development
 brew 'nvm'

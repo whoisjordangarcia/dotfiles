@@ -1,14 +1,31 @@
-background-blur-radius = 20 
-background-opacity = 0.95
-clipboard-read = allow
-clipboard-write = allow
-font-family = JetBrainsMono Nerd Font
-font-size = 14
+#font-family = JetBrainsMono Nerd Font
+#font-family = Terminess Nerd Font
+
 #gtk-adwaita = false
 #gtk-titlebar = false
+
 #keybind = global:cmd+s=toggle_quick_terminal
-#macos-titlebar-style = hidden
+
+background-blur-radius = 20 
+background-blur = true 
+background-opacity = 0.90
+
+clipboard-read = allow
+clipboard-write = allow
+
+confirm-close-surface = false
+
+font-family = GohuFont 14 Nerd Font
+font-size = 20
+
+macos-titlebar-style = hidden
+
 mouse-hide-while-typing = true
-#theme = catppuccin-mocha
-#window-decoration = false 
-#window-padding-y = 0,0 
+
+theme = dark:catppuccin-macchiato,light:GruvboxLight
+
+unfocused-split-opacity = 0.9
+
+window-decoration = none 
+window-padding-x = 13
+window-padding-y = 13 
