@@ -1,7 +1,3 @@
-if true then
-  return {}
-end
-
 return {
   "ibhagwan/fzf-lua",
   opts = function(_, opts)
@@ -12,4 +8,5 @@ return {
       },
     }
   end,
+  enable = false,
 }

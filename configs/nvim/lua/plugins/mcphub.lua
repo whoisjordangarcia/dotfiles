@@ -1,7 +1,3 @@
-if true then
-  return {}
-end
-
 return {
   "ravitemer/mcphub.nvim",
   dependencies = {

@@ -20,3 +20,20 @@ vim.keymap.set("n", "<C-h>", "<C-w><C-h>", { desc = "Move focus to the left wind
 vim.keymap.set("n", "<C-l>", "<C-w><C-l>", { desc = "Move focus to the right window" })
 vim.keymap.set("n", "<C-j>", "<C-w><C-j>", { desc = "Move focus to the lower window" })
 vim.keymap.set("n", "<C-k>", "<C-w><C-k>", { desc = "Move focus to the upper window" })
+
+-- CodeCompanion
+-- vim.keymap.set({ "n", "v" }, "<C-a>", "<cmd>CodeCompanionActions<cr>", { noremap = true, silent = true })
+-- vim.keymap.set(
+--   { "n", "v" },
+--   "<LocalLeader>aa",
+--   "<cmd>CodeCompanionChat Toggle<cr>",
+--   { noremap = true, silent = true, desc = "CodeCompanion" }
+-- )
+-- vim.keymap.set("v", "ga", "<cmd>CodeCompanionChat Add<cr>", { noremap = true, silent = true })
+--
+-- vim.keymap.set("n", "<LocalLeader>a/", function()
+--   require("codecompanion").prompt("docs")
+-- end, { noremap = true, silent = true, desc = "CodeCompanion Docs" })
+--
+-- -- Expand 'cc' into 'CodeCompanion' in the command line
+-- vim.cmd([[cab cc CodeCompanion]])
