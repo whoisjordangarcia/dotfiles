@@ -4,7 +4,6 @@ return {
   event = "VeryLazy",
   lazy = false,
   version = false, -- set this to "*" if you want to always pull the latest change, false to update on release
-  branch = "main",
   opts = {
     -- work
     provider = "openrouter",
@@ -35,7 +34,7 @@ return {
       openrouter = {
         __inherited_from = "openai",
         endpoint = "https://openrouter.ai/api/v1",
-        model = "google/gemini-2.0-flash-001",
+        model = "google/gemini-2.5-flash",
         extra_request_body = {
           temperature = 0,
           max_tokens = 16000,
