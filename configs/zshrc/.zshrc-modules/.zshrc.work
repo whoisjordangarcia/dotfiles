@@ -1,3 +1,7 @@
+#startup tmux
+if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
+  tmux attach -t default || tmux new -s terminal-session 
+fi
 
 function aws_sso_login() {
     aws sso login --profile non-prd
@@ -5,3 +9,12 @@ function aws_sso_login() {
     which docker && echo $pass | docker login --username AWS --password-stdin 761885676921.dkr.ecr.us-east-1.amazonaws.com
     which podman && echo $pass | podman login --username AWS --password-stdin 761885676921.dkr.ecr.us-east-1.amazonaws.com
 }
+
+# pnpm
+export PNPM_HOME="/Users/jordan.garcia/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+
+export ANTHROPIC_BASE_URL="https://llm-router.ai.prd.locusdev.net"
