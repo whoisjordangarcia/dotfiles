@@ -1,8 +1,7 @@
 {
   "layer": "top",
   "output": ["*"],
-  "position": "top",
-  "height": 30,
+  "height": 10,
   "exclusive": true,
   "passthrough": false,
   "reload_style_on_change": true,
@@ -10,9 +9,9 @@
     "$XDG_CONFIG_HOME/waybar/modules/*json*",
     "$XDG_CONFIG_HOME/waybar/includes/includes.json",
   ],
-  "modules-left": ["group/pill#1", "group/pill#2"],
+  "modules-left": ["group/pill#1", "group/pill#3"],
   "group/pill#1": {
-    "modules": ["hyprland/workspaces"],
+    "modules": ["hyprland/window", "hyprland/workspaces"],
     "orientation": "inherit",
   },
   "group/pill#2": {

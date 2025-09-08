@@ -1,0 +1,80 @@
+{
+    "include": [
+        "/home/jordan/.local/share/waybar/modules/wlr-taskbar#windows.json",
+        "/home/jordan/.local/share/waybar/modules/image#wallpaper.json",
+        "/home/jordan/.local/share/waybar/modules/wlr-taskbar.json",
+        "/home/jordan/.local/share/waybar/modules/tray.json",
+        "/home/jordan/.local/share/waybar/modules/privacy.json",
+        "/home/jordan/.local/share/waybar/modules/custom-wallchange.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-gpuinfo.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-github_hyde.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-workflows.jsonc",
+        "/home/jordan/.local/share/waybar/modules/power-profiles-daemon.jsonc",
+        "/home/jordan/.local/share/waybar/modules/pulseaudio#microphone.jsonc",
+        "/home/jordan/.local/share/waybar/modules/mpris.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-gamemode.jsonc",
+        "/home/jordan/.local/share/waybar/modules/cava.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-cava.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-gpuinfo#intel.jsonc",
+        "/home/jordan/.local/share/waybar/modules/backlight.jsonc",
+        "/home/jordan/.local/share/waybar/modules/hyprland-window.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-display.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-updates.jsonc",
+        "/home/jordan/.local/share/waybar/modules/hyprland-workspaces#roman.jsonc",
+        "/home/jordan/.local/share/waybar/modules/bluetooth.jsonc",
+        "/home/jordan/.local/share/waybar/modules/network#bandwidth.jsonc",
+        "/home/jordan/.local/share/waybar/modules/wlr-taskbar#windows.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-clipboard.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-power.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-gpuinfo#nvidia.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-powermenu.jsonc",
+        "/home/jordan/.local/share/waybar/modules/wlr-taskbar.jsonc",
+        "/home/jordan/.local/share/waybar/modules/memory.jsonc",
+        "/home/jordan/.local/share/waybar/modules/clock.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-wbar.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-theme.jsonc",
+        "/home/jordan/.local/share/waybar/modules/pulseaudio.jsonc",
+        "/home/jordan/.local/share/waybar/modules/hyprland-language.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-spotify.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-sensorsinfo.jsonc",
+        "/home/jordan/.local/share/waybar/modules/idle_inhibitor.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-keybindhint.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-hyprsunset.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-gpuinfo#amd.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-swaync.jsonc",
+        "/home/jordan/.local/share/waybar/modules/image#profile.jsonc",
+        "/home/jordan/.local/share/waybar/modules/image#wallpaper.jsonc",
+        "/home/jordan/.local/share/waybar/modules/privacy.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-cliphist.jsonc",
+        "/home/jordan/.local/share/waybar/modules/tray.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-hyde-menu.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-dunst.jsonc",
+        "/home/jordan/.local/share/waybar/modules/cpu.jsonc",
+        "/home/jordan/.local/share/waybar/modules/network.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-cpuinfo.jsonc",
+        "/home/jordan/.local/share/waybar/modules/hyprland-workspaces#kanji.jsonc",
+        "/home/jordan/.local/share/waybar/modules/custom-weather.jsonc",
+        "/home/jordan/.local/share/waybar/modules/battery.jsonc",
+        "/home/jordan/.local/share/waybar/modules/hyprland-workspaces.jsonc"
+    ],
+    "wlr/taskbar#windows": {
+        "icon-size": 16,
+        "icon-size-multiplier": 1.6
+    },
+    "image#wallpaper": {
+        "size": 30,
+        "icon-size-multiplier": 3
+    },
+    "wlr/taskbar": {
+        "icon-size": 16,
+        "icon-size-multiplier": 1.6
+    },
+    "tray": {
+        "icon-size": 16,
+        "icon-size-multiplier": 1.6
+    },
+    "privacy": {
+        "icon-size": 10,
+        "icon-size-multiplier": 1
+    }
+}

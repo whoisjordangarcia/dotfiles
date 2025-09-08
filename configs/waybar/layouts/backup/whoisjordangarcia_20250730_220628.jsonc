@@ -1,8 +1,7 @@
 {
   "layer": "top",
   "output": ["*"],
-  "position": "top",
-  "height": 30,
+  "height": 10,
   "exclusive": true,
   "passthrough": false,
   "reload_style_on_change": true,
@@ -12,7 +11,7 @@
   ],
   "modules-left": ["group/pill#1", "group/pill#2"],
   "group/pill#1": {
-    "modules": ["hyprland/workspaces"],
+    "modules": ["hyprland/window", "hyprland/workspaces"],
     "orientation": "inherit",
   },
   "group/pill#2": {
