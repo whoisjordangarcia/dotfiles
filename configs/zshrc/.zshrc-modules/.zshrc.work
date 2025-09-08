@@ -17,4 +17,9 @@ case ":$PATH:" in
   *) export PATH="$PNPM_HOME:$PATH" ;;
 esac
 
-export ANTHROPIC_BASE_URL="https://llm-router.ai.prd.locusdev.net"
+alias claude="/Users/jordan.garcia/.claude/local/claude"
+alias code='claude --model "bedrock-claude-sonnet-4"'
+
+source ~/.zshrc-work
+
+
