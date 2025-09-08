@@ -1,8 +1,8 @@
 # Binaries
 brew 'gh'
 brew 'zsh' 
-brew 'lolcat'
-brew 'figlet'
+#brew 'lolcat'
+#brew 'figlet'
 brew 'fzf'
 #brew 'autojump' -- old. zoxide is better
 brew 'eza'
@@ -19,6 +19,11 @@ brew 'yazi'
 brew 'jq'
 brew 'go'
 brew 'glow'
+brew 'fastfetch'
+tap  'sst/tap/opencode'
+brew 'dolphie'
+brew 'lazydocker'
+brew 'yewtube'
 
 # Development
 brew 'nvm'
