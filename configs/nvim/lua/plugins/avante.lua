@@ -10,7 +10,7 @@ return {
 
     -- work
     provider = "copilot",
-    model = "claude-sonnet-4",
+    model = "gpt-5",
 
     -- OPTIONS
     -- claude-opus-4
@@ -39,20 +39,20 @@ return {
     -- },
 
     input = {
-      provider = "snacks",
+      provider = "native",
       provider_opts = {
-        -- Additional snacks.input options
-        title = "Avante Input",
-        icon = " ",
+        title = "hihihihihihihi",
+        icon = "💩",
       },
     },
 
     selector = {
       --- @alias avante.SelectorProvider "native" | "fzf_lua" | "mini_pick" | "snacks" | "telescope" | fun(selector: avante.ui.Selector): nil
       --- @type avante.SelectorProvider
-      provider = "snacks",
+      provider = "native",
       -- Options override for custom providers
       provider_opts = {},
+      exclude_auto_select = { "node_modules", "migrations", "tests", "data", "api-tests", "templates" },
     },
 
     shortcuts = {

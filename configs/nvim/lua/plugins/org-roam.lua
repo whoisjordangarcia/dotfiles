@@ -14,12 +14,12 @@ return {
     },
     config = function()
       require("orgmode").setup({
-        org_agenda_files = { "~/notes/**/*" },
-        org_default_notes_file = "~/notes/refile.org",
+        org_agenda_files = { "~/dev/notes/**/*" },
+        org_default_notes_file = "~/dev/notes/refile.org",
       })
 
       require("org-roam").setup({
-        directory = "~/notes",
+        directory = "~/dev/notes",
       })
     end,
   },

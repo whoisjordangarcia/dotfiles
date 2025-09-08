@@ -1,7 +1,3 @@
-if true then
-  return {}
-end
-
 return {
   "nvim-telescope/telescope.nvim",
   opts = {
@@ -12,4 +8,5 @@ return {
       winblend = 0,
     },
   },
+  enabled = false,
 }
