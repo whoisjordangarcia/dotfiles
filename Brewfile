@@ -33,6 +33,10 @@ brew 'bat'
 brew 'black'
 brew 'tmuxinator'
 
+# ai
+brew 'codex'
+cask 'claude-code'
+
 # fun
 brew 'cmatrix'
 
