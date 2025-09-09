@@ -12,6 +12,12 @@ link_file() {
 	fi
 
 	if [ -e "$target" ]; then
+		# Check if target is already a symlink pointing to the correct source
+		if [ -L "$target" ] && [ "$(readlink "$target")" = "$source" ]; then
+			info "Symlink already exists and points to correct source. Skipping."
+			return
+		fi
+
 		# Add some verbosity to the prompt
 		user "The $type '$target' already exists. [O]verride/[B]ackup/[S]kip?"
 		read -r choice

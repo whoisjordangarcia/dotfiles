@@ -9,14 +9,12 @@ component_installation=(
 	zsh
 	vim
 	tmux
-	#wezterm
 	fonts/mac
 	aerospace/mac
 	lazygit/mac
-	git
-	#bun/mac
 	starship
 	work/mac
+	claude
 )
 
 for component in "${component_installation[@]}"; do
