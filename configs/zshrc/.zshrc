@@ -15,17 +15,13 @@ special_config_files=(
 source_files() {
     for config_file in "$@"; do
         if [[ -f "$config_file" ]]; then
+            echo "Loading $config_file"
             source "$config_file"
-            return 0 # Exit function on the first successful source
+            return 0
         fi
     done
-    return 1 # Indicate no files were sourced
+    return 1 
 }
-
-if ! source_files "${special_config_files[@]}"; then
-    echo 'Could not find special config files. Defaulting to load .zshrc.personal'
-    source ~/.zshrc-modules/.zshrc.personal
-fi
 
 # defaults
 source ~/.zshrc-modules/.zshrc.starship
@@ -41,3 +37,9 @@ export PATH="$HOME/.pyenv/shims:$PATH"
 
 source ~/.zshrc-modules/.zshrc.sec
 source ~/.zshrc-sec
+
+if ! source_files "${special_config_files[@]}"; then
+    echo 'Could not find special config files. Defaulting to load .zshrc.personal'
+    source ~/.zshrc-modules/.zshrc.personal
+fi
+
