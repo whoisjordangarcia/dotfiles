@@ -18,7 +18,7 @@ component_installation=(
 	# code
 	lazygit/mac
 	#bun/mac
-	#iterm2/mac
+	claude
 )
 
 for component in "${component_installation[@]}"; do
