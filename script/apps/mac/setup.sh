@@ -5,8 +5,12 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 source "$SCRIPT_DIR/../../common/log.sh"
 
 # Install xCode cli tools
-info "Install commandline tools..."
-xcode-select --install
+if xcode-select -p &>/dev/null; then
+	info "Xcode command line tools already installed. Skipping."
+else
+	info "Installing Xcode command line tools..."
+	xcode-select --install
+fi
 
 # Check if Homebrew is installed
 if ! command -v brew &>/dev/null; then
