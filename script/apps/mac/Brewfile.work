@@ -1,0 +1,14 @@
+brew 'cmatrix'
+
+cask 'raycast'
+cask 'bartender'
+cask 'nikitabobko/tap/aerospace'
+tap 'FelixKratz/formulae'
+brew 'sketchybar'
+brew 'borders'
+
+# Sketchybar Dependencies (from legacy)
+brew 'lua'
+brew 'switchaudio-osx'
+brew 'nowplaying-cli'
+

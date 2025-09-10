@@ -31,3 +31,4 @@ tasks.json
 tasks/ 
 
 .zshrc.sec
+.dotconfig
