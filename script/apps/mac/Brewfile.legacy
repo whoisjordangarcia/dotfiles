@@ -28,7 +28,7 @@ brew 'yewtube'
 # Development
 brew 'nvm'
 #brew 'git-town' -- meh. was ok
-brew 'jesseduffield/lazygit/lazygit'
+brew 'lazygit'
 brew 'bat'
 brew 'black'
 brew 'tmuxinator'

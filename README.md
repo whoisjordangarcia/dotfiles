@@ -30,7 +30,7 @@ Don't prefix with sudo
 
 ## MacOS
 
-- **Terminal** ~iterm2~ ~[wezterm](https://github.com/wez/wezterm)~ [ghostty](https://ghostty.org/)
+- **Terminal** [ghostty](https://ghostty.org/)
 - **Window Manager** aerospace, sketchybar
 - **Panel** sketchybar
 - **Shell prompt** ~powerline10k~ starship

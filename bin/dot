@@ -1,52 +1,306 @@
-#!/bin/sh
+#!/bin/bash
 #
-# dot
+# dot - Enhanced dotfiles management system
 #
-# `dot` handles installation, updates, things like that. Run it periodically
-# to make sure you're on the latest and greatest.
+# Handles installation, updates, and configuration for different platforms and environments
+# Supports auto-detection and interactive configuration
 
 set -e
 
+# Get script directories
 parentDirectory="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P)"
 dotfilesDirectory="$(cd "$( dirname "$parentDirectory" )" && pwd -P)"
+configFile="$dotfilesDirectory/.dotconfig"
 
-displayUsageAndExit() {
-	echo "dot -- dotfiles management"
-	echo ""
-	echo "Usage: dot [options]"
-	echo ""
-	echo "Options:"
-	echo "  -e, --edit    Open dotfiles directory for editing"
-	echo "  -h, --help    Show this help message and exit"
-	exit
+# Color output functions
+source "$dotfilesDirectory/script/common/log.sh"
+
+# Configuration defaults
+DEFAULT_NAME="Jordan Garcia"
+DEFAULT_EMAIL_PERSONAL="jordan.garcia@example.com"
+DEFAULT_EMAIL_WORK="jordan.garcia@labcorp.com"
+
+detect_system() {
+    local os_name=""
+    local distro=""
+    
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        os_name="mac"
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        os_name="linux"
+        # Detect Linux distribution
+        if [ -f /etc/os-release ]; then
+            . /etc/os-release
+            case "$ID" in
+                ubuntu) distro="ubuntu" ;;
+                fedora) distro="fedora" ;;
+                arch) distro="arch" ;;
+                *) distro="unknown" ;;
+            esac
+        fi
+    else
+        os_name="unknown"
+    fi
+    
+    echo "${os_name}_${distro}"
 }
 
-while test $# -gt 0; do
-	case "$1" in
-		"-h"|"--help")
-			displayUsageAndExit
-			;;
-		"-e"|"--edit")
-			exec "$EDITOR" "$dotfilesDirectory"
-			exit
-			;;
-		*)
-			echo "Invalid option: $1"
-			displayUsageAndExit
-			;;
-	esac
-	shift
+load_config() {
+    if [[ -f "$configFile" ]]; then
+        source "$configFile"
+    fi
+}
+
+save_config() {
+    cat > "$configFile" << EOF
+# Dotfiles configuration
+DOT_NAME="$DOT_NAME"
+DOT_EMAIL="$DOT_EMAIL"
+DOT_ENVIRONMENT="$DOT_ENVIRONMENT"
+DOT_SYSTEM="$DOT_SYSTEM"
+EOF
+    info "Configuration saved to $configFile"
+}
+
+get_available_installations() {
+    local installations=()
+    for file in "$dotfilesDirectory/script"/*_installation.sh; do
+        if [[ -f "$file" ]]; then
+            local basename=$(basename "$file" .sh)
+            local install_name=${basename%_installation}
+            installations+=("$install_name")
+        fi
+    done
+    printf '%s\n' "${installations[@]}"
+}
+
+auto_select_installation() {
+    local detected=$(detect_system)
+    local available_installations=($(get_available_installations))
+    
+    # Try exact match first
+    for installation in "${available_installations[@]}"; do
+        if [[ "$installation" == "$detected" ]]; then
+            echo "$installation"
+            return
+        fi
+    done
+    
+    # Try partial matches
+    local os_part=$(echo "$detected" | cut -d'_' -f1)
+    for installation in "${available_installations[@]}"; do
+        if [[ "$installation" == *"$os_part"* ]]; then
+            echo "$installation"
+            return
+        fi
+    done
+    
+    echo ""
+}
+
+interactive_setup() {
+    info "🚀 Dotfiles Interactive Setup"
+    echo ""
+    
+    # Load existing config
+    load_config
+    
+    # Get full name
+    read -p "Enter your full name [${DOT_NAME:-$DEFAULT_NAME}]: " input_name
+    DOT_NAME="${input_name:-${DOT_NAME:-$DEFAULT_NAME}}"
+    
+    # Get environment type
+    echo ""
+    info "Environment setup:"
+    echo "1) Personal"
+    echo "2) Work"
+    read -p "Select environment [${DOT_ENVIRONMENT:-1}]: " env_choice
+    env_choice="${env_choice:-${DOT_ENVIRONMENT:-1}}"
+    
+    case $env_choice in
+        1|personal|Personal|p|P)
+            DOT_ENVIRONMENT="personal"
+            DOT_EMAIL="${DOT_EMAIL:-$DEFAULT_EMAIL_PERSONAL}"
+            ;;
+        2|work|Work|w|W)
+            DOT_ENVIRONMENT="work"
+            DOT_EMAIL="${DOT_EMAIL:-$DEFAULT_EMAIL_WORK}"
+            ;;
+        *)
+            DOT_ENVIRONMENT="personal"
+            DOT_EMAIL="${DOT_EMAIL:-$DEFAULT_EMAIL_PERSONAL}"
+            ;;
+    esac
+    
+    # Get email
+    read -p "Enter your email [${DOT_EMAIL}]: " input_email
+    DOT_EMAIL="${input_email:-$DOT_EMAIL}"
+    
+    # System detection and selection
+    echo ""
+    info "System detection:"
+    local detected_system=$(detect_system)
+    local auto_installation=$(auto_select_installation)
+    
+    if [[ -n "$auto_installation" ]]; then
+        info "Auto-detected system: $detected_system"
+        info "Recommended installation: $auto_installation"
+        
+        if [[ "$DOT_ENVIRONMENT" == "work" && -f "$dotfilesDirectory/script/${auto_installation%_*}_work_installation.sh" ]]; then
+            auto_installation="${auto_installation%_*}_work"
+            info "Work environment detected, switching to: $auto_installation"
+        fi
+        
+        read -p "Use recommended installation? [Y/n]: " use_auto
+        if [[ "$use_auto" =~ ^[Nn]$ ]]; then
+            auto_installation=""
+        fi
+    fi
+    
+    if [[ -z "$auto_installation" ]]; then
+        echo ""
+        info "Available installations:"
+        local installations=($(get_available_installations))
+        for i in "${!installations[@]}"; do
+            echo "$((i+1))) ${installations[i]}"
+        done
+        
+        read -p "Select installation [${DOT_SYSTEM:-1}]: " install_choice
+        install_choice="${install_choice:-${DOT_SYSTEM:-1}}"
+        
+        if [[ "$install_choice" =~ ^[0-9]+$ ]] && [ "$install_choice" -ge 1 ] && [ "$install_choice" -le "${#installations[@]}" ]; then
+            DOT_SYSTEM="${installations[$((install_choice-1))]}"
+        else
+            DOT_SYSTEM="$install_choice"
+        fi
+    else
+        DOT_SYSTEM="$auto_installation"
+    fi
+    
+    # Summary
+    echo ""
+    info "Configuration Summary:"
+    echo "  Name: $DOT_NAME"
+    echo "  Email: $DOT_EMAIL"
+    echo "  Environment: $DOT_ENVIRONMENT"
+    echo "  Installation: $DOT_SYSTEM"
+    echo ""
+    
+    read -p "Proceed with installation? [Y/n]: " proceed
+    if [[ "$proceed" =~ ^[Nn]$ ]]; then
+        info "Installation cancelled"
+        exit 0
+    fi
+    
+    save_config
+}
+
+run_installation() {
+    local installation_script="$dotfilesDirectory/script/${DOT_SYSTEM}_installation.sh"
+    
+    if [[ ! -f "$installation_script" ]]; then
+        error "Installation script not found: $installation_script"
+        exit 1
+    fi
+    
+    # Export configuration for use by installation scripts
+    export DOT_NAME DOT_EMAIL DOT_ENVIRONMENT DOT_SYSTEM
+    export WORK_ENV=""
+    if [[ "$DOT_ENVIRONMENT" == "work" ]]; then
+        export WORK_ENV="1"
+    fi
+    
+    info "Running installation: $DOT_SYSTEM"
+    exec "$installation_script"
+}
+
+displayUsageAndExit() {
+    echo "dot -- Enhanced dotfiles management"
+    echo ""
+    echo "Usage: dot [options]"
+    echo ""
+    echo "Options:"
+    echo "  -i, --install     Interactive installation setup"
+    echo "  -l, --list        List available installations"
+    echo "  -s, --system      Show current system detection"
+    echo "  -c, --config      Show current configuration"
+    echo "  --reset-config    Reset configuration file"
+    echo "  -e, --edit        Open dotfiles directory for editing"
+    echo "  -h, --help        Show this help message and exit"
+    echo ""
+    echo "Installation Examples:"
+    echo "  dot -i                    # Interactive setup"
+    echo "  dot --system mac --work   # Direct Mac work installation"
+    echo "  dot --system linux_ubuntu # Direct Ubuntu installation"
+    exit
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        "-h"|"--help")
+            displayUsageAndExit
+            ;;
+        "-e"|"--edit")
+            exec "${EDITOR:-code}" "$dotfilesDirectory"
+            ;;
+        "-i"|"--install")
+            interactive_setup
+            run_installation
+            exit 0
+            ;;
+        "-l"|"--list")
+            info "Available installations:"
+            get_available_installations
+            exit 0
+            ;;
+        "-s"|"--system")
+            local detected=$(detect_system)
+            local auto=$(auto_select_installation)
+            info "System Detection:"
+            echo "  Detected: $detected"
+            echo "  Recommended: ${auto:-none}"
+            exit 0
+            ;;
+        "-c"|"--config")
+            load_config
+            info "Current Configuration:"
+            echo "  Name: ${DOT_NAME:-not set}"
+            echo "  Email: ${DOT_EMAIL:-not set}"
+            echo "  Environment: ${DOT_ENVIRONMENT:-not set}"
+            echo "  System: ${DOT_SYSTEM:-not set}"
+            exit 0
+            ;;
+        "--reset-config")
+            rm -f "$configFile"
+            info "Configuration reset"
+            exit 0
+            ;;
+        "--system")
+            shift
+            DOT_SYSTEM="$1"
+            ;;
+        "--work")
+            DOT_ENVIRONMENT="work"
+            ;;
+        "--personal")
+            DOT_ENVIRONMENT="personal"
+            ;;
+        *)
+            echo "Invalid option: $1"
+            displayUsageAndExit
+            ;;
+    esac
+    shift
 done
 
-export ZSH=$HOME/.dotfiles
-
-# # Install homebrew
-# $ZSH/homebrew/install.sh 2>&1
-
-# # Upgrade homebrew
-# echo "› brew update"
-# brew update
-
-# Install software
-echo "› $ZSH/script/install"
-$ZSH/script/install
+# Default behavior - check if config exists, if not run interactive setup
+load_config
+if [[ -z "$DOT_SYSTEM" ]]; then
+    info "No configuration found. Starting interactive setup..."
+    interactive_setup
+    run_installation
+else
+    info "Using existing configuration. Run 'dot -i' for interactive setup or 'dot -c' to view config."
+    run_installation
+fi
