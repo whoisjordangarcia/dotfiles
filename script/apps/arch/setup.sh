@@ -15,7 +15,7 @@ pacman -S dysk htop btop
 pacman -S ttf-jetbrains-mono-nerd
 
 # Apps
-yay -S cursor-bin ghostty-git spotify_player darktable
+yay -S ghostty-git spotify_player darktable
 
 # Games
 pacman -S gamemode mangohud
