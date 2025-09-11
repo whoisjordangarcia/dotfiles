@@ -1,0 +1,44 @@
+brew 'gh'
+brew 'zsh' 
+brew 'fzf'
+brew 'eza'
+brew 'ripgrep'
+brew 'tmux'
+brew 'neovim', head: true
+brew 'htop'
+brew 'btop'
+brew 'zoxide'
+brew 'starship'
+brew 'yazi'
+brew 'jq'
+brew 'glow'
+brew 'fastfetch'
+brew 'yewtube'
+
+# Development 
+brew 'nvm'
+brew 'lazygit'
+brew 'bat'
+brew 'black'
+brew 'tmuxinator'
+brew 'yq' # tmux statusbar  
+brew 'go'
+brew 'lazydocker'
+
+# Essential Apps
+cask 'ghostty'
+
+# Essential Fonts
+cask 'font-sf-mono'
+cask 'font-sf-pro'
+cask 'font-hack-nerd-font'
+
+# ai
+brew 'codex'
+cask 'claude-code'
+tap  'sst/tap/opencode'
+
+# fonts
+cask 'sf-symbols'
+cask 'font-jetbrains-mono'
+cask 'font-fira-code'
