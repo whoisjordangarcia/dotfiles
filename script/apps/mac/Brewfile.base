@@ -24,6 +24,7 @@ brew 'tmuxinator'
 brew 'yq' # tmux statusbar  
 brew 'go'
 brew 'lazydocker'
+brew 'uv'
 
 # Essential Apps
 cask 'ghostty'
