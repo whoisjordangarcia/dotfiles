@@ -1,4 +1,14 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(git push *)",
+      "Bash(git commit *)",
+      "Bash(git add *)",
+      "Bash(gh pr create *)"
+    ],
+    "deny": [],
+    "ask": []
+  },
   "statusLine": {
     "type": "command",
     "command": "bunx -y ccstatusline@latest",
