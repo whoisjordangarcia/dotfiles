@@ -1,15 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git push *)",
-      "Bash(git commit *)",
-      "Bash(git add *)",
-      "Bash(gh pr create *)",
-      "Bash(task *)",
-      "Bash(gh pr list *)",
-      "Bash(gh pr view *)"
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)",
+      "Bash(gh pr create:*)",
+      "Bash(task:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)"
     ],
-    "deny": []
+    "deny": [],
+    "ask": []
   },
   "statusLine": {
     "type": "command",
