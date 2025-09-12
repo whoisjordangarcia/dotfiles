@@ -1,5 +1,6 @@
-export EDITOR=nvim
-export TERM=xterm-256color
+if [[ -n "$SSH_CONNECTION" ]]; then
+    export TERM=xterm-256color
+fi
 
 # ==============================================================================
 #  .zshrc
