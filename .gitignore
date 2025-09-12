@@ -34,3 +34,6 @@ tasks/
 
 .zshrc.sec
 .dotconfig
+
+# Test temporary files
+/tmp/test_*

@@ -176,6 +176,27 @@ Copy `wezterm.lua` to Windows home directory (`C:/Users/username/.wezterm.lua`) 
 3. Implement platform-specific component scripts
 4. Test across different environments
 
+## Testing
+
+The repository includes a comprehensive test suite to validate core functionality:
+
+```bash
+# Run all tests
+./test/test_runner.sh
+
+# Run specific test categories
+./test/test_runner.sh syntax      # Syntax validation only
+./test/test_runner.sh functionality # Core functionality only
+```
+
+The test suite covers:
+- Syntax validation for all shell scripts
+- System detection logic
+- Configuration management
+- CLI interface functionality
+
+See [test/README.md](test/README.md) for detailed testing documentation.
+
 ## Troubleshooting
 
 ### Common Issues

@@ -215,6 +215,7 @@ run_installation() {
 }
 
 displayUsageAndExit() {
+    local exit_code=${1:-0}
     echo "dot -- Enhanced dotfiles management"
     echo ""
     echo "Usage: dot [options]"
@@ -232,7 +233,7 @@ displayUsageAndExit() {
     echo "  dot -i                    # Interactive setup"
     echo "  dot --system mac --work   # Direct Mac work installation"
     echo "  dot --system linux_ubuntu # Direct Ubuntu installation"
-    exit
+    exit $exit_code
 }
 
 # Parse command line arguments
@@ -255,8 +256,8 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         "-s"|"--system")
-            local detected=$(detect_system)
-            local auto=$(auto_select_installation)
+            detected=$(detect_system)
+            auto=$(auto_select_installation)
             info "System Detection:"
             echo "  Detected: $detected"
             echo "  Recommended: ${auto:-none}"
@@ -288,7 +289,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "Invalid option: $1"
-            displayUsageAndExit
+            displayUsageAndExit 1
             ;;
     esac
     shift
