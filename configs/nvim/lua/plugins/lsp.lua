@@ -21,31 +21,7 @@ return {
             { "<leader>cR", "<cmd>TypescriptRenameFile<CR>", desc = "Rename File" },
           },
         },
-        basedpyright = {
-          enabled = true,
-          settings = {
-            python = {
-              analysis = {
-                autoSearchPaths = true,
-                autoImportCompletions = true,
-                useLibraryCodeForTypes = true,
-                typeCheckingMode = "recommended", -- ["off", "basic", "strict", "recommended"]
-                diagnosticMode = "openFilesOnly", -- ["openFilesOnly", "workspace"]
-                diagnosticSeverityOverrides = {
-                  -- https://microsoft.github.io/pyright/#/configuration?id=type-check-diagnostics-settings
-                  reportDuplicateImport = "warning",
-                  reportMissingTypeStubs = "warning",
-                  -- slows down type analysis
-                  -- reportImportCycles = "warning",
-                  reportUnusedImport = "warning",
-                  reportUnusedClass = "warning",
-                  reportUnusedFunction = "warning",
-                  reportUnusedVariable = "warning",
-                },
-              },
-            },
-          },
-        },
+        basedpyright = require("lsp.basedpyright"),
         pyright = {
           enabled = false,
           settings = {
