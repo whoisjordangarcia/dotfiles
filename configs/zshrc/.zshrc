@@ -44,3 +44,6 @@ if ! source_files "${special_config_files[@]}"; then
     source ~/.zshrc-modules/.zshrc.personal
 fi
 
+
+# opencode
+export PATH=/home/jordan/.opencode/bin:$PATH

@@ -1,7 +1,3 @@
-# ==============================================================================
-#  Starship Prompt
-# ==============================================================================
-
 # Ensure starship is initialized
 eval "$(starship init zsh)"
 export STARSHIP_CONFIG=~/.config/starship.toml

@@ -1,11 +1,8 @@
-# ==============================================================================
-#
-#  Aliases
-# ==============================================================================
-
 alias vim="nvim"
 alias reload="source ~/.zshrc"
 alias ls="eza --icons"
 alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 alias nvim-kickstart='NVIM_APPNAME="nvim-starter" nvim'
 alias avante='nvim -c "lua vim.defer_fn(function()require(\"avante.api\").zen_mode()end, 100)"'
+
+alias claude-code='claude'

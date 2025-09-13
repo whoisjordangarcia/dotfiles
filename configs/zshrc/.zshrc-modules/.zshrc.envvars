@@ -1,7 +1,3 @@
-# ==============================================================================
-#  Environment Variables
-# ==============================================================================
-
 export LANG=en_US.UTF-8
 
 if [[ -n $SSH_CONNECTION ]]; then
@@ -14,5 +10,3 @@ export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || pr
 
 export PYENV_ROOT="$HOME/.pyenv"
 
-# used 
-export DISABLE_AUTOUPDATER=1
