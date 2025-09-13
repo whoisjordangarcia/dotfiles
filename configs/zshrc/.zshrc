@@ -36,6 +36,7 @@ source ~/.zshrc-modules/.zshrc.appearance
 
 export PATH="$HOME/.pyenv/shims:$PATH"
 
+# secrets
 source ~/.zshrc-modules/.zshrc.sec
 source ~/.zshrc-sec
 

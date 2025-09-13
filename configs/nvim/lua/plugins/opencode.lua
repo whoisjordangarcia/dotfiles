@@ -1,3 +1,5 @@
+-- Temporarily disabled
+--[[ 
 return {
   "sudo-tee/opencode.nvim",
   config = function()
@@ -24,3 +26,4 @@ return {
     -- 'nvim_mini/mini.nvim',
   },
 }
+--]]
