@@ -9,7 +9,13 @@
       "Bash(gh pr list:*)",
       "Bash(gh pr view:*)"
     ],
-    "deny": [],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(~/.zshrc-sec)",
+      "Read(~/.zshrc-modules/.zshrc.sec)"
+    ],
     "ask": []
   },
   "statusLine": {
@@ -22,5 +28,6 @@
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
     "DISABLE_BUG_COMMAND": "1",
     "DISABLE_ERROR_REPORTING": "1"
-  }
+  },
+  "outputStyle": "Explanatory"
 }
