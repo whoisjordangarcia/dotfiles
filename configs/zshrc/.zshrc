@@ -1,26 +1,17 @@
-export EDITOR=nvim
-export TERM=xterm-256color
+if [[ -n "$SSH_CONNECTION" ]]; then
+    export TERM=xterm-256color
+fi
 
-# ==============================================================================
-#  .zshrc
-# ==============================================================================
-
-# Define a list of special configuration files to check
-special_config_files=(
-    "$HOME/.zshrc-work-mode"
-    "$HOME/.zshrc-arch-mode"
-)
-
-# Function to check and source a list of files
-source_files() {
-    for config_file in "$@"; do
-        if [[ -f "$config_file" ]]; then
-            echo "Loading $config_file"
-            source "$config_file"
-            return 0
-        fi
-    done
-    return 1 
+load_special_config() {
+    if [[ -f "$HOME/.zshrc-work-mode" ]]; then
+        echo "Work mode detected - loading .zshrc.work"
+        source ~/.zshrc-modules/.zshrc.work
+        return 0
+    elif [[ -f "$HOME/.zshrc-arch-mode" ]]; then
+        #echo "Arch mode detected - loading .zshrc.arch"
+        return 0
+    fi
+    return 1
 }
 
 # defaults
@@ -35,11 +26,14 @@ source ~/.zshrc-modules/.zshrc.appearance
 
 export PATH="$HOME/.pyenv/shims:$PATH"
 
+# secrets
 source ~/.zshrc-modules/.zshrc.sec
 source ~/.zshrc-sec
 
-if ! source_files "${special_config_files[@]}"; then
-    echo 'Could not find special config files. Defaulting to load .zshrc.personal'
+if ! load_special_config; then
+    echo 'No special mode detected. Loading .zshrc.personal'
     source ~/.zshrc-modules/.zshrc.personal
 fi
+
+
 
