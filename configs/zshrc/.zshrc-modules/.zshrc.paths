@@ -1,5 +1,8 @@
 export PATH="${PATH}:${HOME}/.local/bin/:/usr/local/go/bin:/Users/jordan.garcia/.spicetify"
 
+# opencode
+export PATH=/home/jordan/.opencode/bin:$PATH
+
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"

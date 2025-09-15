@@ -18,3 +18,4 @@ alias :wq="exit"
 alias :x="exit"
 alias zshrc="nvim ~/.zshrc"
 alias dotfiles="cd ~/dev/dotfiles && nvim ."
+
