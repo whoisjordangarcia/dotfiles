@@ -1,0 +1,5 @@
+# Dotfiles configuration
+DOT_NAME="Jordan Garcia"
+DOT_EMAIL="arickho@gmail.com"
+DOT_ENVIRONMENT="personal"
+DOT_SYSTEM="linux_arch"

@@ -12,6 +12,7 @@ component_installation=(
 	zsh
 	vim
 	tmux
+	bat/linux
 	ghostty/linux
 	fonts/linux
 	starship
