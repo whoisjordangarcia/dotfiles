@@ -18,6 +18,7 @@ case ":$PATH:" in
 esac
 
 alias code='claude --model "bedrock-claude-sonnet-4"'
+alias cc='claude --model "bedrock-claude-sonnet-4"'
 
 source ~/.zshrc-work
 
