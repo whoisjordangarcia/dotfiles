@@ -15,8 +15,7 @@
       "Read(./secrets/**)",
       "Read(~/.zshrc-sec)",
       "Read(~/.zshrc-modules/.zshrc.sec)"
-    ],
-    "ask": []
+    ]
   },
   "statusLine": {
     "type": "command",
