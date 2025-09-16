@@ -2,10 +2,6 @@ if [[ -n "$SSH_CONNECTION" ]]; then
     export TERM=xterm-256color
 fi
 
-# ==============================================================================
-#  .zshrc
-# ==============================================================================
-
 # Define a list of special configuration files to check
 special_config_files=(
     "$HOME/.zshrc-work-mode"
@@ -37,12 +33,12 @@ source ~/.zshrc-modules/.zshrc.appearance
 export PATH="$HOME/.pyenv/shims:$PATH"
 
 # secrets
-source ~/.zshrc-modules/.zshrc.sec
-source ~/.zshrc-sec
+[[ -f ~/.zshrc-modules/.zshrc.sec ]] && source ~/.zshrc-modules/.zshrc.sec
+[[ -f ~/.zshrc-sec ]] && source ~/.zshrc-sec
 
 if ! source_files "${special_config_files[@]}"; then
-    echo 'Could not find special config files. Defaulting to load .zshrc.personal'
-    source ~/.zshrc-modules/.zshrc.personal
+    # Silently default to personal config if no special configs found
+    [[ -f ~/.zshrc-modules/.zshrc.personal ]] && source ~/.zshrc-modules/.zshrc.personal
 fi
 
 

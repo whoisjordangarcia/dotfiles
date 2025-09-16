@@ -16,6 +16,7 @@ component_installation=(
 	i3
 	polybar
 	starship
+	fastfetch
 )
 
 for component in "${component_installation[@]}"; do

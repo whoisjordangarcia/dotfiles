@@ -12,6 +12,7 @@ component_installation=(
 	wezterm/windows
 	starship
 	linux/lazygit
+	fastfetch
 )
 
 for component in "${component_installation[@]}"; do

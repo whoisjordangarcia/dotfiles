@@ -33,6 +33,7 @@ component_installation=(
 	lazygit/mac
 	#bun/mac
 	claude/mac
+	fastfetch
 )
 
 for component in "${component_installation[@]}"; do
