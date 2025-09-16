@@ -1,8 +1,21 @@
 alias vim="nvim"
+alias vi="nvim"
 alias reload="source ~/.zshrc"
 alias ls="eza --icons"
+
+#arch 
 alias hyprc="nvim ~/.config/hypr/hyprland.conf"
+
+#development
+alias vimrc="nvim ~/.config/nvim/init.lua"
 alias nvim-kickstart='NVIM_APPNAME="nvim-starter" nvim'
 alias avante='nvim -c "lua vim.defer_fn(function()require(\"avante.api\").zen_mode()end, 100)"'
-
 alias claude-code='claude'
+
+# Vim-friendly aliases
+alias :q="exit"
+alias :wq="exit"
+alias :x="exit"
+alias zshrc="nvim ~/.zshrc"
+alias dotfiles="cd ~/dev/dotfiles && nvim ."
+
