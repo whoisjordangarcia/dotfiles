@@ -5,6 +5,7 @@ source ./script/common/log.sh
 component_installation=(
 	apps/arch
 	# code
+	git
 	node
 	git
 	lazygit/linux
