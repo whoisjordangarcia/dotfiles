@@ -11,3 +11,6 @@
 
 # Load zoxide
 eval "$(zoxide init zsh)"
+
+# Load fzf (fuzzy finder)
+eval "$(fzf --zsh)"
