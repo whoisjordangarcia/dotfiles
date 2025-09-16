@@ -2,13 +2,6 @@ if [[ -n "$SSH_CONNECTION" ]]; then
     export TERM=xterm-256color
 fi
 
-# Define a list of special configuration files to check
-special_config_files=(
-    "$HOME/.zshrc-work-mode"
-    "$HOME/.zshrc-arch-mode"
-)
-
-# Function to check and source a list of files
 source_files() {
     for config_file in "$@"; do
         if [[ -f "$config_file" ]]; then
@@ -18,7 +11,6 @@ source_files() {
         fi
     done
     return 1 
-}
 
 # defaults
 source ~/.zshrc-modules/.zshrc.starship
@@ -37,10 +29,8 @@ export PATH="$HOME/.pyenv/shims:$PATH"
 [[ -f ~/.zshrc-sec ]] && source ~/.zshrc-sec
 
 if ! source_files "${special_config_files[@]}"; then
-    # Silently default to personal config if no special configs found
-    [[ -f ~/.zshrc-modules/.zshrc.personal ]] && source ~/.zshrc-modules/.zshrc.personal
+  [[ -f ~/.zshrc-modules/.zshrc.personal ]] && source ~/.zshrc-modules/.zshrc.personal
 fi
 
 
-# opencode
-export PATH=/home/jordan/.opencode/bin:$PATH
+
