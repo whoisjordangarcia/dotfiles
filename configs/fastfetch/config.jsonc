@@ -21,12 +21,10 @@
     },
     {
       "type": "os",
-      "key": " ",
       "keyColor": "blue",
     },
     {
       "type": "kernel",
-      "key": " ",
       "keyColor": "cyan",
     },
     {
@@ -93,6 +91,11 @@
     {
       "type": "processes",
       "key": "󰯝 ",
+      "keyColor": "cyan",
+    },
+    {
+      "type": "localip",
+      "key": "󰩟 ",
       "keyColor": "cyan",
     },
     {
