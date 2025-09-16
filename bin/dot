@@ -232,6 +232,7 @@ while [[ $# -gt 0 ]]; do
 		exec "${EDITOR:-code}" "$dotfilesDirectory"
 		;;
 	"-i" | "--install")
+		FORCE_INTERACTIVE=1
 		interactive_setup
 		run_installation
 		exit 0
@@ -283,8 +284,12 @@ done
 
 # Default behavior - check if config exists, if not run interactive setup
 load_config
-if [[ -z "$DOT_SYSTEM" ]]; then
-	info "No configuration found. Starting interactive setup..."
+if [[ -z "$DOT_SYSTEM" ]] || [[ "$FORCE_INTERACTIVE" == "1" ]]; then
+	if [[ "$FORCE_INTERACTIVE" == "1" ]]; then
+		info "Running interactive setup..."
+	else
+		info "No configuration found. Starting interactive setup..."
+	fi
 	interactive_setup
 	run_installation
 else
