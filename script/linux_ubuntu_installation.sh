@@ -4,11 +4,11 @@ source ./script/common/log.sh
 
 component_installation=(
 	apps/ubuntu
+	git
 	zsh
 	vim
 	tmux
 	node
-	git
 	wezterm/windows
 	starship
 	linux/lazygit
@@ -16,7 +16,7 @@ component_installation=(
 )
 
 for component in "${component_installation[@]}"; do
-	info "-- Running $component installation. --"
+	section "$component"
 	script_path="./script/${component}/setup.sh"
 
 	#Check if the script exists before trying to run it

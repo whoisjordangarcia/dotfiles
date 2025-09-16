@@ -5,11 +5,10 @@ source ./script/common/log.sh
 component_installation=(
 	apps/fedora
 	# code
+	git
 	zsh
 	vim
 	tmux
-	node
-	git
 	lazygit/fedora
 	# essentials
 	fonts/linux

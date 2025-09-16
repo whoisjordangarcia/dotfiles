@@ -31,21 +31,21 @@ fi
 
 # Install Gohu font
 info "Checking for Gohu fonts..."
-if ls "$FONT_DIR"/gohu* >/dev/null 2>&1; then
+if ls "$FONT_DIR"/Gohu* >/dev/null 2>&1; then
 	success "Gohu fonts already exist. Skipping download."
 else
 	info "Downloading Gohu font zip..."
 	curl -fLo "$GOHU_ZIP_FILE" "$GOHU_ZIP_URL"
-	
+
 	info "Extracting Gohu fonts..."
 	unzip -q "$GOHU_ZIP_FILE" -d "$TEMP_DIR"
-	
+
 	info "Installing Gohu fonts to Font Book..."
 	find "$TEMP_DIR" -name "*.ttf" -o -name "*.otf" | while read -r font_file; do
 		cp "$font_file" "$FONT_DIR/"
 		info "Installed $(basename "$font_file")"
 	done
-	
+
 	success "Gohu fonts installed successfully."
 fi
 

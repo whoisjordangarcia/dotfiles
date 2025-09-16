@@ -33,7 +33,7 @@ link_file "$ZSHRC_MODULES_SOURCE" "$ZSHRC_MODULES_TARGET"
 "$SCRIPT_DIR/../zsh/plugins/zsh_plugins.sh"
 
 # Default zsh
-info "Defaulting zsh..."
+step "Setting zsh as default shell..."
 chsh -s $(which zsh)
 
 chmod 600 ~/.zshrc

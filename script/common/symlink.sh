@@ -14,7 +14,7 @@ link_file() {
 	if [ -e "$target" ]; then
 		# Check if target is already a symlink pointing to the correct source
 		if [ -L "$target" ] && [ "$(readlink "$target")" = "$source" ]; then
-			info "Symlink already exists and points to correct source. Skipping."
+			debug "Symlink $target → $source (already exists)"
 			return
 		fi
 
