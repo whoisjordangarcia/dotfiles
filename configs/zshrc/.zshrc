@@ -11,6 +11,7 @@ source_files() {
         fi
     done
     return 1 
+}
 
 # defaults
 source ~/.zshrc-modules/.zshrc.starship
