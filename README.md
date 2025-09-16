@@ -16,6 +16,17 @@ A comprehensive cross-platform dotfiles repository supporting macOS, Linux (Ubun
 
 ## Quick Start
 
+### One-Liner Installation ⚡
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/boot.sh | bash
+```
+
+This will automatically:
+- Clone or update the dotfiles repository
+- Fetch the latest changes
+- Run the interactive setup process
+
 ### Interactive Installation (Recommended)
 
 ```bash
