@@ -37,7 +37,6 @@ cask 'font-hack-nerd-font'
 # ai
 brew 'codex'
 cask 'claude-code'
-tap  'sst/tap/opencode'
 
 # fonts
 cask 'sf-symbols'

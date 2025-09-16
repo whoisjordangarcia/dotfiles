@@ -48,12 +48,6 @@ fi
 
 brew analytics off
 
-# Tap Homebrew Bundle if not already tapped
-if ! brew tap | grep -q '^homebrew/bundle$'; then
-	info "Tapping homebrew/bundle..."
-	brew tap homebrew/bundle
-fi
-
 # Determine environment type
 if [[ -n "$FORCE_ENVIRONMENT" ]]; then
 	ENVIRONMENT="$FORCE_ENVIRONMENT"
