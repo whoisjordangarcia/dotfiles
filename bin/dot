@@ -98,7 +98,20 @@ auto_select_installation() {
 	echo ""
 }
 
+show_logo() {
+	local logo_file="$dotfilesDirectory/art/logo"
+	if [[ -f "$logo_file" ]]; then
+		echo ""
+		# Display logo in blue color
+		while IFS= read -r line; do
+			printf "${BLUE}%s${RESET}\n" "$line"
+		done < "$logo_file"
+		echo ""
+	fi
+}
+
 interactive_setup() {
+	show_logo
 	header "Dotfiles Setup"
 
 	# Load existing config
