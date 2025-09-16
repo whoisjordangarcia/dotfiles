@@ -41,7 +41,7 @@
     },
     {
       "type": "shell",
-      "key": " ",
+      "key": "󰆍 ",
       "keyColor": "magenta",
     },
     {
@@ -54,6 +54,51 @@
       "type": "memory",
       "key": "󰍛 ",
       "keyColor": "blue",
+    },
+    {
+      "type": "de",
+      "key": "󰨇 ",
+      "keyColor": "magenta",
+    },
+    {
+      "type": "wm",
+      "key": "󰖙 ",
+      "keyColor": "magenta",
+    },
+    {
+      "type": "terminal",
+      "key": "󰠥 ",
+      "keyColor": "magenta",
+    },
+    {
+      "type": "terminalfont",
+      "key": "󰛖 ",
+      "keyColor": "magenta",
+    },
+    {
+      "type": "host",
+      "key": "󰌢 ",
+      "keyColor": "cyan",
+    },
+    {
+      "type": "gpu",
+      "key": "󰛲 ",
+      "keyColor": "red",
+    },
+    {
+      "type": "display",
+      "key": "󰍹 ",
+      "keyColor": "blue",
+    },
+    {
+      "type": "processes",
+      "key": "󰯝 ",
+      "keyColor": "cyan",
+    },
+    {
+      "type": "battery",
+      "key": "󰁾 ",
+      "keyColor": "green",
     },
     {
       "type": "colors",
