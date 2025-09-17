@@ -28,7 +28,8 @@ component_installation=(
 	lazygit/mac
 	starship
 	work/mac
-	claude/mac
+	claude
+	codex
 	fastfetch
 )
 
