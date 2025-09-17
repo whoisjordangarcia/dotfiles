@@ -17,13 +17,25 @@ SKETCHYBAR_TARGET="$HOME/.config/sketchybar"
 link_file "$SKETCHYBAR_SOURCE" "$SKETCHYBAR_TARGET"
 
 # SbarLua
-(git clone https://github.com/FelixKratz/SbarLua.git /tmp/SbarLua && cd /tmp/SbarLua/ && make install && rm -rf /tmp/SbarLua/)
+if [ ! -d "$HOME/.local/share/sketchybar_lua" ]; then
+    step "Installing SbarLua..."
+    (git clone https://github.com/FelixKratz/SbarLua.git /tmp/SbarLua && cd /tmp/SbarLua/ && make install && rm -rf /tmp/SbarLua/)
+    success "SbarLua installed"
+else
+    debug "SbarLua already installed, skipping"
+fi
 
 # Fonts
-curl -L "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v2.0.28/sketchybar-app-font.ttf" -o "$HOME/Library/Fonts/sketchybar-app-font.ttf"
+if [[ ! -f "$HOME/Library/Fonts/sketchybar-app-font.ttf" ]]; then
+    step "Downloading sketchybar-app-font..."
+    curl -L "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v2.0.28/sketchybar-app-font.ttf" -o "$HOME/Library/Fonts/sketchybar-app-font.ttf"
+    success "sketchybar-app-font installed"
+else
+    debug "sketchybar-app-font already installed, skipping"
+fi
 
 # allows to move windows by dragging any part of the window using Ctrl + Cmd
-defaults write -g NSWindowShouldDragOnGesture -bool tre
+defaults write -g NSWindowShouldDragOnGesture -bool true
 
 # disable windows opening animations
 defaults write -g NSAutomaticWindowAnimationsEnabled -bool false

@@ -32,7 +32,7 @@ done
 
 # Install xCode cli tools
 if xcode-select -p &>/dev/null; then
-	info "Xcode command line tools already installed. Skipping."
+	debug "Xcode command line tools already installed. Skipping."
 else
 	info "Installing Xcode command line tools..."
 	xcode-select --install
@@ -57,10 +57,10 @@ else
 	ENVIRONMENT="personal" # Default to personal
 fi
 
-info "Detected environment: $ENVIRONMENT"
+debug "Detected environment: $ENVIRONMENT"
 
 # Install base packages first
-info "Installing base packages..."
+step "Installing base packages..."
 if [[ -f "$SCRIPT_DIR/Brewfile.base" ]]; then
 	brew bundle --file="$SCRIPT_DIR/Brewfile.base"
 else
@@ -69,7 +69,7 @@ fi
 
 # Install environment-specific packages
 if [[ -f "$SCRIPT_DIR/Brewfile.$ENVIRONMENT" ]]; then
-	info "Installing $ENVIRONMENT-specific packages..."
+	step "Installing $ENVIRONMENT-specific packages..."
 	brew bundle --file="$SCRIPT_DIR/Brewfile.$ENVIRONMENT"
 else
 	info "Brewfile.$ENVIRONMENT not found, falling back to legacy Brewfile"

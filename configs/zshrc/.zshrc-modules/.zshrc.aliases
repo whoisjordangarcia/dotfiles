@@ -19,3 +19,9 @@ alias :x="exit"
 alias zshrc="nvim ~/.zshrc"
 alias dotfiles="cd ~/dev/dotfiles && nvim ."
 
+#git
+alias gcm="git checkout main"
+alias gpo="git pull origin"
+alias gc='git checkout'
+alias grm="git rebase main"
+alias gpf="git push --force-with-lease"
