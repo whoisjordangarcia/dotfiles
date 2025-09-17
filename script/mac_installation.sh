@@ -13,14 +13,15 @@ if [[ -n "$DOT_NAME" && -n "$DOT_EMAIL" ]]; then
 fi
 
 # Log environment information
-info "Installation environment: ${DOT_ENVIRONMENT:-not set}"
+debug "Installation environment: ${DOT_ENVIRONMENT:-not set}"
 if [[ "$DOT_ENVIRONMENT" == "work" ]]; then
 	export WORK_ENV="1"
-	info "Work environment detected - enabling work-specific configurations"
+	status "Work environment detected - enabling work-specific configurations"
 fi
 
 component_installation=(
 	apps/mac
+	git
 	# essentials
 	zsh
 	vim
@@ -28,7 +29,6 @@ component_installation=(
 	fonts/mac
 	starship
 	ghostty/mac
-	git
 	# code
 	lazygit/mac
 	#bun/mac
@@ -37,7 +37,7 @@ component_installation=(
 )
 
 for component in "${component_installation[@]}"; do
-	info "-- Running $component installation. --"
+	section "$component"
 	script_path="./script/${component}/setup.sh"
 
 	#Check if the script exists before trying to run it

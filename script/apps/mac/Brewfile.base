@@ -3,6 +3,7 @@ brew 'zsh'
 brew 'fzf'
 brew 'eza'
 brew 'ripgrep'
+brew 'fd'
 brew 'tmux'
 brew 'neovim', head: true
 brew 'htop'

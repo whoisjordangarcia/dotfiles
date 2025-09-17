@@ -49,6 +49,7 @@ __pycache__/
 env/
 venv/
 ENV/
+pytest.local.ini
 
 # Logs and databases #
 ######################

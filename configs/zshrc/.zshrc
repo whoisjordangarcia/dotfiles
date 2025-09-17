@@ -1,6 +1,4 @@
-if [[ -n "$SSH_CONNECTION" ]]; then
-    export TERM=xterm-256color
-fi
+if [[ -n "$SSH_CONNECTION" ]]; then export TERM=xterm-256color; fi
 
 source_files() {
     for config_file in "$@"; do
@@ -32,6 +30,3 @@ export PATH="$HOME/.pyenv/shims:$PATH"
 if ! source_files "${special_config_files[@]}"; then
   [[ -f ~/.zshrc-modules/.zshrc.personal ]] && source ~/.zshrc-modules/.zshrc.personal
 fi
-
-
-
