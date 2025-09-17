@@ -21,6 +21,8 @@ component_installation=(
 	#hypr/linux
 	#waybar/linux
 	fastfetch
+	codex
+	claude
 )
 
 for component in "${component_installation[@]}"; do

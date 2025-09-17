@@ -1,21 +1,54 @@
-# Shell
-pacman -S zsh starship
+#!/bin/bash
+set -euo pipefail
 
-# Development Tools
-pacman -S gh neovim
+# Official repo packages (pretty and safe formatting)
+PACKAGES=(
+	# Shell
+	zsh
+	starship
 
-pacman -S tmux ripgrep eza zoxide wl-clipboard fzf jq bat
+	# Development Tools
+	gh
+	neovim
 
-pacman -S dysk htop btop
+	# CLI utils
+	tmux
+	ripgrep
+	eza
+	zoxide
+	wl-clipboard
+	fzf
+	jq
+	bat
 
-# Fun
-#pacman -S lolcat figlet
+	# System monitors
+	dysk
+	htop
+	btop
 
-# Fonts
-pacman -S ttf-jetbrains-mono-nerd
+	# Fonts
+	ttf-jetbrains-mono-nerd
 
-# Apps
-yay -S ghostty-git spotify_player darktable
+	# Desktop/Games
+	gamemode
+	mangohud
 
-# Games
-pacman -S gamemode mangohud
+	# Apps (official repos)
+	darktable
+)
+
+sudo pacman -S --needed "${PACKAGES[@]}"
+
+# AUR apps (installed with yay if present)
+AUR_PKGS=(
+	ghostty-git
+	spotify_player
+)
+
+if command -v yay >/dev/null 2>&1; then
+	# Use yay for AUR only; keep it interactive by default
+	yay -S --aur --needed --sudoloop --removemake --cleanafter "${AUR_PKGS[@]}"
+else
+	echo "[apps/arch] 'yay' not found; skipping AUR apps: ${AUR_PKGS[*]}"
+	echo "Install yay and re-run to include AUR apps."
+fi

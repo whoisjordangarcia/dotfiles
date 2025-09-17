@@ -32,7 +32,8 @@ component_installation=(
 	# code
 	lazygit/mac
 	#bun/mac
-	claude/mac
+	claude
+	codex
 	fastfetch
 )
 
