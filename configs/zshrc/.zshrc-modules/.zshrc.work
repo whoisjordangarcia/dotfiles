@@ -27,4 +27,4 @@ alias rrtest='task test:reqrepo -- --disable-warnings -q --tb=short --reuse-db'
 # alias librrtest='task test:lib-reqrepo -- --disable-warnings -q --tb=short'
 # alias rrtest='task test:reqrepo -- --disable-warnings -q --tb=short'
 
-
+alias reqrepo-env="source ~/.zshrc-modules/scripts/activate-reqrepo-env"
