@@ -17,13 +17,8 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
 	info "Installing Oh My Zsh..."
 	sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 else
-	echo "Oh My Zsh is already installed."
+	info "Oh My Zsh already installed. Skipping."
 fi
-
-# Install powerlevel 10k
-# using starship 12/20/24
-#info "installing powerlevel10k..."
-#git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
 
 link_file "$ZSHRC_SOURCE" "$ZSHRC_TARGET"
 
@@ -34,8 +29,6 @@ link_file "$ZSHRC_MODULES_SOURCE" "$ZSHRC_MODULES_TARGET"
 
 # Default zsh
 info "Defaulting zsh..."
-chsh -s $(which zsh)
+chsh -s "$(command -v zsh)"
 
-chmod 600 ~/.zshrc
-
-source ~/.zshrc
+chmod 600 "$HOME/.zshrc"
