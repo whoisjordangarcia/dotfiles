@@ -42,8 +42,3 @@
 [includeIf "gitdir:~/dev/work/"]
   path = ~/dev/work/.gitconfig
 
-[alias]
-	wt-auto = "\\!f() { branch=$1; [ -z \"$branch\" ] && { echo \"Usage: git wt-auto <branch-name>\"; exit 1; }; git fetch origin; git worktree add ../$branch origin/$branch 2>/dev/null || git worktree add ../$branch -b $branch origin/develop; echo \"Worktree created: ../$branch\"; }; f"
-	wt-list = worktree list
-	wt-remove = worktree remove
-	wt-prune = worktree prune
