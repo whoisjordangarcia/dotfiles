@@ -10,7 +10,8 @@ source_files() {
             return 0
         fi
     done
-    return 1 
+    return 1
+}
 
 # defaults
 source ~/.zshrc-modules/.zshrc.starship
@@ -31,6 +32,3 @@ export PATH="$HOME/.pyenv/shims:$PATH"
 if ! source_files "${special_config_files[@]}"; then
   [[ -f ~/.zshrc-modules/.zshrc.personal ]] && source ~/.zshrc-modules/.zshrc.personal
 fi
-
-
-
