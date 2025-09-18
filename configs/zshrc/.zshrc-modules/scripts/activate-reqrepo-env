@@ -4,6 +4,7 @@ PROJECT_NAME="reqrepo"
 PYTHON_VERSION="3.9"
 VENV_DIR="$HOME/.venvs/${PROJECT_NAME}-${PYTHON_VERSION}"
 PYRIGHT_CONFIG_SOURCE="$HOME/dev/work/invitae-web-core/pyrightconfig.json"
+CLAUDE_MD_SOURCE="$HOME/dev/work/invitae-web-core/CLAUDE.md"
 PACKAGES_INSTALLED_MARKER="$VENV_DIR/.packages_installed"
 
 # Parse command line arguments
@@ -58,6 +59,16 @@ elif [ -f "./pyrightconfig.json" ]; then
     echo "📄 Using existing pyrightconfig.json in current directory"
 else
     echo "⚠️  Warning: pyrightconfig.json not found at $PYRIGHT_CONFIG_SOURCE"
+fi
+
+# Copy CLAUDE.md to current directory if needed
+if [ ! -f "./CLAUDE.md" ] && [ -f "$CLAUDE_MD_SOURCE" ]; then
+    cp "$CLAUDE_MD_SOURCE" ./CLAUDE.md
+    echo "📄 Copied CLAUDE.md to current directory"
+elif [ -f "./CLAUDE.md" ]; then
+    echo "📄 Using existing CLAUDE.md in current directory"
+else
+    echo "⚠️  Warning: CLAUDE.md not found at $CLAUDE_MD_SOURCE"
 fi
 
 # Create virtual environment if it doesn't exist
