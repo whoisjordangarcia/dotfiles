@@ -23,6 +23,7 @@ curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/boo
 ```
 
 This will automatically:
+
 - Clone or update the dotfiles repository
 - Fetch the latest changes
 - Run the interactive setup process
