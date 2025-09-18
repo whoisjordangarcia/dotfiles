@@ -3,7 +3,7 @@
   email = arickho@gmail.com
 
 [gpg]
-  signingkey = 281272DB63B5A9F0C757BE3659B080F712B9F4D1
+  signingkey = 6BF4E03DB2CBE855D7ECBE47ADC4D8A2BE5DD91B
   program = gpg
 
 [commit]
