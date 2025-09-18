@@ -1,6 +1,4 @@
-if [[ -n "$SSH_CONNECTION" ]]; then
-    export TERM=xterm-256color
-fi
+if [[ -n "$SSH_CONNECTION" ]]; then export TERM=xterm-256color; fi
 
 source_files() {
     for config_file in "$@"; do

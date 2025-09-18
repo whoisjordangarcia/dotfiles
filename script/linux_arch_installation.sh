@@ -5,6 +5,7 @@ source ./script/common/log.sh
 component_installation=(
 	apps/arch
 	# code
+	git
 	node
 	git
 	lazygit/linux
@@ -20,6 +21,8 @@ component_installation=(
 	#hypr/linux
 	#waybar/linux
 	fastfetch
+	codex
+	claude
 )
 
 for component in "${component_installation[@]}"; do

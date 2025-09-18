@@ -11,14 +11,34 @@ link_file() {
 		type="directory"
 	fi
 
-	if [ -e "$target" ]; then
-		# Check if target is already a symlink pointing to the correct source
-		if [ -L "$target" ] && [ "$(readlink "$target")" = "$source" ]; then
-			info "Symlink already exists and points to correct source. Skipping."
+	# Handle both real files/dirs and symlinks (including broken)
+	if [ -e "$target" ] || [ -L "$target" ]; then
+		# If target is a symlink, validate and skip without prompting
+		if [ -L "$target" ]; then
+			local link_dest
+			link_dest=$(readlink "$target")
+
+			# Resolve to absolute paths when possible for comparison
+			local resolved_source="$source"
+			local resolved_link="$link_dest"
+			if command -v realpath >/dev/null 2>&1; then
+				resolved_source=$(realpath "$source" 2>/dev/null || echo "$source")
+				if [[ "$link_dest" = /* ]]; then
+					resolved_link=$(realpath -m "$link_dest" 2>/dev/null || echo "$link_dest")
+				else
+					resolved_link=$(realpath -m "$(dirname "$target")/$link_dest" 2>/dev/null || echo "$(dirname "$target")/$link_dest")
+				fi
+			fi
+
+			if [ "$resolved_link" = "$resolved_source" ]; then
+				info "Symlink already in place: $target → $link_dest"
+			else
+				info "Existing symlink detected; skipping: $target → $link_dest"
+			fi
 			return
 		fi
 
-		# Add some verbosity to the prompt
+		# Non-symlink exists: prompt user
 		user "The $type '$target' already exists. [O]verride/[B]ackup/[S]kip?"
 		read -r choice
 		case "$choice" in
@@ -27,7 +47,6 @@ link_file() {
 			info "Overridden."
 			;;
 		[Bb])
-			# Get current date in YYYYMMDD format
 			DATE_SUFFIX=$(date +%Y%m%d)
 			mv "$target" "${target}_${DATE_SUFFIX}.bak" && ln -s "$source" "$target"
 			info "Backed up and linked."

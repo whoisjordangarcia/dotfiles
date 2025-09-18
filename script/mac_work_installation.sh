@@ -15,10 +15,11 @@ fi
 # Set work environment
 export WORK_ENV="1"
 export DOT_ENVIRONMENT="work"
-info "Work installation - enabling work-specific configurations"
+status "Work installation - enabling work-specific configurations"
 
 component_installation=(
 	apps/mac
+	git
 	zsh
 	vim
 	tmux
@@ -27,11 +28,13 @@ component_installation=(
 	lazygit/mac
 	starship
 	work/mac
-	claude/mac
+	claude
+	codex
+	fastfetch
 )
 
 for component in "${component_installation[@]}"; do
-	info "-- Running $component installation. --"
+	section "$component"
 	script_path="./script/${component}/setup.sh"
 
 	#Check if the script exists before trying to run it
