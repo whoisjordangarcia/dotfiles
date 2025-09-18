@@ -1,6 +1,6 @@
 [user]
-  name = Jordan Garcia
-  email = arickho@gmail.com
+	name = Jordan Garcia
+	email = arickho@gmail.com
 
 [core]
   editor = nvim
