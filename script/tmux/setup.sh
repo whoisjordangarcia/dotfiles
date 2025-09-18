@@ -11,6 +11,19 @@ TMUX_TARGET="$HOME/.tmux.conf"
 
 link_file "$TMUX_SOURCE" "$TMUX_TARGET"
 
+# Link tmux statusline scripts
+TMUX_SCRIPTS_SOURCE="$SCRIPT_DIR/../../configs/tmux/scripts"
+TMUX_SCRIPTS_TARGET="$HOME/.tmux/scripts"
+
+if [ -d "$TMUX_SCRIPTS_SOURCE" ]; then
+	info "Linking tmux statusline scripts directory..."
+	# Create .tmux directory if it doesn't exist
+	mkdir -p "$HOME/.tmux"
+	link_file "$TMUX_SCRIPTS_SOURCE" "$TMUX_SCRIPTS_TARGET"
+else
+	error "Tmux scripts source directory not found at $TMUX_SCRIPTS_SOURCE"
+fi
+
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 
 if [ -d "$TPM_DIR" ]; then
