@@ -1,7 +1,16 @@
 [user]
   name = Jordan Garcia
   email = arickho@gmail.com
-	signingkey = 182676089DEF937C1C23A8A1B02B1415BC96E92B
+
+[gpg]
+  signingkey = 281272DB63B5A9F0C757BE3659B080F712B9F4D1
+  program = gpg
+
+[commit]
+  gpgsign = true
+
+[init]
+  defaultBranch = main
 
 [core]
   editor = nvim
@@ -33,7 +42,6 @@
 [push]
   default = current 
   
-
 [pull]
   rebase = false 
 
