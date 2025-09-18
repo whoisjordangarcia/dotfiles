@@ -194,7 +194,6 @@ Copy `wezterm.lua` to Windows home directory (`C:/Users/username/.wezterm.lua`) 
 **Permission denied**: Don't run with `sudo` - the scripts handle elevation when needed
 
 **Missing dependencies**: Run the appropriate installation script for your platform first
-
 **Configuration conflicts**: Use `./bin/dot --reset-config` to start fresh
 
 ### Manual Steps
