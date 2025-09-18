@@ -7,9 +7,10 @@
 *.cursorrules
 .aider*
 avante.md
-CLAUDE.md
 .claude
 AGENTS.md
+CLAUDE.md
+.github/copilot-instructions.md
 
 # OS generated files #
 ######################
