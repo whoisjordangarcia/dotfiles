@@ -1,6 +1,7 @@
 [user]
   name = Jordan Garcia
   email = arickho@gmail.com
+	signingkey = 182676089DEF937C1C23A8A1B02B1415BC96E92B
 
 [core]
   editor = nvim
