@@ -35,6 +35,11 @@ PACKAGES=(
 
 	# Apps (official repos)
 	darktable
+
+	# smart card
+	gnupg
+	yubico-piv-tool
+	pgpg --card-statuscsc-lite
 )
 
 sudo pacman -S --needed "${PACKAGES[@]}"
