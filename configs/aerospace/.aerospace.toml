@@ -46,7 +46,7 @@ enable-normalization-opposite-orientation-for-nested-containers = true
 [gaps]
 #outer.bottom numbers have to match presentation.sh variables. built-in retina display is excluded from presentation mode, so this only works on external monitors.
 outer.bottom = [{ monitor.'^built-in retina display$' = 15 }, 33]
-outer.top = [{ monitor.'^built-in retina display$' = 25 }, 53]
+outer.top = [{ monitor.'^built-in retina display$' = 10 }, 15]
 outer.left = [{ monitor.'^built-in retina display$' = 15 }, 33]
 outer.right = [{ monitor.'^built-in retina display$' = 15 }, 33]
 inner.horizontal = 10
@@ -157,9 +157,9 @@ run = 'layout floating'
 if.app-id = 'com.flexibits.fantastical2.mac'
 run = 'layout floating'
 
-# [[on-window-detected]]
-# if.app-id = 'com.mitchellh.ghostty'
-# run = 'move-node-to-workspace 1'
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+run = 'move-node-to-workspace 1'
 
 [[on-window-detected]]
 if.app-id = 'md.obsidian'
@@ -167,8 +167,8 @@ run = 'move-node-to-workspace 3'
 
 [[on-window-detected]]
 if.app-id = 'com.tinyspeck.slackmacgap'
-run = 'move-node-to-workspace 6'
+run = 'move-node-to-workspace 3'
 
-# [[on-window-detected]]
-# if.app-id = 'com.brave.Browser'
-# run = 'move-node-to-workspace 2'
+[[on-window-detected]]
+if.app-id = 'com.brave.Browser'
+run = 'move-node-to-workspace 2'
