@@ -30,3 +30,5 @@ export PATH="$HOME/.pyenv/shims:$PATH"
 if ! source_files "${special_config_files[@]}"; then
   [[ -f ~/.zshrc-modules/.zshrc.personal ]] && source ~/.zshrc-modules/.zshrc.personal
 fi
+
+export GPG_TTY=$(tty)

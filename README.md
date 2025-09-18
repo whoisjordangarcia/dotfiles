@@ -10,9 +10,8 @@ A comprehensive cross-platform dotfiles repository supporting macOS, Linux (Ubun
 - **Modular architecture** - Component-based installation system
 - **Symlink-based configs** - Centralized configuration management
 - **AI development tools** - Extensive AI assistant rules for Cursor, Aider, and Avante
-
-> [!TIP]
-> The system automatically detects your platform and environment, making installation straightforward across different setups.
+  > [!TIP]
+  > The system automatically detects your platform and environment, making installation straightforward across different setups.
 
 ## Quick Start
 
