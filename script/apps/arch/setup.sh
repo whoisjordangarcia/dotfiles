@@ -37,9 +37,11 @@ PACKAGES=(
 	darktable
 
 	# smart card
+	yubikey-manager
+	yubikey-personalization
+	ccid
+	pcsclite
 	gnupg
-	yubico-piv-tool
-	pgpg --card-statuscsc-lite
 )
 
 sudo pacman -S --needed "${PACKAGES[@]}"
