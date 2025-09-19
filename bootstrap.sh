@@ -2,7 +2,12 @@
 
 source "./script/common/log.sh"
 
-# Run interactive dotfiles setup
-./bin/dot -i
+# Check for --reconfigure flag
+if [[ "$1" == "--reconfigure" ]]; then
+    ./bin/dot --reconfigure
+else
+    # Run dotfiles setup (will use existing config if available, or prompt if not)
+    ./bin/dot
+fi
 
 success "✨✨ -- Dotfiles installation completed successfully! -- ✨✨"
