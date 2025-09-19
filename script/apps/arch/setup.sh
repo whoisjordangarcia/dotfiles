@@ -7,9 +7,6 @@ PACKAGES=(
 	zsh
 	starship
 
-	# Development Tools
-	neovim
-
 	# CLI utils
 	tmux
 	ripgrep
@@ -47,6 +44,7 @@ sudo pacman -S --needed "${PACKAGES[@]}"
 # AUR apps (installed with yay if present)
 AUR_PKGS=(
 	ghostty-git
+	neovim-nightly-bin
 )
 
 if command -v yay >/dev/null 2>&1; then
