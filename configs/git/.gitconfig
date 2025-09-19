@@ -1,8 +1,7 @@
 [user]
   name = Jordan Garcia
   email = arickho@gmail.com
-	signingkey = 6BF4E03DB2CBE855D7ECBE47ADC4D8A2BE5DD91B
-
+	signingkey = 7C28AE33E7EC27E1E3B5BAB627BC50220BCDF608
 
 [gpg]
   signingkey = 6BF4E03DB2CBE855D7ECBE47ADC4D8A2BE5DD91B
