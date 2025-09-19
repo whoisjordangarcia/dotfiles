@@ -8,7 +8,6 @@ PACKAGES=(
 	starship
 
 	# Development Tools
-	gh
 	neovim
 
 	# CLI utils
@@ -30,7 +29,6 @@ PACKAGES=(
 	ttf-jetbrains-mono-nerd
 
 	# Desktop/Games
-	gamemode
 	mangohud
 
 	# Apps (official repos)
@@ -49,7 +47,6 @@ sudo pacman -S --needed "${PACKAGES[@]}"
 # AUR apps (installed with yay if present)
 AUR_PKGS=(
 	ghostty-git
-	spotify_player
 )
 
 if command -v yay >/dev/null 2>&1; then
