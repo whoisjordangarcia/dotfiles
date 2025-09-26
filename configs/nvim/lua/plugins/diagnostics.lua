@@ -10,13 +10,17 @@ return {
           prefix = "●", -- Could be '●', '▎', 'x', '■', etc.
         },
 
-        virtual_lines = {
-          enabled = true,
-          only_current_line = false, -- Show for all lines or just current
-        },
+        virtual_lines = false, -- Disable virtual lines completely
 
-        -- Signs in the gutter
-        signs = true,
+        -- Custom signs for different severity levels
+        signs = {
+          text = {
+            [vim.diagnostic.severity.ERROR] = "✗",
+            [vim.diagnostic.severity.WARN] = "⚠",
+            [vim.diagnostic.severity.INFO] = "ℹ",
+            [vim.diagnostic.severity.HINT] = "💡",
+          },
+        },
 
         -- Underline errors/warnings
         underline = true,
@@ -28,14 +32,17 @@ return {
         severity_sort = true,
 
         -- Float window configuration for hover diagnostics
-        float = {
-          focusable = false,
-          close_events = { "BufLeave", "CursorMoved", "InsertEnter", "FocusLost" },
-          border = "rounded",
-          source = "if_many",
-          prefix = "",
-          scope = "cursor",
-        },
+        -- float = {
+        --   focusable = false,
+        --   close_events = { "BufLeave", "CursorMoved", "InsertEnter", "FocusLost" },
+        --   border = "rounded",
+        --   source = "if_many",
+        --   prefix = "",
+        --   scope = "cursor",
+        --   max_width = 100, -- Prevent overly wide float windows
+        --   max_height = 20, -- Prevent overly tall float windows
+        --   header = "", -- Remove default header
+        -- },
       })
     end,
   },
