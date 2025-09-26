@@ -1,6 +1,11 @@
 [user]
 	name = Jordan Garcia
-	email = jordan.arickhogarcia@labcorp.com
+	email = arickho@gmail.com 
+	signingkey = 6623D00D7F789A65C486F989483627D851576143
+
+[gpg]
+  signingkey = 6623D00D7F789A65C486F989483627D851576143
+  program = gpg
 
 [init]
   defaultBranch = main
