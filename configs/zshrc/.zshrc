@@ -23,6 +23,11 @@ source ~/.zshrc-modules/.zshrc.appearance
 
 export PATH="$HOME/.pyenv/shims:$PATH"
 
+# special config files to try loading
+special_config_files=(
+    ~/.zshrc-work-mode
+)
+
 # secrets
 [[ -f ~/.zshrc-modules/.zshrc.sec ]] && source ~/.zshrc-modules/.zshrc.sec
 [[ -f ~/.zshrc-sec ]] && source ~/.zshrc-sec
@@ -32,3 +37,9 @@ if ! source_files "${special_config_files[@]}"; then
 fi
 
 export GPG_TTY=$(tty)
+
+
+
+export PYTHONHTTPSVERIFY=0
+export CURL_CA_BUNDLE=""
+export REQUESTS_CA_BUNDLE=""

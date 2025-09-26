@@ -6,7 +6,23 @@
 get_ip_address() {
     case "$(uname -s)" in
         Darwin)
-            # macOS - check common interfaces
+            # macOS - check GlobalProtect VPN interfaces first
+            # GlobalProtect typically uses utun interfaces or gpd interfaces
+            for interface in $(ifconfig -l | tr ' ' '\n' | grep -E '^(utun|gpd|ppp)'); do
+                # Use ifconfig instead of ipconfig for point-to-point interfaces
+                ip=$(ifconfig "$interface" 2>/dev/null | awk '/inet / && !/127\.0\.0\.1/ { print $2 }')
+                if [ -n "$ip" ] && [ "$ip" != "127.0.0.1" ]; then
+                    # Check if this looks like a VPN IP (common VPN ranges)
+                    case "$ip" in
+                        10.*|172.1[6-9].*|172.2[0-9].*|172.3[0-1].*|192.168.*|100.*)
+                            echo "🔒 $ip"
+                            return 0
+                            ;;
+                    esac
+                fi
+            done
+            
+            # If no VPN found, check regular interfaces
             for interface in en0 en1 en2 en3; do
                 ip=$(ipconfig getifaddr "$interface" 2>/dev/null)
                 if [ -n "$ip" ] && [ "$ip" != "127.0.0.1" ]; then
