@@ -4,6 +4,9 @@ alias reload="source ~/.zshrc"
 alias ls="eza --icons"
 alias cat="bat"
 
+# containers
+alias docker="podman"
+
 #arch 
 alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 

@@ -32,3 +32,5 @@ if ! source_files "${special_config_files[@]}"; then
 fi
 
 export GPG_TTY=$(tty)
+
+export DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock

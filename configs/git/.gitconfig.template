@@ -15,7 +15,7 @@
 
 [core]
   editor = nvim
-  autocrlf = input
+  autocrlf = true 
   safecrlf = true
   filemode = false 
 	pager = bat
