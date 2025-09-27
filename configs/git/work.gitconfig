@@ -1,15 +1,9 @@
 [user]
   name = Jordan Garcia
   email = jordan.arickhogarcia@labcorp.com
-  signingkey = 182676089DEF937C1C23A8A1B02B1415BC96E92B
-
-
-[gpg]
-	signingkey = 182676089DEF937C1C23A8A1B02B1415BC96E92B
 
 [core]
   excludesfile = ~/.gitignore_global
-
 
 [pull]
   rebase = true
