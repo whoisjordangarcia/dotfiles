@@ -1,0 +1,50 @@
+[user]
+	name = Jordan Garcia
+	email = arickho@gmail.com 
+	signingkey = 6623D00D7F789A65C486F989483627D851576143
+
+[gpg]
+  signingkey = 6623D00D7F789A65C486F989483627D851576143
+  program = gpg
+
+[init]
+  defaultBranch = main
+
+[core]
+  editor = nvim
+  autocrlf = input
+  safecrlf = true
+  filemode = false 
+	pager = bat
+  excludesfile = ~/.gitignore_global
+
+[color]
+  ui = auto
+
+[color "branch"]
+    current = yellow reverse
+    local = yellow
+    remote = green
+
+[color "diff"]
+    meta = yellow bold
+    frag = magenta bold
+    old = red bold
+    new = green bold
+
+[color "status"]
+    added = green
+    changed = yellow
+    untracked = red
+
+[push]
+  default = current 
+  
+[pull]
+  rebase = false 
+
+[fetch]
+  prune = true
+
+[includeIf "gitdir:~/dev/work/"]
+  path = ~/dev/work/.gitconfig

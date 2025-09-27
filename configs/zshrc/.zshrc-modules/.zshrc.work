@@ -20,11 +20,21 @@ esac
 alias code='claude --model "bedrock-claude-sonnet-4"'
 alias cc='claude --model "bedrock-claude-sonnet-4"'
 alias librrtest='task test:lib-reqrepo -- --disable-warnings -q --tb=short --reuse-db'
-alias rrtest='task test:reqrepo -- --disable-warnings -q --tb=short --reuse-db'lias code='claude --model "bedrock-claude-sonnet-4"'
-alias cc='claude --model "bedrock-claude-sonnet-4"'
-alias librrtest='task test:lib-reqrepo -- --disable-warnings -q --tb=short --reuse-db'
 alias rrtest='task test:reqrepo -- --disable-warnings -q --tb=short --reuse-db'
 # alias librrtest='task test:lib-reqrepo -- --disable-warnings -q --tb=short'
 # alias rrtest='task test:reqrepo -- --disable-warnings -q --tb=short'
 
 alias reqrepo-env="source ~/.zshrc-modules/scripts/activate-reqrepo-env"
+# Unset any existing alias before defining function
+unalias black-staged 2>/dev/null || true
+
+function black-staged {
+    local py_files
+    py_files=$(git diff --cached --name-only --diff-filter=AM | grep "\.py$")
+    if [[ -n "$py_files" ]]; then
+        echo "Running Black on staged Python files:"
+        echo "$py_files" | xargs black --config pyproject.toml
+    else
+        echo "No staged Python files found."
+    fi
+}
