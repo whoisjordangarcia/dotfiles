@@ -73,7 +73,6 @@ format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
 symbol = " "
 style = "bg:#212736"
 format = '[[ $symbol ($virtualenv) ](fg:#769ff0 bg:#212736)]($style)'
-only_show_in_venv = true
 detect_extensions = []
 detect_files = []
 detect_folders = []

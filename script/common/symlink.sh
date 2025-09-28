@@ -13,6 +13,18 @@ link_file() {
 
 	# Handle both real files/dirs and symlinks (including broken)
 	if [ -e "$target" ] || [ -L "$target" ]; then
+		local resolved_source="$source"
+		local resolved_target="$target"
+		if command -v realpath >/dev/null 2>&1; then
+			resolved_source=$(realpath -m "$source" 2>/dev/null || echo "$source")
+			resolved_target=$(realpath -m "$target" 2>/dev/null || echo "$target")
+		fi
+
+		if [[ "$resolved_source" == "$resolved_target" ]]; then
+			info "Source and target are the same. Skipping: $target"
+			return
+		fi
+
 		# If target is a symlink, validate and skip without prompting
 		if [ -L "$target" ]; then
 			local link_dest

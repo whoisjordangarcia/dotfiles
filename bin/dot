@@ -58,6 +58,7 @@ DOT_NAME="$DOT_NAME"
 DOT_EMAIL="$DOT_EMAIL"
 DOT_ENVIRONMENT="$DOT_ENVIRONMENT"
 DOT_SYSTEM="$DOT_SYSTEM"
+DOT_YUBIKEY="$DOT_YUBIKEY"
 EOF
 	info "Configuration saved to $configFile"
 }
@@ -152,6 +153,18 @@ interactive_setup() {
 	read input_email
 	DOT_EMAIL="${input_email:-$DOT_EMAIL}"
 
+	echo ""
+	if command -v gpg >/dev/null 2>&1; then
+		echo "Current GPG keys:"
+		gpg --list-secret-keys --keyid-format=long 2>/dev/null || echo "  No GPG keys found"
+	else
+		info "Install GPG and run: gpg --list-secret-keys --keyid-format=long"
+	fi
+	echo ""
+	prompt "YubiKey ID (for git signing): "
+	read input_yubikey
+	DOT_YUBIKEY="${input_yubikey:-${DOT_YUBIKEY}}"
+
 	# Auto-select installation with work variant
 	if [[ -n "$auto_installation" ]]; then
 		if [[ "$DOT_ENVIRONMENT" == "work" && -f "$dotfilesDirectory/script/${auto_installation%_*}_work_installation.sh" ]]; then
@@ -169,6 +182,7 @@ interactive_setup() {
 	printf "  ${GREEN}Email:${RESET}        %s\n" "$DOT_EMAIL"
 	printf "  ${GREEN}Environment:${RESET}  %s\n" "$DOT_ENVIRONMENT"
 	printf "  ${GREEN}System:${RESET}       %s\n" "$DOT_SYSTEM"
+	printf "  ${GREEN}YubiKey:${RESET}      %s\n" "${DOT_YUBIKEY:-not set}"
 	echo ""
 
 	prompt "Continue? [Y/n]: "
@@ -191,7 +205,7 @@ run_installation() {
 	fi
 
 	# Export configuration for use by installation scripts
-	export DOT_NAME DOT_EMAIL DOT_ENVIRONMENT DOT_SYSTEM
+	export DOT_NAME DOT_EMAIL DOT_ENVIRONMENT DOT_SYSTEM DOT_YUBIKEY
 	export WORK_ENV=""
 	if [[ "$DOT_ENVIRONMENT" == "work" ]]; then
 		export WORK_ENV="1"
@@ -212,6 +226,7 @@ displayUsageAndExit() {
 	echo "  -s, --system      Show current system detection"
 	echo "  -c, --config      Show current configuration"
 	echo "  --reset-config    Reset configuration file"
+	echo "  --reconfigure     Force re-input of configuration questions"
 	echo "  -e, --edit        Open dotfiles directory for editing"
 	echo "  -h, --help        Show this help message and exit"
 	echo ""
@@ -257,11 +272,19 @@ while [[ $# -gt 0 ]]; do
 		echo "  Email: ${DOT_EMAIL:-not set}"
 		echo "  Environment: ${DOT_ENVIRONMENT:-not set}"
 		echo "  System: ${DOT_SYSTEM:-not set}"
+		echo "  YubiKey: ${DOT_YUBIKEY:-not set}"
 		exit 0
 		;;
 	"--reset-config")
 		rm -f "$configFile"
 		info "Configuration reset"
+		exit 0
+		;;
+	"--reconfigure")
+		rm -f "$configFile"
+		info "Configuration reset. Starting interactive setup..."
+		interactive_setup
+		run_installation
 		exit 0
 		;;
 	"--system")
@@ -293,6 +316,22 @@ if [[ -z "$DOT_SYSTEM" ]] || [[ "$FORCE_INTERACTIVE" == "1" ]]; then
 	interactive_setup
 	run_installation
 else
-	info "Using existing configuration. Run 'dot -i' for interactive setup or 'dot -c' to view config."
+	show_logo
+	header "Using Existing Configuration"
+	printf "  ${GREEN}Name:${RESET}         %s\n" "$DOT_NAME"
+	printf "  ${GREEN}Email:${RESET}        %s\n" "$DOT_EMAIL"
+	printf "  ${GREEN}Environment:${RESET}  %s\n" "$DOT_ENVIRONMENT"
+	printf "  ${GREEN}System:${RESET}       %s\n" "$DOT_SYSTEM"
+	printf "  ${GREEN}YubiKey:${RESET}      %s\n" "${DOT_YUBIKEY:-not set}"
+	echo ""
+	
+	prompt "Continue with this configuration? [Y/n]: "
+	read proceed
+	if [[ "$proceed" =~ ^[Nn]$ ]]; then
+		echo ""
+		info "Installation cancelled. Run 'dot --reconfigure' to change settings."
+		exit 0
+	fi
+	
 	run_installation
 fi

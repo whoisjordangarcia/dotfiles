@@ -6,6 +6,7 @@ cask 'nikitabobko/tap/aerospace'
 tap 'FelixKratz/formulae'
 brew 'sketchybar'
 brew 'borders'
+brew '1password-cli'
 
 # Sketchybar Dependencies (from legacy)
 brew 'lua'

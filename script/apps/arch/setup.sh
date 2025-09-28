@@ -7,10 +7,6 @@ PACKAGES=(
 	zsh
 	starship
 
-	# Development Tools
-	gh
-	neovim
-
 	# CLI utils
 	tmux
 	ripgrep
@@ -30,24 +26,43 @@ PACKAGES=(
 	ttf-jetbrains-mono-nerd
 
 	# Desktop/Games
-	gamemode
 	mangohud
 
 	# Apps (official repos)
 	darktable
 
+	# Containers
+	podman-desktop
+	podman
+	podman-docker
+
 	# smart card
+	yubikey-manager
+	yubikey-personalization
+	ccid
+	pcsclite
 	gnupg
-	yubico-piv-tool
-	pgpg --card-statuscsc-lite
 )
 
 sudo pacman -S --needed "${PACKAGES[@]}"
 
+# Ensure rootless Podman can configure user namespaces
+ensure_setuid() {
+	local binary="$1"
+
+	if [[ -x "$binary" && ! -u "$binary" ]]; then
+		echo "[apps/arch] Enabling setuid on $binary for rootless Podman"
+		sudo chmod u+s "$binary"
+	fi
+}
+
+ensure_setuid /usr/bin/newuidmap
+ensure_setuid /usr/bin/newgidmap
+
 # AUR apps (installed with yay if present)
 AUR_PKGS=(
 	ghostty-git
-	spotify_player
+	neovim-nightly-bin
 )
 
 if command -v yay >/dev/null 2>&1; then
