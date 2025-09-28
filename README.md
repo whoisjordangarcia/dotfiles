@@ -10,9 +10,8 @@ A comprehensive cross-platform dotfiles repository supporting macOS, Linux (Ubun
 - **Modular architecture** - Component-based installation system
 - **Symlink-based configs** - Centralized configuration management
 - **AI development tools** - Extensive AI assistant rules for Cursor, Aider, and Avante
-
-> [!TIP]
-> The system automatically detects your platform and environment, making installation straightforward across different setups.
+  > [!TIP]
+  > The system automatically detects your platform and environment, making installation straightforward across different setups.
 
 ## Quick Start
 
@@ -23,6 +22,7 @@ curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/boo
 ```
 
 This will automatically:
+
 - Clone or update the dotfiles repository
 - Fetch the latest changes
 - Run the interactive setup process
@@ -194,7 +194,6 @@ Copy `wezterm.lua` to Windows home directory (`C:/Users/username/.wezterm.lua`) 
 **Permission denied**: Don't run with `sudo` - the scripts handle elevation when needed
 
 **Missing dependencies**: Run the appropriate installation script for your platform first
-
 **Configuration conflicts**: Use `./bin/dot --reset-config` to start fresh
 
 ### Manual Steps

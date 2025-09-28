@@ -12,3 +12,7 @@ brew 'lua'
 brew 'switchaudio-osx'
 brew 'nowplaying-cli'
 
+
+brew 'gnupg'
+brew 'yubico-piv-tool'
+brew 'pcsc-lite'
