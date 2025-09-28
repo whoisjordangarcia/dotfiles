@@ -10,6 +10,7 @@ $directory\
 $git_branch\
 $git_status\
 [▓](fg:#394260 bg:#212736)\
+$python\
 [▓](fg:#212736 bg:#1d2230)\
 [▓ ](fg:#1d2230)\
 \n$character"""
@@ -67,3 +68,13 @@ deleted = "✘${count}"
 [docker_context]
 symbol = " "
 format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
+
+[python]
+symbol = " "
+style = "bg:#212736"
+format = '[[ $symbol ($virtualenv) ](fg:#769ff0 bg:#212736)]($style)'
+only_show_in_venv = true
+detect_extensions = []
+detect_files = []
+detect_folders = []
+python_binary = []

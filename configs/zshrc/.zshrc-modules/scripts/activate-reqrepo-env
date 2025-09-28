@@ -1,0 +1,149 @@
+#!/bin/bash
+# activate-reqrepo-env - Activate the reqrepo virtual environment and setup pyrightconfig
+PROJECT_NAME="reqrepo"
+PYTHON_VERSION="3.9"
+VENV_DIR="$HOME/.venvs/${PROJECT_NAME}-${PYTHON_VERSION}"
+PYRIGHT_CONFIG_SOURCE="$HOME/dev/work/invitae-web-core/pyrightconfig.json"
+PACKAGES_INSTALLED_MARKER="$VENV_DIR/.packages_installed"
+
+# Parse command line arguments
+FORCE_INSTALL=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -f|--force)
+            FORCE_INSTALL=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: reqrepo-env [-f|--force]"
+            echo "  -f, --force    Force reinstall packages even if already installed"
+            return 1
+            ;;
+    esac
+done
+
+# Set SSL bypass environment variables for certificate issues
+export PYTHONHTTPSVERIFY=0
+export SSL_CERT_FILE=""
+export CURL_CA_BUNDLE=""
+
+echo "🐍 ReqRepo Environment Setup"
+echo "   Virtual Environment: $VENV_DIR"
+echo "   Python Version: $PYTHON_VERSION"
+echo "   Note: Using 3.9 instead of 3.8 due to macOS 15.6.1 compatibility issues"
+echo "   🔒 SSL certificate verification disabled for compatibility"
+echo
+
+# Set Python version for the project
+if [ ! -f ".python-version" ]; then
+    echo "$PYTHON_VERSION" > .python-version
+    echo "Created .python-version with Python $PYTHON_VERSION"
+elif [ "$(cat .python-version | grep -v '^#')" != "$PYTHON_VERSION" ]; then
+    echo "$PYTHON_VERSION" > .python-version
+    echo "Updated .python-version to Python $PYTHON_VERSION"
+fi
+
+# Check if Python 3.9 is available
+if ! pyenv versions --bare | grep -q "^$PYTHON_VERSION"; then
+    echo "📦 Installing Python $PYTHON_VERSION..."
+    pyenv install $PYTHON_VERSION
+fi
+
+# Copy pyrightconfig.json to current directory if needed
+if [ ! -f "./pyrightconfig.json" ] && [ -f "$PYRIGHT_CONFIG_SOURCE" ]; then
+    cp "$PYRIGHT_CONFIG_SOURCE" ./pyrightconfig.json
+    echo "📄 Copied pyrightconfig.json to current directory"
+elif [ -f "./pyrightconfig.json" ]; then
+    echo "📄 Using existing pyrightconfig.json in current directory"
+else
+    echo "⚠️  Warning: pyrightconfig.json not found at $PYRIGHT_CONFIG_SOURCE"
+fi
+
+# Create virtual environment if it doesn't exist
+NEW_VENV=false
+if [ ! -d "$VENV_DIR" ]; then
+    echo "🔧 Creating virtual environment at: $VENV_DIR"
+    python -m venv "$VENV_DIR"
+    NEW_VENV=true
+fi
+
+# Activate virtual environment
+if [ -d "$VENV_DIR" ]; then
+    source "$VENV_DIR/bin/activate"
+    echo "✅ Virtual environment activated successfully!"
+    echo "   📁 Path: $VENV_DIR"
+    echo "   🐍 Python: $(python --version)"
+    echo ""
+    echo "🔥 IMPORTANT: Virtual environment is now active in this shell session!"
+    echo "   To verify: which python"
+    echo "   Expected: $VENV_DIR/bin/python"
+
+    # Check if we need to install packages
+    SHOULD_INSTALL_PACKAGES=false
+    if [ "$NEW_VENV" = true ]; then
+        echo "🆕 New virtual environment detected - packages will be installed"
+        SHOULD_INSTALL_PACKAGES=true
+    elif [ "$FORCE_INSTALL" = true ]; then
+        echo "🔄 Force flag detected - packages will be reinstalled"
+        SHOULD_INSTALL_PACKAGES=true
+    elif [ ! -f "$PACKAGES_INSTALLED_MARKER" ]; then
+        echo "📦 No installation marker found - packages will be installed"
+        SHOULD_INSTALL_PACKAGES=true
+    else
+        echo "✅ Packages already installed (use -f/--force to reinstall)"
+    fi
+
+    if [ "$SHOULD_INSTALL_PACKAGES" = true ]; then
+        # Install filtered reqrepo requirements
+        echo "📦 Installing filtered reqrepo requirements..."
+        if [ -f "reqrepo/requirements.txt" ]; then
+            echo "   🔍 Filtering reqrepo requirements (excluding problematic packages)..."
+            grep -v -E "(backoffice-api|django-tastypie-swagger|djangorestframework-camel-case|freezegun|geopy|hcp-api|mockserver-friendly-client|munch|geoip2)" reqrepo/requirements.txt > reqrepo/requirements-filtered.txt
+            echo "   ⬇️  Installing reqrepo packages..."
+            pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r reqrepo/requirements-filtered.txt
+            echo "   ✅ Reqrepo requirements installed"
+        else
+            echo "   ⚠️  Warning: reqrepo/requirements.txt not found"
+        fi
+
+        # Install filtered lib requirements
+        echo "📦 Installing filtered lib/reqrepo requirements..."
+        if [ -f "lib/reqrepo/requirements.txt" ]; then
+            echo "   🔍 Filtering lib/reqrepo requirements (excluding problematic packages)..."
+            grep -v -E "(django-blog-zinnia|django-celery-email|invitae-data-client|locus-core|munch|invitae-valideer)" lib/reqrepo/requirements.txt > lib/reqrepo/requirements-filtered.txt
+            echo "   ⬇️  Installing lib/reqrepo packages..."
+            pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r lib/reqrepo/requirements-filtered.txt
+            echo "   ✅ Lib/reqrepo requirements installed"
+        else
+            echo "   ⚠️  Warning: lib/reqrepo/requirements.txt not found"
+        fi
+
+        # Install lib/reqrepo in editable mode
+        if [ -d "lib/reqrepo" ]; then
+            echo "📦 Installing lib/reqrepo in editable mode..."
+            pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -e lib/reqrepo/
+            echo "   ✅ Lib/reqrepo installed in editable mode"
+        else
+            echo "   ⚠️  Warning: lib/reqrepo directory not found"
+        fi
+
+        # Install development stubs
+        echo "📦 Installing development stubs..."
+        echo "   ⬇️  Installing django-stubs==4.2.0..."
+        pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org django-stubs==4.2.0
+        echo "   ⬇️  Installing djangorestframework-stubs==3.14.0..."
+        pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org djangorestframework-stubs==3.14.0
+        echo "   ✅ Development stubs installed"
+
+        # Create marker file to indicate packages are installed
+        echo "$(date)" > "$PACKAGES_INSTALLED_MARKER"
+        echo "🏷️  Created installation marker: $PACKAGES_INSTALLED_MARKER"
+    fi
+
+    echo ""
+    echo "🎉 ReqRepo environment setup complete!"
+    echo "   Ready for development work"
+else
+    echo "❌ Failed to create virtual environment at: $VENV_DIR"
+fi
