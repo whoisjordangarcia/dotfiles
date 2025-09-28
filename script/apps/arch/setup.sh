@@ -44,20 +44,6 @@ PACKAGES=(
 	gnupg
 )
 
-if pacman -Qi docker-desktop >/dev/null 2>&1; then
-	echo "[apps/arch] Removing docker-desktop in favor of podman-desktop"
-	sudo pacman -Rns --noconfirm docker-desktop
-else
-	echo "[apps/arch] docker-desktop not installed; skipping removal"
-fi
-
-if pacman -Qi docker >/dev/null 2>&1; then
-	echo "[apps/arch] Removing docker CLI to avoid conflicts with podman-docker"
-	sudo pacman -Rns --noconfirm docker
-else
-	echo "[apps/arch] docker CLI not installed; skipping removal"
-fi
-
 sudo pacman -S --needed "${PACKAGES[@]}"
 
 # Ensure rootless Podman can configure user namespaces

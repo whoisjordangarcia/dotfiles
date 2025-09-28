@@ -1,8 +1,3 @@
-if true then
-  return {}
-end
-
--- theme
 return {
   {
     "catppuccin/nvim",
@@ -24,10 +19,10 @@ return {
     end,
     enable = false,
   },
-  -- {
-  --   "LazyVim/LazyVim",
-  --   opts = {
-  --     colorscheme = "catppuccin",
-  --   },
-  -- },
+  {
+    "LazyVim/LazyVim",
+    opts = {
+      colorscheme = "catppuccin",
+    },
+  },
 }
