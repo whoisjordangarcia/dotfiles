@@ -28,7 +28,14 @@ link_file "$ZSHRC_MODULES_SOURCE" "$ZSHRC_MODULES_TARGET"
 "$SCRIPT_DIR/../zsh/plugins/zsh_plugins.sh"
 
 # Default zsh
-info "Defaulting zsh..."
-chsh -s "$(command -v zsh)"
+CURRENT_SHELL=$(basename "$SHELL")
+ZSH_PATH="$(command -v zsh)"
+
+if [ "$CURRENT_SHELL" != "zsh" ]; then
+	info "Defaulting zsh..."
+	chsh -s "$ZSH_PATH"
+else
+	info "Shell is already zsh. Skipping."
+fi
 
 chmod 600 "$HOME/.zshrc"

@@ -31,7 +31,7 @@ for component in "${component_installation[@]}"; do
 
 	#Check if the script exists before trying to run it
 	if [ -f "$script_path" ]; then
-		bash "$script_path"
+		source "$script_path"
 	else
 		info "Script for $component does not exist."
 	fi
