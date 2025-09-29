@@ -29,20 +29,20 @@ _should_log() {
 
 debug() {
     if _should_log "debug"; then
-        printf "\r  [ ${BLUE}DEBUG${RESET} ] $1\n" >&2
+        printf "\r${BLUE}DEBUG${RESET} $1\n" >&2
     fi
 }
 
 info() {
     if _should_log "info"; then
-        printf "\r  [ ${BLUE}..\033[0m ] $1\n" >&2
+        printf "\r$1\n" >&2
     fi
 }
 
 # Section header - for major installation phases
 section() {
     if _should_log "info"; then
-        printf "\r  [ ${BLUE}▶${RESET} ] ${BLUE}$1${RESET}\n" >&2
+        printf "\r${BLUE}▶${RESET} ${BLUE}$1${RESET}\n" >&2
     fi
 }
 
@@ -56,7 +56,7 @@ step() {
 # Status update - for environment detection, etc
 status() {
     if _should_log "info"; then
-        printf "\r  [ ${YELLOW}i${RESET} ] $1\n" >&2
+        printf "\r${YELLOW}INFO${RESET} $1\n" >&2
     fi
 }
 
@@ -74,18 +74,18 @@ header() {
 
 # Prompts user input
 user() {
-    printf "\r  [ ${YELLOW}??${RESET} ] $1\n" >&2
+    printf "\r${YELLOW}??${RESET} $1\n" >&2
 }
 
 # Indicates success
 success() {
-    printf "\r\033[2K  [ ${GREEN}OK${RESET} ] $1\n" >&2
+    printf "\r\033[2K${GREEN}OK${RESET} $1\n" >&2
 }
 
 # Indicates failure and exits
 fail() {
     local exit_code=${2:-1} # Default exit code is 1 if not provided
-    printf "\r\033[2K  [ ${RED}FAIL${RESET} ] $1\n" >&2
+    printf "\r\033[2K${RED}FAIL${RESET} $1\n" >&2
     echo ''
     exit $exit_code
 }

@@ -14,12 +14,12 @@ GOHU_ZIP_URL="https://github.com/koemaeda/gohufont-ttf/archive/refs/heads/master
 GOHU_ZIP_FILE="/tmp/gohufont.zip"
 TEMP_DIR="/tmp/gohufont-extract"
 
-info "Checking for $FONT_FILE in $FONT_DIR..."
+debug "Checking for $FONT_FILE in $FONT_DIR..."
 
 mkdir -p "$FONT_DIR"
 
 if [ -f "$FONT_DIR/$FONT_FILE" ]; then
-	success "$FONT_FILE already exists. Skipping download."
+	debug "$FONT_FILE already exists. Skipping download."
 else
 	info "Downloading $FONT_FILE..."
 	curl -fLo "$FONT_DIR/$FONT_FILE" "$FONT_URL"
@@ -27,9 +27,9 @@ else
 fi
 
 # Install Gohu font
-info "Checking for Gohu fonts..."
+debug "Checking for Gohu fonts..."
 if ls "$FONT_DIR"/gohufont*.ttf >/dev/null 2>&1; then
-	success "Gohu fonts already exist. Skipping download."
+	debug "Gohu fonts already exist. Skipping download."
 else
 	info "Downloading Gohu font zip..."
 	curl -fLo "$GOHU_ZIP_FILE" "$GOHU_ZIP_URL"

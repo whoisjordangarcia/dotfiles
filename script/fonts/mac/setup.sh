@@ -20,9 +20,9 @@ GOHU_ZIP_FILE="$TEMP_DIR/Gohu.zip"
 mkdir -p "$FONT_DIR"
 
 # Install JetBrains Mono
-info "Checking for $JETBRAINS_FONT_FILE in $FONT_DIR..."
+debug "Checking for $JETBRAINS_FONT_FILE in $FONT_DIR..."
 if [ -f "$FONT_DIR/$JETBRAINS_FONT_FILE" ]; then
-	success "$JETBRAINS_FONT_FILE already exists. Skipping download."
+	debug "$JETBRAINS_FONT_FILE already exists. Skipping download."
 else
 	info "Downloading $JETBRAINS_FONT_FILE..."
 	curl -fLo "$FONT_DIR/$JETBRAINS_FONT_FILE" "$JETBRAINS_FONT_URL"
@@ -30,9 +30,9 @@ else
 fi
 
 # Install Gohu font
-info "Checking for Gohu fonts..."
+debug "Checking for Gohu fonts..."
 if ls "$FONT_DIR"/Gohu* >/dev/null 2>&1; then
-	success "Gohu fonts already exist. Skipping download."
+	debug "Gohu fonts already exist. Skipping download."
 else
 	info "Downloading Gohu font zip..."
 	curl -fLo "$GOHU_ZIP_FILE" "$GOHU_ZIP_URL"

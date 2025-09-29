@@ -27,7 +27,7 @@ fi
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 
 if [ -d "$TPM_DIR" ]; then
-	info "TPM is already installed at $TPM_DIR."
+	debug "TPM is already installed at $TPM_DIR."
 else
 	info "TPM not found. Installing..."
 	git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"

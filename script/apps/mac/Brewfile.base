@@ -1,31 +1,21 @@
-brew 'gh'
 brew 'zsh' 
 brew 'fzf'
-brew 'eza'
 brew 'ripgrep'
 brew 'fd'
 brew 'tmux'
 brew 'neovim', head: true
-brew 'htop'
-brew 'btop'
 brew 'zoxide'
 brew 'starship'
-brew 'yazi'
 brew 'jq'
-brew 'glow'
 brew 'fastfetch'
-brew 'yewtube'
 
 # Development 
 brew 'nvm'
 brew 'lazygit'
 brew 'bat'
-brew 'black'
 brew 'tmuxinator'
 brew 'yq' # tmux statusbar  
 brew 'go'
-brew 'lazydocker'
-brew 'uv'
 
 # Essential Apps
 cask 'ghostty'
@@ -34,10 +24,6 @@ cask 'ghostty'
 cask 'font-sf-mono'
 cask 'font-sf-pro'
 cask 'font-hack-nerd-font'
-
-# ai
-brew 'codex'
-cask 'claude-code'
 
 # fonts
 cask 'sf-symbols'

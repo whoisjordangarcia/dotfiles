@@ -17,7 +17,7 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
 	info "Installing Oh My Zsh..."
 	sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 else
-	info "Oh My Zsh already installed. Skipping."
+	debug "Oh My Zsh already installed. Skipping."
 fi
 
 link_file "$ZSHRC_SOURCE" "$ZSHRC_TARGET"
@@ -35,7 +35,7 @@ if [ "$CURRENT_SHELL" != "zsh" ]; then
 	info "Defaulting zsh..."
 	chsh -s "$ZSH_PATH"
 else
-	info "Shell is already zsh. Skipping."
+	debug "Shell is already zsh. Skipping."
 fi
 
 chmod 600 "$HOME/.zshrc"

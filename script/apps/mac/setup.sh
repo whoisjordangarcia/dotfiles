@@ -60,27 +60,25 @@ fi
 debug "Detected environment: $ENVIRONMENT"
 
 # Install base packages first
-step "Installing base packages..."
+debug "Installing base packages..."
 if [[ -f "$SCRIPT_DIR/Brewfile.base" ]]; then
 	brew bundle --file="$SCRIPT_DIR/Brewfile.base"
 else
-	info "Brewfile.base not found, skipping base packages"
+	debug "Brewfile.base not found, skipping base packages"
 fi
 
 # Install environment-specific packages
 if [[ -f "$SCRIPT_DIR/Brewfile.$ENVIRONMENT" ]]; then
-	step "Installing $ENVIRONMENT-specific packages..."
+	debug "Installing $ENVIRONMENT-specific packages..."
 	brew bundle --file="$SCRIPT_DIR/Brewfile.$ENVIRONMENT"
 else
-	info "Brewfile.$ENVIRONMENT not found, falling back to legacy Brewfile"
+	debug "Brewfile.$ENVIRONMENT not found, falling back to legacy Brewfile"
 	if [[ -f "$SCRIPT_DIR/Brewfile.legacy" ]]; then
 		brew bundle --file="$SCRIPT_DIR/Brewfile.legacy"
 	else
-		info "No Brewfile found, skipping package installation"
+		debug "No Brewfile found, skipping package installation"
 	fi
 fi
-
-brew services start borders
 
 # annoying things
 defaults write -g ApplePressAndHoldEnabled -bool false
