@@ -16,7 +16,7 @@ TMUX_SCRIPTS_SOURCE="$SCRIPT_DIR/../../configs/tmux/scripts"
 TMUX_SCRIPTS_TARGET="$HOME/.tmux/scripts"
 
 if [ -d "$TMUX_SCRIPTS_SOURCE" ]; then
-	info "Linking tmux statusline scripts directory..."
+	debug "Linking tmux statusline scripts directory..."
 	# Create .tmux directory if it doesn't exist
 	mkdir -p "$HOME/.tmux"
 	link_file "$TMUX_SCRIPTS_SOURCE" "$TMUX_SCRIPTS_TARGET"

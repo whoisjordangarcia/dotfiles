@@ -30,12 +30,12 @@ GITCONFIG_TARGET="$HOME/.gitconfig"
 
 if [[ -f "$GITCONFIG_TEMPLATE" ]]; then
 	# Always overwrite existing config to ensure updates
-	info "Generating .gitconfig with current user values..."
+	debug "Generating .gitconfig with current user values..."
 
 	# Debug: Show what variables we have
-	info "Debug: DOT_NAME='${DOT_NAME:-NOT_SET}'"
-	info "Debug: DOT_EMAIL='${DOT_EMAIL:-NOT_SET}'"
-	info "Debug: DOT_YUBIKEY='${DOT_YUBIKEY:-NOT_SET}'"
+	debug "Debug: DOT_NAME='${DOT_NAME:-NOT_SET}'"
+	debug "Debug: DOT_EMAIL='${DOT_EMAIL:-NOT_SET}'"
+	debug "Debug: DOT_YUBIKEY='${DOT_YUBIKEY:-NOT_SET}'"
 
 	# Configure sed for macOS (BSD) vs GNU differences
 	if sed --version >/dev/null 2>&1; then
@@ -51,12 +51,12 @@ if [[ -f "$GITCONFIG_TEMPLATE" ]]; then
 	# Replace placeholders with actual values using proper sed escaping
 	if [[ -n "${DOT_NAME:-}" ]]; then
 		"${SED_INLINE[@]}" "s|__DOT_NAME__|${DOT_NAME}|g" "$GITCONFIG_TARGET"
-		info "Replaced __DOT_NAME__ with: $DOT_NAME"
+		debug "Replaced __DOT_NAME__ with: $DOT_NAME"
 	fi
 
 	if [[ -n "${DOT_EMAIL:-}" ]]; then
 		"${SED_INLINE[@]}" "s|__DOT_EMAIL__|${DOT_EMAIL}|g" "$GITCONFIG_TARGET"
-		info "Replaced __DOT_EMAIL__ with: $DOT_EMAIL"
+		debug "Replaced __DOT_EMAIL__ with: $DOT_EMAIL"
 	fi
 
 	if [[ -n "${DOT_YUBIKEY:-}" ]]; then
@@ -75,13 +75,13 @@ else
 	error "Git config template not found at $GITCONFIG_TEMPLATE"
 fi
 
-link_file "$SCRIPT_DIR/../../configs/git/.gitconfig" "$HOME/.gitconfig"
+# Removed conflicting symlink - using template generation above instead
 link_file "$SCRIPT_DIR/../../configs/git/.gitignore_global" "$HOME/.gitignore_global"
 link_file "$SCRIPT_DIR/../../configs/git/work.gitconfig" "$HOME/dev/work/.gitconfig"
 
 # Configure git if DOT_NAME and DOT_EMAIL are provided
 if [[ -n "$DOT_NAME" && -n "$DOT_EMAIL" ]]; then
-	info "Configuring git with provided credentials..."
+	debug "Configuring git with provided credentials..."
 	git config --global user.name "$DOT_NAME"
 	git config --global user.email "$DOT_EMAIL"
 	success "Git configured: $DOT_NAME <$DOT_EMAIL>"
