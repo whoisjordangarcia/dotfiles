@@ -1,5 +1,8 @@
+brew 'eza'
 brew 'cmatrix'
-
+brew 'gh'
+brew 'btop'
+brew 'yazi'
 cask 'raycast'
 cask 'bartender'
 cask 'nikitabobko/tap/aerospace'
@@ -7,6 +10,9 @@ tap 'FelixKratz/formulae'
 brew 'sketchybar'
 brew 'borders'
 brew '1password-cli'
+brew 'black'
+brew 'lazydocker'
+brew 'uv'
 
 # Sketchybar Dependencies (from legacy)
 brew 'lua'

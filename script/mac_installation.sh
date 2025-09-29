@@ -4,21 +4,6 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 source "$SCRIPT_DIR/common/log.sh"
 
-# Configure git if DOT_NAME and DOT_EMAIL are provided
-if [[ -n "$DOT_NAME" && -n "$DOT_EMAIL" ]]; then
-	info "Configuring git with provided credentials..."
-	git config --global user.name "$DOT_NAME"
-	git config --global user.email "$DOT_EMAIL"
-	success "Git configured: $DOT_NAME <$DOT_EMAIL>"
-fi
-
-# Log environment information
-debug "Installation environment: ${DOT_ENVIRONMENT:-not set}"
-if [[ "$DOT_ENVIRONMENT" == "work" ]]; then
-	export WORK_ENV="1"
-	status "Work environment detected - enabling work-specific configurations"
-fi
-
 component_installation=(
 	apps/mac
 	git
