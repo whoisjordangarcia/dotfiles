@@ -1,15 +1,20 @@
-# Dotfiles
+# Otobun
 
-A comprehensive cross-platform dotfiles repository supporting macOS, Linux (Ubuntu, Fedora, Arch), and WSL environments with both personal and work configurations.
+**Opinionated, curated dotfiles for the discerning developer**
+
+otobun is a comprehensive cross-platform dotfiles repository that makes strong choices about your development environment. Supporting macOS, Linux (Ubuntu, Fedora, Arch), and WSL with both personal and work configurations, it's designed for developers who want a thoughtfully curated setup without the decision fatigue.
+
+> **Why "otobun"?** These dotfiles are opinionated ("oto" from opinionated) and bundled ("bun") together as a cohesive package. No endless options—just curated choices that work across multiple platforms.
 
 ## Features
 
-- **Cross-platform compatibility** - Works on macOS, Ubuntu, Fedora, Arch Linux, and WSL
-- **Environment-aware setup** - Separate configurations for personal and work environments
-- **Interactive installation** - Smart system detection with guided setup process
-- **Modular architecture** - Component-based installation system
-- **Symlink-based configs** - Centralized configuration management
-- **AI development tools** - Extensive AI assistant rules for Cursor, Aider, and Avante
+- **Opinionated tool selection** - Carefully curated applications and configurations that work well together
+- **Cross-platform compatibility** - Consistent experience across macOS, Ubuntu, Fedora, Arch Linux, and WSL
+- **Environment-aware setup** - Thoughtfully separated configurations for personal and work environments
+- **Zero-decision installation** - Smart system detection with guided setup—no overwhelming choices
+- **Modular architecture** - Component-based system with sensible defaults
+- **Symlink-based configs** - Centralized configuration management for easy updates
+- **AI development tools** - Curated AI assistant rules for Cursor, Aider, and Avante
   > [!TIP]
   > The system automatically detects your platform and environment, making installation straightforward across different setups.
 
