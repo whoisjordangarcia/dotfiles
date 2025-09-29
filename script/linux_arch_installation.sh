@@ -7,7 +7,6 @@ component_installation=(
 	# code
 	git
 	node
-	git
 	lazygit/linux
 	# essentials
 	zsh
@@ -26,7 +25,7 @@ component_installation=(
 )
 
 for component in "${component_installation[@]}"; do
-	info "Running $component installation."
+	section "$component"
 	script_path="./script/${component}/setup.sh"
 
 	#Check if the script exists before trying to run it

@@ -87,7 +87,7 @@ link_file() {
 		fi
 
 		if [[ "$resolved_source" == "$resolved_target" ]]; then
-			info "Source and target are the same. Skipping: $target"
+			debug "Source and target are the same. Skipping: $target"
 			return
 		fi
 
