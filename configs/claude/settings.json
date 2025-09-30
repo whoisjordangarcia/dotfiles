@@ -1,4 +1,10 @@
 {
+  "env": {
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "DISABLE_BUG_COMMAND": "1",
+    "DISABLE_ERROR_REPORTING": "1"
+  },
+  "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
       "Bash(git push:*)",
@@ -22,11 +28,6 @@
     "command": "bunx -y ccstatusline@latest",
     "padding": 0
   },
-  "includeCoAuthoredBy": false,
-  "env": {
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-    "DISABLE_BUG_COMMAND": "1",
-    "DISABLE_ERROR_REPORTING": "1"
-  },
-  "outputStyle": "Explanatory"
+  "outputStyle": "Explanatory",
+  "alwaysThinkingEnabled": false
 }

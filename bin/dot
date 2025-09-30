@@ -200,8 +200,7 @@ run_installation() {
 	local installation_script="$dotfilesDirectory/script/${DOT_SYSTEM}_installation.sh"
 
 	if [[ ! -f "$installation_script" ]]; then
-		error "Installation script not found: $installation_script"
-		exit 1
+		fail "Installation script not found: $installation_script"
 	fi
 
 	# Export configuration for use by installation scripts
@@ -258,8 +257,8 @@ while [[ $# -gt 0 ]]; do
 		exit 0
 		;;
 	"-s" | "--system")
-		local detected=$(detect_system)
-		local auto=$(auto_select_installation)
+		detected=$(detect_system)
+		auto=$(auto_select_installation)
 		info "System Detection:"
 		echo "  Detected: $detected"
 		echo "  Recommended: ${auto:-none}"
