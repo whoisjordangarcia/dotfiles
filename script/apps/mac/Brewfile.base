@@ -3,7 +3,6 @@ brew 'fzf'
 brew 'ripgrep'
 brew 'fd'
 brew 'tmux'
-brew 'neovim', head: true
 brew 'zoxide'
 brew 'starship'
 brew 'jq'
