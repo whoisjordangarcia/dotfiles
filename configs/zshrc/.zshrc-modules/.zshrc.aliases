@@ -5,7 +5,7 @@ alias ls="eza --icons"
 alias cat="bat"
 
 # containers
-alias docker="podman"
+#alias docker="podman"
 
 #arch 
 alias hyprc="nvim ~/.config/hypr/hyprland.conf"
