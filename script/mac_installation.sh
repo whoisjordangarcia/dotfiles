@@ -10,6 +10,7 @@ component_installation=(
 	# essentials
 	zsh
 	vim
+	neovim/mac
 	tmux
 	fonts/mac
 	starship
