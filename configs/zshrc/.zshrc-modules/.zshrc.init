@@ -10,7 +10,7 @@ if command -v zoxide &> /dev/null; then
 fi
 
 # Load fzf (fuzzy finder)
-if command -v fzf &> /dev/null then
+if command -v fzf &> /dev/null; then
   eval "$(fzf --zsh)"
 fi
 
