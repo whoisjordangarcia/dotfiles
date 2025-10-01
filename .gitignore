@@ -33,3 +33,4 @@ tasks/
 
 .zshrc.sec
 .dotconfig
+lazy-lock.json
