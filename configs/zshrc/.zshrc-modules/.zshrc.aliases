@@ -4,9 +4,6 @@ alias reload="source ~/.zshrc"
 alias ls="eza --icons"
 alias cat="bat"
 
-# containers
-#alias docker="podman"
-
 #arch 
 alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 
@@ -17,7 +14,6 @@ alias avante='nvim -c "lua vim.defer_fn(function()require(\"avante.api\").zen_mo
 alias claude-code='claude'
 alias reqrepo-env='~/.zshrc-modules/scripts/activate-reqrepo-env'
 
-# Vim-friendly aliases
 alias :q="exit"
 alias :wq="exit"
 alias :x="exit"
@@ -28,77 +24,29 @@ alias dotfiles="cd ~/dev/dotfiles && nvim ."
 alias gcm="git checkout main"
 alias gpo="git pull origin"
 alias gc='git checkout'
-alias grm="git rebase main"
+alias grm="git pull --rebase origin main"
 alias gpf="git push --force-with-lease"
 
-# Git worktree management
 wt-auto() {
-    local branch=$1
-    local base_branch=${2:-develop}
-    if [ -z "$branch" ]; then
-        echo "Usage: wt-auto <branch-name> [base-branch]"
-        echo "  branch-name: Name of the new worktree/branch"
-        echo "  base-branch: Base branch to branch from (default: develop)"
-        return 1
-    fi
-
-    # Sanitize branch name for directory (replace / with -)
-    local dir_name=$(echo "$branch" | sed 's/\//-/g')
-
-    git fetch origin
-    git worktree add ../$dir_name origin/$branch 2>/dev/null || git worktree add ../$dir_name -b $branch origin/$base_branch
-
-    if [ "$branch" != "$dir_name" ]; then
-        echo "Worktree created: ../$dir_name (branch: $branch, based on origin/$base_branch)"
-    else
-        echo "Worktree created: ../$dir_name (based on origin/$base_branch)"
-    fi
+    ~/.zshrc-modules/scripts/git-worktree auto "$@"
 }
 
 wt-list() {
-    git worktree list
+    ~/.zshrc-modules/scripts/git-worktree list
 }
 
 wt-remove() {
-    local worktree_path=$1
-    if [ -z "$worktree_path" ]; then
-        echo "Usage: wt-remove <worktree-path>"
-        echo "Available worktrees:"
-        git worktree list
-        return 1
-    fi
-    git worktree remove "$worktree_path"
+    ~/.zshrc-modules/scripts/git-worktree remove "$@"
 }
 
 wt-prune() {
-    echo "Checking for stale worktrees..."
-    local stale_worktrees=$(git worktree list --porcelain | grep -B2 "prunable" | grep "worktree" | sed 's/worktree //')
-
-    if [ -z "$stale_worktrees" ]; then
-        echo "No stale worktrees found."
-        return 0
-    fi
-
-    echo "Found stale worktrees:"
-    echo "$stale_worktrees" | while read -r path; do
-        echo "  - $path"
-    done
-
-    git worktree prune
-    echo "✓ Pruned all stale worktree references"
+    ~/.zshrc-modules/scripts/git-worktree prune
 }
 
-# Help function to show all worktree commands
 wt-help() {
-    echo "Git Worktree Commands:"
-    echo "  wt-auto <branch> [base]  - Create worktree from branch or new branch from base"
-    echo "  wt-list                  - List all worktrees"
-    echo "  wt-remove <path>         - Remove a worktree"
-    echo "  wt-prune                 - Remove stale worktree references"
-    echo "  wt-help                  - Show this help"
+    ~/.zshrc-modules/scripts/git-worktree help
 }
 
-# Tab completion for wt- commands
 _wt_completion() {
     local commands=(
         "wt-auto:Create worktree from branch or new branch from base"
@@ -111,64 +59,8 @@ _wt_completion() {
     _describe 'worktree commands' commands
 }
 
-# Register completions
 compdef _wt_completion wt-auto wt-list wt-remove wt-prune wt-help
 
-# AI Agent Instructions Symlink Manager
 ai_assemble() {
-    local current_dir=$(pwd)
-    
-    # Check if AGENTS.md exists, if not copy from CLAUDE.md
-    if [ ! -f "AGENTS.md" ]; then
-        if [ -f "CLAUDE.md" ]; then
-            cp "CLAUDE.md" "AGENTS.md"
-            echo "✓ Created AGENTS.md from CLAUDE.md"
-        else
-            echo "❌ Neither AGENTS.md nor CLAUDE.md found in current directory"
-            return 1
-        fi
-    else
-        echo "✓ AGENTS.md already exists"
-    fi
-    
-    # Create .github directory if it doesn't exist
-    if [ ! -d ".github" ]; then
-        mkdir -p ".github"
-        echo "✓ Created .github directory"
-    fi
-    
-    # Create symlink for GEMINI.md
-    if [ ! -f "GEMINI.md" ]; then
-        ln -s "AGENTS.md" "GEMINI.md"
-        echo "✓ Created GEMINI.md symlink to AGENTS.md"
-    else
-        echo "• GEMINI.md already exists"
-    fi
-    
-    # Create symlink for .github/copilot-instructions.md
-    if [ ! -f ".github/copilot-instructions.md" ]; then
-        ln -s "../AGENTS.md" ".github/copilot-instructions.md"
-        echo "✓ Created .github/copilot-instructions.md symlink to AGENTS.md"
-    else
-        echo "• .github/copilot-instructions.md already exists"
-    fi
-    
-    echo "🎯 AI agent instruction symlinks setup complete!"
-    
-    # Animated completion
-    echo
-    printf "🔗 Linking agents"
-    for i in {1..3}; do
-        printf "."
-        sleep 0.3
-    done
-    echo
-    
-    # Sparkle animation
-    local sparkles=("✨" "⭐" "🌟" "💫" "⚡")
-    for sparkle in "${sparkles[@]}"; do
-        printf "\r$sparkle AI agents assembled! $sparkle"
-        sleep 0.2
-    done
-    echo
+    ~/.zshrc-modules/scripts/ai-assemble
 }
