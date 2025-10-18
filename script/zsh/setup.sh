@@ -33,7 +33,7 @@ ZSH_PATH="$(command -v zsh)"
 
 if [ "$CURRENT_SHELL" != "zsh" ]; then
 	info "Defaulting zsh..."
-	sudo chsh -s "$ZSH_PATH"
+	sudo -s "$ZSH_PATH"
 else
 	debug "Shell is already zsh. Skipping."
 fi
