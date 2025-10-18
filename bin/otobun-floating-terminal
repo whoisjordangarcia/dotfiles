@@ -1,4 +1,4 @@
 #!/bin/zsh
 
 cmd="$*"
-exec uwsm app -- ghostty --class=Otobun --title=Otobun -e zsh -c "otobun-showlogo; $cmd; otobun-show-done"
+exec uwsm app -- ghostty --class=Otobun --title=Otobun -e zsh -c "otobun-show-logo; $cmd; otobun-show-done"
