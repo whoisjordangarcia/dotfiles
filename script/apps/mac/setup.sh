@@ -82,3 +82,12 @@ fi
 
 # annoying things
 defaults write -g ApplePressAndHoldEnabled -bool false
+
+# Create Screenshots folder if it doesn't exist
+mkdir -p "$HOME/Desktop/Screenshots"
+
+# Set screenshot save location
+defaults write com.apple.screencapture location "$HOME/Desktop/Screenshots"
+
+# Apply screenshot settings
+killall SystemUIServer

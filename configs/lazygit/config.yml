@@ -51,3 +51,8 @@ gui:
   showRandomTip: false
   showNumstatInFilesView: true
   nerdFontsVersion: "3"
+  showFileIcons: true
+  filterMode: fuzzy
+git:
+  commit:
+    signOff: true
