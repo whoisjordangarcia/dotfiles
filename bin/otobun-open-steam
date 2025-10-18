@@ -9,7 +9,9 @@
 notify-send "Launching Steam" "Starting gamescope with Steam Big Picture mode" -u normal -t 3000
 
 # Run gamescope and capture exit code
-gamescope --backend sdl -W 3840 -H 2160 -r 240 --adaptive-sync --steam --force-grab-cursor -f -- steam -gamepadui
+#gamescope --backend sdl -W 3840 -H 2160 -r 240 --adaptive-sync --steam --force-grab-cursor -f -- steam -gamepadui
+gamescope --backend sdl -W 3840 -H 2160 -r 240 --adaptive-sync --steam -f -- steam -gamepadui
+
 exit_code=$?
 
 # Show error notification if command failed
