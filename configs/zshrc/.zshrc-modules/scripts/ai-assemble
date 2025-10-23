@@ -1,55 +1,41 @@
 #!/bin/bash
 
 ai_assemble() {
-    local current_dir=$(pwd)
-    
-    if [ ! -f "AGENTS.md" ]; then
-        if [ -f "CLAUDE.md" ]; then
-            cp "CLAUDE.md" "AGENTS.md"
-            echo "✓ Created AGENTS.md from CLAUDE.md"
-        else
-            echo "❌ Neither AGENTS.md nor CLAUDE.md found in current directory"
-            return 1
-        fi
-    else
-        echo "✓ AGENTS.md already exists"
-    fi
-    
-    if [ ! -d ".github" ]; then
-        mkdir -p ".github"
-        echo "✓ Created .github directory"
-    fi
-    
-    if [ ! -f "GEMINI.md" ]; then
-        ln -s "AGENTS.md" "GEMINI.md"
-        echo "✓ Created GEMINI.md symlink to AGENTS.md"
-    else
-        echo "• GEMINI.md already exists"
-    fi
-    
-    if [ ! -f ".github/copilot-instructions.md" ]; then
-        ln -s "../AGENTS.md" ".github/copilot-instructions.md"
-        echo "✓ Created .github/copilot-instructions.md symlink to AGENTS.md"
-    else
-        echo "• .github/copilot-instructions.md already exists"
-    fi
-    
-    echo "🎯 AI agent instruction symlinks setup complete!"
-    
-    echo
-    printf "🔗 Linking agents"
-    for i in {1..3}; do
-        printf "."
-        sleep 0.3
-    done
-    echo
-    
-    local sparkles=("✨" "⭐" "🌟" "💫" "⚡")
-    for sparkle in "${sparkles[@]}"; do
-        printf "\r$sparkle AI agents assembled! $sparkle"
-        sleep 0.2
-    done
-    echo
+	local current_dir=$(pwd)
+
+	if [ ! -f "AGENTS.md" ]; then
+		if [ -f "CLAUDE.md" ]; then
+			cp "CLAUDE.md" "AGENTS.md"
+			echo "✓ Created AGENTS.md from CLAUDE.md"
+		else
+			echo "❌ Neither AGENTS.md nor CLAUDE.md found in current directory"
+			return 1
+		fi
+	else
+		echo "✓ AGENTS.md already exists"
+	fi
+
+	if [ ! -d ".github" ]; then
+		mkdir -p ".github"
+		echo "✓ Created .github directory"
+	fi
+
+	echo "🎯 AI agent instruction symlinks setup complete!"
+
+	echo
+	printf "🔗 Linking agents"
+	for i in {1..3}; do
+		printf "."
+		sleep 0.3
+	done
+	echo
+
+	local sparkles=("✨" "⭐" "🌟" "💫" "⚡")
+	for sparkle in "${sparkles[@]}"; do
+		printf "\r$sparkle AI agents assembled! $sparkle"
+		sleep 0.2
+	done
+	echo
 }
 
 ai_assemble
