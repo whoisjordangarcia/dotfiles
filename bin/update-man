@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# Helper script to update the dotfiles man page
+
+set -e
+
+DOTFILES_DIR="${HOME}/dev/dotfiles"
+MAN_PAGE="${DOTFILES_DIR}/configs/man/man1/dotfiles.1"
+QUICK_REF="${DOTFILES_DIR}/configs/zshrc/.zshrc-modules/scripts/dotfiles-quick-ref"
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  DOTFILES MAN PAGE UPDATER"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# Function to open both files in nvim split
+edit_docs() {
+    echo "Opening man page and quick reference in nvim..."
+    nvim -O "${MAN_PAGE}" "${QUICK_REF}"
+}
+
+# Function to validate man page
+validate_man() {
+    echo "Validating man page format..."
+    if man -l "${MAN_PAGE}" > /dev/null 2>&1; then
+        echo "✓ Man page format is valid"
+        return 0
+    else
+        echo "✗ Man page has formatting errors"
+        return 1
+    fi
+}
+
+# Function to preview man page
+preview_man() {
+    echo "Previewing man page..."
+    man "${MAN_PAGE}"
+}
+
+# Function to preview quick reference
+preview_ref() {
+    echo "Previewing quick reference..."
+    "${QUICK_REF}"
+}
+
+# Main menu
+show_menu() {
+    echo "What would you like to do?"
+    echo ""
+    echo "  1) Edit man page and quick reference"
+    echo "  2) Validate man page format"
+    echo "  3) Preview man page"
+    echo "  4) Preview quick reference"
+    echo "  5) Edit man page only"
+    echo "  6) Edit quick reference only"
+    echo "  q) Quit"
+    echo ""
+    read -p "Choose an option: " choice
+
+    case $choice in
+        1)
+            edit_docs
+            ;;
+        2)
+            validate_man
+            ;;
+        3)
+            preview_man
+            ;;
+        4)
+            preview_ref
+            ;;
+        5)
+            nvim "${MAN_PAGE}"
+            ;;
+        6)
+            nvim "${QUICK_REF}"
+            ;;
+        q|Q)
+            echo "Goodbye!"
+            exit 0
+            ;;
+        *)
+            echo "Invalid option"
+            show_menu
+            ;;
+    esac
+}
+
+# Parse command line arguments
+if [ "$#" -eq 0 ]; then
+    show_menu
+else
+    case "$1" in
+        edit|e)
+            edit_docs
+            ;;
+        validate|v)
+            validate_man
+            ;;
+        preview|p)
+            preview_man
+            ;;
+        ref|r)
+            preview_ref
+            ;;
+        help|h|-h|--help)
+            echo "Usage: update-man [command]"
+            echo ""
+            echo "Commands:"
+            echo "  edit, e       Edit man page and quick reference"
+            echo "  validate, v   Validate man page format"
+            echo "  preview, p    Preview man page"
+            echo "  ref, r        Preview quick reference"
+            echo "  help, h       Show this help"
+            echo ""
+            echo "Run without arguments for interactive menu."
+            ;;
+        *)
+            echo "Unknown command: $1"
+            echo "Run 'update-man help' for usage information"
+            exit 1
+            ;;
+    esac
+fi
