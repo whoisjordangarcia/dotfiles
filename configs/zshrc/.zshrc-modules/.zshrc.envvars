@@ -15,7 +15,7 @@ export PYENV_ROOT="$HOME/.pyenv"
 # ==============================================================================
 
 # Use bat as man pager for beautiful syntax highlighting
-# Removed -p flag to enable scrolling with less
-export MANPAGER="sh -c 'col -bx | bat -l man'"
+# Force paging=always to override bat config's --paging=never
+export MANPAGER="sh -c 'col -bx | bat -l man --paging=always'"
 export MANROFFOPT="-c"
 

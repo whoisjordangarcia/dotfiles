@@ -111,6 +111,33 @@ The man page system is integrated into your zsh configuration automatically:
 ✅ **Version Controlled**: Documentation lives with your dotfiles
 ✅ **Quick Reference**: Fast lookup without full man page navigation
 ✅ **Consistent**: Follows Unix documentation conventions
+✅ **Syntax Highlighted**: Beautiful colored output using bat
+
+## Colored Output
+
+Man pages are automatically displayed with syntax highlighting using `bat`. This is configured in `.zshrc.envvars`:
+
+```bash
+export MANPAGER="sh -c 'col -bx | bat -l man --paging=always'"
+export MANROFFOPT="-c"
+```
+
+**Note**: The `--paging=always` flag is required to override the `--paging=never` setting in your bat config file, ensuring you can scroll through man pages.
+
+This provides:
+- **Syntax highlighting** for man page sections
+- **Line numbers** and git integration (bat features)
+- **Smooth scrolling** with keyboard navigation
+- **Search highlighting** when using `/` to search
+
+### Navigation in bat-powered man pages:
+- `↑/↓` or `j/k` - Scroll up/down
+- `Space` - Page down
+- `b` - Page up
+- `/pattern` - Search forward
+- `?pattern` - Search backward
+- `n/N` - Next/previous search result
+- `q` - Quit
 
 ## Examples
 
