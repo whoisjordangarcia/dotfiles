@@ -24,6 +24,9 @@ source ~/.zshrc-modules/.zshrc.vim-mode
 
 export PATH="$HOME/.pyenv/shims:$PATH"
 
+# Custom man pages for dotfiles
+export MANPATH="$HOME/dev/dotfiles/configs/man:$MANPATH"
+
 # special config files to try loading
 special_config_files=(
     ~/.zshrc-work-mode

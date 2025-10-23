@@ -1,13 +1,15 @@
-alias vim="nvim"
-alias vi="nvim"
 alias reload="source ~/.zshrc"
 alias ls="eza --icons"
 alias cat="bat"
+alias top="btop"
+alias preview='fzf --preview="bat {} --color=always"'
 
 #arch 
 alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 
 #development
+alias vim="nvim"
+alias vi="nvim"
 alias vimrc="nvim ~/.config/nvim/init.lua"
 alias nvim-kickstart='NVIM_APPNAME="nvim-starter" nvim'
 alias avante='nvim -c "lua vim.defer_fn(function()require(\"avante.api\").zen_mode()end, 100)"'

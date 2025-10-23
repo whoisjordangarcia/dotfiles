@@ -12,8 +12,20 @@ decode_url() {
   python -c "import sys, urllib.parse as ul; print(ul.unquote_plus('$1'))"
 }
 
-decode () {
- jq -R 'split(".") | .[1] | @base64d | fromjson ' <<< "$1"
+encode64() {
+  if [[ $# -eq 0 ]]; then
+    cat | base64
+  else
+    printf '%s' $1 | base64
+  fi
+}
+
+decode64() {
+  if [[ $# -eq 0 ]]; then
+    cat | base64 --decode
+  else
+    printf '%s' $1 | base64 --decode
+  fi
 }
 
 compress() { tar -czf "${1%/}.tar.gz" "${1%/}"; }
@@ -69,3 +81,21 @@ web2app-remove() {
   rm "$DESKTOP_FILE"
   rm "$ICON_PATH"
 }
+
+# ==============================================================================
+#  Custom Man Page System
+# ==============================================================================
+
+# Display custom man page for dotfiles aliases and functions
+# The MANPAGER and MANROFFOPT exports in .zshrc.envvars ensure colored output via bat
+dotman() {
+  man ~/dev/dotfiles/configs/man/man1/dotfiles.1
+}
+
+# Quick reference guide (shorter, colorful output)
+dotref() {
+  ~/.zshrc-modules/scripts/dotfiles-quick-ref
+}
+
+# Aliases for convenience
+alias dothelp="dotman"
