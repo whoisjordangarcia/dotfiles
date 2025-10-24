@@ -1,4 +1,4 @@
-# Otobun
+# dotfiles - Otobun
 
 **Opinionated, curated dotfiles for the discerning developer**
 
