@@ -1,0 +1,89 @@
+#!/bin/bash
+
+wt_auto() {
+    local branch=$1
+    local base_branch=${2:-develop}
+    if [ -z "$branch" ]; then
+        echo "Usage: wt-auto <branch-name> [base-branch]"
+        echo "  branch-name: Name of the new worktree/branch"
+        echo "  base-branch: Base branch to branch from (default: develop)"
+        return 1
+    fi
+
+    local dir_name=$(echo "$branch" | sed 's/\//-/g')
+
+    git fetch origin
+    git worktree add ../$dir_name origin/$branch 2>/dev/null || git worktree add ../$dir_name -b $branch origin/$base_branch
+
+    if [ "$branch" != "$dir_name" ]; then
+        echo "Worktree created: ../$dir_name (branch: $branch, based on origin/$base_branch)"
+    else
+        echo "Worktree created: ../$dir_name (based on origin/$base_branch)"
+    fi
+}
+
+wt_list() {
+    git worktree list
+}
+
+wt_remove() {
+    local worktree_path=$1
+    if [ -z "$worktree_path" ]; then
+        echo "Usage: wt-remove <worktree-path>"
+        echo "Available worktrees:"
+        git worktree list
+        return 1
+    fi
+    git worktree remove "$worktree_path"
+}
+
+wt_prune() {
+    echo "Checking for stale worktrees..."
+    local stale_worktrees=$(git worktree list --porcelain | grep -B2 "prunable" | grep "worktree" | sed 's/worktree //')
+
+    if [ -z "$stale_worktrees" ]; then
+        echo "No stale worktrees found."
+        return 0
+    fi
+
+    echo "Found stale worktrees:"
+    echo "$stale_worktrees" | while read -r path; do
+        echo "  - $path"
+    done
+
+    git worktree prune
+    echo "✓ Pruned all stale worktree references"
+}
+
+wt_help() {
+    echo "Git Worktree Commands:"
+    echo "  wt-auto <branch> [base]  - Create worktree from branch or new branch from base"
+    echo "  wt-list                  - List all worktrees"
+    echo "  wt-remove <path>         - Remove a worktree"
+    echo "  wt-prune                 - Remove stale worktree references"
+    echo "  wt-help                  - Show this help"
+}
+
+case "$1" in
+    auto)
+        shift
+        wt_auto "$@"
+        ;;
+    list)
+        wt_list
+        ;;
+    remove)
+        shift
+        wt_remove "$@"
+        ;;
+    prune)
+        wt_prune
+        ;;
+    help|--help|-h)
+        wt_help
+        ;;
+    *)
+        wt_help
+        exit 1
+        ;;
+esac

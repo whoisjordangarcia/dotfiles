@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+clear
+echo -e "\033[32m"
+cat <~/dev/dotfiles/art/logo
+echo -e "\033[0m"
+echo

@@ -10,3 +10,12 @@ export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || pr
 
 export PYENV_ROOT="$HOME/.pyenv"
 
+# ==============================================================================
+#  Colored Man Pages (using bat)
+# ==============================================================================
+
+# Use bat as man pager for beautiful syntax highlighting
+# Force paging=always to override bat config's --paging=never
+export MANPAGER="sh -c 'col -bx | bat -l man --paging=always'"
+export MANROFFOPT="-c"
+

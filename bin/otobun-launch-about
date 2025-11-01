@@ -1,0 +1,3 @@
+#!/bin/zsh
+
+exec setsid uwsm app -- ghostty --class=Otobun -e bash -c 'fastfetch; read -n 1 -s'

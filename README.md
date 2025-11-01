@@ -1,4 +1,4 @@
-# Otobun
+# dotfiles - Otobun
 
 **Opinionated, curated dotfiles for the discerning developer**
 
@@ -20,7 +20,7 @@ otobun is a comprehensive cross-platform dotfiles repository that makes strong c
 
 ## Quick Start
 
-### One-Liner Installation ⚡
+### yolo it
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/boot.sh | bash

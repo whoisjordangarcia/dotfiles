@@ -1,0 +1,222 @@
+.TH DOTFILES 1 "2025-10-23" "1.0" "Dotfiles User Commands"
+.SH NAME
+dotfiles \- custom shell aliases and functions reference
+.SH SYNOPSIS
+This manual page documents custom zsh aliases and functions available in your dotfiles configuration.
+.SH DESCRIPTION
+This is a comprehensive reference for all custom aliases and functions defined in your zsh configuration. These commands enhance your shell experience with convenient shortcuts and utilities.
+
+.SH SHELL MANAGEMENT
+.TP
+.B reload
+Reload the zsh configuration by sourcing ~/.zshrc
+.TP
+.B zshrc
+Open ~/.zshrc in nvim for editing
+.TP
+.B dotfiles
+Change directory to ~/dev/dotfiles and open in nvim
+
+.SH FILE OPERATIONS
+.TP
+.B ls
+Enhanced ls with icons using eza
+.TP
+.B cat
+View files with syntax highlighting using bat
+.TP
+.B top
+System monitor using btop
+.TP
+.B preview
+Interactive file preview using fzf with bat for syntax highlighting
+
+.SH COMPRESSION UTILITIES
+.TP
+.B compress <directory>
+Compress a directory into a .tar.gz archive
+.br
+Example: compress myproject
+.TP
+.B decompress <file.tar.gz>
+Extract a .tar.gz archive
+.br
+Example: decompress myproject.tar.gz
+
+.SH EDITOR ALIASES
+.TP
+.B vim, vi
+Launch neovim
+.TP
+.B vimrc
+Open neovim configuration (init.lua) in nvim
+.TP
+.B nvim-kickstart
+Launch neovim with the kickstart configuration
+.TP
+.B avante
+Launch neovim in Avante zen mode for AI-assisted editing
+.TP
+.B claude-code
+Launch Claude Code CLI
+
+.SH EXIT SHORTCUTS
+.TP
+.B :q, :wq, :x
+Exit the shell (vim-style commands)
+
+.SH HYPRLAND (ARCH)
+.TP
+.B hyprc
+Edit Hyprland configuration in nvim
+
+.SH GIT ALIASES
+.TP
+.B gcm
+Checkout main branch
+.br
+Equivalent to: git checkout main
+.TP
+.B gpo
+Pull from origin
+.br
+Equivalent to: git pull origin
+.TP
+.B gc <branch>
+Checkout a git branch
+.br
+Equivalent to: git checkout
+.TP
+.B grm
+Rebase current branch with origin/main
+.br
+Equivalent to: git pull --rebase origin main
+.TP
+.B gpf
+Force push with lease (safer than force push)
+.br
+Equivalent to: git push --force-with-lease
+
+.SH GIT WORKTREE COMMANDS
+.TP
+.B wt-auto [branch] [base]
+Create a worktree from an existing branch or create a new branch from base
+.br
+Example: wt-auto feature-branch
+.br
+Example: wt-auto new-feature main
+.TP
+.B wt-list
+List all git worktrees in the current repository
+.TP
+.B wt-remove <worktree>
+Remove a specific worktree
+.br
+Example: wt-remove feature-branch
+.TP
+.B wt-prune
+Remove stale worktree references
+.TP
+.B wt-help
+Display help information for worktree commands
+
+.SH ENCODING/DECODING FUNCTIONS
+.TP
+.B decode_url <url>
+Decode a URL-encoded string
+.br
+Example: decode_url "hello%20world"
+.TP
+.B encode64 [string]
+Base64 encode a string or stdin
+.br
+Example: encode64 "hello world"
+.br
+Example: echo "hello world" | encode64
+.TP
+.B decode64 [string]
+Base64 decode a string or stdin
+.br
+Example: decode64 "aGVsbG8gd29ybGQ="
+.br
+Example: echo "aGVsbG8gd29ybGQ=" | decode64
+
+.SH WEB APPLICATION UTILITIES
+.TP
+.B web2app <AppName> <AppURL> <IconURL>
+Create a desktop launcher for a web application
+.br
+Creates a .desktop file in ~/.local/share/applications/
+.br
+Icon must be PNG format (use https://dashboardicons.com for icons)
+.br
+Example: web2app Gmail https://mail.google.com https://example.com/gmail-icon.png
+.TP
+.B web2app-remove <AppName>
+Remove a web application launcher created with web2app
+.br
+Example: web2app-remove Gmail
+
+.SH AI UTILITIES
+.TP
+.B ai_assemble
+Run the AI assembly script for project organization
+.TP
+.B reqrepo-env
+Activate the reqrepo Python environment
+
+.SH FILES
+.TP
+.I ~/.zshrc
+Main zsh configuration file
+.TP
+.I ~/.zshrc-modules/.zshrc.aliases
+Alias definitions
+.TP
+.I ~/.zshrc-modules/.zshrc.functions
+Function definitions
+.TP
+.I ~/dev/dotfiles
+Dotfiles repository location
+
+.SH EXAMPLES
+.PP
+Compress a project directory:
+.RS
+.nf
+compress my-project
+.fi
+.RE
+
+.PP
+Create a new git worktree for a feature branch:
+.RS
+.nf
+wt-auto feature/new-ui main
+.fi
+.RE
+
+.PP
+Decode a URL parameter:
+.RS
+.nf
+decode_url "search%3Fq%3Dhello%20world"
+.fi
+.RE
+
+.PP
+Create a web app launcher:
+.RS
+.nf
+web2app Notion https://notion.so https://dashboardicons.com/notion.png
+.fi
+.RE
+
+.SH AUTHOR
+Jordan Garcia
+
+.SH SEE ALSO
+.BR zsh (1),
+.BR git (1),
+.BR nvim (1),
+.BR tmux (1)
