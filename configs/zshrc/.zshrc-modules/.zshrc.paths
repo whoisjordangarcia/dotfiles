@@ -1,3 +1,6 @@
+# dotfiles bin
+export PATH="${HOME}/dev/dotfiles/bin:$PATH"
+
 # opencode
 export PATH=${HOME}/.opencode/bin:$PATH
 

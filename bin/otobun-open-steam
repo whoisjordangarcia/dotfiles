@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+
+# Check if gamescope is already running
+# if [ -f /run/user/1000/gamescope-0.lock ]; then
+# 	notify-send "Steam Already Running" "Gamescope is already active" -u normal -t 3000
+# 	exit 0
+# fi
+
+notify-send "Launching Steam" "Starting gamescope with Steam Big Picture mode" -u normal -t 3000
+
+# Run gamescope and capture exit code
+#gamescope --backend sdl -W 3840 -H 2160 -r 240 --adaptive-sync --steam --force-grab-cursor -f -- steam -gamepadui
+gamescope --backend sdl -W 3840 -H 2160 -r 240 --adaptive-sync --steam -f -- steam -gamepadui
+
+exit_code=$?
+
+# Show error notification if command failed
+if [ $exit_code -ne 0 ]; then
+	notify-send "Steam Launch Failed" "Gamescope exited with error code: $exit_code\n\nCheck for missing dependencies or display issues." -u critical -t 5000
+	exit $exit_code
+fi
