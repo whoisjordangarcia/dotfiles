@@ -34,4 +34,7 @@ resize-overlay = never
 
 cursor-style = "block"
 cursor-style-blink = false
-shell-integration-features = no-cursor 
+
+# Fix double input with tmux - disable shell integration entirely
+shell-integration = false
+term = xterm-256color 
