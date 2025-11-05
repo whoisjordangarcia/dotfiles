@@ -3,16 +3,20 @@
 ai_assemble() {
 	local current_dir=$(pwd)
 
-	if [ ! -f "AGENTS.md" ]; then
+	if [ ! -e "AGENTS.md" ]; then
 		if [ -f "CLAUDE.md" ]; then
-			cp "CLAUDE.md" "AGENTS.md"
-			echo "✓ Created AGENTS.md from CLAUDE.md"
+			ln -sf "CLAUDE.md" "AGENTS.md"
+			echo "✓ Created AGENTS.md symlink to CLAUDE.md"
 		else
-			echo "❌ Neither AGENTS.md nor CLAUDE.md found in current directory"
+			echo "❌ CLAUDE.md not found in current directory"
 			return 1
 		fi
 	else
-		echo "✓ AGENTS.md already exists"
+		if [ -L "AGENTS.md" ]; then
+			echo "✓ AGENTS.md symlink already exists"
+		else
+			echo "✓ AGENTS.md already exists (not a symlink)"
+		fi
 	fi
 
 	echo "🎯 AI agent instruction symlinks setup complete!"
