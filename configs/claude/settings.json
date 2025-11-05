@@ -13,7 +13,8 @@
       "Bash(gh pr create:*)",
       "Bash(task:*)",
       "Bash(gh pr list:*)",
-      "Bash(gh pr view:*)"
+      "Bash(gh pr view:*)",
+      "Bash(npm run:*)"
     ],
     "deny": [
       "Read(./.env)",
@@ -29,5 +30,5 @@
     "padding": 0
   },
   "outputStyle": "Explanatory",
-  "alwaysThinkingEnabled": true
+  "alwaysThinkingEnabled": false
 }

@@ -45,7 +45,6 @@ The following will be handled by other specialized agents:
 - **ui-designer**: Creates actual mockups and component hierarchies
 - **system-architect**: Designs technical implementation
 - **backend-architect**: Defines API implementation details
-- **shadcn-expert**: Selects UI components and design systems
 
 ## Key Principles
 
@@ -66,4 +65,4 @@ Before finalizing any PRD, you must ensure:
 - ✓ Includes measurable success metrics
 - ✓ Clearly defines scope boundaries
 
-Y
+Save PRD in @output/[date 2025-01-01]-prd-[title].md
