@@ -36,5 +36,5 @@ cursor-style = "block"
 cursor-style-blink = false
 
 # Fix double input with tmux - disable shell integration entirely
-shell-integration = false
+shell-integration = zsh 
 term = xterm-256color 

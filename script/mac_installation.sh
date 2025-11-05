@@ -21,6 +21,7 @@ component_installation=(
 	claude
 	codex
 	fastfetch
+	opencode
 )
 
 for component in "${component_installation[@]}"; do
