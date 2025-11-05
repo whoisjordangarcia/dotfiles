@@ -1,3 +1,7 @@
+if true then
+  return {}
+end
+
 -- https://github.com/yetone/avante.nvim
 return {
   "yetone/avante.nvim",

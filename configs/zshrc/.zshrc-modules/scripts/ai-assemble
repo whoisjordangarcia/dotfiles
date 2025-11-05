@@ -15,11 +15,6 @@ ai_assemble() {
 		echo "✓ AGENTS.md already exists"
 	fi
 
-	if [ ! -d ".github" ]; then
-		mkdir -p ".github"
-		echo "✓ Created .github directory"
-	fi
-
 	echo "🎯 AI agent instruction symlinks setup complete!"
 
 	echo
