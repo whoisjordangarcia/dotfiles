@@ -29,6 +29,9 @@
     "command": "bunx -y ccstatusline@latest",
     "padding": 0
   },
+  "enabledPlugins": {
+    "superpowers@superpowers-marketplace": true
+  },
   "outputStyle": "Explanatory",
   "alwaysThinkingEnabled": false
 }
