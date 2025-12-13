@@ -62,3 +62,4 @@ export GPG_TTY=$(tty)
 # }
 # add-zsh-hook chpwd load-nvmrc
 # load-nvmrc
+export PATH="$HOME/.local/bin:$PATH"
