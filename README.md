@@ -36,7 +36,7 @@ This will automatically:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/dotfiles.git
+git clone https://github.com/whoisjordangarcia/dotfiles.git
 cd dotfiles
 
 # Run interactive setup
@@ -69,39 +69,35 @@ For automated setups or CI/CD:
 
 ### Core Tools
 
-- **Shell**: Zsh with Oh My Zsh, syntax highlighting, and autosuggestions
-- **Editor**: Neovim with LazyVim configuration
+- **Shell**: Zsh with Oh My Zsh and plugins
+- **Editor**: Vim (Neovim + LazyVim on the `mac` profile)
 - **Terminal Multiplexer**: Tmux with custom configuration
-- **File Navigation**: eza, zoxide, ripgrep, fzf
-- **Prompt**: Starship (cross-platform) or Powerlevel10k
+- **CLI Essentials**: Common tools via `script/apps/*` (varies by profile)
+- **Prompt**: Starship (cross-platform)
 
 ### Platform-Specific Applications
 
 #### macOS
 
-- **Terminal**: Ghostty
-- **Window Manager**: Aerospace with Sketchybar
-- **Package Manager**: Homebrew with curated package lists
-- Environment-specific Brewfiles (personal/work)
+- **`mac` profile**: Ghostty, Neovim, Lazygit, CLI AI tooling
+- **`mac_work` profile**: Homebrew apps + Aerospace + work-specific setup
 
 #### Arch Linux
 
-- **Window Manager**: Hyprland with HyDE theme
 - **Terminal**: Ghostty
-- **Panel**: Waybar
-- **Launcher**: Rofi (Wayland)
-- **File Manager**: Dolphin
+- **Essentials**: Node, Bat, Lazygit, CLI AI tooling
+- Hyprland/Waybar configs live in `configs/`, but aren’t installed by default
 
 #### Fedora
 
 - **Window Manager**: i3wm
-- **Terminal**: Wezterm
 - **Panel**: Polybar
+- **Essentials**: Lazygit, fonts, Starship, Fastfetch
 
 #### Ubuntu
 
-- **Desktop Environment**: GNOME with extensions
-- **Terminal**: GNOME Terminal or Wezterm
+- **Essentials**: Node, Lazygit, Starship, Fastfetch
+- **WSL-friendly**: Includes `wezterm/windows` setup
 
 ## Management Commands
 
@@ -110,19 +106,22 @@ For automated setups or CI/CD:
 ./bin/dot --help
 
 # List all available installations
-./bin/dot --list
+./bin/dot -l
 
 # Show current system detection
-./bin/dot --system
+./bin/dot -s
 
 # View current configuration
-./bin/dot --config
+./bin/dot -c
 
 # Reset configuration and start over
 ./bin/dot --reset-config
 
+# Reset config and re-run setup
+./bin/dot --reconfigure
+
 # Open dotfiles in editor
-./bin/dot --edit
+./bin/dot -e
 ```
 
 ## Architecture
