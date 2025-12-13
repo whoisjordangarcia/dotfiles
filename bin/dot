@@ -222,7 +222,7 @@ displayUsageAndExit() {
 	echo "Options:"
 	echo "  -i, --install     Interactive installation setup"
 	echo "  -l, --list        List available installations"
-	echo "  -s, --system      Show current system detection"
+	echo "  -s, --detect-system Show current system detection"
 	echo "  -c, --config      Show current configuration"
 	echo "  --reset-config    Reset configuration file"
 	echo "  --reconfigure     Force re-input of configuration questions"
@@ -256,7 +256,7 @@ while [[ $# -gt 0 ]]; do
 		get_available_installations
 		exit 0
 		;;
-	"-s" | "--system")
+	"-s" | "--detect-system")
 		detected=$(detect_system)
 		auto=$(auto_select_installation)
 		info "System Detection:"
