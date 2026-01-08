@@ -9,6 +9,14 @@ source "$SCRIPT_DIR/../common/log.sh"
 # shellcheck source=../common/symlink.sh
 source "$SCRIPT_DIR/../common/symlink.sh"
 
+# Source .dotconfig if variables aren't already set
+DOTCONFIG="$SCRIPT_DIR/../../.dotconfig"
+if [[ -z "${DOT_NAME:-}" || -z "${DOT_EMAIL:-}" ]] && [[ -f "$DOTCONFIG" ]]; then
+	# shellcheck source=../../.dotconfig
+	source "$DOTCONFIG"
+	debug "Loaded configuration from .dotconfig"
+fi
+
 DOT_NAME=${DOT_NAME:-}
 DOT_EMAIL=${DOT_EMAIL:-}
 DOT_YUBIKEY=${DOT_YUBIKEY:-}
