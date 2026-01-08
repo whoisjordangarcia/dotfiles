@@ -45,6 +45,138 @@ detect_system() {
 	echo "${os_name}_${distro}"
 }
 
+get_modules_from_script() {
+	local script="$1"
+	if [[ ! -f "$script" ]]; then
+		return 1
+	fi
+	# Extract component_installation array entries
+	grep -A 100 'component_installation=(' "$script" | \
+		grep -v '^#' | \
+		sed -n '/(/,/)/p' | \
+		grep -v '(' | grep -v ')' | \
+		sed 's/^[[:space:]]*//' | \
+		sed 's/#.*//' | \
+		grep -v '^$'
+}
+
+interactive_module_selection() {
+	local system="${1:-$(auto_select_installation)}"
+	local script="$dotfilesDirectory/script/${system}_installation.sh"
+
+	if [[ ! -f "$script" ]]; then
+		fail "Installation script not found: $script"
+	fi
+
+	# Get available modules
+	local modules=()
+	while IFS= read -r module; do
+		modules+=("$module")
+	done < <(get_modules_from_script "$script")
+
+	if [[ ${#modules[@]} -eq 0 ]]; then
+		fail "No modules found in $script"
+	fi
+
+	# Initialize selection state (all selected by default)
+	local selected=()
+	for ((i=0; i<${#modules[@]}; i++)); do
+		selected[$i]=1
+	done
+
+	# Interactive selection loop
+	while true; do
+		clear
+		header "Module Selection ($system)"
+		echo ""
+		echo "  Toggle modules with number keys, then press Enter to install"
+		echo "  Press 'a' to select all, 'n' to select none, 'q' to quit"
+		echo ""
+
+		for ((i=0; i<${#modules[@]}; i++)); do
+			local marker="[ ]"
+			if [[ ${selected[$i]} -eq 1 ]]; then
+				marker="[${GREEN}✓${RESET}]"
+			fi
+			printf "  %2d) %b %s\n" "$((i+1))" "$marker" "${modules[$i]}"
+		done
+
+		echo ""
+		prompt "Selection: "
+		read -r choice
+
+		case "$choice" in
+			q|Q)
+				info "Cancelled"
+				exit 0
+				;;
+			a|A)
+				for ((i=0; i<${#modules[@]}; i++)); do
+					selected[$i]=1
+				done
+				;;
+			n|N)
+				for ((i=0; i<${#modules[@]}; i++)); do
+					selected[$i]=0
+				done
+				;;
+			"")
+				# Enter pressed - run selected modules
+				break
+				;;
+			*[0-9]*)
+				# Toggle the selected number
+				local num=$((choice - 1))
+				if [[ $num -ge 0 && $num -lt ${#modules[@]} ]]; then
+					if [[ ${selected[$num]} -eq 1 ]]; then
+						selected[$num]=0
+					else
+						selected[$num]=1
+					fi
+				fi
+				;;
+		esac
+	done
+
+	# Build list of selected modules
+	SELECTED_MODULES=()
+	for ((i=0; i<${#modules[@]}; i++)); do
+		if [[ ${selected[$i]} -eq 1 ]]; then
+			SELECTED_MODULES+=("${modules[$i]}")
+		fi
+	done
+
+	if [[ ${#SELECTED_MODULES[@]} -eq 0 ]]; then
+		info "No modules selected"
+		exit 0
+	fi
+
+	# Run selected modules
+	echo ""
+	header "Installing ${#SELECTED_MODULES[@]} modules"
+
+	# Export configuration
+	load_config
+	export DOT_NAME DOT_EMAIL DOT_ENVIRONMENT DOT_SYSTEM DOT_YUBIKEY
+	export WORK_ENV=""
+	if [[ "$DOT_ENVIRONMENT" == "work" ]]; then
+		export WORK_ENV="1"
+	fi
+
+	cd "$dotfilesDirectory"
+	for module in "${SELECTED_MODULES[@]}"; do
+		section "$module"
+		local script_path="./script/${module}/setup.sh"
+		if [[ -f "$script_path" ]]; then
+			source "$script_path"
+		else
+			info "Script for $module does not exist"
+		fi
+	done
+
+	success "Module installation complete!"
+}
+
 load_config() {
 	if [[ -f "$configFile" ]]; then
 		source "$configFile"
@@ -221,6 +353,7 @@ displayUsageAndExit() {
 	echo ""
 	echo "Options:"
 	echo "  -i, --install     Interactive installation setup"
+	echo "  -m, --modules     Interactive module selection"
 	echo "  -l, --list        List available installations"
 	echo "  -s, --detect-system Show current system detection"
 	echo "  -c, --config      Show current configuration"
@@ -231,6 +364,7 @@ displayUsageAndExit() {
 	echo ""
 	echo "Installation Examples:"
 	echo "  dot -i                    # Interactive setup"
+	echo "  dot -m                    # Select specific modules to install"
 	echo "  dot --system mac --work   # Direct Mac work installation"
 	echo "  dot --system linux_ubuntu # Direct Ubuntu installation"
 	exit
@@ -244,6 +378,11 @@ while [[ $# -gt 0 ]]; do
 		;;
 	"-e" | "--edit")
 		exec "${EDITOR:-code}" "$dotfilesDirectory"
+		;;
+	"-m" | "--modules")
+		load_config
+		interactive_module_selection "$DOT_SYSTEM"
+		exit 0
 		;;
 	"-i" | "--install")
 		FORCE_INTERACTIVE=1
