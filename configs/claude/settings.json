@@ -33,5 +33,6 @@
     "superpowers@superpowers-marketplace": true
   },
   "outputStyle": "Explanatory",
-  "alwaysThinkingEnabled": false
+  "alwaysThinkingEnabled": true,
+  "model": "opus"
 }
