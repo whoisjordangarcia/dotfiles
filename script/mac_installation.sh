@@ -10,6 +10,7 @@ component_installation=(
 	# essentials
 	zsh
 	vim
+	node
 	neovim/mac
 	tmux
 	fonts/mac

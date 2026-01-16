@@ -15,6 +15,7 @@ component_installation=(
 	zsh
 	vim
 	tmux
+  node
 	fonts/mac
 	aerospace/mac
 	lazygit/mac
