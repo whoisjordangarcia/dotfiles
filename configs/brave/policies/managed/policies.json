@@ -1,0 +1,25 @@
+{
+  "ExtensionInstallForcelist": [
+    "ddkjiahejlhfcafbddmgiahcphecmpfh;https://clients2.google.com/service/update2/crx",
+    "aeblfdkhhhdcdjpifhhbdiojplfjncoa;https://clients2.google.com/service/update2/crx",
+    "dbepggeogbaibhgnhhndojpepiihcmeb;https://clients2.google.com/service/update2/crx",
+    "iphcomljdfghbkdcfndaijbokpgddeno;https://clients2.google.com/service/update2/crx",
+    "eimadpbcbfnmbkopoojfekhnkhdbieeh;https://clients2.google.com/service/update2/crx",
+    "dkgjnpbipbdaoaadbdhpiokaemhlphep;https://clients2.google.com/service/update2/crx",
+    "hlepfoohegkhhmjieoechaddaejaokhf;https://clients2.google.com/service/update2/crx",
+    "neebplgakaahbhdphmkckjjcegoiijjo;https://clients2.google.com/service/update2/crx"
+  ],
+  "DefaultSearchProviderEnabled": true,
+  "DefaultSearchProviderName": "DuckDuckGo",
+  "DefaultSearchProviderSearchURL": "https://duckduckgo.com/?q={searchTerms}",
+  "DefaultSearchProviderSuggestURL": "https://duckduckgo.com/ac/?q={searchTerms}&type=list",
+  "ManagedBookmarks": [
+    { "toplevel_name": "Managed" },
+    { "name": "GitHub", "url": "https://github.com" },
+    { "name": "Gmail", "url": "https://mail.google.com" }
+  ],
+  "BrowserSignin": 0,
+  "PasswordManagerEnabled": false,
+  "AutofillAddressEnabled": false,
+  "AutofillCreditCardEnabled": false
+}

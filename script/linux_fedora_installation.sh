@@ -16,6 +16,7 @@ component_installation=(
 	polybar
 	starship
 	fastfetch
+	brave/linux
 )
 
 for component in "${component_installation[@]}"; do

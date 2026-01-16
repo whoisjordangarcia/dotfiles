@@ -19,6 +19,7 @@ component_installation=(
 	# now using HyDE
 	#hypr/linux
 	#waybar/linux
+	brave/linux
 	fastfetch
 	codex
 	claude

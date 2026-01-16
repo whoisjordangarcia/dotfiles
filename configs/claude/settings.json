@@ -22,8 +22,10 @@
       "Read(./secrets/**)",
       "Read(~/.zshrc-sec)",
       "Read(~/.zshrc-modules/.zshrc.sec)"
-    ]
+    ],
+    "defaultMode": "default"
   },
+  "model": "opus",
   "statusLine": {
     "type": "command",
     "command": "bunx -y ccstatusline@latest",
@@ -33,6 +35,5 @@
     "superpowers@superpowers-marketplace": true
   },
   "outputStyle": "Explanatory",
-  "alwaysThinkingEnabled": true,
-  "model": "opus"
+  "alwaysThinkingEnabled": true
 }
