@@ -83,6 +83,9 @@ fi
 # annoying things
 defaults write -g ApplePressAndHoldEnabled -bool false
 
+# Trackpad: disable "natural" scrolling (use traditional scroll direction)
+defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
+
 # Create Screenshots folder if it doesn't exist
 mkdir -p "$HOME/Desktop/Screenshots"
 

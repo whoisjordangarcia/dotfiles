@@ -20,6 +20,7 @@ cask 'tailscale-app'
 
 # Essential Apps
 cask 'ghostty'
+cask 'brave-browser'
 
 # Essential Fonts
 cask 'font-sf-mono'

@@ -13,6 +13,7 @@ component_installation=(
 	starship
 	linux/lazygit
 	fastfetch
+	brave/linux
 )
 
 for component in "${component_installation[@]}"; do

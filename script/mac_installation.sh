@@ -23,6 +23,7 @@ component_installation=(
 	codex
 	fastfetch
 	opencode
+	brave/mac
 )
 
 for component in "${component_installation[@]}"; do
