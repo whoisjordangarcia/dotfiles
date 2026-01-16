@@ -15,6 +15,7 @@ brew 'bat'
 brew 'tmuxinator'
 brew 'yq' # tmux statusbar  
 brew 'go'
+cask 'tailscale-app'
 
 # Essential Apps
 cask 'ghostty'

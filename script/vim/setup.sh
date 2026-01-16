@@ -6,7 +6,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 NVIM_SOURCE="$SCRIPT_DIR/../../configs/nvim"
 NVIM_TARGET="$HOME/.config/nvim"
 
-mkdir -p "$HOME/.config.nvim"
+mkdir -p "$HOME/.config"
 
 source "$SCRIPT_DIR/../common/log.sh"
 source "$SCRIPT_DIR/../common/symlink.sh"

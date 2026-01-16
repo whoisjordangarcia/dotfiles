@@ -46,5 +46,9 @@ defaults write com.apple.dock autohide -bool true
 # autohide status bar
 defaults write NSGlobalDomain _HIHideMenuBar -bool true
 
+# hide desktop icons
+defaults write com.apple.finder CreateDesktop -bool false
+
 killall Dock
 killall SystemUIServer
+killall Finder
