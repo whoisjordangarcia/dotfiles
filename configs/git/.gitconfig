@@ -42,6 +42,6 @@
 [fetch]
   prune = true
 
-[includeIf "gitdir:~/dev/work/"]
-  path = ~/dev/work/.gitconfig
+[includeIf "gitdir:~/projects/work/"]
+  path = ~/projects/work/.gitconfig
 
