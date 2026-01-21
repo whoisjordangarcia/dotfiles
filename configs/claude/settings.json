@@ -1,41 +1,53 @@
 {
   "env": {
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "DISABLE_TELEMETRY": "1",
     "DISABLE_BUG_COMMAND": "1",
     "DISABLE_ERROR_REPORTING": "1"
   },
   "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
-      "Bash(git push:*)",
-      "Bash(git commit:*)",
-      "Bash(git add:*)",
       "Bash(gh pr create:*)",
-      "Bash(task:*)",
       "Bash(gh pr list:*)",
       "Bash(gh pr view:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git push:*)",
+      "Bash(git status:*)",
+      "Bash(npm info:*)",
       "Bash(npm run:*)",
-      "Bash(npm info:*)"
+      "Bash(npm run:*)",
+      "Bash(nx:*)",
+      "Bash(pnpm:*)",
+      "Bash(task:*)"
     ],
     "deny": [
+      "Read(./**/*credentials*)",
       "Read(./.env)",
       "Read(./.env.*)",
       "Read(./secrets/**)",
-      "Read(~/.zshrc-sec)",
-      "Read(~/.zshrc-modules/.zshrc.sec)"
+      "Read(~/.aws/**)",
+      "Read(~/.ssh/**)",
+      "Read(~/.zshrc-modules/.zshrc.sec)",
+      "Read(~/.zshrc-sec)"
     ],
+    "ask": ["Bash(git push:*)", "Bash(curl:*)"],
     "defaultMode": "default"
   },
-  "model": "sonnet",
   "statusLine": {
     "type": "command",
     "command": "bunx -y ccstatusline@latest",
     "padding": 0
   },
   "enabledPlugins": {
-    "superpowers@superpowers-marketplace": true
+    "superpowers@superpowers-marketplace": true,
+    "linear@claude-plugins-official": true,
+    "dev-browser@dev-browser-marketplace": true
   },
   "outputStyle": "Explanatory",
   "alwaysThinkingEnabled": true,
-  "autoUpdatesChannel": "latest"
+  "autoUpdatesChannel": "stable",
+  "minimumVersion": "2.1.14"
 }
