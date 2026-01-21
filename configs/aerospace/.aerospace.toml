@@ -46,7 +46,7 @@ enable-normalization-opposite-orientation-for-nested-containers = true
 [gaps]
 #outer.bottom numbers have to match presentation.sh variables. built-in retina display is excluded from presentation mode, so this only works on external monitors.
 outer.bottom = [{ monitor.'^built-in retina display$' = 15 }, 15]
-outer.top = [{ monitor.'^built-in retina display$' = 10 }, 15]
+outer.top = [{ monitor.'^built-in retina display$' = 10 }, 50]
 outer.left = [{ monitor.'^built-in retina display$' = 15 }, 15]
 outer.right = [{ monitor.'^built-in retina display$' = 15 }, 15]
 inner.horizontal = 10
