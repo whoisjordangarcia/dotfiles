@@ -51,12 +51,12 @@ get_modules_from_script() {
 		return 1
 	fi
 	# Extract component_installation array entries
-	grep -A 100 'component_installation=(' "$script" | \
-		grep -v '^#' | \
-		sed -n '/(/,/)/p' | \
-		grep -v '(' | grep -v ')' | \
-		sed 's/^[[:space:]]*//' | \
-		sed 's/#.*//' | \
+	grep -A 100 'component_installation=(' "$script" |
+		grep -v '^#' |
+		sed -n '/(/,/)/p' |
+		grep -v '(' | grep -v ')' |
+		sed 's/^[[:space:]]*//' |
+		sed 's/#.*//' |
 		grep -v '^$'
 }
 
@@ -80,7 +80,7 @@ interactive_module_selection() {
 
 	# Initialize selection state (all selected by default)
 	local selected=()
-	for ((i=0; i<${#modules[@]}; i++)); do
+	for ((i = 0; i < ${#modules[@]}; i++)); do
 		selected[$i]=1
 	done
 
@@ -93,12 +93,12 @@ interactive_module_selection() {
 		echo "  Press 'a' to select all, 'n' to select none, 'q' to quit"
 		echo ""
 
-		for ((i=0; i<${#modules[@]}; i++)); do
+		for ((i = 0; i < ${#modules[@]}; i++)); do
 			local marker="[ ]"
 			if [[ ${selected[$i]} -eq 1 ]]; then
 				marker="[${GREEN}✓${RESET}]"
 			fi
-			printf "  %2d) %b %s\n" "$((i+1))" "$marker" "${modules[$i]}"
+			printf "  %2d) %b %s\n" "$((i + 1))" "$marker" "${modules[$i]}"
 		done
 
 		echo ""
@@ -106,41 +106,41 @@ interactive_module_selection() {
 		read -r choice
 
 		case "$choice" in
-			q|Q)
-				info "Cancelled"
-				exit 0
-				;;
-			a|A)
-				for ((i=0; i<${#modules[@]}; i++)); do
-					selected[$i]=1
-				done
-				;;
-			n|N)
-				for ((i=0; i<${#modules[@]}; i++)); do
-					selected[$i]=0
-				done
-				;;
-			"")
-				# Enter pressed - run selected modules
-				break
-				;;
-			*[0-9]*)
-				# Toggle the selected number
-				local num=$((choice - 1))
-				if [[ $num -ge 0 && $num -lt ${#modules[@]} ]]; then
-					if [[ ${selected[$num]} -eq 1 ]]; then
-						selected[$num]=0
-					else
-						selected[$num]=1
-					fi
+		q | Q)
+			info "Cancelled"
+			exit 0
+			;;
+		a | A)
+			for ((i = 0; i < ${#modules[@]}; i++)); do
+				selected[$i]=1
+			done
+			;;
+		n | N)
+			for ((i = 0; i < ${#modules[@]}; i++)); do
+				selected[$i]=0
+			done
+			;;
+		"")
+			# Enter pressed - run selected modules
+			break
+			;;
+		*[0-9]*)
+			# Toggle the selected number
+			local num=$((choice - 1))
+			if [[ $num -ge 0 && $num -lt ${#modules[@]} ]]; then
+				if [[ ${selected[$num]} -eq 1 ]]; then
+					selected[$num]=0
+				else
+					selected[$num]=1
 				fi
-				;;
+			fi
+			;;
 		esac
 	done
 
 	# Build list of selected modules
 	SELECTED_MODULES=()
-	for ((i=0; i<${#modules[@]}; i++)); do
+	for ((i = 0; i < ${#modules[@]}; i++)); do
 		if [[ ${selected[$i]} -eq 1 ]]; then
 			SELECTED_MODULES+=("${modules[$i]}")
 		fi
@@ -238,7 +238,7 @@ show_logo() {
 		# Display logo in blue color
 		while IFS= read -r line; do
 			printf "${BLUE}%s${RESET}\n" "$line"
-		done < "$logo_file"
+		done <"$logo_file"
 		echo ""
 	fi
 }
@@ -256,7 +256,7 @@ interactive_setup() {
 	local suggested_env="personal"
 
 	# Smart environment detection based on existing git config
-	if [[ "$(git config user.email 2>/dev/null)" == *"@labcorp.com" ]]; then
+	if [[ "$(git config user.email 2>/dev/null)" == *"@nestgenomics.com" ]]; then
 		suggested_env="work"
 	fi
 
@@ -462,7 +462,7 @@ else
 	printf "  ${GREEN}System:${RESET}       %s\n" "$DOT_SYSTEM"
 	printf "  ${GREEN}YubiKey:${RESET}      %s\n" "${DOT_YUBIKEY:-not set}"
 	echo ""
-	
+
 	prompt "Continue with this configuration? [Y/n]: "
 	read proceed
 	if [[ "$proceed" =~ ^[Nn]$ ]]; then
@@ -470,6 +470,6 @@ else
 		info "Installation cancelled. Run 'dot --reconfigure' to change settings."
 		exit 0
 	fi
-	
+
 	run_installation
 fi

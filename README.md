@@ -150,7 +150,7 @@ The system automatically detects:
 
 - **Operating System**: macOS (Darwin) or Linux distributions
 - **Linux Distribution**: Ubuntu, Fedora, or Arch via `/etc/os-release`
-- **Environment Type**: Work (via `@labcorp.com` email) or personal
+- **Environment Type**: Work (via `@nestgenomics.com` email) or personal
 - **Available Components**: Based on platform compatibility
 
 ### Configuration Management

@@ -51,7 +51,7 @@ brew analytics off
 # Determine environment type
 if [[ -n "$FORCE_ENVIRONMENT" ]]; then
 	ENVIRONMENT="$FORCE_ENVIRONMENT"
-elif [[ -n "${WORK_ENV:-}" ]] || [[ "$(git config user.email)" == *"@labcorp.com" ]]; then
+elif [[ -n "${WORK_ENV:-}" ]] || [[ "$(git config user.email)" == *"@nestgenomics.com" ]]; then
 	ENVIRONMENT="work"
 else
 	ENVIRONMENT="personal" # Default to personal
