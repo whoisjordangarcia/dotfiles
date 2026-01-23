@@ -24,6 +24,7 @@ plugins=(
     zsh-syntax-highlighting
     zsh-autosuggestions
     fzf
+    nx-completion
 )
 
 DISABLE_MAGIC_FUNCTIONS=true

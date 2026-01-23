@@ -49,3 +49,11 @@ if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh_codex" ]; then
 else
     debug "zsh_codex already installed"
 fi
+
+# nx-completion - Nx CLI completions
+if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/nx-completion" ]; then
+    step "Installing nx-completion..."
+    git clone git@github.com:jscutlery/nx-completion.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/nx-completion
+else
+    debug "nx-completion already installed"
+fi
