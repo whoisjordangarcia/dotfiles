@@ -14,7 +14,6 @@ alias vi="nvim"
 alias vimrc="nvim ~/.config/nvim/init.lua"
 alias nvim-kickstart='NVIM_APPNAME="nvim-starter" nvim'
 alias avante='nvim -c "lua vim.defer_fn(function()require(\"avante.api\").zen_mode()end, 100)"'
-alias claude-code='claude'
 alias reqrepo-env='~/.zshrc-modules/scripts/activate-reqrepo-env'
 
 alias :q="exit"
