@@ -18,7 +18,7 @@ source "$dotfilesDirectory/script/common/log.sh"
 # Configuration defaults
 DEFAULT_NAME="Jordan Garcia"
 DEFAULT_EMAIL_PERSONAL="arickho@gmail.com"
-DEFAULT_EMAIL_WORK="jordan.arickhogarcia@labcorp.com"
+DEFAULT_EMAIL_WORK="jordan.arickhogarcia@nestgenomics.com"
 
 detect_system() {
 	local os_name=""
