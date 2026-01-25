@@ -34,29 +34,24 @@
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
-    "ask": [
-      "Bash(git push:*)",
-      "Bash(curl:*)"
-    ],
-    "defaultMode": "default"
+    "ask": ["Bash(git push:*)", "Bash(curl:*)"]
   },
+  "model": "opus",
   "statusLine": {
     "type": "command",
-    "command": "bunx -y ccstatusline@latest",
+    "command": "~/.claude/statusline.sh",
     "padding": 0
   },
   "enabledPlugins": {
     "superpowers@superpowers-marketplace": true,
-    "linear@claude-plugins-official": true,
+    "linear@claude-plugins-official": false,
     "dev-browser@dev-browser-marketplace": true,
     "frontend-design@claude-plugins-official": true,
-    "github@claude-plugins-official": false,
     "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
     "claude-mem@thedotmack": true
   },
   "outputStyle": "Explanatory",
   "alwaysThinkingEnabled": true,
-  "autoUpdatesChannel": "stable",
-  "minimumVersion": "2.1.14"
+  "autoUpdatesChannel": "latest"
 }
