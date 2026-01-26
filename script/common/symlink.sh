@@ -30,7 +30,7 @@ link_file() {
 			# Absolute path - try to resolve it
 			if command -v realpath >/dev/null 2>&1; then
 				# Try realpath first (works if file exists)
-				resolved_link=$(realpath "$link_dest" 2>/dev/null)
+				resolved_link=$(realpath "$link_dest" 2>/dev/null || true)
 				if [ -z "$resolved_link" ]; then
 					# If realpath fails, use Python to resolve the path
 					resolved_link=$(python3 -c "import os.path; print(os.path.abspath('$link_dest'))" 2>/dev/null || echo "$link_dest")
