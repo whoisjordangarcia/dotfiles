@@ -72,12 +72,7 @@ if [[ -f "$SCRIPT_DIR/Brewfile.$ENVIRONMENT" ]]; then
 	debug "Installing $ENVIRONMENT-specific packages..."
 	brew bundle --file="$SCRIPT_DIR/Brewfile.$ENVIRONMENT"
 else
-	debug "Brewfile.$ENVIRONMENT not found, falling back to legacy Brewfile"
-	if [[ -f "$SCRIPT_DIR/Brewfile.legacy" ]]; then
-		brew bundle --file="$SCRIPT_DIR/Brewfile.legacy"
-	else
-		debug "No Brewfile found, skipping package installation"
-	fi
+	debug "No environment-specific Brewfile found, skipping package installation"
 fi
 
 # annoying things

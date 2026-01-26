@@ -109,11 +109,10 @@ DOT_YUBIKEY="ABC123..."            # GPG key ID for git signing (optional)
 1. Install `Brewfile.base` (core packages for all environments)
 2. Install environment-specific:
    - `Brewfile.work` - Work environment packages
-   - `Brewfile.personal` - Personal environment packages
-   - `Brewfile.legacy` - Fallback if environment-specific not found
+   - `Brewfile.personal` - Personal environment packages (minimal)
 
 **Work Environment Detection**:
-- Email contains `@labcorp.com`
+- Email contains `@nestgenomics.com`
 - `--work` flag passed to `./bin/dot`
 - `WORK_ENV` environment variable set
 
@@ -265,7 +264,7 @@ git config --global commit.gpgsign true
 ## Platform-Specific Notes
 
 ### macOS
-- **Window Manager**: Aerospace with Sketchybar integration
+- **Window Manager**: Aerospace window manager
 - **Terminal**: Ghostty (replaces Alacritty/Kitty)
 - **Brewfile**: Environment-aware (work/personal package lists)
 - **System Tweaks**: Disables press-and-hold, sets Screenshots folder
@@ -286,7 +285,7 @@ git config --global commit.gpgsign true
 - **Terminal**: GNOME Terminal or Wezterm
 
 ### WSL
-- **Wezterm**: Copy `configs/wezterm/wezterm.lua` to `C:/Users/{username}/.wezterm.lua`
+- **Wezterm**: Configure wezterm.lua in your Windows user directory
 - Cross-platform file access considerations
 
 ## Post-Installation Manual Steps

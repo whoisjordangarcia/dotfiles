@@ -74,6 +74,8 @@ For automated setups or CI/CD:
 - **Terminal Multiplexer**: Tmux with custom configuration
 - **CLI Essentials**: Common tools via `script/apps/*` (varies by profile)
 - **Prompt**: Starship (cross-platform)
+- **AI Tooling**: Codex, OpenCode, Claude CLI
+- **Browsers**: Brave
 
 ### Platform-Specific Applications
 
@@ -104,9 +106,13 @@ For automated setups or CI/CD:
 ```bash
 # Show help and available options
 ./bin/dot --help
+./bin/dot -h
 
 # List all available installations
 ./bin/dot -l
+
+# Interactively select modules to install
+./bin/dot -m
 
 # Show current system detection
 ./bin/dot -s
