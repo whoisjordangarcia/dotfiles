@@ -21,8 +21,7 @@
       "Bash(npm run:*)",
       "Bash(nx:*)",
       "Bash(pnpm:*)",
-      "Bash(task:*)",
-      "mcp__pencil"
+      "Bash(task:*)"
     ],
     "deny": [
       "Read(./**/*credentials*)",
@@ -57,6 +56,5 @@
   },
   "outputStyle": "Explanatory",
   "alwaysThinkingEnabled": true,
-  "autoUpdatesChannel": "stable",
-  "minimumVersion": "2.1.14"
+  "autoUpdatesChannel": "latest"
 }
