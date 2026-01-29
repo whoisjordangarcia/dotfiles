@@ -43,6 +43,11 @@ return {
               ".cache",
               "coverage",
               ".nyc_output",
+              -- Generated code (Prisma, GraphQL, etc.)
+              "__generated__",
+              "*.generated.ts",
+              "*.generated.tsx",
+              "graphql.tsx",
               -- OS & misc
               ".DS_Store",
               "*.log",
@@ -81,6 +86,11 @@ return {
               ".cache",
               "coverage",
               ".nyc_output",
+              -- Generated code (Prisma, GraphQL, etc.)
+              "__generated__",
+              "*.generated.ts",
+              "*.generated.tsx",
+              "graphql.tsx",
               -- OS & misc
               ".DS_Store",
               "*.log",
@@ -115,6 +125,11 @@ return {
               ".cache",
               "coverage",
               ".nyc_output",
+              -- Generated code (Prisma, GraphQL, etc.)
+              "__generated__",
+              "*.generated.ts",
+              "*.generated.tsx",
+              "graphql.tsx",
               -- OS & misc
               ".DS_Store",
               "*.log",
