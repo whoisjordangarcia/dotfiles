@@ -29,8 +29,14 @@ cost_display=$(printf '$%.2f' "$cost")
 usage=$(echo "$input" | jq '.context_window.current_usage')
 if [ "$usage" != "null" ]; then
 	current=$(echo "$usage" | jq '.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens')
-	size=$(echo "$input" | jq '.context_window.context_window_size')
-	pct=$((current * 100 / size))
+	size=$(echo "$input" | jq '.context_window.context_window_size // 0')
+
+	# Guard against division by zero
+	if [ "$size" -gt 0 ] 2>/dev/null; then
+		pct=$((current * 100 / size))
+	else
+		pct=0
+	fi
 
 	# Progress bar
 	bar_length=10
@@ -44,14 +50,17 @@ if [ "$usage" != "null" ]; then
 	context_info="[$bar] ${pct}%"
 
 	# Format tokens (k for thousands)
-	if [ "$current" -ge 1000 ]; then
+	current=${current:-0}
+	size=${size:-0}
+
+	if [ "$current" -ge 1000 ] 2>/dev/null; then
 		current_k=$((current / 1000))
 		current_display="${current_k}k"
 	else
 		current_display="${current}"
 	fi
 
-	if [ "$size" -ge 1000 ]; then
+	if [ "$size" -ge 1000 ] 2>/dev/null; then
 		size_k=$((size / 1000))
 		size_display="${size_k}k"
 	else
@@ -61,8 +70,8 @@ if [ "$usage" != "null" ]; then
 	tokens_display="${current_display}/${size_display} tokens"
 else
 	context_info="[░░░░░░░░░░] 0%"
-	size=$(echo "$input" | jq '.context_window.context_window_size')
-	if [ "$size" -ge 1000 ]; then
+	size=$(echo "$input" | jq '.context_window.context_window_size // 0')
+	if [ "$size" -ge 1000 ] 2>/dev/null; then
 		size_k=$((size / 1000))
 		size_display="${size_k}k"
 	else
@@ -72,4 +81,4 @@ else
 fi
 
 # Output
-p
+echo "$model_short | $cost_display | $context_info | $tokens_display"
