@@ -1,0 +1,31 @@
+# History Configuration
+# ---------------------
+
+# History file location and size
+HISTFILE=~/.zsh_history
+HISTSIZE=50000                # Commands to keep in memory
+SAVEHIST=50000                # Commands to save to file
+
+# History behavior options
+setopt HIST_IGNORE_SPACE      # Don't save commands starting with space
+setopt HIST_IGNORE_DUPS       # Don't save consecutive duplicate commands
+setopt HIST_IGNORE_ALL_DUPS   # Remove older duplicates when new one is added
+setopt HIST_FIND_NO_DUPS      # Don't show duplicates when searching history
+setopt HIST_SAVE_NO_DUPS      # Don't write duplicates to history file
+setopt SHARE_HISTORY          # Share history between all sessions
+setopt APPEND_HISTORY         # Append to history file, don't overwrite
+setopt INC_APPEND_HISTORY     # Write immediately, not when shell exits
+setopt EXTENDED_HISTORY       # Save timestamp and duration with commands
+setopt HIST_REDUCE_BLANKS     # Remove extra blanks from commands
+setopt HIST_VERIFY            # Show command before executing from history
+
+# Ignore common commands from history
+# Add commands here that you don't want cluttering your history
+HISTORY_IGNORE="(ls|ll|la|cd|cd ..|pwd|exit|clear|cls|q|history|h)"
+
+# Hook to filter commands from history
+zshaddhistory() {
+  local line="${1%%$'\n'}"
+  # Don't add to history if it matches HISTORY_IGNORE pattern
+  [[ ! "$line" =~ ${~HISTORY_IGNORE} ]]
+}
