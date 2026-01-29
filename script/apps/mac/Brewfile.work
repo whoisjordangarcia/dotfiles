@@ -17,6 +17,7 @@ brew 'lazydocker'
 brew 'uv'
 cask 'obsidian'
 brew 'raine/workmux/workmux'
+brew 'deno'
 
 # Sketchybar Dependencies (from legacy)
 brew 'lua'
