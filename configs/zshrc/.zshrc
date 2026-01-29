@@ -12,6 +12,7 @@ source_files() {
 }
 
 # defaults
+source ~/.zshrc-modules/.zshrc.history
 source ~/.zshrc-modules/.zshrc.init
 source ~/.zshrc-modules/.zshrc.ohmyzsh
 source ~/.zshrc-modules/.zshrc.envvars
