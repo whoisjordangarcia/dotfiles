@@ -1,1 +1,48 @@
+# ==============================================================================
+#  Work-specific Configuration (Nest)
+# ==============================================================================
 
+# Set the nest repo root (used by nest-wt)
+export NEST_REPO_ROOT="$HOME/projects/nest"
+
+# ==============================================================================
+#  Nest Worktree Helper
+# ==============================================================================
+
+# Wrapper function that calls the script and cds into the new worktree
+nest-wt() {
+    local script_path="$HOME/.zshrc-modules/scripts/git-worktree"
+
+    # For list/remove/prune/help, just run the script directly
+    case "${1:-}" in
+        list|remove|prune|help|--help|-h)
+            "$script_path" "$@"
+            return $?
+            ;;
+    esac
+
+    # For worktree creation, capture output to extract the path
+    local output
+    output=$("$script_path" "$@")
+    local exit_code=$?
+
+    # Print the output (excluding the path marker line)
+    echo "$output" | grep -v "^WORKTREE_PATH:"
+
+    # If successful, cd into the new worktree
+    if [[ $exit_code -eq 0 ]]; then
+        local worktree_path
+        worktree_path=$(echo "$output" | grep "^WORKTREE_PATH:" | cut -d: -f2-)
+        if [[ -n "$worktree_path" && -d "$worktree_path" ]]; then
+            cd "$worktree_path"
+            echo "Changed directory to: $worktree_path"
+        fi
+    fi
+
+    return $exit_code
+}
+
+# Aliases for convenience
+alias nwt="nest-wt"
+alias nwt-list="nest-wt list"
+alias nwt-remove="nest-wt remove"
