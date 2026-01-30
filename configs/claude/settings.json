@@ -32,10 +32,7 @@
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
-    "ask": [
-      "Bash(git push:*)",
-      "Bash(curl:*)"
-    ],
+    "ask": ["Bash(git push:*)", "Bash(curl:*)"],
     "defaultMode": "default"
   },
   "model": "opus",
@@ -65,5 +62,10 @@
   },
   "outputStyle": "Explanatory",
   "alwaysThinkingEnabled": true,
-  "autoUpdatesChannel": "latest"
+  "autoUpdatesChannel": "latest",
+  "spinnerTipsEnabled": false,
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": ["Nesting", "sahh good", "ralphing"]
+  }
 }
