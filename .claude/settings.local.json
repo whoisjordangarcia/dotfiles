@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(bash -x ~/.zshrc-modules/scripts/git-worktree testdebug)",
+      "Bash(zsh:*)"
+    ]
+  }
+}
