@@ -54,15 +54,15 @@ print_info() {
 }
 
 show_usage() {
-    echo "Usage: nest-wt <worktree-name> [base-ref]"
+    echo "Usage: nest-wt <worktree-name|branch-name> [base-ref]"
     echo ""
     echo "Creates a new git worktree with local configuration files."
-    echo "Always creates a new branch prefixed with 'jordan/'."
+    echo "Smart branch detection: reuses existing local/remote branches automatically."
     echo ""
     echo "Arguments:"
-    echo "  worktree-name     Name for the worktree directory (required)"
-    echo "                    Branch will be created as 'jordan/<worktree-name>'"
-    echo "  base-ref          What to branch from (optional):"
+    echo "  worktree-name     Simple name → prefixed with 'jordan/'"
+    echo "                    Full branch (contains /) → used as-is"
+    echo "  base-ref          What to branch from (only for new branches):"
     echo "                    - Version number (2.11.0) -> release/2.11.0"
     echo "                    - Branch name (main, develop)"
     echo "                    - Remote ref (origin/some-branch)"
@@ -70,16 +70,23 @@ show_usage() {
     echo ""
     echo "Examples:"
     echo "  nest-wt my-feature 2.11.0                  # jordan/my-feature from release/2.11.0"
-    echo "  nest-wt hotfix 2.10.5                      # jordan/hotfix from release/2.10.5"
-    echo "  nest-wt experiment main                   # jordan/experiment from main"
-    echo "  nest-wt quick-fix                          # jordan/quick-fix from current HEAD"
+    echo "  nest-wt my-feature                         # Reuses jordan/my-feature if exists"
+    echo "  nest-wt jordan/my-feature                  # Same as above (slash detected)"
+    echo "  nest-wt alice/her-feature                  # Checkout alice's branch (dir: alice-her-feature)"
     echo ""
     echo "The worktree will be created at: $WORKTREES_DIR/<worktree-name>"
     echo ""
     echo "Other commands:"
     echo "  nest-wt list                               # List all worktrees"
+    echo "  nest-wt go                                 # Interactive worktree picker"
+    echo "  nest-wt go <number|name>                   # Quick switch to worktree"
     echo "  nest-wt remove <number|name|path>          # Remove a worktree"
     echo "  nest-wt prune                              # Remove stale worktree references"
+    echo ""
+    echo "Quick switch examples:"
+    echo "  nest-wt go 1                               # Switch to worktree #1"
+    echo "  nest-wt go my-feature                      # Switch by name"
+    echo "  wt                                         # Shortcut for 'nest-wt go'"
     echo ""
     echo "Remove examples:"
     echo "  nest-wt remove 1                           # Remove worktree #1 from list"
@@ -101,11 +108,11 @@ copy_if_exists() {
             cp "$src" "$dest"
         fi
         print_success "Copied $desc"
-        return 0
     else
         print_warning "Skipped $desc (not found)"
-        return 1
     fi
+    # Always return 0 - skipping is not an error (avoids set -e exit)
+    return 0
 }
 
 # =============================================================================
@@ -117,35 +124,103 @@ wt_list() {
 
     print_header "Nest Worktrees"
 
-    local count=0
-    local worktrees=()
+    local wt_count=0
+    local total_count=0
 
     # Parse worktree list
     while IFS= read -r line; do
         if [[ -n "$line" ]]; then
             local path=$(echo "$line" | awk '{print $1}')
             local branch=$(echo "$line" | grep -o '\[.*\]' | tr -d '[]')
-            worktrees+=("$path")
-            count=$((count + 1))
+            total_count=$((total_count + 1))
+
+            # Get git status info for this worktree
+            local changes_info=""
+            local ahead_behind=""
+            local upstream_branch=""
+
+            if [[ -d "$path" ]]; then
+                # Count modified/staged/untracked files
+                local modified=0 staged=0 untracked=0
+                while IFS= read -r status_line; do
+                    [[ -z "$status_line" ]] && continue
+                    local xy="${status_line:0:2}"
+                    # Staged changes (index)
+                    [[ "${xy:0:1}" =~ [MADRC] ]] && staged=$((staged + 1))
+                    # Unstaged changes (working tree)
+                    [[ "${xy:1:1}" =~ [MD] ]] && modified=$((modified + 1))
+                    # Untracked files
+                    [[ "$xy" == "??" ]] && untracked=$((untracked + 1))
+                done < <(git -C "$path" status --porcelain 2>/dev/null)
+
+                # Build changes string
+                local changes_parts=()
+                [[ $staged -gt 0 ]] && changes_parts+=("${GREEN}+$staged staged${NC}")
+                [[ $modified -gt 0 ]] && changes_parts+=("${YELLOW}~$modified modified${NC}")
+                [[ $untracked -gt 0 ]] && changes_parts+=("${RED}?$untracked untracked${NC}")
+
+                if [[ ${#changes_parts[@]} -gt 0 ]]; then
+                    changes_info=$(IFS=", "; echo "${changes_parts[*]}")
+                else
+                    changes_info="${GREEN}clean${NC}"
+                fi
+
+                # Get ahead/behind info
+                local upstream=$(git -C "$path" rev-parse --abbrev-ref "@{upstream}" 2>/dev/null || true)
+                if [[ -n "$upstream" ]]; then
+                    upstream_branch="$upstream"
+                    local counts=$(git -C "$path" rev-list --left-right --count "$branch...$upstream" 2>/dev/null || echo "0 0")
+                    local ahead=$(echo "$counts" | awk '{print $1}')
+                    local behind=$(echo "$counts" | awk '{print $2}')
+
+                    local ab_parts=()
+                    [[ $ahead -gt 0 ]] && ab_parts+=("${GREEN}↑$ahead${NC}")
+                    [[ $behind -gt 0 ]] && ab_parts+=("${RED}↓$behind${NC}")
+
+                    if [[ ${#ab_parts[@]} -gt 0 ]]; then
+                        ahead_behind=$(IFS=" "; echo "${ab_parts[*]}")
+                    fi
+                else
+                    # Try to find the fork point / base branch
+                    # Check common base branches
+                    for base in "main" "develop" "master"; do
+                        if git -C "$path" show-ref --verify --quiet "refs/heads/$base" 2>/dev/null || \
+                           git -C "$path" show-ref --verify --quiet "refs/remotes/origin/$base" 2>/dev/null; then
+                            local ref="origin/$base"
+                            local fork_point=$(git -C "$path" merge-base "$branch" "$ref" 2>/dev/null || true)
+                            if [[ -n "$fork_point" ]]; then
+                                local ahead_of_base=$(git -C "$path" rev-list --count "$fork_point..$branch" 2>/dev/null || echo "0")
+                                if [[ $ahead_of_base -gt 0 ]]; then
+                                    upstream_branch="$base"
+                                    ahead_behind="${GREEN}↑$ahead_of_base${NC} from $base"
+                                    break
+                                fi
+                            fi
+                        fi
+                    done
+                fi
+            fi
 
             # Highlight .worktrees entries differently from main repo
             if [[ "$path" == *".worktrees"* ]]; then
+                wt_count=$((wt_count + 1))
                 local name=$(basename "$path")
-                echo -e "  ${GREEN}[$count]${NC} ${YELLOW}$name${NC}"
+                echo -e "  ${GREEN}[$wt_count]${NC} ${YELLOW}$name${NC}"
                 echo -e "      Branch: $branch"
-                echo -e "      Path:   $path"
-                echo -e "      ${BLUE}nest-wt remove $path${NC}"
+                [[ -n "$upstream_branch" ]] && echo -e "      From:   $upstream_branch"
+                echo -e "      Status: $changes_info ${ahead_behind:+  $ahead_behind}"
+                echo -e "      ${BLUE}nest-wt remove $wt_count${NC}"
                 echo ""
             else
                 echo -e "  ${GREEN}[0]${NC} ${YELLOW}(main)${NC}"
                 echo -e "      Branch: $branch"
-                echo -e "      Path:   $path"
+                echo -e "      Status: $changes_info ${ahead_behind:+  $ahead_behind}"
                 echo ""
             fi
         fi
     done < <(git worktree list)
 
-    if [[ $count -le 1 ]]; then
+    if [[ $wt_count -eq 0 ]]; then
         echo -e "  ${YELLOW}No additional worktrees found.${NC}"
         echo ""
     fi
@@ -159,80 +234,80 @@ wt_list() {
     fi
 
     echo "Quick actions:"
-    echo "  nest-wt remove <path>    # Remove a specific worktree"
+    echo "  wt <number>              # Switch to worktree"
+    echo "  nest-wt remove <number>  # Remove a worktree"
     echo "  nest-wt prune            # Clean up stale references"
 }
 
 wt_remove() {
-    local input=$1
     cd "$REPO_ROOT"
 
-    if [[ -z "$input" ]]; then
-        echo "Usage: nest-wt remove <number|path|name>"
+    if [[ -z "$1" ]]; then
+        echo "Usage: nest-wt remove <number|name|path> [more...]"
         echo ""
         wt_list
         return 1
     fi
 
-    local worktree_path=""
+    local branches_to_delete=()
 
-    # Check if input is a number
-    if [[ "$input" =~ ^[0-9]+$ ]]; then
-        local count=0
-        while IFS= read -r line; do
-            if [[ -n "$line" ]]; then
-                local path=$(echo "$line" | awk '{print $1}')
-                # Skip main repo (index 0)
-                if [[ "$path" == *".worktrees"* ]]; then
-                    count=$((count + 1))
-                    if [[ $count -eq $input ]]; then
-                        worktree_path="$path"
-                        break
+    # Process each argument
+    for input in "$@"; do
+        local worktree_path=""
+
+        # Check if input is a number
+        if [[ "$input" =~ ^[0-9]+$ ]]; then
+            local count=0
+            while IFS= read -r line; do
+                if [[ -n "$line" ]]; then
+                    local path=$(echo "$line" | awk '{print $1}')
+                    if [[ "$path" == *".worktrees"* ]]; then
+                        count=$((count + 1))
+                        if [[ $count -eq $input ]]; then
+                            worktree_path="$path"
+                            break
+                        fi
                     fi
                 fi
+            done < <(git worktree list)
+
+            if [[ -z "$worktree_path" ]]; then
+                print_error "Invalid worktree number: $input"
+                continue
             fi
-        done < <(git worktree list)
-
-        if [[ -z "$worktree_path" ]]; then
-            print_error "Invalid worktree number: $input"
-            wt_list
-            return 1
-        fi
-    # Check if input is a name (without path)
-    elif [[ ! "$input" == /* ]]; then
-        # Try to find by name in .worktrees directory
-        local potential_path="$WORKTREES_DIR/$input"
-        if [[ -d "$potential_path" ]]; then
-            worktree_path="$potential_path"
+        # Check if input is a name (without path)
+        elif [[ ! "$input" == /* ]]; then
+            local potential_path="$WORKTREES_DIR/$input"
+            if [[ -d "$potential_path" ]]; then
+                worktree_path="$potential_path"
+            else
+                print_error "Worktree not found: $input"
+                continue
+            fi
         else
-            print_error "Worktree not found: $input"
-            wt_list
-            return 1
+            worktree_path="$input"
         fi
-    else
-        worktree_path="$input"
-    fi
 
-    local name=$(basename "$worktree_path")
-    local branch=$(cd "$worktree_path" 2>/dev/null && git branch --show-current)
+        local name=$(basename "$worktree_path")
+        local branch=$(cd "$worktree_path" 2>/dev/null && git branch --show-current)
 
-    echo -e "Removing worktree: ${YELLOW}$name${NC}"
-    echo -e "  Path:   $worktree_path"
-    echo -e "  Branch: $branch"
-    echo ""
+        echo -e "Removing: ${YELLOW}$name${NC}"
 
-    if git worktree remove "$worktree_path"; then
-        print_success "Worktree removed: $name"
-
-        # Offer to delete the branch too
-        if [[ -n "$branch" ]]; then
-            echo ""
-            echo -e "Branch ${YELLOW}$branch${NC} still exists."
-            echo -e "To delete it: ${BLUE}git branch -D $branch${NC}"
+        if git worktree remove "$worktree_path" 2>/dev/null; then
+            print_success "Removed $name"
+            [[ -n "$branch" ]] && branches_to_delete+=("$branch")
+        else
+            print_error "Failed to remove $name"
         fi
-    else
-        print_error "Failed to remove worktree"
-        echo "Try: nest-wt remove --force $worktree_path"
+    done
+
+    # Show branches that can be deleted
+    if [[ ${#branches_to_delete[@]} -gt 0 ]]; then
+        echo ""
+        echo -e "Branches still exist. To delete:"
+        for branch in "${branches_to_delete[@]}"; do
+            echo -e "  ${BLUE}git branch -D $branch${NC}"
+        done
     fi
 }
 
@@ -256,14 +331,27 @@ wt_prune() {
 }
 
 wt_create() {
-    local WORKTREE_NAME="$1"
+    local INPUT="$1"
     local BASE_REF="${2:-}"
 
-    # Branch prefix for new branches
     local BRANCH_PREFIX="jordan/"
-    local NEW_BRANCH="${BRANCH_PREFIX}${WORKTREE_NAME}"
+    local NEW_BRANCH=""
+    local WORKTREE_NAME=""
 
-    # Validate worktree name
+    # Check if input contains a slash (full branch name provided)
+    if [[ "$INPUT" == */* ]]; then
+        # Full branch name provided (e.g., "alice/feature" or "jordan/my-feature")
+        NEW_BRANCH="$INPUT"
+        # Convert slashes to dashes for directory name
+        WORKTREE_NAME="${INPUT//\//-}"
+        print_info "Using full branch name '$NEW_BRANCH' → directory '$WORKTREE_NAME'"
+    else
+        # Simple name provided, add jordan/ prefix
+        WORKTREE_NAME="$INPUT"
+        NEW_BRANCH="${BRANCH_PREFIX}${WORKTREE_NAME}"
+    fi
+
+    # Validate worktree directory name
     if [[ "$WORKTREE_NAME" =~ [^a-zA-Z0-9_-] ]]; then
         print_error "Worktree name should only contain letters, numbers, hyphens, and underscores"
         exit 1
@@ -273,34 +361,14 @@ wt_create() {
 
     print_header "Creating Git Worktree: $WORKTREE_NAME"
 
-    # Show path info upfront and copy to clipboard
+    # Show path info upfront
     echo -e "Worktree: ${GREEN}$WORKTREE_PATH${NC}"
     echo -e "Branch:   ${GREEN}$NEW_BRANCH${NC}"
     echo ""
 
-    # Copy path to clipboard immediately (macOS)
-    if command -v pbcopy &>/dev/null; then
-        echo -n "$WORKTREE_PATH" | pbcopy
-        echo -e "${BLUE}📋 Path copied to clipboard${NC}"
-        echo ""
-    fi
-
     # Check if worktree already exists
     if [[ -d "$WORKTREE_PATH" ]]; then
         print_error "Worktree directory already exists at: $WORKTREE_PATH"
-        exit 1
-    fi
-
-    # Check if branch already exists
-    cd "$REPO_ROOT"
-    if git show-ref --verify --quiet "refs/heads/$NEW_BRANCH"; then
-        print_warning "Branch '$NEW_BRANCH' already exists!"
-        echo ""
-        echo "Options:"
-        echo "  1. Use existing branch:  git worktree add $WORKTREE_PATH $NEW_BRANCH"
-        echo "  2. Delete old branch:    git branch -D $NEW_BRANCH"
-        echo "  3. Use different name:   nest-wt <different-name> $BASE_REF"
-        echo ""
         exit 1
     fi
 
@@ -309,51 +377,73 @@ wt_create() {
 
     # Fetch latest from remote
     print_info "Fetching latest from origin..."
+    cd "$REPO_ROOT"
     git fetch origin
 
     # =========================================================================
-    # Step 1: Create the worktree
+    # Step 1: Create the worktree (smart branch detection)
     # =========================================================================
 
     print_info "Creating worktree..."
 
-    if [[ -n "$BASE_REF" ]]; then
-        local RESOLVED_REF=""
+    # Check if branch exists locally
+    if git show-ref --verify --quiet "refs/heads/$NEW_BRANCH"; then
+        print_info "Using existing local branch '$NEW_BRANCH'"
+        if [[ -n "$BASE_REF" ]]; then
+            print_warning "Ignoring base-ref '$BASE_REF' (using existing branch)"
+        fi
+        git worktree add "$WORKTREE_PATH" "$NEW_BRANCH"
+        print_success "Created worktree from existing local branch '$NEW_BRANCH'"
 
-        # Check if it looks like a version number (e.g., 2.11.0)
-        if [[ "$BASE_REF" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            # It's a version number, map to release/X.X.X
-            local RELEASE_BRANCH="release/${BASE_REF}"
-            if git show-ref --verify --quiet "refs/remotes/origin/$RELEASE_BRANCH"; then
-                RESOLVED_REF="origin/$RELEASE_BRANCH"
-                print_info "Resolved version $BASE_REF to $RESOLVED_REF"
+    # Check if branch exists on remote
+    elif git show-ref --verify --quiet "refs/remotes/origin/$NEW_BRANCH"; then
+        print_info "Tracking remote branch 'origin/$NEW_BRANCH'"
+        if [[ -n "$BASE_REF" ]]; then
+            print_warning "Ignoring base-ref '$BASE_REF' (tracking remote branch)"
+        fi
+        git worktree add "$WORKTREE_PATH" --track -b "$NEW_BRANCH" "origin/$NEW_BRANCH"
+        print_success "Created worktree tracking 'origin/$NEW_BRANCH'"
+
+    # Branch doesn't exist - create new
+    else
+        if [[ -n "$BASE_REF" ]]; then
+            local RESOLVED_REF=""
+
+            # Check if it looks like a version number (e.g., 2.11.0)
+            if [[ "$BASE_REF" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                # It's a version number, map to release/X.X.X
+                local RELEASE_BRANCH="release/${BASE_REF}"
+                if git show-ref --verify --quiet "refs/remotes/origin/$RELEASE_BRANCH"; then
+                    RESOLVED_REF="origin/$RELEASE_BRANCH"
+                    print_info "Resolved version $BASE_REF to $RESOLVED_REF"
+                else
+                    print_error "Release branch not found: $RELEASE_BRANCH"
+                    print_info "Available release branches:"
+                    git branch -r | grep "origin/release/" | head -10
+                    exit 1
+                fi
+            # Check if it's already a remote ref
+            elif [[ "$BASE_REF" == origin/* ]]; then
+                RESOLVED_REF="$BASE_REF"
+            # Check if release/X.X.X exists on remote
+            elif git show-ref --verify --quiet "refs/remotes/origin/$BASE_REF"; then
+                RESOLVED_REF="origin/$BASE_REF"
+            # Check if it exists locally
+            elif git show-ref --verify --quiet "refs/heads/$BASE_REF"; then
+                RESOLVED_REF="$BASE_REF"
             else
-                print_error "Release branch not found: $RELEASE_BRANCH"
-                print_info "Available release branches:"
-                git branch -r | grep "origin/release/" | head -10
+                print_error "Could not find branch: $BASE_REF"
                 exit 1
             fi
-        # Check if it's already a remote ref
-        elif [[ "$BASE_REF" == origin/* ]]; then
-            RESOLVED_REF="$BASE_REF"
-        # Check if release/X.X.X exists on remote
-        elif git show-ref --verify --quiet "refs/remotes/origin/$BASE_REF"; then
-            RESOLVED_REF="origin/$BASE_REF"
-        # Check if it exists locally
-        elif git show-ref --verify --quiet "refs/heads/$BASE_REF"; then
-            RESOLVED_REF="$BASE_REF"
-        else
-            print_error "Could not find branch: $BASE_REF"
-            exit 1
-        fi
 
-        # Create new branch from the resolved ref
-        git worktree add "$WORKTREE_PATH" -b "$NEW_BRANCH" "$RESOLVED_REF"
-        print_success "Created branch '$NEW_BRANCH' from '$RESOLVED_REF'"
-    else
-        # No base ref provided - create from current HEAD
-        git worktree add "$WORKTREE_PATH" -b "$NEW_BRANCH"
-        print_success "Created branch '$NEW_BRANCH' from HEAD"
+            # Create new branch from the resolved ref
+            git worktree add "$WORKTREE_PATH" -b "$NEW_BRANCH" "$RESOLVED_REF"
+            print_success "Created new branch '$NEW_BRANCH' from '$RESOLVED_REF'"
+        else
+            # No base ref provided - create from current HEAD
+            git worktree add "$WORKTREE_PATH" -b "$NEW_BRANCH"
+            print_success "Created new branch '$NEW_BRANCH' from HEAD"
+        fi
     fi
 
     # =========================================================================
@@ -420,38 +510,23 @@ wt_create() {
     copy_if_exists "$REPO_ROOT/.playwright-mcp" "$WORKTREE_PATH/.playwright-mcp" ".playwright-mcp/ (Playwright MCP config)"
 
     # =========================================================================
-    # Step 3: Install dependencies
+    # Done - skip pnpm install for speed (user can run manually)
     # =========================================================================
-
-    print_header "Installing Dependencies"
-
-    cd "$WORKTREE_PATH"
-
-    print_info "Running pnpm install (this may take a few minutes)..."
-    if pnpm install; then
-        print_success "Dependencies installed successfully"
-    else
-        print_error "Failed to install dependencies"
-        print_warning "You may need to run 'pnpm install' manually in the worktree"
-    fi
 
     # =========================================================================
     # Summary
     # =========================================================================
 
-    print_header "Worktree Created Successfully!"
+    print_header "Worktree Ready!"
 
-    echo "Quick start:"
-    echo "  nx serve provider-portal   # Start Provider Portal"
-    echo "  nx serve patient-navigator # Start Patient Navigator"
-    echo "  nx serve client-api        # Start Client API"
+    echo "Next step:"
+    echo "  pnpm install                # Install dependencies (required before running)"
     echo ""
-    echo "To remove this worktree later:"
-    echo "  nest-wt remove $WORKTREE_PATH"
+    echo "Then:"
+    echo "  nx serve provider-portal    # Start Provider Portal"
+    echo "  nx serve patient-navigator  # Start Patient Navigator"
+    echo "  nx serve client-api         # Start Client API"
     echo ""
-
-    # Output path for wrapper function to cd into
-    echo "WORKTREE_PATH:$WORKTREE_PATH"
 }
 
 # =============================================================================
