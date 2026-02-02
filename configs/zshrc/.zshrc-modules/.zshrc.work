@@ -185,11 +185,89 @@ nest-wt() {
         return $?
     fi
 
-    # For list/remove/prune/help, just run the script directly
+    # For list/prune/help, just run the script directly
     case "${1:-}" in
-        list|remove|prune|help|--help|-h)
+        list|prune|help|--help|-h)
             "$script_path" "$@"
             return $?
+            ;;
+        remove)
+            # Intercept remove to also kill tmux sessions
+            shift
+
+            # If no args and we're inside a worktree, offer to remove current one
+            if [[ -z "$1" ]]; then
+                local current_dir="$PWD"
+                if [[ "$current_dir" == *"/.worktrees/"* ]]; then
+                    # Extract worktree name from path
+                    local wt_path="${current_dir%%/.worktrees/*}/.worktrees"
+                    local after_worktrees="${current_dir#*/.worktrees/}"
+                    local current_wt_name="${after_worktrees%%/*}"
+
+                    echo -e "\033[1;33m⚠ You're currently in worktree: $current_wt_name\033[0m"
+                    echo -n "Remove this worktree? [y/N] "
+                    read -r confirm
+
+                    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                        # Set arg to current worktree name and continue
+                        set -- "$current_wt_name"
+                    else
+                        echo "Cancelled."
+                        return 0
+                    fi
+                else
+                    "$script_path" remove
+                    return $?
+                fi
+            fi
+
+            # Collect worktree names before removal (for tmux cleanup)
+            local names_to_remove=()
+            for input in "$@"; do
+                local worktree_path=""
+                local worktree_name=""
+
+                # Resolve path by number
+                if [[ "$input" =~ ^[0-9]+$ ]]; then
+                    local count=0
+                    while IFS= read -r line; do
+                        [[ -z "$line" ]] && continue
+                        local path="${line%% *}"
+                        if [[ "$path" == *".worktrees"* ]]; then
+                            count=$((count + 1))
+                            if [[ $count -eq $input ]]; then
+                                worktree_path="$path"
+                                break
+                            fi
+                        fi
+                    done < <(git -C "$repo_root" worktree list 2>/dev/null)
+                # Resolve by name
+                elif [[ ! "$input" == /* ]]; then
+                    worktree_path="$repo_root/.worktrees/$input"
+                else
+                    worktree_path="$input"
+                fi
+
+                if [[ -n "$worktree_path" && -d "$worktree_path" ]]; then
+                    worktree_name="${worktree_path##*/}"
+                    names_to_remove+=("$worktree_name")
+                fi
+            done
+
+            # Run the actual remove command
+            "$script_path" remove "$@"
+            local exit_code=$?
+
+            # Kill associated tmux sessions
+            for name in "${names_to_remove[@]}"; do
+                local session_name="🌿_${name}"
+                if tmux has-session -t "$session_name" 2>/dev/null; then
+                    tmux kill-session -t "$session_name"
+                    echo -e "\033[0;32m✓\033[0m Killed tmux session: $session_name"
+                fi
+            done
+
+            return $exit_code
             ;;
     esac
 
