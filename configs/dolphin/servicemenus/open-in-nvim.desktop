@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Service
+MimeType=text/*;application/json;application/javascript;application/x-shellscript;application/xml;application/x-yaml;
+Actions=openInNvim
+
+[Desktop Action openInNvim]
+Name=Open in Neovim
+Icon=nvim
+Exec=ghostty -e nvim %f

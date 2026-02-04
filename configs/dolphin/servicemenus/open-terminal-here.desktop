@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Service
+MimeType=inode/directory;
+Actions=openTerminalHere
+
+[Desktop Action openTerminalHere]
+Name=Open Terminal Here
+Icon=utilities-terminal
+Exec=ghostty --working-directory=%f
