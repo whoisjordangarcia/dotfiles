@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Service
+MimeType=inode/directory;text/*;application/json;application/javascript;application/x-shellscript;
+Actions=openInVSCode;openInCursor
+
+[Desktop Action openInVSCode]
+Name=Open in VS Code
+Icon=visual-studio-code
+Exec=code %f
+
+[Desktop Action openInCursor]
+Name=Open in Cursor
+Icon=cursor
+Exec=cursor %f
