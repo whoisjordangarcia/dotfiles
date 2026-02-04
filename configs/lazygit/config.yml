@@ -65,3 +65,5 @@ gui:
 git:
   commit:
     signOff: true
+
+  branchPrefix: "jordan"

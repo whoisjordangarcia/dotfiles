@@ -27,10 +27,10 @@ if [ ! -d "$HOME/dev" ]; then
 	info "Created ~/dev folder"
 fi
 
-if [ ! -d "$HOME/dev/work" ]; then
-	mkdir "$HOME/dev/work"
+if [ ! -d "$HOME/projects" ]; then
+	mkdir "$HOME/projects"
 
-	info "Created ~/dev/work folder"
+	info "Created ~/projects folder"
 fi
 
 GITCONFIG_TEMPLATE="$SCRIPT_DIR/../../configs/git/.gitconfig.template"
@@ -85,7 +85,7 @@ fi
 
 # Removed conflicting symlink - using template generation above instead
 link_file "$SCRIPT_DIR/../../configs/git/.gitignore_global" "$HOME/.gitignore_global"
-link_file "$SCRIPT_DIR/../../configs/git/work.gitconfig" "$HOME/dev/work/.gitconfig"
+link_file "$SCRIPT_DIR/../../configs/git/work.gitconfig" "$HOME/projects/.gitconfig"
 
 # Configure git if DOT_NAME and DOT_EMAIL are provided
 if [[ -n "$DOT_NAME" && -n "$DOT_EMAIL" ]]; then
