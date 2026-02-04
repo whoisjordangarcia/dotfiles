@@ -23,6 +23,7 @@ component_installation=(
 	fastfetch
 	codex
 	claude
+	dolphin/linux
 )
 
 for component in "${component_installation[@]}"; do
