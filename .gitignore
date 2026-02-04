@@ -34,3 +34,6 @@ tasks/
 .zshrc.sec
 .dotconfig
 lazy-lock.json
+
+# Git worktrees
+.worktrees/
