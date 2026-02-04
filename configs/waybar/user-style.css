@@ -1,1 +1,41 @@
 /* User custom styles */
+
+/* Fix for light wallpapers: dark bar with light text for visibility */
+window#waybar {
+    background: rgba(30, 30, 46, 0.7);
+}
+
+/* Override module text/icon colors for visibility */
+.module {
+    color: rgba(205, 214, 244, 1);
+}
+
+/* Ensure pill backgrounds are also visible */
+#pill,
+#pill-right,
+#pill-left,
+#pill-down,
+#pill-up,
+#pill-in,
+#pill-out {
+    background-color: rgba(49, 50, 68, 0.8);
+}
+
+/* Workspaces styling with Nerd Font icons */
+#workspaces button {
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-size: 14px;
+    padding: 0 8px;
+    margin: 2px;
+    border-radius: 8px;
+    color: rgba(205, 214, 244, 1);
+}
+
+#workspaces button.active {
+    background: rgba(137, 180, 250, 0.3);
+    color: rgba(137, 180, 250, 1);
+}
+
+#workspaces button:hover {
+    background: rgba(137, 180, 250, 0.2);
+}
