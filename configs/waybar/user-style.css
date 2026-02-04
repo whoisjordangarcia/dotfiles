@@ -1,6 +1,22 @@
 /* User custom styles */
 
-/* Fix for light wallpapers: add semi-opaque dark background so icons don't wash out */
+/* Fix for light wallpapers: dark bar with light text for visibility */
 window#waybar {
-    background: rgba(30, 30, 46, 0.85);
+    background: rgba(30, 30, 46, 0.9);
+}
+
+/* Override module text/icon colors for visibility */
+.module {
+    color: rgba(205, 214, 244, 1);
+}
+
+/* Ensure pill backgrounds are also visible */
+#pill,
+#pill-right,
+#pill-left,
+#pill-down,
+#pill-up,
+#pill-in,
+#pill-out {
+    background-color: rgba(49, 50, 68, 0.95);
 }
