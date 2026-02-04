@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Service
+MimeType=inode/directory;
+Actions=gitStatus;gitLog;gitLazygit
+
+[Desktop Action gitStatus]
+Name=Git Status
+Icon=git
+Exec=ghostty -e bash -c 'cd "%f" && git status; read -p "Press Enter to close..."'
+
+[Desktop Action gitLog]
+Name=Git Log (Graph)
+Icon=git
+Exec=ghostty -e bash -c 'cd "%f" && git log --oneline --graph -20; read -p "Press Enter to close..."'
+
+[Desktop Action gitLazygit]
+Name=Open in Lazygit
+Icon=git
+Exec=ghostty -e bash -c 'cd "%f" && lazygit'
