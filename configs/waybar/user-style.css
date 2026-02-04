@@ -1,1 +1,6 @@
 /* User custom styles */
+
+/* Fix for light wallpapers: add semi-opaque dark background so icons don't wash out */
+window#waybar {
+    background: rgba(30, 30, 46, 0.85);
+}
