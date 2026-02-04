@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Service
+MimeType=all/allfiles;inode/directory;
+Actions=copyPath;copyPathQuoted
+
+[Desktop Action copyPath]
+Name=Copy Path
+Icon=edit-copy
+Exec=bash -c 'echo -n "%f" | wl-copy'
+
+[Desktop Action copyPathQuoted]
+Name=Copy Path (Quoted)
+Icon=edit-copy
+Exec=bash -c 'echo -n "\"%f\"" | wl-copy'

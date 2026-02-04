@@ -4,27 +4,32 @@ MenuBar=Disabled
 update_info=dolphin_detailsmodesettings.upd:rename-leading-padding
 
 [DetailsMode]
-PreviewSize=16
+ExpandableFolders=true
+PreviewSize=22
+SidePadding=16
 
 [General]
 EditableUrl=true
+FilterBar=true
+HiddenFilesShown=true
 ShowFullPath=true
 ShowSelectionToggle=false
 ShowStatusBar=FullWidth
 ShowZoomSlider=true
+SplitView=true
 Version=202
 ViewPropsTimestamp=2023,4,26,16,58,48.324
 
 [IconsMode]
-MaximumTextLines=1
-PreviewSize=80
+MaximumTextLines=2
+PreviewSize=128
 
 [InformationPanel]
 dateFormat=ShortFormat
 
 [KFileDialog Settings]
 Places Icons Auto-resize=false
-Places Icons Static Size=16
+Places Icons Static Size=22
 
 [KPropertiesDialog]
 2560x1080 screen: Window-Maximized=true
@@ -40,6 +45,7 @@ ToolButtonStyle=IconOnly
 IconSize=16
 
 [PreviewSettings]
+MaximumRemoteSize=10485760
 Plugins=appimagethumbnail,audiothumbnail,comicbookthumbnail,cursorthumbnail,djvuthumbnail,ebookthumbnail,exrthumbnail,imagethumbnail,jpegthumbnail,kraorathumbnail,windowsexethumbnail,windowsimagethumbnail,opendocumentthumbnail,svgthumbnail,ffmpegthumbs
 
 [Toolbar mainToolBar]
