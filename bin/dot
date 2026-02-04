@@ -161,6 +161,11 @@ interactive_module_selection() {
 	export WORK_ENV=""
 	if [[ "$DOT_ENVIRONMENT" == "work" ]]; then
 		export WORK_ENV="1"
+		# Create work mode toggle file for zsh configuration
+		touch "$HOME/.zshrc-work-mode"
+	else
+		# Remove work mode toggle file if exists (switching to personal)
+		rm -f "$HOME/.zshrc-work-mode"
 	fi
 
 	cd "$dotfilesDirectory"
@@ -340,6 +345,12 @@ run_installation() {
 	export WORK_ENV=""
 	if [[ "$DOT_ENVIRONMENT" == "work" ]]; then
 		export WORK_ENV="1"
+		# Create work mode toggle file for zsh configuration
+		touch "$HOME/.zshrc-work-mode"
+		info "Work mode enabled (~/.zshrc-work-mode created)"
+	else
+		# Remove work mode toggle file if exists (switching to personal)
+		rm -f "$HOME/.zshrc-work-mode"
 	fi
 
 	info "Running installation: $DOT_SYSTEM"
