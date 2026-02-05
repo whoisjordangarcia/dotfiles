@@ -88,7 +88,7 @@ _nest_wt_switch_to() {
 
             # Split above for nvim (60% height for nvim, 40% for terminal)
             tmux split-window -v -t "$session_name" -b -l 60% -c "$worktree_path"
-            tmux send-keys -t "$session_name" "clear && nvim ." Enter
+            tmux send-keys -t "$session_name" "clear && nvim" Enter
 
             # Focus on the terminal pane below
             tmux select-pane -t "$session_name" -D
