@@ -3,6 +3,8 @@
 # Enhanced git status script for tmux statusline
 # Shows branch with worktree indicator and dirty status
 
+ICON_LEAF=$(printf '\xef\x81\xac')  # U+F06C nf-fa-leaf
+
 get_git_status() {
     local current_path="${1:-$(pwd)}"
 
@@ -29,7 +31,7 @@ get_git_status() {
     # Check if in a worktree
     local worktree_indicator=""
     if [[ "$current_path" == *".worktrees"* ]]; then
-        worktree_indicator="🌿"
+        worktree_indicator="$ICON_LEAF"
     fi
 
     # Check for uncommitted changes (dirty status)
