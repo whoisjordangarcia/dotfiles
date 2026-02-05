@@ -61,7 +61,11 @@
     "playwright@claude-plugins-official": false,
     "security-guidance@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
-    "explanatory-output-style@claude-plugins-official": true
+    "explanatory-output-style@claude-plugins-official": true,
+    "nest-genomics-skills@nest-genomics-skills": true,
+    "nest-retool-json-schema-forms@nest-genomics-skills": true,
+    "nest-linear-ticket-template@nest-genomics-skills": false,
+    "nest-pr@nest-genomics-skills": true
   },
   "outputStyle": "Explanatory",
   "spinnerTipsEnabled": false,
