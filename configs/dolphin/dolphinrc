@@ -5,7 +5,7 @@ update_info=dolphin_detailsmodesettings.upd:rename-leading-padding
 
 [DetailsMode]
 ExpandableFolders=true
-PreviewSize=22
+PreviewSize=64
 SidePadding=16
 
 [General]
@@ -18,18 +18,18 @@ ShowStatusBar=FullWidth
 ShowZoomSlider=true
 SplitView=true
 Version=202
-ViewPropsTimestamp=2023,4,26,16,58,48.324
+ViewPropsTimestamp=2026,2,3,21,45,7.469
 
 [IconsMode]
 MaximumTextLines=2
-PreviewSize=128
+PreviewSize=96
 
 [InformationPanel]
 dateFormat=ShortFormat
 
 [KFileDialog Settings]
 Places Icons Auto-resize=false
-Places Icons Static Size=22
+Places Icons Static Size=16
 
 [KPropertiesDialog]
 2560x1080 screen: Window-Maximized=true
@@ -50,3 +50,6 @@ Plugins=appimagethumbnail,audiothumbnail,comicbookthumbnail,cursorthumbnail,djvu
 
 [Toolbar mainToolBar]
 ToolButtonStyle=IconOnly
+
+[UiSettings]
+ColorScheme=KvantumAlt
