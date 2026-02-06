@@ -1,0 +1,503 @@
+# ==============================================================================
+#  nest-wt — Git worktree manager with tmux + status dashboard
+#
+#  Requires: git, tmux
+#  Optional: jq (or node), claude (for status detection)
+#
+#  Configuration (set before sourcing):
+#    NEST_REPO_ROOT    — path to the nest monorepo (default: ~/projects/nest)
+#    NEST_INSTANCES_FILE — path to instances.json (default: ~/.nest/instances.json)
+#    NEST_WT_SESSION_PREFIX — tmux session prefix (default: 🌿_)
+# ==============================================================================
+
+: ${NEST_REPO_ROOT:="$HOME/projects/nest"}
+: ${NEST_INSTANCES_FILE:="$HOME/.nest/instances.json"}
+: ${NEST_WT_SESSION_PREFIX:="🌿_"}
+
+# ------------------------------------------------------------------------------
+#  Internal helpers
+# ------------------------------------------------------------------------------
+
+# Resolve worktree path by number or name
+_nest_wt_resolve_path() {
+    local input="$1"
+    local repo_root="${NEST_REPO_ROOT}"
+    local worktrees_dir="$repo_root/.worktrees"
+
+    if [[ "$input" =~ ^[0-9]+$ ]]; then
+        local worktree_paths=()
+        local line wt_path
+        while IFS= read -r line; do
+            [[ -z "$line" ]] && continue
+            wt_path="${line%% *}"
+            [[ "$wt_path" == *".worktrees"* ]] && worktree_paths+=("$wt_path")
+        done < <(git -C "$repo_root" worktree list 2>/dev/null)
+
+        if (( input >= 1 && input <= ${#worktree_paths[@]} )); then
+            echo "${worktree_paths[$input]}"
+            return 0
+        fi
+        return 1
+    fi
+
+    local potential_path="$worktrees_dir/$input"
+    if [[ -d "$potential_path" ]]; then
+        echo "$potential_path"
+        return 0
+    fi
+    return 1
+}
+
+# Check if Claude Code is running in a tmux session
+_nest_claude_status() {
+    setopt local_options typeset_silent
+    local session_name="$1"
+
+    if ! tmux has-session -t "$session_name" 2>/dev/null; then
+        echo "no-session"
+        return
+    fi
+
+    local pane_pid child grandchild args
+    while IFS= read -r pane_pid; do
+        for child in $(pgrep -P "$pane_pid" 2>/dev/null); do
+            args="$(ps -o args= -p "$child" 2>/dev/null)"
+            if [[ "$args" == claude* ]]; then
+                echo "running"
+                return
+            fi
+            for grandchild in $(pgrep -P "$child" 2>/dev/null); do
+                args="$(ps -o args= -p "$grandchild" 2>/dev/null)"
+                if [[ "$args" == claude* ]]; then
+                    echo "running"
+                    return
+                fi
+            done
+        done
+    done < <(tmux list-panes -t "$session_name" -F '#{pane_pid}' 2>/dev/null)
+
+    echo "idle"
+}
+
+# Check if an NX command is running in a tmux session
+# Returns the nx subcommand (e.g., "serve client-api") or "idle"/"no-session"
+_nest_nx_status() {
+    setopt local_options typeset_silent
+    local session_name="$1"
+
+    if ! tmux has-session -t "$session_name" 2>/dev/null; then
+        echo "no-session"
+        return
+    fi
+
+    _nest_extract_nx_cmd() {
+        local a="$1"
+        if [[ "$a" == *"nx.js "* ]]; then
+            echo "${a#*nx.js }"
+        elif [[ "$a" == *"/nx "* ]]; then
+            echo "${a#*/nx }"
+        elif [[ "$a" == "nx "* ]]; then
+            echo "${a#nx }"
+        else
+            echo "running"
+        fi
+    }
+
+    local pane_pid child grandchild args
+    while IFS= read -r pane_pid; do
+        for child in $(pgrep -P "$pane_pid" 2>/dev/null); do
+            args="$(ps -o args= -p "$child" 2>/dev/null)"
+            if [[ "$args" == *"/nx "* || "$args" == *"/nx/"* || "$args" == "nx "* ]] \
+               && [[ "$args" != *"daemon/server"* ]] \
+               && [[ "$args" != *"plugin-worker"* ]] \
+               && [[ "$args" != *"fork.js"* ]] \
+               && [[ "$args" != *"run-executor"* ]]; then
+                _nest_extract_nx_cmd "$args"
+                return
+            fi
+            for grandchild in $(pgrep -P "$child" 2>/dev/null); do
+                args="$(ps -o args= -p "$grandchild" 2>/dev/null)"
+                if [[ "$args" == *"/nx "* || "$args" == *"/nx/"* || "$args" == "nx "* ]] \
+                   && [[ "$args" != *"daemon/server"* ]] \
+                   && [[ "$args" != *"plugin-worker"* ]] \
+                   && [[ "$args" != *"fork.js"* ]] \
+                   && [[ "$args" != *"run-executor"* ]]; then
+                    _nest_extract_nx_cmd "$args"
+                    return
+                fi
+            done
+        done
+    done < <(tmux list-panes -t "$session_name" -F '#{pane_pid}' 2>/dev/null)
+
+    echo "idle"
+}
+
+# Read instances.json, output pipe-delimited lines
+# Format: instanceName|projectPath|clientApi|portal|patient
+_nest_read_instances() {
+    local json_file="${NEST_INSTANCES_FILE}"
+    [[ -f "$json_file" ]] || return
+
+    if command -v jq &>/dev/null || [[ -x /opt/homebrew/bin/jq ]]; then
+        local jq_bin="${commands[jq]:-/opt/homebrew/bin/jq}"
+        "$jq_bin" -r '.instances | to_entries[] | "\(.key)|\(.value.projectPath)|\(.value.ports.clientApi)|\(.value.ports.portal)|\(.value.ports.patient)"' "$json_file" 2>/dev/null
+    elif command -v node &>/dev/null; then
+        node -e "
+            const d = require('$json_file');
+            for (const [k,v] of Object.entries(d.instances||{})) {
+                const p = v.ports||{};
+                console.log([k,v.projectPath,p.clientApi,p.portal,p.patient].join('|'));
+            }
+        " 2>/dev/null
+    fi
+}
+
+# ------------------------------------------------------------------------------
+#  Dashboard
+# ------------------------------------------------------------------------------
+
+_nest_wt_status() {
+    setopt local_options typeset_silent
+    local repo_root="${NEST_REPO_ROOT}"
+    local prefix="${NEST_WT_SESSION_PREFIX}"
+
+    # Read instances data once
+    local -a instance_lines=()
+    local inst_line
+    while IFS= read -r inst_line; do
+        [[ -n "$inst_line" ]] && instance_lines+=("$inst_line")
+    done < <(_nest_read_instances)
+
+    # Collect worktrees
+    local -a wt_entries=()
+    local line wt_path
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        wt_path="${line%% *}"
+        [[ "$wt_path" == *".worktrees"* ]] && wt_entries+=("$line")
+    done < <(git -C "$repo_root" worktree list 2>/dev/null)
+
+    # Header
+    echo ""
+    echo "  \033[1;32m🌿 Nest Worktrees\033[0m"
+    echo "  \033[0;90m───────────────────────────────────────────────────────\033[0m"
+
+    if [[ ${#wt_entries[@]} -eq 0 ]]; then
+        echo ""
+        echo "  \033[1;33mNo worktrees.\033[0m Create: nest-wt <name>"
+        echo ""
+        return
+    fi
+
+    local count=0
+    for line in "${wt_entries[@]}"; do
+        count=$((count + 1))
+        wt_path="${line%% *}"
+        local name="${wt_path##*/}"
+
+        # Extract branch
+        local branch=""
+        if [[ "$line" == *"["*"]"* ]]; then
+            branch="${line#*\[}"
+            branch="${branch%%\]*}"
+        fi
+
+        # Compact git status
+        local status_text staged modified untracked gs_line
+        status_text="clean"
+        staged=0; modified=0; untracked=0
+        while IFS= read -r gs_line; do
+            case "${gs_line:0:2}" in
+                "??") (( untracked++ )) || true ;;
+                " M"| " D") (( modified++ )) || true ;;
+                *)
+                    [[ "${gs_line:0:1}" != " " && "${gs_line:0:1}" != "?" ]] && { (( staged++ )) || true; }
+                    [[ "${gs_line:1:1}" != " " && "${gs_line:1:1}" != "?" ]] && { (( modified++ )) || true; }
+                    ;;
+            esac
+        done < <(git -C "$wt_path" status --porcelain 2>/dev/null)
+
+        local parts=()
+        (( staged > 0 )) && parts+=("\033[1;32m+${staged} staged\033[0m")
+        (( modified > 0 )) && parts+=("\033[1;33m~${modified} modified\033[0m")
+        (( untracked > 0 )) && parts+=("\033[0;90m?${untracked} untracked\033[0m")
+        if (( ${#parts[@]} > 0 )); then
+            status_text="${(j: · :)parts}"
+        else
+            status_text="\033[0;32mclean\033[0m"
+        fi
+
+        # Claude & NX status
+        local session_name claude_st nx_st
+        session_name="${prefix}${name}"
+        claude_st="$(_nest_claude_status "$session_name")"
+        nx_st="$(_nest_nx_status "$session_name")"
+
+        # Build right-aligned indicators
+        local -a indicators=()
+        case "$claude_st" in
+            running) indicators+=("\033[1;32m● claude\033[0m") ;;
+            idle)    indicators+=("\033[0;90m○ claude\033[0m") ;;
+        esac
+        if [[ "$nx_st" != "idle" && "$nx_st" != "no-session" ]]; then
+            indicators+=("\033[1;33m⚡ nx\033[0m")
+        fi
+
+        # Print worktree entry
+        echo ""
+        local indicator_str=""
+        if (( ${#indicators[@]} > 0 )); then
+            indicator_str="${(j:  :)indicators}"
+            local label_len=$(( ${#count} + ${#name} + 5 ))
+            local pad=$(( 55 - label_len ))
+            (( pad < 1 )) && pad=1
+            printf "  \033[1;32m[%s]\033[0m \033[1;33m%s\033[0m%*s%b\n" "$count" "$name" "$pad" "" "$indicator_str"
+        else
+            printf "  \033[1;32m[%s]\033[0m \033[1;33m%s\033[0m\n" "$count" "$name"
+        fi
+
+        echo "      \033[0;36m${branch}\033[0m · ${status_text}"
+        if [[ "$nx_st" != "idle" && "$nx_st" != "no-session" ]]; then
+            echo "      \033[1;33m⚡\033[0m \033[0;90mnx ${nx_st}\033[0m"
+        fi
+
+        # Match instances by projectPath
+        local found_instance=0
+        for inst_line in "${instance_lines[@]}"; do
+            local inst_name="${inst_line%%|*}"
+            local rest="${inst_line#*|}"
+            local inst_path="${rest%%|*}"
+            rest="${rest#*|}"
+            local api_port="${rest%%|*}"
+            rest="${rest#*|}"
+            local portal_port="${rest%%|*}"
+            local patient_port="${rest#*|}"
+
+            if [[ "$inst_path" == "$wt_path" ]]; then
+                found_instance=1
+                echo "      \033[0;90m╰─\033[0m \033[0;35m${inst_name}\033[0m"
+                echo "         \033[0;90mportal\033[0m  \033[4;34mhttps://dev.portal.nestgenomics.com:${portal_port}\033[0m"
+                echo "         \033[0;90mapp\033[0m     \033[4;34mhttps://dev.app.nestgenomics.com:${patient_port}\033[0m"
+                echo "         \033[0;90mapi\033[0m     \033[4;34mhttps://dev.api.nestgenomics.com:${api_port}\033[0m"
+            fi
+        done
+        if (( found_instance == 0 )); then
+            echo "      \033[0;90m(no stack instance)\033[0m"
+        fi
+    done
+
+    echo ""
+    echo "  \033[0;90m───────────────────────────────────────────────────────\033[0m"
+    echo "  \033[0;90mwt <n>\033[0m switch  \033[0;90m·\033[0m  \033[0;90mnest-wt remove <n>\033[0m remove"
+    echo ""
+}
+
+# ------------------------------------------------------------------------------
+#  nest-wt command
+# ------------------------------------------------------------------------------
+
+nest-wt() {
+    local script_path="$HOME/.zshrc-modules/scripts/git-worktree"
+    local repo_root="${NEST_REPO_ROOT}"
+
+    # Handle go/cd subcommand
+    if [[ "${1:-}" == "go" || "${1:-}" == "cd" ]]; then
+        shift
+        local selection="$1"
+
+        if [[ -z "$selection" ]]; then
+            echo ""
+            echo "  \033[1;34m═══════════════════════════════════════════════════════════════\033[0m"
+            echo "  \033[1;34m  Select a Worktree\033[0m"
+            echo "  \033[1;34m═══════════════════════════════════════════════════════════════\033[0m"
+            echo ""
+
+            local count=0
+            local worktrees=()
+            local line wt_path branch name
+
+            while IFS= read -r line; do
+                [[ -z "$line" ]] && continue
+                wt_path="${line%% *}"
+                [[ "$wt_path" == *".worktrees"* ]] && worktrees+=("$line")
+            done < <(git -C "$repo_root" worktree list 2>/dev/null)
+
+            for line in "${worktrees[@]}"; do
+                count=$((count + 1))
+                wt_path="${line%% *}"
+                name="${wt_path##*/}"
+                if [[ "$line" == *"["*"]"* ]]; then
+                    branch="${line#*\[}"
+                    branch="${branch%%\]*}"
+                else
+                    branch=""
+                fi
+                echo "  \033[1;32m[$count]\033[0m \033[1;33m$name\033[0m"
+                echo "       Branch: $branch"
+                echo ""
+            done
+
+            if [[ $count -eq 0 ]]; then
+                echo "  \033[1;33mNo worktrees found.\033[0m"
+                echo "  Create one with: nest-wt <name> [base-ref]"
+                return 1
+            fi
+
+            echo -n "  Enter number (1-$count): "
+            read selection
+            [[ -z "$selection" ]] && { echo "Cancelled."; return 0; }
+        fi
+
+        local worktree_path
+        worktree_path=$(_nest_wt_resolve_path "$selection")
+
+        if [[ -z "$worktree_path" ]]; then
+            echo "Error: Could not find worktree: $selection"
+            return 1
+        fi
+
+        _nest_wt_switch_to "$worktree_path"
+        return $?
+    fi
+
+    # No args: show dashboard
+    if [[ -z "${1:-}" ]]; then
+        _nest_wt_status
+        return $?
+    fi
+
+    case "${1:-}" in
+        status)
+            _nest_wt_status
+            return $?
+            ;;
+        list|prune|help|--help|-h)
+            "$script_path" "$@"
+            return $?
+            ;;
+        remove)
+            shift
+
+            # If no args and we're inside a worktree, offer to remove current one
+            if [[ -z "$1" ]]; then
+                local current_dir="$PWD"
+                if [[ "$current_dir" == *"/.worktrees/"* ]]; then
+                    local wt_path="${current_dir%%/.worktrees/*}/.worktrees"
+                    local after_worktrees="${current_dir#*/.worktrees/}"
+                    local current_wt_name="${after_worktrees%%/*}"
+
+                    echo -e "\033[1;33m⚠ You're currently in worktree: $current_wt_name\033[0m"
+                    echo -n "Remove this worktree? [y/N] "
+                    read -r confirm
+
+                    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                        set -- "$current_wt_name"
+                    else
+                        echo "Cancelled."
+                        return 0
+                    fi
+                else
+                    "$script_path" remove
+                    return $?
+                fi
+            fi
+
+            # Collect worktree names before removal (for tmux cleanup)
+            local names_to_remove=()
+            for input in "$@"; do
+                local worktree_path=""
+                local worktree_name=""
+
+                if [[ "$input" =~ ^[0-9]+$ ]]; then
+                    local count=0
+                    while IFS= read -r line; do
+                        [[ -z "$line" ]] && continue
+                        local wt_path="${line%% *}"
+                        if [[ "$wt_path" == *".worktrees"* ]]; then
+                            count=$((count + 1))
+                            if [[ $count -eq $input ]]; then
+                                worktree_path="$wt_path"
+                                break
+                            fi
+                        fi
+                    done < <(git -C "$repo_root" worktree list 2>/dev/null)
+                elif [[ ! "$input" == /* ]]; then
+                    worktree_path="$repo_root/.worktrees/$input"
+                else
+                    worktree_path="$input"
+                fi
+
+                if [[ -n "$worktree_path" && -d "$worktree_path" ]]; then
+                    worktree_name="${worktree_path##*/}"
+                    names_to_remove+=("$worktree_name")
+                fi
+            done
+
+            # Destroy stack instances before removing worktrees
+            for name in "${names_to_remove[@]}"; do
+                echo -e "\033[0;34m🏗️\033[0m Destroying stack instance: $name"
+                (cd "$repo_root" && nx run stack:destroy --instance "$name" 2>/dev/null) || true
+            done
+
+            "$script_path" remove "$@"
+            local exit_code=$?
+
+            # Kill associated tmux sessions
+            for name in "${names_to_remove[@]}"; do
+                local session_name="${NEST_WT_SESSION_PREFIX}${name}"
+                if tmux has-session -t "$session_name" 2>/dev/null; then
+                    tmux kill-session -t "$session_name"
+                    echo -e "\033[0;32m✓\033[0m Killed tmux session: $session_name"
+                fi
+            done
+
+            return $exit_code
+            ;;
+    esac
+
+    # Worktree creation
+    local input="$1"
+    local worktree_dir_name
+
+    if [[ "$input" == */* ]]; then
+        worktree_dir_name="${input//\//-}"
+    else
+        worktree_dir_name="$input"
+    fi
+
+    local worktree_path="$repo_root/.worktrees/$worktree_dir_name"
+
+    if [[ -d "$worktree_path" ]]; then
+        echo "🌿 Worktree already exists, switching to it..."
+        _nest_wt_switch_to "$worktree_path"
+        return $?
+    fi
+
+    "$script_path" "$@"
+    local exit_code=$?
+
+    if [[ $exit_code -eq 0 && -d "$worktree_path" ]]; then
+        echo ""
+        _nest_wt_switch_to "$worktree_path"
+    fi
+
+    return $exit_code
+}
+
+# ------------------------------------------------------------------------------
+#  Shortcuts
+# ------------------------------------------------------------------------------
+
+alias nwt="nest-wt"
+alias nwt-list="nest-wt list"
+alias nwt-remove="nest-wt remove"
+alias nwt-go="nest-wt go"
+
+unalias wt 2>/dev/null || true
+wt() {
+    if [[ -z "$1" ]]; then
+        _nest_wt_status
+    else
+        nest-wt go "$@"
+    fi
+}
