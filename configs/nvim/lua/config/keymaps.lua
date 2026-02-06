@@ -37,3 +37,61 @@ vim.keymap.set("n", "<C-k>", "<C-w><C-k>", { desc = "Move focus to the upper win
 --
 -- -- Expand 'cc' into 'CodeCompanion' in the command line
 -- vim.cmd([[cab cc CodeCompanion]])
+
+-- NX commands for nearest project (finds project.json)
+local function get_nx_project()
+  local project_json = vim.fs.find("project.json", {
+    upward = true,
+    path = vim.fn.expand("%:p:h"),
+  })[1]
+
+  if project_json then
+    local content = vim.fn.readfile(project_json)
+    local json = vim.fn.json_decode(table.concat(content, "\n"))
+    return json.name
+  end
+  return nil
+end
+
+vim.keymap.set("n", "<leader>cN", function()
+  local project = get_nx_project()
+  if project then
+    vim.cmd("term nx lint " .. project)
+  else
+    vim.notify("No NX project found", vim.log.levels.WARN)
+  end
+end, { desc = "NX lint (nearest)" })
+
+vim.keymap.set("n", "<leader>cB", function()
+  local project = get_nx_project()
+  if project then
+    vim.cmd("term nx build " .. project)
+  else
+    vim.notify("No NX project found", vim.log.levels.WARN)
+  end
+end, { desc = "NX build (nearest)" })
+
+vim.keymap.set("n", "<leader>cR", function()
+  local project = get_nx_project()
+  if project then
+    vim.cmd("term nx run " .. project .. ":")
+    vim.api.nvim_feedkeys("i", "n", false) -- Enter insert mode to type target
+  else
+    vim.notify("No NX project found", vim.log.levels.WARN)
+  end
+end, { desc = "NX run (nearest)" })
+
+vim.keymap.set("n", "<leader>cC", function()
+  local project = get_nx_project()
+  local project_json = vim.fs.find("project.json", {
+    upward = true,
+    path = vim.fn.expand("%:p:h"),
+  })[1]
+
+  if project and project_json then
+    local dir = vim.fn.fnamemodify(project_json, ":h")
+    vim.cmd("term cd " .. dir .. " && npx tsc --noEmit && nx lint " .. project)
+  else
+    vim.notify("No NX project found", vim.log.levels.WARN)
+  end
+end, { desc = "NX check (types + lint)" })

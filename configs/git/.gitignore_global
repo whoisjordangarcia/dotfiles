@@ -27,6 +27,7 @@ Thumbs.db
 *.swo
 *~
 pyrightconfig.json
+oxlint.json
 .rgignore
 .metals
 

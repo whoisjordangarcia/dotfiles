@@ -21,6 +21,7 @@ alias :wq="exit"
 alias :x="exit"
 alias zshrc="nvim ~/.zshrc"
 alias dotfiles="cd ~/dev/dotfiles && nvim ."
+alias sketchybar-theme="~/.config/sketchybar/switch-theme.sh"
 
 #git
 alias gcm="git checkout main"
