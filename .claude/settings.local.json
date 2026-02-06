@@ -3,7 +3,16 @@
     "allow": [
       "Bash(chmod:*)",
       "Bash(bash -x ~/.zshrc-modules/scripts/git-worktree testdebug)",
-      "Bash(zsh:*)"
+      "Bash(zsh:*)",
+      "Bash(vm_stat:*)",
+      "Bash(/usr/bin/top:*)",
+      "WebSearch",
+      "Bash(bash:*)",
+      "Bash(git mv:*)",
+      "Bash(aerospace reload-config:*)",
+      "Bash(command -v:*)",
+      "Bash(tmux list-sessions:*)",
+      "Bash(git -C:*)"
     ]
   }
 }

@@ -4,14 +4,22 @@ return {
     opts = function(_, opts)
       opts.servers = opts.servers or {}
 
-      -- TypeScript LSP optimizations for large monorepos
-      opts.servers.ts_ls = {
-        init_options = {
-          maxTsServerMemory = 16384,
-          disableAutomaticTypingAcquisition = true,
-        },
+      -- Enable oxlint LSP for fast JS/TS linting
+      opts.servers.oxlint = {}
+
+      -- Disable ts_ls (using vtsls instead)
+      opts.servers.ts_ls = { enabled = false }
+
+      -- TypeScript LSP (vtsls) optimizations for large monorepos
+      opts.servers.vtsls = {
         settings = {
           typescript = {
+            tsserver = {
+              maxTsServerMemory = 4096,
+              experimental = {
+                enableProjectDiagnostics = false,
+              },
+            },
             preferences = {
               includePackageJsonAutoImports = "off",
             },
@@ -19,15 +27,21 @@ return {
               autoImports = true,
               includeCompletionsForModuleExports = true,
             },
-            tsserver = {
-              experimental = {
-                enableProjectDiagnostics = false,
-              },
-            },
           },
           javascript = {
             preferences = {
               includePackageJsonAutoImports = "off",
+            },
+          },
+          vtsls = {
+            autoUseWorkspaceTsdk = true,
+            enableMoveToFileCodeAction = true,
+            experimental = {
+              completion = {
+                enableServerSideFuzzyMatch = true,
+              },
+              -- Use nearest tsconfig for each file (better monorepo support)
+              maxInlayHintLength = 30,
             },
           },
         },
