@@ -17,6 +17,7 @@ COLOR_TOKENS=$'\033[38;5;180m'     # Soft gold for tokens
 COLOR_DURATION=$'\033[38;5;183m'   # Soft pink for duration
 COLOR_GIT=$'\033[38;5;173m'        # Soft coral for git branch
 COLOR_SEPARATOR=$'\033[38;5;238m'  # Subtle gray for separators
+COLOR_ITALIC=$'\033[3m'            # Italic text
 COLOR_RESET=$'\033[0m'
 
 # Extract model and shorten it
@@ -160,7 +161,7 @@ else
 	tokens_display="0/${size_display} tokens"
 fi
 
-# Git branch
+# Git branch and worktree path
 cwd=$(echo "$input" | jq -r '.cwd // .workspace.current_dir // ""')
 if [ -n "$cwd" ] && [ -d "$cwd/.git" ]; then
 	branch=$(cd "$cwd" 2>/dev/null && git -c core.useBuiltinFSMonitor=false branch --show-current 2>/dev/null)
@@ -173,10 +174,16 @@ else
 	git_info=""
 fi
 
+# Worktree path for second line - extract portion after .worktrees/
+worktree_path="$cwd"
+if [[ "$worktree_path" =~ \.worktrees/(.+)$ ]]; then
+	worktree_path="${BASH_REMATCH[1]}"
+fi
+
 # Output with colors
 # Using %b for context_info and git_info since they contain embedded escape codes
 if [ -n "$duration_display" ]; then
-	printf "%s%s%s %s|%s %s%s%s %s|%s %s%s%s %s|%s %b %s|%s %s%s%s%b\n" \
+	printf "%s%s%s %s|%s %s%s%s %s|%s %s%s%s %s|%s %b %s|%s %s%s%s%b\n%s%s%s\n" \
 		"$COLOR_MODEL" "$model_short" "$COLOR_RESET" \
 		"$COLOR_SEPARATOR" "$COLOR_RESET" \
 		"$COLOR_COST" "$cost_display" "$COLOR_RESET" \
@@ -186,9 +193,10 @@ if [ -n "$duration_display" ]; then
 		"$context_info" \
 		"$COLOR_SEPARATOR" "$COLOR_RESET" \
 		"$COLOR_TOKENS" "$tokens_display" "$COLOR_RESET" \
-		"$git_info"
+		"$git_info" \
+		"$COLOR_ITALIC" "$worktree_path" "$COLOR_RESET"
 else
-	printf "%s%s%s %s|%s %s%s%s %s|%s %b %s|%s %s%s%s%b\n" \
+	printf "%s%s%s %s|%s %s%s%s %s|%s %b %s|%s %s%s%s%b\n%s%s%s\n" \
 		"$COLOR_MODEL" "$model_short" "$COLOR_RESET" \
 		"$COLOR_SEPARATOR" "$COLOR_RESET" \
 		"$COLOR_COST" "$cost_display" "$COLOR_RESET" \
@@ -196,5 +204,6 @@ else
 		"$context_info" \
 		"$COLOR_SEPARATOR" "$COLOR_RESET" \
 		"$COLOR_TOKENS" "$tokens_display" "$COLOR_RESET" \
-		"$git_info"
+		"$git_info" \
+		"$COLOR_ITALIC" "$worktree_path" "$COLOR_RESET"
 fi

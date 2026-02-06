@@ -33,10 +33,12 @@
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
-    "ask": ["Bash(git push:*)", "Bash(curl:*)"],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(curl:*)"
+    ],
     "defaultMode": "default"
   },
-  "model": "opus",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
@@ -54,19 +56,27 @@
     "superpowers@claude-plugins-official": false,
     "feature-dev@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": false,
     "commit-commands@claude-plugins-official": true,
-    "playwright@claude-plugins-official": true,
+    "playwright@claude-plugins-official": false,
     "security-guidance@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
-    "explanatory-output-style@claude-plugins-official": true
+    "explanatory-output-style@claude-plugins-official": true,
+    "nest-genomics-skills@nest-genomics-skills": true,
+    "nest-retool-json-schema-forms@nest-genomics-skills": true,
+    "nest-linear-ticket-template@nest-genomics-skills": false,
+    "nest-pr@nest-genomics-skills": true
   },
   "outputStyle": "Explanatory",
-  "alwaysThinkingEnabled": true,
-  "autoUpdatesChannel": "latest",
   "spinnerTipsEnabled": false,
   "spinnerVerbs": {
     "mode": "replace",
-    "verbs": ["Nesting", "sahh good", "ralphing"]
-  }
+    "verbs": [
+      "Nesting",
+      "sahh good",
+      "ralphing"
+    ]
+  },
+  "alwaysThinkingEnabled": true,
+  "autoUpdatesChannel": "latest"
 }
