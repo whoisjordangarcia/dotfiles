@@ -88,7 +88,7 @@ _nest_wt_switch_to() {
 
             # Split above for nvim (60% height for nvim, 40% for terminal)
             tmux split-window -v -t "$session_name" -b -l 60% -c "$worktree_path"
-            tmux send-keys -t "$session_name" "clear && nvim ." Enter
+            tmux send-keys -t "$session_name" "clear && nvim" Enter
 
             # Focus on the terminal pane below
             tmux select-pane -t "$session_name" -D
@@ -283,6 +283,13 @@ nest-wt() {
     fi
 
     local worktree_path="$repo_root/.worktrees/$worktree_dir_name"
+
+    # If worktree already exists, just switch to it
+    if [[ -d "$worktree_path" ]]; then
+        echo "🌿 Worktree already exists, switching to it..."
+        _nest_wt_switch_to "$worktree_path"
+        return $?
+    fi
 
     # Run the script directly - allows pnpm install to show progress
     "$script_path" "$@"
