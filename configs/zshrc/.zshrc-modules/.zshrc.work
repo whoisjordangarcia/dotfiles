@@ -6,54 +6,14 @@
 export NEST_REPO_ROOT="$HOME/projects/nest"
 
 # ==============================================================================
-#  Nest Worktree Helper
+#  Worktree session layout (work-specific: nvim + claude + stack setup)
 # ==============================================================================
 
-# Helper: Get worktree path by number or name
-_nest_wt_resolve_path() {
-    local input="$1"
-    local repo_root="${NEST_REPO_ROOT:-$HOME/projects/nest}"
-    local worktrees_dir="$repo_root/.worktrees"
-
-    # If input is a number, resolve from list
-    if [[ "$input" =~ ^[0-9]+$ ]]; then
-        # Get all worktree paths (only .worktrees, not main repo)
-        local worktree_paths=()
-        local wt_list
-        wt_list=$(git -C "$repo_root" worktree list 2>/dev/null)
-
-        local line path
-        while IFS= read -r line; do
-            [[ -z "$line" ]] && continue
-            path="${line%% *}"
-            if [[ "$path" == *".worktrees"* ]]; then
-                worktree_paths+=("$path")
-            fi
-        done <<< "$wt_list"
-
-        # zsh arrays are 1-indexed, so input 1 = first element
-        if (( input >= 1 && input <= ${#worktree_paths[@]} )); then
-            echo "${worktree_paths[$input]}"
-            return 0
-        fi
-        return 1
-    fi
-
-    # If input is a name, resolve from worktrees directory
-    local potential_path="$worktrees_dir/$input"
-    if [[ -d "$potential_path" ]]; then
-        echo "$potential_path"
-        return 0
-    fi
-
-    return 1
-}
-
-# Helper: Switch to a worktree (creates/switches tmux session or cds)
+# Override: how a new worktree tmux session is created
 _nest_wt_switch_to() {
     local worktree_path="$1"
     local worktree_name="${worktree_path##*/}"
-    local session_name="🌿_${worktree_name}"
+    local session_name="${NEST_WT_SESSION_PREFIX}${worktree_name}"
 
     if [[ ! -d "$worktree_path" ]]; then
         echo "Error: Worktree not found at $worktree_path"
@@ -93,8 +53,41 @@ _nest_wt_switch_to() {
             # Focus on the terminal pane below
             tmux select-pane -t "$session_name" -D
 
-            # Auto-run pnpm install in the terminal pane (clear fastfetch first, show quick start after)
-            tmux send-keys -t "$session_name" "clear && echo '🌿 $worktree_name' && pnpm install && echo '' && echo '╭─────────────────────────────────────╮' && echo '│  Quick Start                        │' && echo '├─────────────────────────────────────┤' && echo '│  nx run provider-portal:serve       │' && echo '│  nx run patient-navigator:serve     │' && echo '│  nx run client-api:serve            │' && echo '╰─────────────────────────────────────╯'" Enter
+            # Setup script (runs in terminal pane — stack, env)
+            local setup_script="/tmp/nest-wt-setup-${worktree_name}.sh"
+            cat > "$setup_script" << SETUP_EOF
+#!/bin/bash
+set -e
+
+# Wait for pnpm install to finish (NX needs node_modules/.modules.yaml)
+echo "⏳ Waiting for pnpm install..."
+while [ ! -f "${worktree_path}/node_modules/.modules.yaml" ]; do sleep 1; done
+echo "✅ Dependencies ready"
+echo ""
+
+# echo "🔐 Installing dev certs..."
+# nx run client-api:install-dev-certs
+# nx run provider-portal:install-dev-certs
+# nx run patient-navigator:install-dev-certs
+
+echo "🏗️ Creating stack instance..."
+nx run stack:create-instance -- "${worktree_name}" --start --migrate --seed
+
+echo ""
+nx run stack:env
+rm -f "${setup_script}"
+SETUP_EOF
+            chmod +x "$setup_script"
+
+            # Clear neofetch then run setup in terminal pane (parallel with pnpm)
+            tmux send-keys -t "$session_name" "clear && bash $setup_script" Enter
+
+            # Tiny pane at bottom (2%) for pnpm install — auto-closes when done
+            tmux split-window -v -t "$session_name" -l 2% -c "$worktree_path" \
+                "zsh -lc 'pnpm install --frozen-lockfile --prefer-offline'"
+
+            # Re-focus the terminal pane above
+            tmux select-pane -t "$session_name" -U
 
             # Switch to the new session
             if [[ -n "${TMUX:-}" ]]; then
@@ -109,240 +102,5 @@ _nest_wt_switch_to() {
     fi
 }
 
-# Wrapper function that calls the script and cds into the new worktree
-nest-wt() {
-    local script_path="$HOME/.zshrc-modules/scripts/git-worktree"
-    local repo_root="${NEST_REPO_ROOT:-$HOME/projects/nest}"
-
-    # Handle go/cd subcommand - quick switch to existing worktree
-    if [[ "${1:-}" == "go" || "${1:-}" == "cd" ]]; then
-        shift
-        local selection="$1"
-
-        # If no selection provided, show interactive picker
-        if [[ -z "$selection" ]]; then
-            echo ""
-            echo "  \033[1;34m═══════════════════════════════════════════════════════════════\033[0m"
-            echo "  \033[1;34m  Select a Worktree\033[0m"
-            echo "  \033[1;34m═══════════════════════════════════════════════════════════════\033[0m"
-            echo ""
-
-            local count=0
-            local worktrees=()
-            local line path branch name
-
-            # Read worktree list into array first (avoids subshell issues)
-            while IFS= read -r line; do
-                [[ -z "$line" ]] && continue
-                path="${line%% *}"
-                if [[ "$path" == *".worktrees"* ]]; then
-                    worktrees+=("$line")
-                fi
-            done < <(git -C "$repo_root" worktree list 2>/dev/null)
-
-            # Display worktrees from array
-            for line in "${worktrees[@]}"; do
-                count=$((count + 1))
-                path="${line%% *}"
-                name="${path##*/}"
-                # Extract branch from [brackets]
-                if [[ "$line" == *"["*"]"* ]]; then
-                    branch="${line#*\[}"
-                    branch="${branch%%\]*}"
-                else
-                    branch=""
-                fi
-                echo "  \033[1;32m[$count]\033[0m \033[1;33m$name\033[0m"
-                echo "       Branch: $branch"
-                echo ""
-            done
-
-            if [[ $count -eq 0 ]]; then
-                echo "  \033[1;33mNo worktrees found.\033[0m"
-                echo "  Create one with: nest-wt <name> [base-ref]"
-                return 1
-            fi
-
-            echo -n "  Enter number (1-$count): "
-            read selection
-
-            if [[ -z "$selection" ]]; then
-                echo "Cancelled."
-                return 0
-            fi
-        fi
-
-        # Resolve the worktree path
-        local worktree_path
-        worktree_path=$(_nest_wt_resolve_path "$selection")
-
-        if [[ -z "$worktree_path" ]]; then
-            echo "Error: Could not find worktree: $selection"
-            return 1
-        fi
-
-        _nest_wt_switch_to "$worktree_path"
-        return $?
-    fi
-
-    # For list/prune/help, just run the script directly
-    case "${1:-}" in
-        list|prune|help|--help|-h)
-            "$script_path" "$@"
-            return $?
-            ;;
-        remove)
-            # Intercept remove to also kill tmux sessions
-            shift
-
-            # If no args and we're inside a worktree, offer to remove current one
-            if [[ -z "$1" ]]; then
-                local current_dir="$PWD"
-                if [[ "$current_dir" == *"/.worktrees/"* ]]; then
-                    # Extract worktree name from path
-                    local wt_path="${current_dir%%/.worktrees/*}/.worktrees"
-                    local after_worktrees="${current_dir#*/.worktrees/}"
-                    local current_wt_name="${after_worktrees%%/*}"
-
-                    echo -e "\033[1;33m⚠ You're currently in worktree: $current_wt_name\033[0m"
-                    echo -n "Remove this worktree? [y/N] "
-                    read -r confirm
-
-                    if [[ "$confirm" =~ ^[Yy]$ ]]; then
-                        # Set arg to current worktree name and continue
-                        set -- "$current_wt_name"
-                    else
-                        echo "Cancelled."
-                        return 0
-                    fi
-                else
-                    "$script_path" remove
-                    return $?
-                fi
-            fi
-
-            # Collect worktree names before removal (for tmux cleanup)
-            local names_to_remove=()
-            for input in "$@"; do
-                local worktree_path=""
-                local worktree_name=""
-
-                # Resolve path by number
-                if [[ "$input" =~ ^[0-9]+$ ]]; then
-                    local count=0
-                    while IFS= read -r line; do
-                        [[ -z "$line" ]] && continue
-                        local path="${line%% *}"
-                        if [[ "$path" == *".worktrees"* ]]; then
-                            count=$((count + 1))
-                            if [[ $count -eq $input ]]; then
-                                worktree_path="$path"
-                                break
-                            fi
-                        fi
-                    done < <(git -C "$repo_root" worktree list 2>/dev/null)
-                # Resolve by name
-                elif [[ ! "$input" == /* ]]; then
-                    worktree_path="$repo_root/.worktrees/$input"
-                else
-                    worktree_path="$input"
-                fi
-
-                if [[ -n "$worktree_path" && -d "$worktree_path" ]]; then
-                    worktree_name="${worktree_path##*/}"
-                    names_to_remove+=("$worktree_name")
-                fi
-            done
-
-            # Run the actual remove command
-            "$script_path" remove "$@"
-            local exit_code=$?
-
-            # Kill associated tmux sessions
-            for name in "${names_to_remove[@]}"; do
-                local session_name="🌿_${name}"
-                if tmux has-session -t "$session_name" 2>/dev/null; then
-                    tmux kill-session -t "$session_name"
-                    echo -e "\033[0;32m✓\033[0m Killed tmux session: $session_name"
-                fi
-            done
-
-            return $exit_code
-            ;;
-    esac
-
-    # For worktree creation, run script directly (not captured) so pnpm install works properly
-    local input="$1"
-    local worktree_dir_name
-
-    # Mirror the git-worktree script's logic: slashes become dashes in directory name
-    if [[ "$input" == */* ]]; then
-        worktree_dir_name="${input//\//-}"
-    else
-        worktree_dir_name="$input"
-    fi
-
-    local worktree_path="$repo_root/.worktrees/$worktree_dir_name"
-
-    # If worktree already exists, just switch to it
-    if [[ -d "$worktree_path" ]]; then
-        echo "🌿 Worktree already exists, switching to it..."
-        _nest_wt_switch_to "$worktree_path"
-        return $?
-    fi
-
-    # Run the script directly - allows pnpm install to show progress
-    "$script_path" "$@"
-    local exit_code=$?
-
-    # If successful and worktree exists, set up tmux session
-    if [[ $exit_code -eq 0 && -d "$worktree_path" ]]; then
-        echo ""
-        # Reuse the same switch function that nest-wt go uses
-        _nest_wt_switch_to "$worktree_path"
-    fi
-
-    return $exit_code
-}
-
-# Aliases for convenience
-alias nwt="nest-wt"
-alias nwt-list="nest-wt list"
-alias nwt-remove="nest-wt remove"
-alias nwt-go="nest-wt go"
-
-# Quick worktree switcher: wt shows list, wt <num> switches
-unalias wt 2>/dev/null || true
-wt() {
-    if [[ -z "$1" ]]; then
-        # No args: show compact list for quick reference
-        local repo_root="${NEST_REPO_ROOT:-$HOME/projects/nest}"
-        echo ""
-        local count=0
-        local line path branch name
-
-        while IFS= read -r line; do
-            [[ -z "$line" ]] && continue
-            path="${line%% *}"
-            if [[ "$path" == *".worktrees"* ]]; then
-                count=$((count + 1))
-                name="${path##*/}"
-                if [[ "$line" == *"["*"]"* ]]; then
-                    branch="${line#*\[}"
-                    branch="${branch%%\]*}"
-                else
-                    branch=""
-                fi
-                echo "  \033[1;32m[$count]\033[0m \033[1;33m$name\033[0m  \033[0;90m($branch)\033[0m"
-            fi
-        done < <(git -C "$repo_root" worktree list 2>/dev/null)
-
-        if [[ $count -eq 0 ]]; then
-            echo "  \033[1;33mNo worktrees.\033[0m Create: nest-wt <name>"
-        fi
-        echo ""
-    else
-        # Args provided: switch to worktree
-        nest-wt go "$@"
-    fi
-}
+# Load nest-wt module (dashboard, helpers, aliases)
+source "${0:A:h}/.zshrc.nest-wt"
