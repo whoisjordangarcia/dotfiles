@@ -212,6 +212,30 @@ export LOG_LEVEL=error    # Only errors
 
 ## Development Patterns
 
+### Git Worktree Convention
+
+**Always create a new worktree when developing new features.** This keeps the main working directory clean and allows parallel development.
+
+**Worktree Location**: Use sibling directory with `__worktree` suffix:
+```bash
+# Main repo: ~/dev/dotfiles
+# Worktrees: ~/dev/dotfiles__worktree/{feature-name}
+
+# Example: Create worktree for waybar styling
+git worktree add ~/dev/dotfiles__worktree/waybar-styling -b feature/waybar-styling
+
+# List active worktrees
+git worktree list
+
+# Remove worktree when done (after merging)
+git worktree remove ~/dev/dotfiles__worktree/waybar-styling
+```
+
+**Why sibling directories?**
+- Avoids worktree contents interfering with main repo
+- Keeps all worktrees discoverable alongside the main repo in `~/dev/`
+- No need for `.gitignore` entries for worktree directories
+
 ### Adding New Components
 
 1. **Create platform-specific setup script**:
