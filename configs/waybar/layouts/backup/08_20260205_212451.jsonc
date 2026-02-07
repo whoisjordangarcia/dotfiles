@@ -32,9 +32,39 @@
     "group/pill#left2": {
         "orientation": "inherit",
         "modules": [
-            "wlr/taskbar",
+            "hyprland/workspaces",
             "custom/spotify"
         ]
+    },
+    "hyprland/workspaces": {
+        "format": "{id} {windows}",
+        "format-window-separator": "  ",
+        "window-rewrite-default": "● App",
+        "window-rewrite": {
+            "class<brave-browser>": "󰖟 Brave",
+            "class<firefox>": " Firefox",
+            "class<chromium>": " Chrome",
+            "class<com.mitchellh.ghostty>": " Term",
+            "class<kitty>": " Term",
+            "class<Alacritty>": " Term",
+            "class<org.kde.dolphin>": " Files",
+            "class<thunar>": " Files",
+            "class<steam>": "󰓓 Steam",
+            "class<steam_app_.*>": "󰊗 {title}",
+            "class<discord>": "󰙯 Discord",
+            "class<Discord>": "󰙯 Discord",
+            "class<spotify>": "󰓇 Spotify",
+            "class<Spotify>": "󰓇 Spotify",
+            "class<code>": "󰨞 Code",
+            "class<Code>": "󰨞 Code",
+            "class<obsidian>": "󰎚 Obsidian",
+            "class<slack>": "󰒱 Slack",
+            "class<Slack>": "󰒱 Slack"
+        },
+        "on-click": "activate",
+        "on-scroll-up": "hyprctl dispatch workspace -1",
+        "on-scroll-down": "hyprctl dispatch workspace +1",
+        "all-outputs": true
     },
     "modules-center": [
         "group/pill#center"
