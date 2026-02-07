@@ -78,6 +78,9 @@ fi
 # annoying things
 defaults write -g ApplePressAndHoldEnabled -bool false
 
+# Use 12-hour time format in menu bar clock
+defaults write com.apple.menuextra.clock AppleICUForce12HourTime -bool true
+
 # Trackpad: disable "natural" scrolling (use traditional scroll direction)
 defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
 
