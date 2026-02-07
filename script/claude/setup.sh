@@ -18,12 +18,3 @@ link_file "$SCRIPT_DIR/../../configs/claude/commands/" "$HOME/.claude/commands" 
 link_file "$SCRIPT_DIR/../../configs/claude/prompts/" "$HOME/.claude/prompts" "directory"
 link_file "$SCRIPT_DIR/../../configs/claude/statusline.sh" "$HOME/.claude/statusline.sh"
 link_file "$SCRIPT_DIR/../../configs/claude/settings.json" "$HOME/.claude/settings.json"
-
-# /plugin marketplace add obra/superpowers-marketplace
-# /plugin install superpowers-developing-for-claude-code@superpowers-marketplace
-#
-# /plugin marketplace add sawyerhood/dev-browser
-# /plugin install dev-browser@sawyerhood/dev-browser
-#
-# /plugin marketplace add thedotmack/claude-mem
-# /plugin install claude-mem

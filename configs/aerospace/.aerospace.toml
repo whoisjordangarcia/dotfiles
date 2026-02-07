@@ -5,7 +5,7 @@ start-at-login = true
 after-login-command = []
 
 after-startup-command = [
-  'exec-and-forget borders active_color=0xc0e2e2e3 inactive_color=0xc02c2e34 width=6.0',
+  #'exec-and-forget bash ~/.config/borders/bordersrc',
   'exec-and-forget /usr/local/bin/sketchybar',
 ]
 
@@ -45,10 +45,10 @@ enable-normalization-opposite-orientation-for-nested-containers = true
 
 [gaps]
 #outer.bottom numbers have to match presentation.sh variables. built-in retina display is excluded from presentation mode, so this only works on external monitors.
-outer.bottom = [{ monitor.'^built-in retina display$' = 15 }, 15]
-outer.top = [{ monitor.'^built-in retina display$' = 10 }, 50]
-outer.left = [{ monitor.'^built-in retina display$' = 15 }, 15]
-outer.right = [{ monitor.'^built-in retina display$' = 15 }, 15]
+outer.bottom = [{ monitor.'^built-in retina display$' = 5 }, 5]
+outer.top = [{ monitor.'^built-in retina display$' = 15 }, 55]
+outer.left = [{ monitor.'^built-in retina display$' = 5 }, 5]
+outer.right = [{ monitor.'^built-in retina display$' = 5 }, 5]
 inner.horizontal = 10
 inner.vertical = 10
 
