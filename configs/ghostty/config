@@ -26,9 +26,11 @@ mouse-hide-while-typing = true
 
 unfocused-split-opacity = 0.9
 
-window-decoration = auto 
-window-padding-x = 14
-window-padding-y = 14
+window-decoration = false
+window-padding-x = 5
+window-padding-y = 14,0
+window-padding-balance = true
+window-padding-color = extend
 confirm-close-surface = false
 resize-overlay = never
 
