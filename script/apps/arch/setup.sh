@@ -16,6 +16,7 @@ PACKAGES=(
 	fzf
 	jq
 	bat
+	github-cli
 
 	# System monitors
 	dysk
