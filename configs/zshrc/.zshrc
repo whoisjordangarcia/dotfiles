@@ -43,5 +43,5 @@ export PATH="$HOME/.local/bin:$PATH"
 
 alias claude-mem='bun "/Users/nest/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'
 
-export NEST_WT_EDITOR="zed"
+#export NEST_WT_EDITOR="zed"
 export NEST_REPO_ROOT="$HOME/projects/nest"
