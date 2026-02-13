@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
     "DISABLE_AUTOUPDATER": "1",
     "DISABLE_TELEMETRY": "1",
@@ -8,20 +9,21 @@
   "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
-      "Bash(gh pr create:*)",
-      "Bash(gh pr list:*)",
-      "Bash(gh pr view:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git push:*)",
-      "Bash(git status:*)",
-      "Bash(npm info:*)",
-      "Bash(npm run:*)",
-      "Bash(nx:*)",
-      "Bash(pnpm:*)",
-      "Bash(task:*)"
+      "Bash(gh pr create *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr view *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git push *)",
+      "Bash(git status *)",
+      "Bash(npm info *)",
+      "Bash(npm run *)",
+      "Bash(nx *)",
+      "Bash(pnpm *)",
+      "Bash(task *)",
+      "mcp__pencil"
     ],
     "deny": [
       "Read(./**/*credentials*)",
@@ -34,10 +36,23 @@
       "Read(~/.zshrc-sec)"
     ],
     "ask": [
-      "Bash(git push:*)",
-      "Bash(curl:*)"
+      "Bash(git push *)",
+      "Bash(curl *)"
     ],
     "defaultMode": "default"
+  },
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/permission-notification.sh",
+            "async": true
+          }
+        ]
+      }
+    ]
   },
   "statusLine": {
     "type": "command",
@@ -46,7 +61,7 @@
   },
   "enabledPlugins": {
     "superpowers@superpowers-marketplace": true,
-    "linear@claude-plugins-official": true,
+    "linear@claude-plugins-official": false,
     "dev-browser@dev-browser-marketplace": true,
     "frontend-design@claude-plugins-official": true,
     "code-review@claude-plugins-official": false,
@@ -62,10 +77,10 @@
     "security-guidance@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": false,
     "explanatory-output-style@claude-plugins-official": true,
-    "nest-genomics-skills@nest-genomics-skills": true,
     "nest-retool-json-schema-forms@nest-genomics-skills": true,
-    "nest-linear-ticket-template@nest-genomics-skills": false,
-    "nest-pr@nest-genomics-skills": true
+    "nest-pr@nest-genomics-skills": true,
+    "playwright-skill@playwright-skill": true,
+    "nest-linear@nest-genomics-skills": true
   },
   "outputStyle": "Explanatory",
   "spinnerTipsEnabled": false,
@@ -78,5 +93,10 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "autoUpdatesChannel": "latest"
+  "companyAnnouncements": [
+    "Nest Genomics"
+  ],
+  "autoUpdatesChannel": "latest",
+  "effortLevel": "medium",
+  "skipDangerousModePermissionPrompt": true
 }
