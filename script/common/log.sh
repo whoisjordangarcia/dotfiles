@@ -82,6 +82,13 @@ success() {
     printf "\r\033[2K${GREEN}OK${RESET} $1\n" >&2
 }
 
+# Warning - non-fatal error (continues execution)
+warn() {
+    if _should_log "warn"; then
+        printf "\r\033[2K${YELLOW}WARN${RESET} $1\n" >&2
+    fi
+}
+
 # Indicates failure and exits
 fail() {
     local exit_code=${2:-1} # Default exit code is 1 if not provided

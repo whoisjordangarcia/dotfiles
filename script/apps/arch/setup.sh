@@ -64,6 +64,7 @@ ensure_setuid /usr/bin/newgidmap
 AUR_PKGS=(
 	ghostty-git
 	neovim-nightly-bin
+	claude-desktop-appimage
 )
 
 if command -v yay >/dev/null 2>&1; then
