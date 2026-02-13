@@ -10,3 +10,7 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 # neovim nightly
 export PATH="${HOME}/.local/neovim/current/bin:$PATH"
+
+# nest worktree CLI
+export PATH="${HOME}/.nest/bin:$PATH"
+source "${HOME}/.nest/bin/wt-function.sh" 2>/dev/null || true
