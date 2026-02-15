@@ -57,8 +57,11 @@ pytest.local.ini
 #*.sqlite
 
 
+# Plans
+docs/plans/
+
 # Ralph
 .ralph
 .ralphrc
 nest-*
-
+tasks

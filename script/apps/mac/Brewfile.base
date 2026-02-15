@@ -9,13 +9,14 @@ brew 'jq'
 brew 'fastfetch'
 brew 'rg'
 
-# Development 
+# Development
 brew 'nvm'
 brew 'lazygit'
 brew 'bat'
 brew 'tmuxinator'
-brew 'yq' # tmux statusbar  
+brew 'yq' # tmux statusbar
 brew 'go'
+brew 'terminal-notifier' # macOS notifications for scripts
 cask 'tailscale-app'
 
 # Essential Apps
@@ -31,3 +32,4 @@ cask 'font-hack-nerd-font'
 cask 'sf-symbols'
 cask 'font-jetbrains-mono'
 cask 'font-fira-code'
+cask 'font-cozette'

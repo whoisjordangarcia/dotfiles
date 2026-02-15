@@ -2,12 +2,679 @@
 #  Work-specific Configuration (Nest)
 # ==============================================================================
 
-# Set the nest repo root (used by nest-wt)
-export NEST_REPO_ROOT="$HOME/projects/nest"
+# ------------------------------------------------------------------------------
+#  GitHub CLI Aliases & Functions
+# ------------------------------------------------------------------------------
 
-# Load nest-wt from standalone repo
-if [[ -f "$HOME/dev/nest-worktree/nest-wt.zsh" ]]; then
-    source "$HOME/dev/nest-worktree/nest-wt.zsh"
-else
-    echo "⚠ nest-wt not found — please pull https://github.com/whoisjordangarcia/nest-worktree manually to ~/dev/nest-worktree"
-fi
+# Quick PR status checks without navigating GitHub UI
+alias ghpr='gh pr view --json title,state,statusCheckRollup'
+alias ghrun='gh run view'
+alias ghwatch='gh run watch'
+
+# Simple aliases for current branch PR operations
+alias pr-check='ghc'                # Check PR status for current branch
+alias pr-watch='ghcr'               # Watch workflow run for current branch (jobs only)
+alias pr-watch-detailed='ghcr-detailed'  # Watch with full step details
+alias pr-checks='ghcw'              # Watch PR checks with auto-refresh
+alias pr-rerun='ghcrerun'           # Rerun failed checks for current branch
+
+# Enhanced PR checks viewer with summary
+ghcheck() {
+    local pr_number=$1
+    local repo=${2:-"Nest-Genomics/nest"}
+
+    if [[ -z "$pr_number" ]]; then
+        echo "Usage: ghcheck <pr_number> [repo]"
+        echo "Example: ghcheck 2435"
+        echo "Example: ghcheck 2435 Nest-Genomics/nest"
+        return 1
+    fi
+
+    local output
+    output=$(gh pr checks "$pr_number" -R "$repo" 2>&1)
+    local exit_code=$?
+
+    # Filter out summary checks (E2E Success, CI Success)
+    local filtered_output
+    filtered_output=$(echo "$output" | grep -vE "(E2E Success|CI Success)\s")
+
+    # Count checks (ensure numeric values) - excluding summary checks
+    local failed_count=$(echo "$filtered_output" | grep -c "fail" 2>/dev/null)
+    [[ -z "$failed_count" ]] && failed_count=0
+    local passed_count=$(echo "$filtered_output" | grep -c "pass" 2>/dev/null)
+    [[ -z "$passed_count" ]] && passed_count=0
+    local pending_count=$(echo "$filtered_output" | grep -cE "pending|in_progress" 2>/dev/null)
+    [[ -z "$pending_count" ]] && pending_count=0
+    local total_count=$((failed_count + passed_count + pending_count))
+
+    # Get PR title
+    local pr_title=$(gh pr view "$pr_number" -R "$repo" --json title -q '.title' 2>/dev/null)
+
+    # Truncate title if too long (40 chars + "..." = 43 chars max)
+    local display_title="$pr_title"
+    if [[ ${#pr_title} -gt 40 ]]; then
+        display_title="${pr_title:0:40}..."
+    fi
+
+    # Header
+    echo ""
+    echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+    printf "┃  📋 PR #%-4s • %-45s ┃\n" "$pr_number" "$display_title"
+    printf "┃     %-52s ┃\n" "${total_count} checks"
+    echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+    echo ""
+
+    # Show failures first (red)
+    if [[ $failed_count -gt 0 ]]; then
+        echo "╭─ ❌ Failed ($failed_count)"
+        echo "$filtered_output" | grep "fail" | while IFS=$'\t' read -r check_name check_status check_duration check_url; do
+            printf "│  %-40s %8s  %6s\n" "$check_name" "$check_status" "$check_duration"
+        done
+        echo "╰──────────────────────────────────────────────────────────"
+        echo ""
+    fi
+
+    # Then pending (yellow)
+    if [[ $pending_count -gt 0 ]]; then
+        echo "╭─ ⏳ Pending ($pending_count)"
+        echo "$filtered_output" | grep -E "pending|in_progress" | while IFS=$'\t' read -r check_name check_status check_duration check_url; do
+            printf "│  %-40s %8s  %6s\n" "$check_name" "$check_status" "$check_duration"
+        done
+        echo "╰──────────────────────────────────────────────────────────"
+        echo ""
+    fi
+
+    # Finally passed (green)
+    if [[ $passed_count -gt 0 ]]; then
+        echo "╭─ ✅ Passed ($passed_count)"
+        echo "$filtered_output" | grep "pass" | while IFS=$'\t' read -r check_name check_status check_duration check_url; do
+            printf "│  %-40s %8s  %6s\n" "$check_name" "$check_status" "$check_duration"
+        done
+        echo "╰──────────────────────────────────────────────────────────"
+        echo ""
+    fi
+
+    # Summary footer
+    if [[ $exit_code -eq 0 ]]; then
+        echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+        printf "┃  🎉 %-52s ┃\n" "All checks passed!"
+        echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+    else
+        echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+        printf "┃  ⚠️  %-51s ┃\n" "$failed_count failed • $passed_count passed • $pending_count pending"
+        echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+    fi
+    echo ""
+
+    return $exit_code
+}
+
+# Watch PR checks with auto-refresh (stops when all complete)
+ghcheck-watch() {
+    local pr_number=$1
+    local repo=${2:-"Nest-Genomics/nest"}
+    local interval=${3:-10}
+
+    if [[ -z "$pr_number" ]]; then
+        echo "Usage: ghcheck-watch <pr_number> [repo] [interval]"
+        return 1
+    fi
+
+    echo "⏱️  Auto-refreshing every ${interval}s (Press Ctrl+C to stop)"
+    echo "🎯 Will auto-stop when all checks complete"
+    echo ""
+
+    local iteration=0
+
+    # Loop until all checks complete
+    while true; do
+        ((iteration++))
+        clear
+
+        echo "🔄 Refresh #${iteration} - $(date '+%H:%M:%S')"
+        echo ""
+
+        # Get check status
+        local output
+        output=$(gh pr checks "$pr_number" -R "$repo" 2>&1)
+        local exit_code=$?
+
+        # Count pending/in_progress checks (ensure numeric)
+        local pending_count
+        pending_count=$(echo "$output" | grep -cE "pending|in_progress" 2>/dev/null)
+        [[ -z "$pending_count" ]] && pending_count=0
+
+        # Display the checks using ghcheck
+        ghcheck "$pr_number" "$repo"
+
+        # Check if all done (no pending checks)
+        if [[ "$pending_count" -eq 0 ]]; then
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            if [[ $exit_code -eq 0 ]]; then
+                echo "🎉 All checks complete! All passed!"
+            else
+                echo "⚠️  All checks complete! Some failed."
+            fi
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            break
+        fi
+
+        echo ""
+        echo "⏳ $pending_count checks still running..."
+
+        # Animated spinner while waiting
+        local spinner=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+        local spin_count=$((interval * 4))  # 4 frames per second
+
+        for ((i=0; i<spin_count; i++)); do
+            local frame=$((i % ${#spinner[@]}))
+            printf "\r   ${spinner[$frame]} Refreshing in %d seconds... " $(( (spin_count - i) / 4 ))
+            sleep 0.25
+        done
+        printf "\r%*s\r" 50 ""  # Clear the line
+    done
+}
+
+# Get latest workflow run for a PR and watch it live (jobs only, no step details)
+ghpr-watch() {
+    # Disable trace output for clean display
+    setopt local_options no_xtrace
+
+    local pr_number=$1
+    local repo=${2:-"Nest-Genomics/nest"}
+    local interval=${3:-10}
+
+    if [[ -z "$pr_number" ]]; then
+        echo "Usage: ghpr-watch <pr_number> [repo] [interval]"
+        echo "Example: ghpr-watch 2435"
+        return 1
+    fi
+
+    echo "🔍 Finding workflow runs for PR #${pr_number}..."
+
+    # Get the branch name for the PR
+    local branch
+    branch=$(gh pr view "$pr_number" -R "$repo" --json headRefName -q '.headRefName')
+
+    if [[ -z "$branch" ]]; then
+        echo "❌ Could not find PR #${pr_number}"
+        return 1
+    fi
+
+    echo "📌 Branch: $branch"
+    echo ""
+
+    # Get recent workflow runs for this branch (last 5)
+    local runs_json
+    runs_json=$(gh run list -R "$repo" --branch "$branch" --limit 5 --json databaseId,status,conclusion,displayTitle,workflowName)
+
+    # Find in-progress or failed runs first
+    local active_runs
+    active_runs=$(echo "$runs_json" | jq -r '.[] | select(.status == "in_progress" or .status == "queued" or (.status == "completed" and .conclusion != "success")) | "\(.databaseId) [\(.status)] \(.workflowName)"')
+
+    if [[ -n "$active_runs" ]]; then
+        echo "📋 Active/Failed workflows:"
+        echo "$active_runs" | nl -w2 -s'. '
+        echo ""
+
+        # Get the first active run
+        local run_id
+        run_id=$(echo "$active_runs" | head -1 | awk '{print $1}')
+
+        echo "🚀 Watching: $run_id"
+        echo "⏱️  Auto-refreshing every ${interval}s (Press Ctrl+C to stop)"
+        echo ""
+
+        # Custom watch loop - jobs only
+        local iteration=0
+        while true; do
+            ((iteration++))
+            clear
+
+            echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+            printf "┃  🔄 Workflow Run #%-5s • Refresh #%-3s • %s    ┃\n" "$run_id" "$iteration" "$(date '+%H:%M:%S')"
+            echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+            echo ""
+
+            # Get jobs for this run (filter out summary jobs)
+            local jobs_json=$(gh run view "$run_id" -R "$repo" --json jobs --jq '.jobs[] | select(.name != "E2E Success" and .name != "CI Success") | {name: .name, status: .status, conclusion: .conclusion}' 2>/dev/null)
+
+            local completed_count=0
+            local total_count=0
+            local failed_count=0
+
+            # Show jobs grouped by status
+            echo "╭─ Jobs"
+
+            echo "$jobs_json" | jq -r '@json' | while read -r job; do
+                local job_name=$(echo "$job" | jq -r '.name')
+                local job_status=$(echo "$job" | jq -r '.status')
+                local job_conclusion=$(echo "$job" | jq -r '.conclusion // "null"')
+
+                ((total_count++))
+
+                if [[ "$job_status" == "completed" ]]; then
+                    ((completed_count++))
+                    if [[ "$job_conclusion" == "success" ]]; then
+                        printf "│  ✅ %-50s\n" "$job_name"
+                    elif [[ "$job_conclusion" == "failure" ]]; then
+                        printf "│  ❌ %-50s\n" "$job_name"
+                        ((failed_count++))
+                    elif [[ "$job_conclusion" == "cancelled" ]]; then
+                        printf "│  ⚠️  %-50s\n" "$job_name"
+                    else
+                        printf "│  🔵 %-50s [%s]\n" "$job_name" "$job_conclusion"
+                    fi
+                elif [[ "$job_status" == "in_progress" ]]; then
+                    printf "│  ⏳ %-50s [running]\n" "$job_name"
+                elif [[ "$job_status" == "queued" ]]; then
+                    printf "│  ⏸️  %-50s [queued]\n" "$job_name"
+                else
+                    printf "│  ❓ %-50s [%s]\n" "$job_name" "$job_status"
+                fi
+            done
+
+            echo "╰──────────────────────────────────────────────────────────"
+            echo ""
+
+            # Check if all jobs are complete
+            local run_status=$(gh run view "$run_id" -R "$repo" --json status -q '.status' 2>/dev/null)
+
+            if [[ "$run_status" == "completed" ]]; then
+                local run_conclusion=$(gh run view "$run_id" -R "$repo" --json conclusion -q '.conclusion' 2>/dev/null)
+
+                echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+                if [[ "$run_conclusion" == "success" ]]; then
+                    printf "┃  🎉 %-52s ┃\n" "Workflow completed successfully!"
+                    echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+                else
+                    printf "┃  ⚠️  %-51s ┃\n" "Workflow completed: $run_conclusion"
+                    echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+                    echo ""
+
+                    # Find failed jobs and show their logs (exclude summary jobs)
+                    echo "🔍 Fetching failure logs..."
+                    echo ""
+
+                    local failed_jobs=$(gh run view "$run_id" -R "$repo" --json jobs --jq '.jobs[] | select(.conclusion == "failure" and .name != "E2E Success" and .name != "CI Success") | {name: .name, id: .databaseId}' 2>/dev/null)
+
+                    if [[ -n "$failed_jobs" ]]; then
+                        echo "$failed_jobs" | jq -r '@json' | while read -r failed_job; do
+                            local failed_job_name=$(echo "$failed_job" | jq -r '.name')
+                            local failed_job_id=$(echo "$failed_job" | jq -r '.id')
+
+                            echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+                            printf "┃  ❌ %-54s ┃\n" "$failed_job_name"
+                            echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+                            echo ""
+
+                            # Get full job logs and clean up the format
+                            # Extract just the timestamp (HH:MM:SS) and log message
+                            # Log format: job_name├──┤step_name├┤[BOM]timestamp message
+                            gh run view "$run_id" -R "$repo" --job="$failed_job_id" --log | tail -100 | \
+                                sed -E 's/^[^├]*├──┤[^├]*├┤(\xef\xbb\xbf)?[0-9]{4}-[0-9]{2}-[0-9]{2}T([0-9]{2}:[0-9]{2}:[0-9]{2})[^ ]* /\2  /'
+                            echo ""
+                            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                            echo ""
+                        done
+                    fi
+                fi
+                break
+            fi
+
+            # Animated spinner while waiting
+            local spinner=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+            local spin_count=$((interval * 4))
+
+            for ((i=0; i<spin_count; i++)); do
+                local frame=$((i % ${#spinner[@]}))
+                printf "\r   ${spinner[$frame]} Refreshing in %d seconds... " $(( (spin_count - i) / 4 ))
+                sleep 0.25
+            done
+            printf "\r%*s\r" 50 ""
+        done
+    else
+        # All workflows completed successfully
+        echo "✅ All workflows completed successfully!"
+        echo ""
+        echo "📋 Recent workflows:"
+        echo "$runs_json" | jq -r '.[] | "\(.databaseId) [\(.conclusion)] \(.workflowName)"' | nl -w2 -s'. '
+        echo ""
+        echo "💡 Nothing to watch. All checks passed!"
+    fi
+}
+
+# Watch workflow run with detailed step output (uses native gh run watch)
+ghpr-watch-detailed() {
+    local pr_number=$1
+    local repo=${2:-"Nest-Genomics/nest"}
+
+    if [[ -z "$pr_number" ]]; then
+        echo "Usage: ghpr-watch-detailed <pr_number> [repo]"
+        echo "Example: ghpr-watch-detailed 2435"
+        return 1
+    fi
+
+    echo "🔍 Finding workflow runs for PR #${pr_number}..."
+
+    # Get the branch name for the PR
+    local branch
+    branch=$(gh pr view "$pr_number" -R "$repo" --json headRefName -q '.headRefName')
+
+    if [[ -z "$branch" ]]; then
+        echo "❌ Could not find PR #${pr_number}"
+        return 1
+    fi
+
+    echo "📌 Branch: $branch"
+    echo ""
+
+    # Get recent workflow runs for this branch (last 5)
+    local runs_json
+    runs_json=$(gh run list -R "$repo" --branch "$branch" --limit 5 --json databaseId,status,conclusion,displayTitle,workflowName)
+
+    # Find in-progress or failed runs first
+    local active_runs
+    active_runs=$(echo "$runs_json" | jq -r '.[] | select(.status == "in_progress" or .status == "queued" or (.status == "completed" and .conclusion != "success")) | "\(.databaseId) [\(.status)] \(.workflowName)"')
+
+    if [[ -n "$active_runs" ]]; then
+        echo "📋 Active/Failed workflows:"
+        echo "$active_runs" | nl -w2 -s'. '
+        echo ""
+
+        # Get the first active run
+        local run_id
+        run_id=$(echo "$active_runs" | head -1 | awk '{print $1}')
+
+        echo "🚀 Watching with full details: $run_id"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+
+        # Use native gh run watch for full step details
+        gh run watch "$run_id" -R "$repo"
+    else
+        # All workflows completed successfully
+        echo "✅ All workflows completed successfully!"
+        echo ""
+        echo "📋 Recent workflows:"
+        echo "$runs_json" | jq -r '.[] | "\(.databaseId) [\(.conclusion)] \(.workflowName)"' | nl -w2 -s'. '
+        echo ""
+        echo "💡 Nothing to watch. All checks passed!"
+    fi
+}
+
+# View latest workflow run for a PR (one-time view)
+ghpr-run() {
+    local pr_number=$1
+    local repo=${2:-"Nest-Genomics/nest"}
+
+    if [[ -z "$pr_number" ]]; then
+        echo "Usage: ghpr-run <pr_number> [repo]"
+        echo "Example: ghpr-run 2435"
+        return 1
+    fi
+
+    # Get the branch name for the PR
+    local branch
+    branch=$(gh pr view "$pr_number" -R "$repo" --json headRefName -q '.headRefName')
+
+    if [[ -z "$branch" ]]; then
+        echo "❌ Could not find PR #${pr_number}"
+        return 1
+    fi
+
+    # Get the latest workflow run for this branch
+    local run_id
+    run_id=$(gh run list -R "$repo" --branch "$branch" --limit 1 --json databaseId -q '.[0].databaseId')
+
+    if [[ -z "$run_id" ]]; then
+        echo "❌ No workflow runs found for this PR"
+        return 1
+    fi
+
+    # View the run
+    gh run view "$run_id" -R "$repo"
+}
+
+# Rerun checks for a specific PR
+ghpr-rerun() {
+    local pr_number=$1
+    local repo=${2:-"Nest-Genomics/nest"}
+    local rerun_type=${3:-"failed"}  # "failed" or "all"
+
+    if [[ -z "$pr_number" ]]; then
+        echo "Usage: ghpr-rerun <pr_number> [repo] [failed|all]"
+        echo "Example: ghpr-rerun 2435"
+        echo "Example: ghpr-rerun 2435 Nest-Genomics/nest all"
+        return 1
+    fi
+
+    # Get the branch name for the PR
+    local branch
+    branch=$(gh pr view "$pr_number" -R "$repo" --json headRefName -q '.headRefName')
+
+    if [[ -z "$branch" ]]; then
+        echo "❌ Could not find PR #${pr_number}"
+        return 1
+    fi
+
+    # Get the latest workflow run for this branch
+    local run_id
+    run_id=$(gh run list -R "$repo" --branch "$branch" --limit 1 --json databaseId -q '.[0].databaseId')
+
+    if [[ -z "$run_id" ]]; then
+        echo "❌ No workflow runs found for this PR"
+        return 1
+    fi
+
+    echo "🔄 Found workflow run: $run_id"
+
+    if [[ "$rerun_type" == "all" ]]; then
+        echo "🚀 Rerunning ALL jobs for PR #${pr_number}..."
+        gh run rerun "$run_id" -R "$repo"
+    else
+        echo "🚀 Rerunning only FAILED jobs for PR #${pr_number}..."
+        gh run rerun "$run_id" -R "$repo" --failed
+    fi
+
+    if [[ $? -eq 0 ]]; then
+        echo ""
+        echo "✅ Rerun triggered successfully!"
+        echo ""
+        echo "💡 Watch progress with: ghpr-watch $pr_number"
+    else
+        echo ""
+        echo "❌ Failed to trigger rerun"
+        return 1
+    fi
+}
+
+# ------------------------------------------------------------------------------
+#  Current Branch PR Commands
+# ------------------------------------------------------------------------------
+
+# Get PR number for current branch
+_get_current_pr() {
+    local repo=${1:-"Nest-Genomics/nest"}
+
+    # Check if we're in a git repo
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo "❌ Not in a git repository"
+        return 1
+    fi
+
+    # Get current branch name
+    local branch
+    branch=$(git branch --show-current)
+
+    if [[ -z "$branch" ]]; then
+        echo "❌ Could not determine current branch"
+        return 1
+    fi
+
+    # Find PR for this branch
+    local pr_number
+    pr_number=$(gh pr list -R "$repo" --head "$branch" --json number -q '.[0].number' 2>/dev/null)
+
+    if [[ -z "$pr_number" ]]; then
+        echo "❌ No PR found for branch: $branch"
+        return 1
+    fi
+
+    echo "$pr_number"
+}
+
+# Check PR status for current branch
+ghc() {
+    local repo=${1:-"Nest-Genomics/nest"}
+
+    local pr_number
+    pr_number=$(_get_current_pr "$repo")
+
+    if [[ $? -ne 0 ]]; then
+        echo "$pr_number"  # This will be the error message
+        return 1
+    fi
+
+    # Run check and capture exit code
+    ghcheck "$pr_number" "$repo"
+    local check_exit=$?
+
+    # If checks failed (not just pending), offer to rerun
+    # Only prompt if there are actual failures, not just pending checks
+    local has_failures=$(gh pr checks "$pr_number" -R "$repo" 2>&1 | grep -c "fail" 2>/dev/null)
+    [[ -z "$has_failures" ]] && has_failures=0
+
+    if [[ $check_exit -ne 0 && $has_failures -gt 0 ]]; then
+        echo ""
+        echo -n "❓ Rerun failed checks? [y/N/a=all] "
+        read -r response
+
+        case "$response" in
+            [yY]|[yY][eE][sS])
+                echo ""
+                ghcrerun "$repo" "failed"
+                ;;
+            [aA]|[aA][lL][lL])
+                echo ""
+                ghcrerun "$repo" "all"
+                ;;
+            *)
+                echo "Skipped rerun."
+                ;;
+        esac
+    fi
+
+    return $check_exit
+}
+
+# Watch PR checks for current branch
+ghcw() {
+    local repo=${1:-"Nest-Genomics/nest"}
+
+    local pr_number
+    pr_number=$(_get_current_pr "$repo")
+
+    if [[ $? -ne 0 ]]; then
+        echo "$pr_number"  # This will be the error message
+        return 1
+    fi
+
+    ghcheck-watch "$pr_number" "$repo"
+}
+
+# Watch workflow run for current branch (jobs only)
+ghcr() {
+    local repo=${1:-"Nest-Genomics/nest"}
+
+    local pr_number
+    pr_number=$(_get_current_pr "$repo")
+
+    if [[ $? -ne 0 ]]; then
+        echo "$pr_number"  # This will be the error message
+        return 1
+    fi
+
+    ghpr-watch "$pr_number" "$repo"
+}
+
+# Watch workflow run for current branch (detailed with all steps)
+ghcr-detailed() {
+    local repo=${1:-"Nest-Genomics/nest"}
+
+    local pr_number
+    pr_number=$(_get_current_pr "$repo")
+
+    if [[ $? -ne 0 ]]; then
+        echo "$pr_number"  # This will be the error message
+        return 1
+    fi
+
+    ghpr-watch-detailed "$pr_number" "$repo"
+}
+
+# Rerun failed checks for current branch
+ghcrerun() {
+    local repo=${1:-"Nest-Genomics/nest"}
+    local rerun_type=${2:-"failed"}  # "failed" or "all"
+
+    local pr_number
+    pr_number=$(_get_current_pr "$repo")
+
+    if [[ $? -ne 0 ]]; then
+        echo "$pr_number"  # This will be the error message
+        return 1
+    fi
+
+    local branch
+    branch=$(git branch --show-current)
+
+    # Get ALL recent workflow runs for this branch
+    echo "🔎 Finding workflow runs with failures..."
+    local runs_json
+    runs_json=$(gh run list -R "$repo" --branch "$branch" --limit 10 --json databaseId,status,conclusion,displayTitle)
+
+    # Find failed or incomplete runs
+    local failed_runs
+    failed_runs=$(echo "$runs_json" | jq -r '.[] | select(.conclusion == "failure" or .conclusion == "cancelled" or .status == "in_progress") | "\(.databaseId) \(.displayTitle) (\(.conclusion // .status))"')
+
+    if [[ -z "$failed_runs" ]]; then
+        echo "✅ No failed or running workflows found!"
+        echo ""
+        echo "💡 All workflows have passed. Nothing to rerun."
+        return 0
+    fi
+
+    echo ""
+    echo "Found workflow runs to rerun:"
+    echo "$failed_runs" | nl -w2 -s'. '
+    echo ""
+
+    # Get the first (most recent) failed run ID
+    local run_id
+    run_id=$(echo "$failed_runs" | head -1 | awk '{print $1}')
+
+    echo "🔄 Using most recent: $run_id"
+    echo ""
+
+    if [[ "$rerun_type" == "all" ]]; then
+        echo "🚀 Rerunning ALL jobs..."
+        gh run rerun "$run_id" -R "$repo"
+    else
+        echo "🚀 Rerunning only FAILED jobs..."
+        gh run rerun "$run_id" -R "$repo" --failed
+    fi
+
+    if [[ $? -eq 0 ]]; then
+        echo ""
+        echo "✅ Rerun triggered successfully!"
+        echo ""
+        echo "💡 Watch progress with: pr-watch"
+    else
+        echo ""
+        echo "❌ Failed to trigger rerun"
+        echo "💡 Try: gh run rerun $run_id -R $repo"
+        return 1
+    fi
+}
