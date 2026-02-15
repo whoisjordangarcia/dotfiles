@@ -23,6 +23,12 @@ func Run(dotfilesDir string, forceSetup bool) error {
 	detected := detector.Detect()
 	var cfg *config.DotConfig
 
+	// Step 0: Pre-flight sudo — cache credentials while terminal is pristine
+	// Must happen BEFORE any Bubble Tea program touches the terminal
+	if err := preflight(); err != nil {
+		return fmt.Errorf("sudo preflight: %w", err)
+	}
+
 	// Step 1: Setup wizard (if needed)
 	if forceSetup || !config.Exists(dotfilesDir) {
 		var err error
@@ -74,12 +80,7 @@ func Run(dotfilesDir string, forceSetup bool) error {
 		return nil
 	}
 
-	// Step 4: Pre-flight sudo — cache credentials before TUI takes over
-	if err := preflight(); err != nil {
-		return fmt.Errorf("sudo preflight: %w", err)
-	}
-
-	// Step 5: Installation runner
+	// Step 4: Installation runner
 	r := installer.NewRunner(dotfilesDir, cfg)
 	runnerModel := runner.New(selected, r)
 	p2 := tea.NewProgram(runnerModel, tea.WithAltScreen())
