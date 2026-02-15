@@ -8,12 +8,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Key Commands
 
-### Installation & Setup
+### otobun (Go TUI — preferred)
+```bash
+otobun                    # Full TUI: wizard → module selector → installer
+otobun --setup            # Force setup wizard (even if .dotconfig exists)
+otobun --config           # Show current configuration
+otobun --system           # Show detected system
+
+# Build from source (requires Go 1.22+)
+go build -o bin/otobun ./cmd/otobun
+go test ./...             # Run all tests
+```
+
+### Installation & Setup (Legacy Shell)
 ```bash
 # Remote installation (YOLO method)
 curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/boot.sh | bash
 
-# Interactive setup (recommended for first-time)
+# Interactive setup
 ./bin/dot -i
 
 # Direct installation with explicit configuration
@@ -48,17 +60,32 @@ Individual components can be installed directly:
 ## Architecture
 
 ### Entry Points & Installation Flow
-1. **Remote Bootstrap**: `boot.sh` - Clones repo, fetches updates, launches interactive setup
-2. **CLI Tool**: `bin/dot` - Main management interface with system detection and configuration
-3. **Legacy**: `bootstrap.sh` - Original installation script (maintained for compatibility)
+1. **Go TUI**: `otobun` (cmd/otobun) - Bubble Tea TUI with wizard, module selector, and installation runner
+2. **Remote Bootstrap**: `boot.sh` - Clones repo, fetches updates, launches interactive setup
+3. **CLI Tool**: `bin/dot` - Legacy shell management interface with system detection and configuration
+4. **Legacy**: `bootstrap.sh` - Original installation script (maintained for compatibility)
 
 ### Directory Structure
 ```
-bin/dot                           # Enhanced CLI with interactive setup
+cmd/otobun/main.go                # Go TUI entry point
+internal/
+  ├── config/config.go            # .dotconfig read/write (shared with shell scripts)
+  ├── detector/system.go          # OS/platform detection (Go port of detect_system())
+  ├── installer/
+  │   ├── components.go           # Parse component arrays from installation scripts
+  │   └── runner.go               # Execute setup.sh scripts with output capture
+  └── tui/
+      ├── app.go                  # Screen routing & sudo preflight
+      ├── wizard/wizard.go        # Huh? form: name, email, env, yubikey
+      ├── selector/selector.go    # Checkbox module picker
+      ├── runner/runner.go        # Progress spinner + viewport
+      └── theme/theme.go          # Lip Gloss brand styles + progress bar
+bin/dot                           # Legacy shell CLI
 script/
   ├── common/
   │   ├── log.sh                 # Logging utilities (info, success, fail, etc.)
-  │   └── symlink.sh             # Symlink creation with override/backup prompts
+  │   └── symlink.sh             # Symlink creation with override/backup/skip prompts
+  │                              # Supports DOT_SYMLINK_MODE for non-interactive use
   ├── {platform}_installation.sh # Platform installers (mac, linux_ubuntu, etc.)
   └── {component}/{platform}/setup.sh  # Component-specific setup scripts
 configs/                          # Configuration files (symlinked to home)
@@ -68,6 +95,7 @@ configs/                          # Configuration files (symlinked to home)
   ├── hypr/                      # Hyprland (Arch)
   ├── aerospace/                 # Aerospace window manager (macOS)
   └── ai-rules/                  # AI assistant rules (Cursor, Aider, Avante)
+go.mod                            # Go module (github.com/whoisjordangarcia/dotfiles)
 .dotconfig                        # Generated config file (DOT_NAME, DOT_EMAIL, etc.)
 ```
 
@@ -129,6 +157,13 @@ link_file "$SOURCE" "$TARGET"
 - **[O]verride**: Remove existing file/symlink, create new symlink
 - **[B]ackup**: Rename to `{file}_YYYYMMDD.bak`, create new symlink
 - **[S]kip**: Keep existing file/symlink unchanged
+
+**Non-Interactive Mode** (for otobun TUI):
+```bash
+DOT_SYMLINK_MODE=override  # Auto-override (default in otobun TUI)
+DOT_SYMLINK_MODE=backup    # Auto-backup existing files
+DOT_SYMLINK_MODE=skip      # Auto-skip conflicts
+DOT_SYMLINK_MODE=interactive # Prompt user (default in shell)
 
 **Common Symlink Patterns**:
 ```bash
@@ -212,6 +247,35 @@ export LOG_LEVEL=error    # Only errors
 
 ## Development Patterns
 
+### otobun Go TUI Development
+
+**Tech Stack**: Go 1.22+, Bubble Tea (TUI framework), Lip Gloss (styling), Bubbles (components), Huh? (forms)
+
+**Building & Testing**:
+```bash
+go build -o bin/otobun ./cmd/otobun    # Build binary
+go test ./...                           # Run all tests (14 tests across 3 packages)
+go run ./cmd/otobun --help              # Run without building
+```
+
+**Package Layout** (`internal/`):
+- `config/` — Reads/writes `.dotconfig` (same format as shell scripts). Functions: `Load()`, `Save()`, `Exists()`, `ToEnv()`
+- `detector/` — Platform detection via `runtime.GOOS` + `/etc/os-release`. Returns `DetectedSystem{OS, Distro, System}`
+- `installer/components.go` — Parses `component_installation=(...)` bash arrays from installation scripts using regex
+- `installer/runner.go` — Executes `script/{component}/setup.sh` via `bash -c`, sources `log.sh` and `symlink.sh`, exports `DOT_*` env vars
+- `tui/app.go` — Orchestrates screen flow: sudo preflight → wizard → selector → runner
+- `tui/wizard/` — Huh? form with branded theme (purple/cyan)
+- `tui/selector/` — Bubble Tea model with `●`/`○` checkboxes, `❯` cursor, vim keys (j/k/space/a/n/enter)
+- `tui/runner/` — Spinner progress with `████░░░` bar, viewport for script output
+- `tui/theme/` — Lip Gloss styles, brand colors, `ProgressBar()` helper
+
+**Key Design Decisions**:
+- otobun does NOT reimplement installation logic — it orchestrates existing shell scripts
+- Shell scripts remain the source of truth for what gets installed
+- `DOT_SYMLINK_MODE=override` is set automatically so symlink.sh doesn't prompt during TUI
+- `sudo -v` runs before any Bubble Tea screen to cache credentials while terminal is pristine
+- Component lists are parsed from bash arrays, not duplicated in Go
+
 ### Adding New Components
 
 1. **Create platform-specific setup script**:
@@ -232,10 +296,11 @@ export LOG_LEVEL=error    # Only errors
    ```
 
 4. **Place configs** in `configs/{component}/` for symlinking
+5. The `otobun` TUI automatically picks up new components (it parses the bash arrays)
 
 ### Supporting New Platforms
 
-1. **Add detection** to `bin/dot` `detect_system()` function
+1. **Add detection** to `internal/detector/system.go` (Go) and `bin/dot` `detect_system()` (shell)
 2. **Create installer**: `script/{platform}_installation.sh`
 3. **Implement component scripts**: `script/{component}/{platform}/setup.sh`
 4. **Choose package manager**: brew (macOS), apt (Ubuntu), dnf (Fedora), pacman (Arch)
