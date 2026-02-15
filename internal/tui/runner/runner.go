@@ -40,7 +40,7 @@ type result struct {
 // New creates a new installation runner model.
 func New(components []installer.Component, r *installer.Runner) Model {
 	s := spinner.New()
-	s.Spinner = spinner.Dot
+	s.Spinner = spinner.MiniDot
 	s.Style = theme.Spinner
 
 	vp := viewport.New(80, 10)
@@ -76,12 +76,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		headerHeight := len(m.components) + 6
+		headerHeight := len(m.components) + 10
 		vpHeight := m.height - headerHeight
 		if vpHeight < 5 {
 			vpHeight = 5
 		}
-		m.viewport.Width = m.width
+		m.viewport.Width = m.width - 4
 		m.viewport.Height = vpHeight
 
 	case spinner.TickMsg:
@@ -97,7 +97,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			err:     msg.err,
 		}
 
-		// Show output in viewport
 		m.viewport.SetContent(msg.output)
 		m.viewport.GotoBottom()
 
@@ -120,56 +119,90 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	var b strings.Builder
 
-	b.WriteString(theme.Title.Render("Installing otobun dotfiles"))
+	// Title
+	b.WriteString(theme.TitleAccent.Render("  ⚡ "))
+	b.WriteString(theme.Title.Render("Installing dotfiles"))
 	b.WriteString("\n\n")
 
+	// Progress info
+	completed := 0
+	failed := 0
+	for _, r := range m.results {
+		if r.done {
+			completed++
+			if !r.success {
+				failed++
+			}
+		}
+	}
+
+	total := len(m.components)
+	percent := float64(completed) / float64(total)
+
+	// Progress bar
+	barWidth := 40
+	if m.width > 60 {
+		barWidth = m.width - 30
+	}
+	progressLabel := theme.Badge.Render(fmt.Sprintf("  %d/%d", completed, total))
+	bar := theme.ProgressBar(barWidth, percent)
+	b.WriteString("  " + bar + progressLabel + "\n\n")
+
+	// Component list
 	for i, comp := range m.components {
 		var icon string
 		switch {
 		case m.results[i].done && m.results[i].success:
-			icon = theme.Success.Render("✓")
+			icon = theme.Success.Render(" ✓ ")
 		case m.results[i].done && !m.results[i].success:
-			icon = theme.Error.Render("✗")
+			icon = theme.Error.Render(" ✗ ")
 		case i == m.current && !m.done:
-			icon = m.spinner.View()
+			icon = " " + m.spinner.View() + " "
 		default:
-			icon = theme.Unselected.Render("○")
+			icon = theme.Unselected.Render(" · ")
 		}
 
-		name := comp.Name
-		if i == m.current && !m.done {
-			name = theme.ActiveItem.Render(name)
+		name := theme.Unselected.Render(comp.Name)
+		if m.results[i].done && m.results[i].success {
+			name = theme.Success.Render(comp.Name)
+		} else if m.results[i].done && !m.results[i].success {
+			name = theme.Error.Render(comp.Name)
+		} else if i == m.current && !m.done {
+			name = theme.ActiveItem.Render(comp.Name)
 		}
+
 		b.WriteString(fmt.Sprintf("  %s %s\n", icon, name))
 	}
 
 	// Output viewport
+	b.WriteString("\n")
 	w := m.width
 	if w < 40 {
 		w = 40
 	}
-	separator := theme.Subtitle.Render(strings.Repeat("─", w))
-	b.WriteString("\n" + separator + "\n")
-	b.WriteString(m.viewport.View())
+	outputLabel := theme.Subtitle.Render("  output ")
+	lineWidth := w - 12
+	if lineWidth < 10 {
+		lineWidth = 10
+	}
+	b.WriteString(outputLabel + theme.HelpSep.Render(strings.Repeat("─", lineWidth)) + "\n")
+	b.WriteString("  " + m.viewport.View() + "\n")
 
 	// Summary when done
 	if m.done {
-		b.WriteString("\n\n")
-		succeeded := 0
-		failed := 0
-		for _, r := range m.results {
-			if r.success {
-				succeeded++
-			} else {
-				failed++
-			}
+		b.WriteString("\n")
+		succeeded := completed - failed
+
+		var summaryParts []string
+		if succeeded > 0 {
+			summaryParts = append(summaryParts, theme.Success.Render(fmt.Sprintf("✓ %d succeeded", succeeded)))
 		}
-		summary := fmt.Sprintf("%d succeeded", succeeded)
 		if failed > 0 {
-			summary += fmt.Sprintf(", %s", theme.Error.Render(fmt.Sprintf("%d failed", failed)))
+			summaryParts = append(summaryParts, theme.Error.Render(fmt.Sprintf("✗ %d failed", failed)))
 		}
-		b.WriteString(theme.Title.Render("Done! ") + summary + "\n")
-		b.WriteString(theme.HelpKey.Render("Press q to exit"))
+
+		b.WriteString("  " + theme.TitleAccent.Render("⚡ Done! ") + strings.Join(summaryParts, "  ") + "\n\n")
+		b.WriteString("  " + theme.HelpKey.Render("q") + theme.HelpValue.Render(" quit"))
 	}
 
 	return b.String()

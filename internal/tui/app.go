@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,7 +12,10 @@ import (
 	"github.com/whoisjordangarcia/dotfiles/internal/installer"
 	"github.com/whoisjordangarcia/dotfiles/internal/tui/runner"
 	"github.com/whoisjordangarcia/dotfiles/internal/tui/selector"
+	"github.com/whoisjordangarcia/dotfiles/internal/tui/theme"
 	"github.com/whoisjordangarcia/dotfiles/internal/tui/wizard"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 // Run starts the full otobun TUI flow.
@@ -70,7 +74,12 @@ func Run(dotfilesDir string, forceSetup bool) error {
 		return nil
 	}
 
-	// Step 4: Installation runner
+	// Step 4: Pre-flight sudo — cache credentials before TUI takes over
+	if err := preflight(); err != nil {
+		return fmt.Errorf("sudo preflight: %w", err)
+	}
+
+	// Step 5: Installation runner
 	r := installer.NewRunner(dotfilesDir, cfg)
 	runnerModel := runner.New(selected, r)
 	p2 := tea.NewProgram(runnerModel, tea.WithAltScreen())
@@ -80,6 +89,34 @@ func Run(dotfilesDir string, forceSetup bool) error {
 	}
 
 	return nil
+}
+
+// preflight prompts for sudo credentials before the TUI takes over stdin.
+// This caches the credentials so scripts can use sudo non-interactively.
+func preflight() error {
+	// Check if sudo is even available
+	if _, err := exec.LookPath("sudo"); err != nil {
+		return nil // no sudo on system, skip
+	}
+
+	// Check if we already have cached credentials
+	check := exec.Command("sudo", "-n", "true")
+	if check.Run() == nil {
+		return nil // already authenticated
+	}
+
+	// Need to prompt — do it before TUI takes over
+	fmt.Println()
+	style := lipgloss.NewStyle().Foreground(theme.Yellow).Bold(true)
+	fmt.Println(style.Render("  🔐 Some components require sudo access."))
+	fmt.Println(lipgloss.NewStyle().Foreground(theme.Muted).Render("  Enter your password to cache credentials for installation."))
+	fmt.Println()
+
+	cmd := exec.Command("sudo", "-v")
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 // FindDotfilesDir locates the dotfiles directory.

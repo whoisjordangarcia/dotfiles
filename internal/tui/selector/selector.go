@@ -10,6 +10,14 @@ import (
 	"github.com/whoisjordangarcia/dotfiles/internal/tui/theme"
 )
 
+const logo = `  ▄▄█▀▀██▄   ██            ▄██
+▄██▀    ▀██▄ ██             ██
+██▀      ▀███████  ▄██▀██▄  ██▄████▄ ▀███  ▀███ ▀████████▄
+██        ██ ██   ██▀   ▀██ ██    ▀██  ██    ██   ██    ██
+██▄      ▄██ ██   ██     ██ ██     ██  ██    ██   ██    ██
+▀██▄    ▄██▀ ██   ██▄   ▄██ ██▄   ▄██  ██    ██   ██    ██
+  ▀▀████▀▀   ▀████ ▀█████▀  █▀█████▀   ▀████▀███▄████  ████▄`
+
 // Result holds the user's module selection.
 type Result struct {
 	Components []installer.Component
@@ -25,13 +33,15 @@ type Model struct {
 	system     string
 	done       bool
 	quitting   bool
+	width      int
+	height     int
 }
 
 // New creates a new module selector model.
 func New(system string, components []installer.Component) Model {
 	selected := make([]bool, len(components))
 	for i := range selected {
-		selected[i] = true // all selected by default
+		selected[i] = true
 	}
 	return Model{
 		components: components,
@@ -55,6 +65,9 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
@@ -68,7 +81,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor < len(m.components)-1 {
 				m.cursor++
 			}
-		case " ":
+		case " ", "x":
 			m.selected[m.cursor] = !m.selected[m.cursor]
 		case "a":
 			for i := range m.selected {
@@ -93,43 +106,73 @@ func (m Model) View() string {
 
 	var b strings.Builder
 
-	title := theme.Title.Render("Module Selection")
-	subtitle := theme.Subtitle.Render(fmt.Sprintf("System: %s", m.system))
-	b.WriteString(title + "\n")
-	b.WriteString(subtitle + "\n\n")
+	// Logo
+	b.WriteString(theme.Logo.Render(logo))
+	b.WriteString("\n\n")
 
-	for i, comp := range m.components {
-		cursor := "  "
-		if m.cursor == i {
-			cursor = theme.ActiveItem.Render("▸ ")
+	// Header
+	selectedCount := 0
+	for _, s := range m.selected {
+		if s {
+			selectedCount++
 		}
-
-		checkbox := theme.Unselected.Render("[ ]")
-		if m.selected[i] {
-			checkbox = theme.Selected.Render("[✓]")
-		}
-
-		name := comp.Name
-		if m.cursor == i {
-			name = theme.ActiveItem.Render(name)
-		}
-
-		b.WriteString(fmt.Sprintf("%s%s %s\n", cursor, checkbox, name))
 	}
 
+	header := theme.Title.Render("  Module Selection") + "  " +
+		theme.Badge.Render(fmt.Sprintf("[%d/%d]", selectedCount, len(m.components))) + "  " +
+		theme.Subtitle.Render(m.system)
+	b.WriteString(header)
 	b.WriteString("\n")
-	help := lipgloss.JoinHorizontal(lipgloss.Top,
-		theme.HelpKey.Render("space"),
-		theme.HelpValue.Render(" toggle  "),
-		theme.HelpKey.Render("a"),
-		theme.HelpValue.Render(" all  "),
-		theme.HelpKey.Render("n"),
-		theme.HelpValue.Render(" none  "),
-		theme.HelpKey.Render("enter"),
-		theme.HelpValue.Render(" confirm  "),
-		theme.HelpKey.Render("q"),
-		theme.HelpValue.Render(" quit"),
-	)
+	b.WriteString(theme.HelpSep.Render("  " + strings.Repeat("─", 50)))
+	b.WriteString("\n\n")
+
+	// Module list
+	for i, comp := range m.components {
+		var line string
+
+		if m.cursor == i {
+			cursor := theme.CursorStyle.Render("❯ ")
+			checkbox := theme.Unselected.Render("○")
+			if m.selected[i] {
+				checkbox = theme.Selected.Render("●")
+			}
+			name := theme.ActiveItem.Render(comp.Name)
+			line = fmt.Sprintf("  %s%s  %s", cursor, checkbox, name)
+		} else {
+			checkbox := theme.Unselected.Render("○")
+			if m.selected[i] {
+				checkbox = theme.Selected.Render("●")
+			}
+			name := comp.Name
+			if m.selected[i] {
+				name = lipgloss.NewStyle().Foreground(theme.White).Render(name)
+			} else {
+				name = theme.Unselected.Render(name)
+			}
+			line = fmt.Sprintf("    %s  %s", checkbox, name)
+		}
+
+		b.WriteString(line + "\n")
+	}
+
+	// Help bar
+	b.WriteString("\n")
+	b.WriteString(theme.HelpSep.Render("  " + strings.Repeat("─", 50)))
+	b.WriteString("\n")
+
+	helpItems := []struct{ key, desc string }{
+		{"space", "toggle"},
+		{"a", "all"},
+		{"n", "none"},
+		{"↵", "install"},
+		{"q", "quit"},
+	}
+	var helpParts []string
+	for _, h := range helpItems {
+		helpParts = append(helpParts,
+			theme.HelpKey.Render(h.key)+theme.HelpValue.Render(" "+h.desc))
+	}
+	help := "  " + strings.Join(helpParts, theme.HelpSep.Render(" · "))
 	b.WriteString(help)
 
 	return b.String()
