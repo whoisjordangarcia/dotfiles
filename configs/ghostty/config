@@ -15,7 +15,8 @@ clipboard-write = allow
 
 confirm-close-surface = false
 
-font-family = GohuFont 14 Nerd Font
+#font-family = GohuFont 14 Nerd Font
+font-family = CozetteVector
 font-size = 16
 
 macos-titlebar-style = hidden
