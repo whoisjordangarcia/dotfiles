@@ -96,6 +96,16 @@ var (
 	Badge = lipgloss.NewStyle().
 		Foreground(Cyan).
 		Bold(true)
+
+	// Panel styles for runner side-by-side layout
+	PanelBorder = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(Highlight).
+			Padding(0, 1)
+
+	PanelTitle = lipgloss.NewStyle().
+			Foreground(Muted).
+			Italic(true)
 )
 
 // ProgressBar renders a progress bar with the given width and percentage.
