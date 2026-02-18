@@ -22,7 +22,7 @@ source ~/.zshrc-modules/.zshrc.paths
 source ~/.zshrc-modules/.zshrc.appearance
 source ~/.zshrc-modules/.zshrc.vim-mode
 
-export PATH="$HOME/.pyenv/shims:$PATH"
+#export PATH="$HOME/.pyenv/shims:$PATH"
 
 # Custom man pages for dotfiles
 export MANPATH="$HOME/dev/dotfiles/configs/man:$MANPATH"
@@ -41,7 +41,4 @@ fi
 export GPG_TTY=$(tty)
 export PATH="$HOME/.local/bin:$PATH"
 
-alias claude-mem='bun "/Users/nest/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'
-
-#export NEST_WT_EDITOR="zed"
-export NEST_REPO_ROOT="$HOME/projects/nest"
+#alias claude-mem='bun "/Users/nest/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'
