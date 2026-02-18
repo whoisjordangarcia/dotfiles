@@ -2,56 +2,101 @@
   "layer": "top",
   "output": ["*"],
   "position": "bottom",
-  "height": 30,
+  "height": 40,
+  "margin-bottom": 8,
+  "margin-left": 10,
+  "margin-right": 10,
   "exclusive": true,
   "passthrough": false,
   "reload_style_on_change": true,
   "include": [
     "$XDG_CONFIG_HOME/waybar/modules/*json*",
-    "$XDG_CONFIG_HOME/waybar/includes/includes.json",
+    "$XDG_CONFIG_HOME/waybar/includes/includes.json"
   ],
-  "modules-left": ["group/pill#1", "group/pill#2"],
-  "group/pill#1": {
+
+  // ── Left ──────────────────────────────────
+  "modules-left": ["group/pill#workspaces"],
+
+  "group/pill#workspaces": {
     "modules": ["hyprland/workspaces"],
-    "orientation": "inherit",
+    "orientation": "inherit"
   },
-  "group/pill#2": {
+
+  // ── Center ────────────────────────────────
+  "modules-center": ["group/pill#clock"],
+
+  "group/pill#clock": {
     "orientation": "inherit",
+    "modules": ["idle_inhibitor", "clock"]
+  },
+
+  // Override clock format to include date
+  "clock": {
+    "format": "{:%m/%d/%Y   %I:%M %p}",
+    "format-alt": "{:%A, %B %d, %Y   %I:%M:%S %p}",
+    "tooltip-format": "<span>{calendar}</span>",
+    "calendar": {
+      "mode": "month",
+      "mode-mon-col": 3,
+      "on-scroll": 1,
+      "on-click-right": "mode",
+      "format": {
+        "months": "<span color='#ffead3'><b>{}</b></span>",
+        "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
+        "today": "<span color='#ff6699'><b>{}</b></span>"
+      }
+    },
+    "actions": {
+      "on-click-right": "mode",
+      "on-click-forward": "tz_up",
+      "on-click-backward": "tz_down",
+      "on-scroll-up": "shift_up",
+      "on-scroll-down": "shift_down"
+    }
+  },
+
+  // ── Right ─────────────────────────────────
+  "modules-right": [
+    "group/pill#connectivity",
+    "group/pill#stats",
+    "group/pill#controls"
+  ],
+
+  // Override network bandwidth format to match our theme
+  "network#bandwidth": {
+    "format-wifi": "{bandwidthDownBytes}  {bandwidthUpBytes}",
+    "format-ethernet": "{bandwidthDownBytes}  {bandwidthUpBytes}",
+    "format-alt": "{bandwidthDownBytes}  {bandwidthUpBytes}"
+  },
+
+  // Pill 1: Network + Volume (interactive)
+  "group/pill#connectivity": {
+    "modules": ["network#bandwidth", "pulseaudio"],
+    "orientation": "inherit"
+  },
+
+  // Pill 2: System stats (glanceable)
+  "group/pill#stats": {
     "modules": [
       "cpu",
       "memory",
       "custom/gpuinfo",
       "custom/cpuinfo",
-      "custom/sensorsinfo",
+      "custom/sensorsinfo"
+    ],
+    "orientation": "inherit"
+  },
+
+  // Pill 3: System controls
+  "group/pill#controls": {
+    "modules": [
       "custom/swaync",
       "custom/dunst",
+      "privacy",
+      "tray",
+      "battery",
+      "custom/power"
     ],
-  },
-  "modules-center": ["group/pill#middle"],
-  "group/pill#middle": {
-    "orientation": "inherit",
-    "modules": ["idle_inhibitor", "clock"],
-  },
-  "modules-right": [
-    "group/pill#right1",
-    "group/pill#right2",
-    "group/pill#right3",
-  ],
-  "group/pill#right1": {
-    "modules": ["network#bandwidth", "pulseaudio", "custom/updates"],
-    "orientation": "inherit",
-  },
-  "group/pill#right2": {
-    "modules": ["privacy", "tray", "battery"],
-    "orientation": "inherit",
-  },
-  "group/pill#right3": {
-    "modules": [
-      "custom/wbar",
-      "custom/cliphist",
-      "custom/hyde-menu",
-      "custom/power",
-    ],
-    "orientation": "inherit",
-  },
+    "orientation": "inherit"
+  }
 }

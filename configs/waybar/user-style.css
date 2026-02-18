@@ -1,16 +1,30 @@
-/* User custom styles */
+/* ── Sleek & Modern Waybar Theme ──────────────────
+ *  Floating bottom bar, monochrome + blue accent
+ *  Designed for readability on any wallpaper
+ * ─────────────────────────────────────────────── */
 
-/* Fix for light wallpapers: dark bar with light text for visibility */
+/* ── Lock down wallbash/theme color variables ── */
+@define-color bar-bg rgba(17, 17, 27, 0.85);
+@define-color main-bg rgba(30, 30, 46, 0.6);
+@define-color main-fg rgba(186, 194, 222, 0.75);
+@define-color wb-act-bg rgba(137, 180, 250, 0.25);
+@define-color wb-act-fg #89b4fa;
+@define-color wb-hvr-bg rgba(137, 180, 250, 0.15);
+@define-color wb-hvr-fg rgba(186, 194, 222, 0.8);
+
+/* ── Bar ─────────────────────────────────────── */
 window#waybar {
-    background: rgba(30, 30, 46, 0.7);
+    background: @bar-bg;
+    border-radius: 12px;
+    border: none;
 }
 
-/* Override module text/icon colors for visibility */
+/* ── Base module text ────────────────────────── */
 .module {
-    color: rgba(205, 214, 244, 1);
+    color: rgba(186, 194, 222, 0.75);
 }
 
-/* Ensure pill backgrounds are also visible */
+/* ── All pill containers ─────────────────────── */
 #pill,
 #pill-right,
 #pill-left,
@@ -18,24 +32,190 @@ window#waybar {
 #pill-up,
 #pill-in,
 #pill-out {
-    background-color: rgba(49, 50, 68, 0.8);
+    background-color: rgba(30, 30, 46, 0.6);
+    border-color: rgba(30, 30, 46, 0.6);
+    border-radius: 10px;
 }
 
-/* Workspaces styling with Nerd Font icons */
+/* ── Workspaces ──────────────────────────────── */
 #workspaces button {
     font-family: "JetBrainsMono Nerd Font", monospace;
     font-size: 14px;
-    padding: 0 8px;
+    padding: 0 10px;
     margin: 2px;
-    border-radius: 8px;
-    color: rgba(205, 214, 244, 1);
+    border-radius: 6px;
+    color: rgba(205, 214, 244, 0.4);
+    transition: all 0.3s cubic-bezier(0.55, -0.68, 0.48, 1.682);
 }
 
 #workspaces button.active {
-    background: rgba(137, 180, 250, 0.3);
-    color: rgba(137, 180, 250, 1);
+    background: rgba(137, 180, 250, 0.25);
+    color: #89b4fa;
+    border-bottom: 1px solid #89b4fa;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-left: 2px;
+    margin-right: 2px;
 }
 
 #workspaces button:hover {
-    background: rgba(137, 180, 250, 0.2);
+    background: rgba(137, 180, 250, 0.15);
+    color: rgba(205, 214, 244, 0.7);
+}
+
+/* ── Clock ───────────────────────────────────── */
+#clock {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(205, 214, 244, 0.9);
+}
+
+/* ── Idle Inhibitor ──────────────────────────── */
+#idle_inhibitor {
+    color: rgba(205, 214, 244, 0.5);
+}
+
+#idle_inhibitor.activated {
+    color: #89b4fa;
+}
+
+/* ── Network bandwidth ───────────────────────── */
+#network {
+    font-size: 12px;
+    color: rgba(186, 194, 222, 0.75);
+}
+
+/* ── Volume ──────────────────────────────────── */
+#pulseaudio {
+    color: rgba(186, 194, 222, 0.75);
+}
+
+#pulseaudio:hover {
+    color: #89b4fa;
+}
+
+#pulseaudio.muted {
+    color: rgba(205, 214, 244, 0.35);
+}
+
+/* ── System stats (dimmer — less urgent) ─────── */
+#cpu,
+#memory,
+#temperature,
+#custom-gpuinfo,
+#custom-cpuinfo,
+#custom-sensorsinfo {
+    color: rgba(205, 214, 244, 0.8);
+    font-size: 12px;
+}
+
+/* Warning states */
+#cpu.warning,
+#temperature.critical {
+    color: #fab387;
+}
+
+/* ── Temperature overrides (cpuinfo + gpuinfo) ── */
+/* Normal temps: use default bar color */
+#custom-cpuinfo.temp-0,
+#custom-cpuinfo.temp-5,
+#custom-cpuinfo.temp-10,
+#custom-cpuinfo.temp-15,
+#custom-cpuinfo.temp-20,
+#custom-cpuinfo.temp-25,
+#custom-cpuinfo.temp-30,
+#custom-cpuinfo.temp-35,
+#custom-cpuinfo.temp-40,
+#custom-cpuinfo.temp-45,
+#custom-cpuinfo.temp-50,
+#custom-cpuinfo.temp-55,
+#custom-gpuinfo.temp-0,
+#custom-gpuinfo.temp-5,
+#custom-gpuinfo.temp-10,
+#custom-gpuinfo.temp-15,
+#custom-gpuinfo.temp-20,
+#custom-gpuinfo.temp-25,
+#custom-gpuinfo.temp-30,
+#custom-gpuinfo.temp-35,
+#custom-gpuinfo.temp-40,
+#custom-gpuinfo.temp-45,
+#custom-gpuinfo.temp-50,
+#custom-gpuinfo.temp-55 {
+    color: rgba(186, 194, 222, 0.75);
+}
+
+/* Warm (60–75°C): orange */
+#custom-cpuinfo.temp-60,
+#custom-cpuinfo.temp-65,
+#custom-cpuinfo.temp-70,
+#custom-cpuinfo.temp-75,
+#custom-gpuinfo.temp-60,
+#custom-gpuinfo.temp-65,
+#custom-gpuinfo.temp-70,
+#custom-gpuinfo.temp-75 {
+    color: #fab387;
+}
+
+/* Hot (80°C+): red */
+#custom-cpuinfo.temp-80,
+#custom-cpuinfo.temp-85,
+#custom-cpuinfo.temp-90,
+#custom-cpuinfo.temp-95,
+#custom-cpuinfo.temp-100,
+#custom-gpuinfo.temp-80,
+#custom-gpuinfo.temp-85,
+#custom-gpuinfo.temp-90,
+#custom-gpuinfo.temp-95,
+#custom-gpuinfo.temp-100 {
+    color: #f38ba8;
+}
+
+/* ── Notifications ───────────────────────────── */
+#custom-swaync,
+#custom-dunst {
+    color: rgba(186, 194, 222, 0.75);
+}
+
+/* ── Tray ────────────────────────────────────── */
+#tray {
+    color: rgba(186, 194, 222, 0.75);
+}
+
+/* ── Battery ─────────────────────────────────── */
+#battery {
+    color: rgba(186, 194, 222, 0.75);
+}
+
+#battery.charging {
+    color: #89b4fa;
+}
+
+#battery.warning:not(.charging) {
+    color: #fab387;
+}
+
+#battery.critical:not(.charging) {
+    color: #f38ba8;
+}
+
+/* ── Power menu ──────────────────────────────── */
+#custom-power {
+    color: rgba(205, 214, 244, 0.6);
+}
+
+#custom-power:hover {
+    color: #89b4fa;
+}
+
+/* ── Privacy ─────────────────────────────────── */
+#privacy {
+    color: #89b4fa;
+}
+
+/* ── Tooltips ────────────────────────────────── */
+tooltip {
+    background: rgba(17, 17, 27, 0.95);
+    color: rgba(205, 214, 244, 0.9);
+    border: 1px solid rgba(137, 180, 250, 0.3);
+    border-radius: 8px;
 }

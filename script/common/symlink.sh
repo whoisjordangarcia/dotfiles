@@ -56,9 +56,13 @@ link_file() {
 			return
 		fi
 
-		# Symlink points elsewhere - prompt user
-		user "Symlink '$target' points to '$link_dest'. [O]verride/[B]ackup/[S]kip?"
-		read -r choice
+		# Symlink points elsewhere - prompt or auto-resolve
+		if [ "${DOT_SYMLINK_MODE:-interactive}" != "interactive" ]; then
+			choice="${DOT_SYMLINK_MODE:0:1}"
+		else
+			user "Symlink '$target' points to '$link_dest'. [O]verride/[B]ackup/[S]kip?"
+			read -r choice
+		fi
 		case "$choice" in
 		[Oo])
 			rm -f "$target" && ln -s "$source" "$target"
@@ -91,9 +95,13 @@ link_file() {
 			return
 		fi
 
-		# Regular file/directory exists - prompt user
-		user "The $type '$target' already exists. [O]verride/[B]ackup/[S]kip?"
-		read -r choice
+		# Regular file/directory exists - prompt or auto-resolve
+		if [ "${DOT_SYMLINK_MODE:-interactive}" != "interactive" ]; then
+			choice="${DOT_SYMLINK_MODE:0:1}"
+		else
+			user "The $type '$target' already exists. [O]verride/[B]ackup/[S]kip?"
+			read -r choice
+		fi
 		case "$choice" in
 		[Oo])
 			rm -rf "$target" && ln -s "$source" "$target"
