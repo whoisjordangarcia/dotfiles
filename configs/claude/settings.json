@@ -79,7 +79,8 @@
     "nest-retool-json-schema-forms@nest-genomics-skills": true,
     "nest-pr@nest-genomics-skills": true,
     "playwright-skill@playwright-skill": true,
-    "nest-linear@nest-genomics-skills": true
+    "nest-linear@nest-genomics-skills": true,
+    "nest-slite@nest-genomics-skills": true
   },
   "outputStyle": "Explanatory",
   "spinnerTipsEnabled": false,
