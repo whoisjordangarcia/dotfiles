@@ -1,7 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "DISABLE_AUTOUPDATER": "1",
     "DISABLE_TELEMETRY": "1",
     "DISABLE_BUG_COMMAND": "1",
     "DISABLE_ERROR_REPORTING": "1"
@@ -97,6 +96,6 @@
     "Nest Genomics"
   ],
   "autoUpdatesChannel": "latest",
-  "effortLevel": "medium",
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "effortLevel": "medium"
 }
