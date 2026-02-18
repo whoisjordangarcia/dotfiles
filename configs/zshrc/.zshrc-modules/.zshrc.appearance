@@ -1,1 +1,1 @@
-fastfetch -l small
+[[ -z "$TMUX" ]] && fastfetch -l small

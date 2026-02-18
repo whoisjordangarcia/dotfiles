@@ -9,6 +9,7 @@ alias wm='workmux'
 alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 
 #development
+alias lg="lazygit"
 alias vim="nvim"
 alias vi="nvim"
 alias vimrc="nvim ~/.config/nvim/init.lua"
@@ -19,11 +20,13 @@ alias reqrepo-env='~/.zshrc-modules/scripts/activate-reqrepo-env'
 alias :q="exit"
 alias :wq="exit"
 alias :x="exit"
-alias zshrc="nvim ~/.zshrc"
+alias zshrc="nvim ~/.zshrc-modules"
 alias dotfiles="cd ~/dev/dotfiles && nvim ."
 alias sketchybar-theme="~/.config/sketchybar/switch-theme.sh"
 
 #git
+alias gs="git status"
+alias gd="git diff"
 alias gcm="git checkout main"
 alias gpo="git pull origin"
 alias gc='git checkout'
