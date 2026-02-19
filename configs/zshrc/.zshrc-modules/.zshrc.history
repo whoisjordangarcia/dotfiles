@@ -3,8 +3,8 @@
 
 # History file location and size
 HISTFILE=~/.zsh_history
-HISTSIZE=50000                # Commands to keep in memory
-SAVEHIST=50000                # Commands to save to file
+HISTSIZE=500000               # Commands to keep in memory
+SAVEHIST=500000               # Commands to save to file
 
 # History behavior options
 setopt HIST_IGNORE_SPACE      # Don't save commands starting with space
