@@ -6,13 +6,8 @@ else
   export EDITOR='nvim'
 fi
 
-#export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-export NVM_DIR="$HOME/.nvm"
-nvm() {
-    unset -f nvm
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    nvm "$@"
-}
+# NVM_DIR is set in .zshrc.init (lightweight node manager)
+# Full nvm is available via: source "$HOME/.nvm/nvm.sh"
 export PYENV_ROOT="$HOME/.pyenv"
 
 # ==============================================================================

@@ -1,1 +1,5 @@
-[[ -z "$TMUX" ]] && fastfetch -l small
+if [[ -n "$TMUX" ]]; then
+  fastfetch --config ~/.config/fastfetch/config-minimal.jsonc
+else
+  fastfetch
+fi
