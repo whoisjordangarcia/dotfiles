@@ -1,5 +1,5 @@
 add_newline = true
-command_timeout = 200
+command_timeout = 1000
 format = "${custom.dir_display}${custom.git_worktree}$git_branch$git_status$character"
 
 [custom.dir_display]
