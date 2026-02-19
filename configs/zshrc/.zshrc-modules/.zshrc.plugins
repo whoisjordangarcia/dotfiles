@@ -1,0 +1,36 @@
+# ==============================================================================
+#  Plugins & Completions
+# ==============================================================================
+# Plugins installed at ~/.zsh/plugins/ (managed via git clone)
+
+_plugin_dir="$HOME/.zsh/plugins"
+
+# --- Completion system (extracted from OMZ lib/completion.zsh) ---
+zmodload -i zsh/complist
+autoload -U compinit
+# Regenerate comp dump at most once per day (-C skips security check for speed)
+if [[ -f "$HOME/.zcompdump" && $(date +'%j') == $(stat -f '%Sm' -t '%j' "$HOME/.zcompdump" 2>/dev/null) ]]; then
+  compinit -C
+else
+  compinit
+fi
+
+WORDCHARS=''
+setopt auto_menu complete_in_word always_to_end
+unsetopt menu_complete flowcontrol
+
+zstyle ':completion:*:*:*:*:*' menu select
+zstyle ':completion:*' matcher-list 'm:{[:lower:][:upper:]}={[:upper:][:lower:]}' 'r:|=*' 'l:|=* r:|=*'
+zstyle ':completion:*' special-dirs true
+zstyle ':completion:*' list-colors ''
+zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;34=0=01'
+zstyle ':completion:*:*:*:*:processes' command "ps -u $USERNAME -o pid,user,comm -w -w"
+zstyle ':completion:*:cd:*' tag-order local-directories directory-stack path-directories
+
+# --- Plugins ---
+source "$_plugin_dir/zsh-autosuggestions/zsh-autosuggestions.zsh"
+source "$_plugin_dir/nx-completion/nx-completion.plugin.zsh"
+# syntax-highlighting must be sourced LAST (it wraps zle widgets)
+source "$_plugin_dir/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+
+unset _plugin_dir

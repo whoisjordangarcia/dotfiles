@@ -1,20 +1,44 @@
-# Load starship
-if command -v starship &> /dev/null; then
-  eval "$(starship init zsh)"
-  export STARSHIP_CONFIG=~/.config/starship.toml
-fi
+# ==============================================================================
+#  Cached init helper — avoids spawning subprocesses on every shell start
+# ==============================================================================
+# Caches output of "tool init zsh" commands in ~/.cache/zsh/.
+# Cache invalidates when the binary's modification time changes.
+zmodload zsh/stat 2>/dev/null
 
-# Load zoxide
-if command -v zoxide &> /dev/null; then
-  eval "$(zoxide init zsh)"
-fi
+_cached_init() {
+  local cmd=$1; shift
+  local cache_dir="${HOME}/.cache/zsh"
+  local bin_path="${commands[$cmd]}"
+  [[ -z "$bin_path" ]] && return 1
 
-# Load fzf (fuzzy finder)
-if command -v fzf &> /dev/null; then
-  eval "$(fzf --zsh)"
-fi
+  local cache_file="${cache_dir}/${cmd}.zsh"
+  local stamp_file="${cache_dir}/${cmd}.stamp"
+  local bin_mtime
+  zstat -A bin_mtime +mtime "$bin_path" 2>/dev/null || return 1
 
-# Lightweight node version manager (replaces nvm for speed)
+  if [[ -f "$cache_file" && -f "$stamp_file" && "$(<"$stamp_file")" == "$bin_mtime" ]]; then
+    source "$cache_file"
+  else
+    mkdir -p "$cache_dir"
+    "$cmd" "$@" > "$cache_file"
+    echo "$bin_mtime" > "$stamp_file"
+    source "$cache_file"
+  fi
+}
+
+# Load starship (cached)
+_cached_init starship init zsh
+export STARSHIP_CONFIG=~/.config/starship.toml
+
+# Load zoxide (cached)
+_cached_init zoxide init zsh
+
+# Load fzf (cached)
+_cached_init fzf --zsh
+
+# ==============================================================================
+#  Lightweight node version manager (replaces nvm for speed)
+# ==============================================================================
 # Uses nvm's installed versions at ~/.nvm/versions/node/ but skips the 0.9s nvm.sh load
 export NVM_DIR="$HOME/.nvm"
 
@@ -67,4 +91,3 @@ autoload -U add-zsh-hook
 add-zsh-hook chpwd _auto_node_switch
 # Run once for initial directory
 _auto_node_switch
-
