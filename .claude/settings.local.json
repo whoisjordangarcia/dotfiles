@@ -12,7 +12,10 @@
       "Bash(aerospace reload-config:*)",
       "Bash(command -v:*)",
       "Bash(tmux list-sessions:*)",
-      "Bash(git -C:*)"
+      "Bash(git -C:*)",
+      "Bash(go test:*)",
+      "Bash(go build:*)",
+      "Bash(./bin/nxps:*)"
     ]
   }
 }
