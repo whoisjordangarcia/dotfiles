@@ -18,7 +18,6 @@ source ~/.zshrc-modules/.zshrc.plugins
 source ~/.zshrc-modules/.zshrc.envvars
 source ~/.zshrc-modules/.zshrc.aliases
 source ~/.zshrc-modules/.zshrc.functions
-source ~/.zshrc-modules/.zshrc.nxps
 source ~/.zshrc-modules/.zshrc.paths
 source ~/.zshrc-modules/.zshrc.appearance
 source ~/.zshrc-modules/.zshrc.vim-mode
