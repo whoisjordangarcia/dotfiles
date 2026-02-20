@@ -10,7 +10,6 @@
     "allow": [
       "Bash(gh api *)",
       "Bash(gh pr checks *)",
-      "Bash(gh pr create *)",
       "Bash(gh pr diff *)",
       "Bash(gh pr list *)",
       "Bash(gh pr view *)",
@@ -23,21 +22,16 @@
       "Bash(git fetch *)",
       "Bash(git log *)",
       "Bash(git pull *)",
-      "Bash(git push *)",
       "Bash(git rm *)",
       "Bash(git stash *)",
       "Bash(git status *)",
       "Bash(docker build *)",
-      "Bash(find *)",
-      "Bash(grep *)",
       "Bash(npm info *)",
       "Bash(npm run *)",
       "Bash(npx eslint *)",
       "Bash(npx tsc *)",
       "Bash(nx *)",
       "Bash(pnpm *)",
-      "Bash(python3 *)",
-      "Bash(source *)",
       "Bash(task *)",
       "Bash(wt *)",
       "Skill(superpowers:brainstorming)",
@@ -54,10 +48,7 @@
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
-    "ask": [
-      "Bash(git push *)",
-      "Bash(curl *)"
-    ],
+    "ask": ["Bash(git push *)", "Bash(curl *)"],
     "defaultMode": "default"
   },
   "hooks": {},
@@ -98,17 +89,20 @@
   "spinnerTipsEnabled": false,
   "spinnerVerbs": {
     "mode": "append",
-    "verbs": [
-      "Nesting",
-      "sahh good",
-      "ralphing"
-    ]
+    "verbs": ["Nesting", "sahh good", "ralphing"]
   },
   "alwaysThinkingEnabled": true,
-  "companyAnnouncements": [
-    "Nest Genomics"
-  ],
+  "companyAnnouncements": ["Nest Genomics"],
   "autoUpdatesChannel": "latest",
-  "skipDangerousModePermissionPrompt": true,
-  "effortLevel": "medium"
+  "skipDangerousModePermissionPrompt": false,
+  "effortLevel": "medium",
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": false,
+    "network": {
+      "allowLocalBinding": true
+    },
+    "excludedCommands": ["git"]
+  }
 }
