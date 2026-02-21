@@ -1,7 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "DISABLE_AUTOUPDATER": "1",
     "DISABLE_TELEMETRY": "1",
     "DISABLE_BUG_COMMAND": "1",
     "DISABLE_ERROR_REPORTING": "1"
@@ -35,10 +34,7 @@
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
-    "ask": [
-      "Bash(git push *)",
-      "Bash(curl *)"
-    ],
+    "ask": ["Bash(git push *)", "Bash(curl *)"],
     "defaultMode": "default"
   },
   "hooks": {
@@ -60,43 +56,36 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "superpowers@superpowers-marketplace": true,
-    "linear@claude-plugins-official": false,
-    "dev-browser@dev-browser-marketplace": true,
-    "frontend-design@claude-plugins-official": true,
+    "claude-mem@thedotmack": false,
     "code-review@claude-plugins-official": false,
     "code-simplifier@claude-plugins-official": true,
-    "claude-mem@thedotmack": false,
-    "ralph-loop@claude-plugins-official": false,
-    "superpowers@claude-plugins-official": false,
-    "feature-dev@claude-plugins-official": false,
-    "context7@claude-plugins-official": false,
-    "typescript-lsp@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": false,
-    "playwright@claude-plugins-official": false,
-    "security-guidance@claude-plugins-official": true,
-    "pr-review-toolkit@claude-plugins-official": false,
+    "context7@claude-plugins-official": false,
+    "dev-browser@dev-browser-marketplace": true,
     "explanatory-output-style@claude-plugins-official": true,
-    "nest-retool-json-schema-forms@nest-genomics-skills": true,
-    "nest-pr@nest-genomics-skills": true,
+    "feature-dev@claude-plugins-official": false,
+    "frontend-design@claude-plugins-official": true,
+    "linear@claude-plugins-official": false,
+    "nest-linear@nest-genomics-skills": false,
+    "nest-pr@nest-genomics-skills": false,
+    "nest-retool-json-schema-forms@nest-genomics-skills": false,
     "playwright-skill@playwright-skill": true,
-    "nest-linear@nest-genomics-skills": true
+    "playwright@claude-plugins-official": false,
+    "pr-review-toolkit@claude-plugins-official": false,
+    "ralph-loop@claude-plugins-official": false,
+    "security-guidance@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": false,
+    "superpowers@superpowers-marketplace": true,
+    "typescript-lsp@claude-plugins-official": true
   },
   "outputStyle": "Explanatory",
   "spinnerTipsEnabled": false,
   "spinnerVerbs": {
     "mode": "append",
-    "verbs": [
-      "Nesting",
-      "sahh good",
-      "ralphing"
-    ]
+    "verbs": ["Nesting", "sahh good", "ralphing"]
   },
-  "alwaysThinkingEnabled": true,
-  "companyAnnouncements": [
-    "Nest Genomics"
-  ],
+  "alwaysThinkingEnabled": false,
   "autoUpdatesChannel": "latest",
-  "effortLevel": "medium",
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": false,
+  "effortLevel": "medium"
 }

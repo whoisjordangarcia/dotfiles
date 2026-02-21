@@ -65,3 +65,5 @@ docs/plans/
 .ralphrc
 nest-*
 tasks
+
+.settings.local.json
