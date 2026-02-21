@@ -16,7 +16,7 @@ otobun --config           # Show current configuration
 otobun --system           # Show detected system
 
 # Build from source (requires Go 1.22+)
-go build -o bin/otobun ./cmd/otobun
+go build -o bin/otobun ./apps/otobun-go
 go test ./...             # Run all tests
 ```
 
@@ -60,14 +60,30 @@ Individual components can be installed directly:
 ## Architecture
 
 ### Entry Points & Installation Flow
-1. **Go TUI**: `otobun` (cmd/otobun) - Bubble Tea TUI with wizard, module selector, and installation runner
-2. **Remote Bootstrap**: `boot.sh` - Clones repo, fetches updates, launches interactive setup
-3. **CLI Tool**: `bin/dot` - Legacy shell management interface with system detection and configuration
-4. **Legacy**: `bootstrap.sh` - Original installation script (maintained for compatibility)
+1. **Go TUI**: `otobun` (apps/otobun-go) - Bubble Tea TUI with wizard, module selector, and installation runner
+2. **TypeScript TUI**: `otobun-ts` (apps/otobun-ts) - Ink/React port of the same TUI (`bin/otobun-ts`)
+3. **Remote Bootstrap**: `boot.sh` - Clones repo, fetches updates, launches interactive setup
+4. **CLI Tool**: `bin/dot` - Legacy shell management interface with system detection and configuration
+5. **Legacy**: `bootstrap.sh` - Original installation script (maintained for compatibility)
 
 ### Directory Structure
 ```
-cmd/otobun/main.go                # Go TUI entry point
+apps/
+  ├── otobun-go/main.go           # Go TUI entry point (Bubble Tea)
+  └── otobun-ts/                  # TypeScript/Ink TUI
+      ├── package.json
+      ├── tsconfig.json
+      └── src/
+          ├── index.tsx           # CLI entry (--help, --config, --system, --setup)
+          ├── config.ts           # .dotconfig read/write
+          ├── detector.ts         # OS/distro detection
+          ├── installer.ts        # Component parser + script runner
+          └── tui/
+              ├── App.tsx         # Phase orchestrator
+              ├── Wizard.tsx      # Setup form (name, env, email, yubikey)
+              ├── Selector.tsx    # Checkbox module picker (vim keys)
+              ├── Runner.tsx      # Progress + side-by-side output panels
+              └── theme.ts        # Chalk colours + progressBar()
 internal/
   ├── config/config.go            # .dotconfig read/write (shared with shell scripts)
   ├── detector/system.go          # OS/platform detection (Go port of detect_system())
@@ -81,6 +97,7 @@ internal/
       ├── runner/runner.go        # Progress spinner + viewport
       └── theme/theme.go          # Lip Gloss brand styles + progress bar
 bin/dot                           # Legacy shell CLI
+bin/otobun-ts                     # Shell wrapper → apps/otobun-ts via tsx
 script/
   ├── common/
   │   ├── log.sh                 # Logging utilities (info, success, fail, etc.)
@@ -253,9 +270,9 @@ export LOG_LEVEL=error    # Only errors
 
 **Building & Testing**:
 ```bash
-go build -o bin/otobun ./cmd/otobun    # Build binary
-go test ./...                           # Run all tests (14 tests across 3 packages)
-go run ./cmd/otobun --help              # Run without building
+go build -o bin/otobun ./apps/otobun-go    # Build binary
+go test ./...                              # Run all tests (14 tests across 3 packages)
+go run ./apps/otobun-go --help             # Run without building
 ```
 
 **Package Layout** (`internal/`):
