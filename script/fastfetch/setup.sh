@@ -12,3 +12,4 @@ debug "Ensuring $HOME/.config/fastfetch exists"
 mkdir -p "$HOME/.config/fastfetch"
 
 link_file "$DOTFILES_ROOT/configs/fastfetch/config.jsonc" "$HOME/.config/fastfetch/config.jsonc"
+link_file "$DOTFILES_ROOT/configs/fastfetch/config-minimal.jsonc" "$HOME/.config/fastfetch/config-minimal.jsonc"

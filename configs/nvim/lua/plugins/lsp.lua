@@ -47,20 +47,38 @@ return {
         },
       }
 
-      -- JSON LSP with SchemaStore + custom schemas
+      -- JSON LSP: auto-discover project *.schema.json files from cwd at startup
+      -- (works with git worktrees since cwd reflects the worktree path)
+      local extra_schemas = {}
+      local cwd = vim.fn.getcwd()
+      -- Use system find with -prune to skip node_modules entirely (not just filter results)
+      local schema_files = vim.fn.systemlist(
+        "find " .. vim.fn.shellescape(cwd)
+          .. " -path '*/node_modules' -prune"
+          .. " -o -path '*/.git' -prune"
+          .. " -o -path '*/__generated__' -prune"
+          .. " -o -path '*/@generated' -prune"
+          .. " -o -path '*/.worktrees' -prune"
+          .. " -o -path '*/.nx' -prune"
+          .. " -o -name '*.schema.json' -print"
+          .. " 2>/dev/null"
+      )
+      for _, schema_path in ipairs(schema_files) do
+        local filename = schema_path:match("([^/]+)%.schema%.json$")
+        if filename then
+          table.insert(extra_schemas, {
+            description = filename:gsub("^%l", string.upper) .. " JSON schema",
+            fileMatch = { "*." .. filename .. ".json" },
+            name = filename .. ".json",
+            url = "file://" .. schema_path,
+          })
+        end
+      end
+
       opts.servers.jsonls = {
         settings = {
           json = {
-            schemas = require("schemastore").json.schemas({
-              extra = {
-                {
-                  description = "Story JSON schema for patient-navigator",
-                  fileMatch = { "*.story.json" },
-                  name = "story.json",
-                  url = "file:///Users/nest/projects/nest/apps/frontend/patient-navigator/src/schemas/story.schema.json",
-                },
-              },
-            }),
+            schemas = require("schemastore").json.schemas({ extra = extra_schemas }),
             validate = { enable = true },
           },
         },

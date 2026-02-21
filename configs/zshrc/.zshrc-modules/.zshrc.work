@@ -2,6 +2,10 @@
 #  Work-specific Configuration (Nest)
 # ==============================================================================
 
+#export NEST_WT_EDITOR="zed"
+export NEST_REPO_ROOT="$HOME/projects/nest"
+export WT_BRANCH_PREFIX="jordan"
+
 # ------------------------------------------------------------------------------
 #  GitHub CLI Aliases & Functions
 # ------------------------------------------------------------------------------

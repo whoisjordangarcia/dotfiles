@@ -14,7 +14,7 @@ source_files() {
 # defaults
 source ~/.zshrc-modules/.zshrc.history
 source ~/.zshrc-modules/.zshrc.init
-source ~/.zshrc-modules/.zshrc.ohmyzsh
+source ~/.zshrc-modules/.zshrc.plugins
 source ~/.zshrc-modules/.zshrc.envvars
 source ~/.zshrc-modules/.zshrc.aliases
 source ~/.zshrc-modules/.zshrc.functions
@@ -22,7 +22,7 @@ source ~/.zshrc-modules/.zshrc.paths
 source ~/.zshrc-modules/.zshrc.appearance
 source ~/.zshrc-modules/.zshrc.vim-mode
 
-export PATH="$HOME/.pyenv/shims:$PATH"
+#export PATH="$HOME/.pyenv/shims:$PATH"
 
 # Custom man pages for dotfiles
 export MANPATH="$HOME/dev/dotfiles/configs/man:$MANPATH"
@@ -38,10 +38,7 @@ else
     [[ -f ~/.zshrc-modules/.zshrc.personal ]] && source ~/.zshrc-modules/.zshrc.personal
 fi
 
-export GPG_TTY=$(tty)
+export GPG_TTY=$TTY
 export PATH="$HOME/.local/bin:$PATH"
 
-alias claude-mem='bun "/Users/nest/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'
-
-#export NEST_WT_EDITOR="zed"
-export NEST_REPO_ROOT="$HOME/projects/nest"
+#alias claude-mem='bun "/Users/nest/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'

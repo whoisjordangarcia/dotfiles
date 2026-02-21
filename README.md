@@ -63,8 +63,8 @@ Modular Z shell configuration with organized `.zshrc-modules/`:
 | `.zshrc.history` | 50k command history with smart duplicate filtering, ignores mundane commands |
 | `.zshrc.aliases` | `reload`, `vim→nvim`, `ls→eza`, `cat→bat`, `top→btop`, git shortcuts |
 | `.zshrc.functions` | `encode64/decode64`, `compress/decompress`, `web2app` launcher creator |
-| `.zshrc.ohmyzsh` | Plugins: git, zsh-syntax-highlighting, zsh-autosuggestions, fzf, nx-completion |
-| `.zshrc.envvars` | EDITOR, NVM_DIR, pyenv, colored man pages via bat |
+| `.zshrc.plugins` | Completions + plugins: zsh-syntax-highlighting, zsh-autosuggestions, nx-completion |
+| `.zshrc.envvars` | EDITOR, pyenv, colored man pages via bat |
 | `.zshrc.vim-mode` | Vi keybindings in shell |
 | `.zshrc.work` | Work-specific environment config |
 
@@ -251,7 +251,7 @@ Context rules for AI coding assistants:
 ./bin/dot --system mac
 ```
 
-**Installs:** Git, Zsh+OMZ, Neovim nightly, Node, Tmux+TPM, Fonts, Starship, Ghostty, LazyGit, Claude/Codex/OpenCode, Fastfetch, Brave
+**Installs:** Git, Zsh, Neovim nightly, Node, Tmux+TPM, Fonts, Starship, Ghostty, LazyGit, Claude/Codex/OpenCode, Fastfetch, Brave
 
 **Work variant** (`mac_work`): Adds Homebrew apps + Aerospace + enterprise tools
 
@@ -375,9 +375,11 @@ tmux source ~/.tmux.conf   # Reload config
 # Inside tmux: <prefix> + I to install plugins
 ```
 
-### Shell Integration
+### Zsh Plugins
+Plugins are sourced directly from `~/.zsh/plugins/`. Install via git clone:
 ```bash
-source <(fzf --zsh)        # FZF keybindings (add to .zshrc if needed)
+git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.zsh/plugins/zsh-syntax-highlighting
+git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/plugins/zsh-autosuggestions
 ```
 
 ### YubiKey Git Signing (Optional)

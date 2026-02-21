@@ -1,0 +1,341 @@
+# ==============================================================================
+#  Node/Nx Process Inspector & Manager
+# ==============================================================================
+
+# Show running nx serve processes and node background services, grouped by
+# worktree. Optionally kill processes interactively.
+#
+# Usage:
+#   nxps              — list all running nx/node services
+#   nxps kill         — interactive kill mode (select by number)
+#   nxps kill <pids>  — kill specific PIDs directly
+#   nxps kill-wt      — kill all processes for a worktree (select by number)
+
+nxps() {
+  local action="${1:-list}"
+  shift 2>/dev/null
+
+  case "$action" in
+    list)   _nxps_list ;;
+    kill)   _nxps_kill "$@" ;;
+    kill-wt) _nxps_kill_worktree "$@" ;;
+    *)
+      echo "Usage: nxps [list|kill|kill-wt]"
+      echo ""
+      echo "  list      Show running services (default)"
+      echo "  kill      Kill by PID selection or direct PIDs"
+      echo "  kill-wt   Kill all processes for a worktree"
+      return 1
+      ;;
+  esac
+}
+
+# ── Internal: resolve a PID's working directory to a short worktree name ──
+_nxps_resolve_worktree() {
+  local pid=$1
+  local cwd
+  cwd=$(lsof -p "$pid" -Fn 2>/dev/null \
+    | grep '^n/Users' \
+    | head -1 \
+    | sed 's/^n//; s|/\.nx/.*||; s|/apps/.*||; s|/node_modules/.*||; s|/dist/.*||')
+
+  if [[ -z "$cwd" ]]; then
+    echo "unknown"
+    return
+  fi
+
+  # Shorten known prefixes
+  echo "$cwd" | sed "s|$HOME/projects/nest/.worktrees/||; s|$HOME/projects/nest|repo-root|; s|$HOME/||"
+}
+
+# ── Internal: collect all nx serve + background node processes ──
+_nxps_collect() {
+  # Returns lines: PID|SERVICE|WORKTREE
+  # nx serve processes
+  ps -eo pid,args 2>/dev/null | grep 'nx serve' | grep -v grep | while read -r pid rest; do
+    local service=$(echo "$rest" | sed 's/.*nx serve //')
+    local wt=$(_nxps_resolve_worktree "$pid")
+    echo "${pid// /}|nx:${service}|${wt}"
+  done
+
+  # Storybook
+  ps -eo pid,args 2>/dev/null | grep 'storybook' | grep -v grep | while read -r pid rest; do
+    local wt=$(_nxps_resolve_worktree "$pid")
+    echo "${pid// /}|storybook|${wt}"
+  done
+
+  # MCP servers
+  ps -eo pid,args 2>/dev/null | grep 'mcp-server' | grep -v grep | while read -r pid rest; do
+    local name=$(echo "$rest" | sed "s|.*node $HOME/||; s|/scripts/.*||; s|.*/out/||; s| .*||")
+    echo "${pid// /}|mcp:${name}|background"
+  done
+
+  # Language servers
+  ps -eo pid,args 2>/dev/null | grep 'language-server' | grep -v grep | while read -r pid rest; do
+    local name=$(echo "$rest" | sed 's|.*/||; s| .*||')
+    echo "${pid// /}|lsp:${name}|background"
+  done
+}
+
+# ── List ──
+_nxps_list() {
+  local lines=()
+  local idx=0
+
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && lines+=("$line")
+  done < <(_nxps_collect)
+
+  if [[ ${#lines[@]} -eq 0 ]]; then
+    echo "  No node services running."
+    return
+  fi
+
+  # Group by worktree
+  local -A groups
+  local group_order=()
+  for line in "${lines[@]}"; do
+    local wt="${line##*|}"
+    if [[ -z "${groups[$wt]+x}" ]]; then
+      group_order+=("$wt")
+    fi
+    groups[$wt]+="${line}"$'\n'
+  done
+
+  echo ""
+  echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+  printf "┃  🖥️  Node Services  %-43s ┃\n" "$(date '+%H:%M:%S')"
+  echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+  echo ""
+
+  local global_idx=0
+
+  for wt in "${group_order[@]}"; do
+    # Choose icon based on group type
+    local icon="📂"
+    [[ "$wt" == "background" ]] && icon="⚙️ "
+
+    echo "╭─ ${icon} ${wt}"
+
+    local group_lines=()
+    while IFS= read -r gl; do
+      [[ -n "$gl" ]] && group_lines+=("$gl")
+    done <<< "${groups[$wt]}"
+
+    for entry in "${group_lines[@]}"; do
+      ((global_idx++))
+      local pid="${entry%%|*}"
+      local rest="${entry#*|}"
+      local service="${rest%%|*}"
+
+      printf "│  %2d) %-6s %-40s\n" "$global_idx" "$pid" "$service"
+    done
+
+    echo "╰──────────────────────────────────────────────────────────────────"
+    echo ""
+  done
+
+  echo "💡 nxps kill → interactive  │  nxps kill-wt → by worktree"
+}
+
+# ── Kill by PID selection ──
+_nxps_kill() {
+  # If PIDs passed directly, kill them
+  if [[ $# -gt 0 ]]; then
+    echo "🔪 Killing PIDs: $*"
+    kill "$@" 2>/dev/null
+    sleep 0.5
+    # Check for survivors
+    local survivors=()
+    for pid in "$@"; do
+      if kill -0 "$pid" 2>/dev/null; then
+        survivors+=("$pid")
+      fi
+    done
+    if [[ ${#survivors[@]} -gt 0 ]]; then
+      echo "⚠️  Still alive: ${survivors[*]}"
+      echo -n "   Force kill (SIGKILL)? [y/N] "
+      read -r response
+      if [[ "$response" =~ ^[yY] ]]; then
+        kill -9 "${survivors[@]}" 2>/dev/null
+        echo "💀 Force killed."
+      fi
+    else
+      echo "✅ Done."
+    fi
+    return
+  fi
+
+  # Interactive mode — show list then prompt
+  local lines=()
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && lines+=("$line")
+  done < <(_nxps_collect)
+
+  if [[ ${#lines[@]} -eq 0 ]]; then
+    echo "  No node services running."
+    return
+  fi
+
+  # Display numbered list
+  echo ""
+  printf "  %-4s %-7s %-30s %s\n" "#" "PID" "SERVICE" "WORKTREE"
+  echo "  ──── ─────── ────────────────────────────── ─────────────────────────"
+
+  local idx=0
+  for line in "${lines[@]}"; do
+    ((idx++))
+    local pid="${line%%|*}"
+    local rest="${line#*|}"
+    local service="${rest%%|*}"
+    local wt="${rest##*|}"
+    printf "  %-4d %-7s %-30s %s\n" "$idx" "$pid" "$service" "$wt"
+  done
+
+  echo ""
+  echo "  Enter numbers to kill (e.g. 1 3 5, 1-4, or 'all'):"
+  echo -n "  → "
+  read -r selection
+
+  [[ -z "$selection" ]] && return
+
+  local pids_to_kill=()
+
+  if [[ "$selection" == "all" ]]; then
+    for line in "${lines[@]}"; do
+      pids_to_kill+=("${line%%|*}")
+    done
+  else
+    # Parse selection: supports "1 3 5", "1-4", "1,3,5", or combos
+    local tokens=(${(s: :)selection//,/ })
+    for token in "${tokens[@]}"; do
+      if [[ "$token" == *-* ]]; then
+        local start="${token%-*}"
+        local end="${token#*-}"
+        for ((i=start; i<=end; i++)); do
+          local idx_line="${lines[$i]}"
+          [[ -n "$idx_line" ]] && pids_to_kill+=("${idx_line%%|*}")
+        done
+      else
+        local idx_line="${lines[$token]}"
+        [[ -n "$idx_line" ]] && pids_to_kill+=("${idx_line%%|*}")
+      fi
+    done
+  fi
+
+  if [[ ${#pids_to_kill[@]} -eq 0 ]]; then
+    echo "  Nothing selected."
+    return
+  fi
+
+  echo ""
+  echo "  🔪 Killing ${#pids_to_kill[@]} process(es): ${pids_to_kill[*]}"
+  kill "${pids_to_kill[@]}" 2>/dev/null
+  sleep 0.5
+
+  local survivors=()
+  for pid in "${pids_to_kill[@]}"; do
+    if kill -0 "$pid" 2>/dev/null; then
+      survivors+=("$pid")
+    fi
+  done
+
+  if [[ ${#survivors[@]} -gt 0 ]]; then
+    echo "  ⚠️  Still alive: ${survivors[*]}"
+    echo -n "  Force kill (SIGKILL)? [y/N] "
+    read -r response
+    if [[ "$response" =~ ^[yY] ]]; then
+      kill -9 "${survivors[@]}" 2>/dev/null
+      echo "  💀 Force killed."
+    fi
+  else
+    echo "  ✅ All killed."
+  fi
+}
+
+# ── Kill by worktree ──
+_nxps_kill_worktree() {
+  local lines=()
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && lines+=("$line")
+  done < <(_nxps_collect)
+
+  if [[ ${#lines[@]} -eq 0 ]]; then
+    echo "  No node services running."
+    return
+  fi
+
+  # Collect unique worktrees
+  local -A wt_pids
+  local wt_order=()
+  for line in "${lines[@]}"; do
+    local pid="${line%%|*}"
+    local wt="${line##*|}"
+    if [[ -z "${wt_pids[$wt]+x}" ]]; then
+      wt_order+=("$wt")
+    fi
+    wt_pids[$wt]+="$pid "
+  done
+
+  echo ""
+  printf "  %-4s %-45s %s\n" "#" "WORKTREE" "PIDS"
+  echo "  ──── ───────────────────────────────────────────── ───────────────"
+
+  local idx=0
+  for wt in "${wt_order[@]}"; do
+    ((idx++))
+    local pids="${wt_pids[$wt]}"
+    local count=$(echo "$pids" | wc -w | tr -d ' ')
+    printf "  %-4d %-45s %s (%s)\n" "$idx" "$wt" "${pids% }" "${count} procs"
+  done
+
+  echo ""
+  echo "  Enter worktree numbers to kill (e.g. 1 2, or 'all'):"
+  echo -n "  → "
+  read -r selection
+
+  [[ -z "$selection" ]] && return
+
+  local pids_to_kill=()
+
+  if [[ "$selection" == "all" ]]; then
+    for wt in "${wt_order[@]}"; do
+      pids_to_kill+=(${(s: :)wt_pids[$wt]})
+    done
+  else
+    local tokens=(${(s: :)selection//,/ })
+    for token in "${tokens[@]}"; do
+      local wt="${wt_order[$token]}"
+      [[ -n "$wt" ]] && pids_to_kill+=(${(s: :)wt_pids[$wt]})
+    done
+  fi
+
+  if [[ ${#pids_to_kill[@]} -eq 0 ]]; then
+    echo "  Nothing selected."
+    return
+  fi
+
+  echo ""
+  echo "  🔪 Killing ${#pids_to_kill[@]} process(es): ${pids_to_kill[*]}"
+  kill "${pids_to_kill[@]}" 2>/dev/null
+  sleep 0.5
+
+  local survivors=()
+  for pid in "${pids_to_kill[@]}"; do
+    if kill -0 "$pid" 2>/dev/null; then
+      survivors+=("$pid")
+    fi
+  done
+
+  if [[ ${#survivors[@]} -gt 0 ]]; then
+    echo "  ⚠️  Still alive: ${survivors[*]}"
+    echo -n "  Force kill (SIGKILL)? [y/N] "
+    read -r response
+    if [[ "$response" =~ ^[yY] ]]; then
+      kill -9 "${survivors[@]}" 2>/dev/null
+      echo "  💀 Force killed."
+    fi
+  else
+    echo "  ✅ All killed."
+  fi
+}
