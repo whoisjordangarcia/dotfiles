@@ -38,5 +38,6 @@ lazy-lock.json
 # Git worktrees
 .worktrees/
 
-# Compiled Go binary
+# Compiled Go binaries
 bin/otobun
+bin/nxps

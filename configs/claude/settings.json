@@ -8,20 +8,34 @@
   "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
-      "Bash(gh pr create *)",
+      "Bash(gh api *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr diff *)",
       "Bash(gh pr list *)",
       "Bash(gh pr view *)",
+      "Bash(gh run view *)",
       "Bash(git add *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
       "Bash(git commit *)",
       "Bash(git diff *)",
+      "Bash(git fetch *)",
       "Bash(git log *)",
-      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(git rm *)",
+      "Bash(git stash *)",
       "Bash(git status *)",
+      "Bash(docker build *)",
       "Bash(npm info *)",
       "Bash(npm run *)",
+      "Bash(npx eslint *)",
+      "Bash(npx tsc *)",
       "Bash(nx *)",
       "Bash(pnpm *)",
       "Bash(task *)",
+      "Bash(wt *)",
+      "Skill(superpowers:brainstorming)",
+      "Skill(superpowers:writing-plans)",
       "mcp__pencil"
     ],
     "deny": [
@@ -37,26 +51,14 @@
     "ask": ["Bash(git push *)", "Bash(curl *)"],
     "defaultMode": "default"
   },
-  "hooks": {
-    "PermissionRequest": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/permission-notification.sh",
-            "async": true
-          }
-        ]
-      }
-    ]
-  },
+  "hooks": {},
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
     "padding": 0
   },
   "enabledPlugins": {
-    "claude-mem@thedotmack": false,
+    "claude-mem@thedotmack": true,
     "code-review@claude-plugins-official": false,
     "code-simplifier@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": false,
@@ -84,8 +86,17 @@
     "mode": "append",
     "verbs": ["Nesting", "sahh good", "ralphing"]
   },
-  "alwaysThinkingEnabled": false,
+  "alwaysThinkingEnabled": true,
   "autoUpdatesChannel": "latest",
   "skipDangerousModePermissionPrompt": false,
-  "effortLevel": "medium"
+  "effortLevel": "medium",
+  "sandbox": {
+    "enabled": false,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": false,
+    "network": {
+      "allowLocalBinding": true
+    },
+    "excludedCommands": ["git"]
+  }
 }

@@ -12,13 +12,8 @@ ZSHRC_TARGET="$HOME/.zshrc"
 ZSHRC_MODULES_SOURCE="$SCRIPT_DIR/../../configs/zshrc/.zshrc-modules"
 ZSHRC_MODULES_TARGET="$HOME/.zshrc-modules"
 
-# Install oh-my-zsh
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
-	info "Installing Oh My Zsh..."
-	sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-else
-	debug "Oh My Zsh already installed. Skipping."
-fi
+# Create plugin directory
+mkdir -p "$HOME/.zsh/plugins"
 
 link_file "$ZSHRC_SOURCE" "$ZSHRC_TARGET"
 
