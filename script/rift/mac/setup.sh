@@ -6,12 +6,15 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 source "$SCRIPT_DIR/../../common/log.sh"
 source "$SCRIPT_DIR/../../common/symlink.sh"
 
-AEROSPACE_SOURCE="$SCRIPT_DIR/../../configs/aerospace/.aerospace.toml"
-AEROSPACE_TARGET="$HOME/.aerospace.toml"
+# Rift config
+RIFT_SOURCE="$SCRIPT_DIR/../../configs/rift/config.toml"
+RIFT_TARGET="$HOME/.config/rift/config.toml"
 
-link_file "$AEROSPACE_SOURCE" "$AEROSPACE_TARGET"
+mkdir -p "$HOME/.config/rift"
+link_file "$RIFT_SOURCE" "$RIFT_TARGET"
 
-SKETCHYBAR_SOURCE="$SCRIPT_DIR/../../configs/aerospace/sketchybar"
+# Sketchybar config
+SKETCHYBAR_SOURCE="$SCRIPT_DIR/../../configs/rift/sketchybar"
 SKETCHYBAR_TARGET="$HOME/.config/sketchybar"
 
 link_file "$SKETCHYBAR_SOURCE" "$SKETCHYBAR_TARGET"
