@@ -42,5 +42,3 @@ cursor-style-blink = false
 shell-integration = zsh
 term = xterm-256color
 
-# macOS: Launch tmux on startup (attach to existing session or create new one)
-command = tmux new-session -A -s main
