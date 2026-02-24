@@ -1,118 +1,141 @@
 local icons = require("icons")
 local colors = require("colors")
+local settings = require("settings")
 
-local whitelist = { ["Spotify"] = true,
-                    ["Music"] = true    };
-
-local media_cover = sbar.add("item", {
-  position = "right",
-  background = {
-    image = {
-      string = "media.artwork",
-      scale = 0.85,
-    },
-    color = colors.transparent,
-  },
-  label = { drawing = false },
-  icon = { drawing = false },
-  drawing = false,
-  updates = true,
-  popup = {
-    align = "center",
-    horizontal = true,
-  }
+local media_back = sbar.add("item", "media.back", {
+	position = "left",
+	icon = {
+		string = icons.media.back,
+		font = {
+			family = settings.font.text,
+			size = 12.0,
+		},
+		color = colors.grey,
+		padding_right = 0,
+	},
+	label = { drawing = false },
+	background = { drawing = false },
+	drawing = false,
+	padding_left = 4,
+	padding_right = 0,
 })
 
-local media_artist = sbar.add("item", {
-  position = "right",
-  drawing = false,
-  padding_left = 3,
-  padding_right = 0,
-  width = 0,
-  icon = { drawing = false },
-  label = {
-    width = 0,
-    font = { size = 9 },
-    color = colors.subtext,
-    max_chars = 18,
-    y_offset = 6,
-  },
+local media_play = sbar.add("item", "media.play", {
+	position = "left",
+	icon = {
+		string = icons.media.play_pause,
+		font = {
+			family = settings.font.text,
+			size = 14.0,
+		},
+		color = colors.green,
+		padding_right = 0,
+	},
+	label = { drawing = false },
+	background = { drawing = false },
+	drawing = false,
+	padding_left = 2,
+	padding_right = 2,
 })
 
-local media_title = sbar.add("item", {
-  position = "right",
-  drawing = false,
-  padding_left = 3,
-  padding_right = 0,
-  icon = { drawing = false },
-  label = {
-    font = { size = 11 },
-    width = 0,
-    max_chars = 16,
-    y_offset = -5,
-  },
+local media_forward = sbar.add("item", "media.forward", {
+	position = "left",
+	icon = {
+		string = icons.media.forward,
+		font = {
+			family = settings.font.text,
+			size = 12.0,
+		},
+		color = colors.grey,
+		padding_right = 4,
+	},
+	label = { drawing = false },
+	background = { drawing = false },
+	drawing = false,
+	padding_left = 0,
+	padding_right = 2,
 })
 
-sbar.add("item", {
-  position = "popup." .. media_cover.name,
-  icon = { string = icons.media.back },
-  label = { drawing = false },
-  click_script = "nowplaying-cli previous",
-})
-sbar.add("item", {
-  position = "popup." .. media_cover.name,
-  icon = { string = icons.media.play_pause },
-  label = { drawing = false },
-  click_script = "nowplaying-cli togglePlayPause",
-})
-sbar.add("item", {
-  position = "popup." .. media_cover.name,
-  icon = { string = icons.media.forward },
-  label = { drawing = false },
-  click_script = "nowplaying-cli next",
+local media = sbar.add("item", "media", {
+	position = "left",
+	icon = { drawing = false },
+	label = {
+		font = {
+			family = settings.font.text,
+			size = 11.0,
+		},
+		color = colors.subtext,
+		max_chars = 40,
+	},
+	background = { drawing = false },
+	drawing = false,
+	updates = true,
+	update_freq = 5,
+	padding_left = 0,
+	padding_right = 4,
 })
 
-local interrupt = 0
-local function animate_detail(detail)
-  if (not detail) then interrupt = interrupt - 1 end
-  if interrupt > 0 and (not detail) then return end
+local spotify_cmd = 'osascript -e "try" -e "tell application \\"Spotify\\"" -e "set s to player state as string" -e "set t to name of current track" -e "set a to artist of current track" -e "return s & \\"||\\" & t & \\" - \\" & a" -e "end tell" -e "end try" -e "return \\"\\""'
 
-  sbar.animate("tanh", 30, function()
-    media_artist:set({ label = { width = detail and "dynamic" or 0 } })
-    media_title:set({ label = { width = detail and "dynamic" or 0 } })
-  end)
+local function set_drawing(visible)
+	media:set({ drawing = visible })
+	media_back:set({ drawing = visible })
+	media_play:set({ drawing = visible })
+	media_forward:set({ drawing = visible })
 end
 
-media_cover:subscribe("media_change", function(env)
-  if whitelist[env.INFO.app] then
-    local drawing = (env.INFO.state == "playing")
-    media_artist:set({ drawing = drawing, label = env.INFO.artist, })
-    media_title:set({ drawing = drawing, label = env.INFO.title, })
-    media_cover:set({ drawing = drawing })
+local function update_media(state, track_info)
+	if not track_info or track_info == "" then
+		set_drawing(false)
+		return
+	end
+	local is_playing = (state == "playing")
+	local play_color = is_playing and colors.green or colors.yellow
+	set_drawing(true)
+	media_play:set({
+		icon = { color = play_color },
+	})
+	media:set({
+		label = { string = track_info },
+	})
+end
 
-    if drawing then
-      animate_detail(true)
-      interrupt = interrupt + 1
-      sbar.delay(5, animate_detail)
-    else
-      media_cover:set({ popup = { drawing = false } })
-    end
-  end
+media:subscribe("media_change", function(env)
+	if env.INFO.app == "Spotify" then
+		update_media(env.INFO.state, env.INFO.title .. " - " .. env.INFO.artist)
+	end
 end)
 
-media_cover:subscribe("mouse.entered", function(env)
-  interrupt = interrupt + 1
-  animate_detail(true)
+media:subscribe({ "routine", "forced" }, function()
+	sbar.exec(spotify_cmd, function(result)
+		if not result or result == "" or result == "\n" then
+			set_drawing(false)
+			return
+		end
+		result = result:match("^%s*(.-)%s*$")
+		if result == "" then
+			set_drawing(false)
+			return
+		end
+		local state, track_info = result:match("^(.-)%|%|(.+)$")
+		if state and track_info then
+			update_media(state, track_info)
+		end
+	end)
 end)
 
-media_cover:subscribe("mouse.exited", function(env)
-  animate_detail(false)
+media_back:subscribe("mouse.clicked", function()
+	sbar.exec('osascript -e "tell application \\"Spotify\\" to previous track"')
 end)
 
-media_cover:subscribe("mouse.clicked", function(env)
-  media_cover:set({ popup = { drawing = "toggle" }})
+media_play:subscribe("mouse.clicked", function()
+	sbar.exec('osascript -e "tell application \\"Spotify\\" to playpause"')
 end)
 
-media_title:subscribe("mouse.exited.global", function(env)
-  media_cover:set({ popup = { drawing = false }})
+media_forward:subscribe("mouse.clicked", function()
+	sbar.exec('osascript -e "tell application \\"Spotify\\" to next track"')
+end)
+
+media:subscribe("mouse.clicked", function()
+	sbar.exec('osascript -e "tell application \\"Spotify\\" to playpause"')
 end)
