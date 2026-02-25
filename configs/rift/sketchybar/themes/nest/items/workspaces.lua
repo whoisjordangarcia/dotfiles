@@ -35,10 +35,16 @@ local function updateWindows(workspace_index)
 			icon_line = icon_line .. " " .. icon
 		end
 
+		local is_focused = (focused_index == rift_ws_index)
+
+		if is_focused then
+			sbar.trigger("workspace_app_change", { HAS_APP = no_app and "false" or "true" })
+		end
+
 		sbar.animate("tanh", 10, function()
-			if no_app and focused_index == rift_ws_index then
+			if no_app and is_focused then
 				workspaces[workspace_index]:set({
-					icon = { drawing = true },
+					icon = { drawing = true, padding_right = 8 },
 					label = {
 						string = "",
 						drawing = false,
@@ -96,7 +102,7 @@ for workspace_index = 1, max_workspaces do
 		padding_left = 1,
 		background = {
 			color = colors.surface0,
-			corner_radius = 6,
+			corner_radius = 8,
 			height = 24,
 			border_width = 0,
 		},

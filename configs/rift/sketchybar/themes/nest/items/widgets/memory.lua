@@ -40,7 +40,7 @@ memory:subscribe({ "routine", "forced" }, function()
 				color = colors.orange
 			end
 			memory:set({
-				label = { string = used .. "%", color = color },
+				label = { string = string.format("%02d", used) .. "%", color = color },
 			})
 		end
 	end)

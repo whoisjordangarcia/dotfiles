@@ -34,7 +34,7 @@ stack_offset = 40.0
 default_orientation = "perpendicular"
 
 [settings.layout.gaps.outer]
-top = 22
+top = 10
 left = 10
 bottom = 10
 right = 10
@@ -81,14 +81,6 @@ app_rules = [
   { app_id = "com.1password.1password", floating = true },
   { app_id = "com.flexibits.fantastical2.mac", floating = true },
 
-  # Workspace assignments (rift is 0-indexed: aerospace ws 1 = rift ws 0)
-  { app_id = "com.mitchellh.ghostty", workspace = 0 },
-  { app_id = "com.brave.Browser", workspace = 1 },
-  { app_id = "com.tinyspeck.slackmacgap", workspace = 2 },
-  { app_id = "com.microsoft.teams2", workspace = 3 },
-  { app_id = "com.microsoft.Outlook", workspace = 4 },
-  { app_id = "md.obsidian", workspace = 5 },
-  { app_id = "com.spotify.client", workspace = 8 },
 ]
 
 # Modifier combinations (i3/sway style: Option as $mod)
@@ -99,17 +91,8 @@ comb1 = "Option + Shift"
 # i3/sway keybinds using Option as $mod
 # Navigation: jkl; (i3 default)
 
-# Focus
-"Option + J" = { move_focus = "left" }
-"Option + K" = { move_focus = "down" }
-"Option + L" = { move_focus = "up" }
-"Option + Semicolon" = { move_focus = "right" }
-
-# Move windows
-"comb1 + J" = { move_node = "left" }
-"comb1 + K" = { move_node = "down" }
-"comb1 + L" = { move_node = "up" }
-"comb1 + Semicolon" = { move_node = "right" }
+# Layout toggle
+"Option + J" = "toggle_orientation"
 
 # Workspaces (Option + 1-9,0)
 "Option + 1" = { switch_to_workspace = 0 }
@@ -123,17 +106,17 @@ comb1 = "Option + Shift"
 "Option + 9" = { switch_to_workspace = 8 }
 "Option + 0" = { switch_to_workspace = 9 }
 
-# Move window to workspace
-"comb1 + 1" = { move_window_to_workspace = 0 }
-"comb1 + 2" = { move_window_to_workspace = 1 }
-"comb1 + 3" = { move_window_to_workspace = 2 }
-"comb1 + 4" = { move_window_to_workspace = 3 }
-"comb1 + 5" = { move_window_to_workspace = 4 }
-"comb1 + 6" = { move_window_to_workspace = 5 }
-"comb1 + 7" = { move_window_to_workspace = 6 }
-"comb1 + 8" = { move_window_to_workspace = 7 }
-"comb1 + 9" = { move_window_to_workspace = 8 }
-"comb1 + 0" = { move_window_to_workspace = 9 }
+# Move window to workspace and follow
+"comb1 + 1" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 0 && rift-cli execute workspace switch 0"] }
+"comb1 + 2" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 1 && rift-cli execute workspace switch 1"] }
+"comb1 + 3" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 2 && rift-cli execute workspace switch 2"] }
+"comb1 + 4" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 3 && rift-cli execute workspace switch 3"] }
+"comb1 + 5" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 4 && rift-cli execute workspace switch 4"] }
+"comb1 + 6" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 5 && rift-cli execute workspace switch 5"] }
+"comb1 + 7" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 6 && rift-cli execute workspace switch 6"] }
+"comb1 + 8" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 7 && rift-cli execute workspace switch 7"] }
+"comb1 + 9" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 8 && rift-cli execute workspace switch 8"] }
+"comb1 + 0" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 9 && rift-cli execute workspace switch 9"] }
 
 # Workspace back and forth
 "Option + Tab" = "switch_to_last_workspace"
@@ -147,6 +130,7 @@ comb1 = "Option + Shift"
 "Option + Shift + F" = "toggle_fullscreen_within_gaps"
 
 # Floating
+"Option + W" = "toggle_window_floating"
 "Option + Shift + Space" = "toggle_window_floating"
 "comb1 + Ctrl + Space" = "toggle_focus_floating"
 
