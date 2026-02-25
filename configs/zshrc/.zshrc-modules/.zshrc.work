@@ -16,6 +16,7 @@ alias ghrun='gh run view'
 alias ghwatch='gh run watch'
 
 # Simple aliases for current branch PR operations
+alias pr-open='gh pr view --web'     # Open PR in browser for current branch
 alias pr-check='ghc'                # Check PR status for current branch
 alias pr-watch='ghcr'               # Watch workflow run for current branch (jobs only)
 alias pr-watch-detailed='ghcr-detailed'  # Watch with full step details
