@@ -10,6 +10,7 @@ sbar.begin_config()
 -- Define custom events for rift window manager integration
 sbar.add("event", "rift_workspace_changed")
 sbar.add("event", "rift_windows_changed")
+sbar.add("event", "workspace_app_change")
 
 require("bar")
 require("default")

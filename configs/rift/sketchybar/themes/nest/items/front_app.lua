@@ -19,6 +19,11 @@ front_app:subscribe("front_app_switched", function(env)
   front_app:set({ label = { string = env.INFO } })
 end)
 
+front_app:subscribe("workspace_app_change", function(env)
+  local has_app = env.HAS_APP == "true"
+  front_app:set({ drawing = has_app })
+end)
+
 front_app:subscribe("mouse.clicked", function(env)
   sbar.trigger("swap_menus_and_spaces")
 end)

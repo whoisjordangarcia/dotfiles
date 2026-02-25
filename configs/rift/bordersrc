@@ -7,6 +7,7 @@ options=(
 	active_color=0xffcba6f7
 	inactive_color=0xff585b70
 	background_color=0x301e1e2e
+	blacklist="sketchybar"
 )
 
 borders "${options[@]}"

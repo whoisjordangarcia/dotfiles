@@ -40,7 +40,7 @@ volume:subscribe("volume_change", function(env)
 
 	volume:set({
 		icon = { string = icon },
-		label = { string = vol .. "%" },
+		label = { string = string.format("%02d", vol) .. "%" },
 	})
 end)
 
