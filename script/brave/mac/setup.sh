@@ -53,6 +53,12 @@ sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderName string 'DuckDuck
 sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderSearchURL string 'https://duckduckgo.com/?q={searchTerms}'" "$PLIST_FILE"
 sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderSuggestURL string 'https://duckduckgo.com/ac/?q={searchTerms}&type=list'" "$PLIST_FILE"
 
+# Default search provider for private/incognito windows
+sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderInPrivateEnabled bool true" "$PLIST_FILE"
+sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderInPrivateName string 'DuckDuckGo'" "$PLIST_FILE"
+sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderInPrivateSearchURL string 'https://duckduckgo.com/?q={searchTerms}'" "$PLIST_FILE"
+sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderInPrivateSuggestURL string 'https://duckduckgo.com/ac/?q={searchTerms}&type=list'" "$PLIST_FILE"
+
 # Disable built-in password manager and autofill (use external like 1Password)
 sudo /usr/libexec/PlistBuddy -c "Add :PasswordManagerEnabled bool false" "$PLIST_FILE"
 sudo /usr/libexec/PlistBuddy -c "Add :AutofillAddressEnabled bool false" "$PLIST_FILE"

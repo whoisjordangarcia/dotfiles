@@ -11,12 +11,8 @@ cask 'bartender'
 brew 'sketchybar'
 brew 'borders'
 cask '1password-cli'
-brew 'black'
 brew 'lazydocker'
-brew 'uv'
 cask 'obsidian'
-brew 'raine/workmux/workmux'
-brew 'deno'
 
 # Sketchybar Dependencies (from legacy)
 brew 'lua'

@@ -16,7 +16,6 @@ brew 'bat'
 brew 'tmuxinator'
 brew 'yq' # tmux statusbar
 brew 'go'
-brew 'terminal-notifier' # macOS notifications for scripts
 cask 'tailscale-app'
 
 # Essential Apps
