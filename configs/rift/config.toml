@@ -5,9 +5,9 @@ animate = true
 animation_duration = 0.3
 animation_fps = 100.0
 
-focus_follows_mouse = true
-mouse_follows_focus = true
-mouse_hides_on_focus = true
+focus_follows_mouse = false 
+mouse_follows_focus = false 
+mouse_hides_on_focus = false 
 default_disable = false
 
 auto_focus_blacklist = []
@@ -72,16 +72,16 @@ workspace_names = [
 ]
 
 # App rules — ported from aerospace
-app_rules = [
-  # Floating
-  { app_id = "com.apple.finder", floating = true },
-  { app_id = "io.rancherdesktop.app", floating = true },
-  { app_id = "com.cisco.secureclient.gui", floating = true },
-  { app_id = "com.apple.systempreferences", floating = true },
-  { app_id = "com.1password.1password", floating = true },
-  { app_id = "com.flexibits.fantastical2.mac", floating = true },
-
-]
+# app_rules = [
+#   # Floating
+#   { app_id = "com.apple.finder", floating = true },
+#   { app_id = "io.rancherdesktop.app", floating = true },
+#   { app_id = "com.cisco.secureclient.gui", floating = true },
+#   { app_id = "com.apple.systempreferences", floating = true },
+#   { app_id = "com.1password.1password", floating = true },
+#   { app_id = "com.flexibits.fantastical2.mac", floating = true },
+#
+# ]
 
 # Modifier combinations (i3/sway style: Option as $mod)
 [modifier_combinations]
