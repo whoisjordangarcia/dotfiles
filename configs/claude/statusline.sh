@@ -24,8 +24,9 @@ COLOR_PCT_CRITICAL="$COLOR_DEL"
 COLOR_DUR="$COLOR_DIM"
 COLOR_GIT="$COLOR_ACCENT"
 COLOR_WORKTREE="$COLOR_DIM"
-COLOR_PR="$COLOR_WHITE"
-COLOR_PR_MERGED="$COLOR_DIM"
+COLOR_PR_OPEN="$COLOR_ADD"
+COLOR_PR_DRAFT="$COLOR_DIM"
+COLOR_PR_MERGED=$'\033[38;5;141m'
 COLOR_SYNC_AHEAD="$COLOR_WHITE"
 COLOR_SYNC_BEHIND="$COLOR_WHITE"
 COLOR_CACHE="$COLOR_DIM"
@@ -36,6 +37,8 @@ COLOR_COMMIT_FRESH="$COLOR_ADD"
 COLOR_COMMIT_STALE="$COLOR_WARN"
 COLOR_COMMIT_OLD="$COLOR_DEL"
 COLOR_BASE="$COLOR_DIM"
+COLOR_DOCKER="$COLOR_ADD"
+COLOR_DOCKER_OFF="$COLOR_DIM"
 
 # ─── Cache config ────────────────────────────────────────────────────
 GIT_CACHE_DIR="/tmp/claude-statusline-git-cache"
@@ -44,6 +47,8 @@ PR_CACHE_DIR="/tmp/claude-statusline-pr-cache"
 PR_CACHE_TTL=300    # 5 minutes
 CI_CACHE_TTL=120    # 2 minutes — CI changes more often than PR metadata
 BASE_CACHE_TTL=600  # 10 minutes — base branch rarely changes
+DOCKER_CACHE_DIR="/tmp/claude-statusline-docker-cache"
+DOCKER_CACHE_TTL=30  # 30 seconds — containers can start/stop frequently
 
 # ─── Helper: check if cache file is fresh ────────────────────────────
 cache_fresh() {
@@ -70,7 +75,7 @@ format_commit_age() {
 	else
 		label="$(( secs / 86400 ))d ago"; color="$COLOR_COMMIT_OLD"
 	fi
-	echo "${color}${label}${COLOR_RESET} ${COLOR_DIM}since commit${COLOR_RESET}"
+	echo "${COLOR_DIM}${label} since commit${COLOR_RESET}"
 }
 
 # ─── Single jq call to extract all fields ────────────────────────────
@@ -279,24 +284,51 @@ if [ -n "$branch" ] && [ -n "$cwd" ]; then
 	pr_cache_file="$PR_CACHE_DIR/$pr_cache_key"
 
 	if cache_fresh "$pr_cache_file" "$PR_CACHE_TTL"; then
-		IFS=$'\t' read -r pr_url pr_state <<< "$(cat "$pr_cache_file")"
+		IFS=$'\t' read -r pr_url pr_state pr_draft <<< "$(cat "$pr_cache_file")"
 	else
-		pr_json=$(cd "$cwd" 2>/dev/null && gh pr view "$branch" --json url,state 2>/dev/null || echo "")
+		pr_json=$(cd "$cwd" 2>/dev/null && gh pr view "$branch" --json url,state,isDraft 2>/dev/null || echo "")
 		pr_url=""
 		pr_state=""
+		pr_draft=""
 		if [ -n "$pr_json" ]; then
 			pr_url=$(echo "$pr_json" | jq -r '.url // ""')
 			pr_state=$(echo "$pr_json" | jq -r '.state // ""')
+			pr_draft=$(echo "$pr_json" | jq -r '.isDraft // false')
 		fi
-		printf '%s\t%s' "$pr_url" "$pr_state" > "$pr_cache_file"
+		printf '%s\t%s\t%s' "$pr_url" "$pr_state" "$pr_draft" > "$pr_cache_file"
 	fi
 
 	if [ -n "$pr_url" ]; then
 		pr_number="${pr_url##*/}"
 		if [ "$pr_state" = "MERGED" ]; then
-			pr_display="${COLOR_PR_MERGED}#${pr_number} merged${COLOR_RESET}"
+			pr_display="${COLOR_PR_MERGED} #${pr_number} merged${COLOR_RESET}"
+		elif [ "$pr_state" = "OPEN" ] && [ "$pr_draft" = "true" ]; then
+			pr_display="${COLOR_PR_DRAFT} #${pr_number} draft${COLOR_RESET}"
+
+			# CI status for draft PRs too
+			ci_cache_file="$PR_CACHE_DIR/${pr_cache_key}_ci"
+			if cache_fresh "$ci_cache_file" "$CI_CACHE_TTL"; then
+				ci_display=$(cat "$ci_cache_file")
+			else
+				ci_display=""
+				ci_json=$(cd "$cwd" 2>/dev/null && gh pr checks "$branch" --json name,state,conclusion 2>/dev/null || echo "")
+				if [ -n "$ci_json" ] && [ "$ci_json" != "[]" ] && [ "$ci_json" != "null" ]; then
+					failed=$(echo "$ci_json" | jq '[.[] | select(.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT")] | length')
+					pending=$(echo "$ci_json" | jq '[.[] | select(.state == "PENDING" or .state == "QUEUED" or .state == "IN_PROGRESS")] | length')
+					passed=$(echo "$ci_json" | jq '[.[] | select(.conclusion == "SUCCESS" or .conclusion == "NEUTRAL" or .conclusion == "SKIPPED")] | length')
+
+					if [ "$failed" -gt 0 ] 2>/dev/null; then
+						ci_display="${COLOR_CI_FAIL}✗${COLOR_RESET}"
+					elif [ "$pending" -gt 0 ] 2>/dev/null; then
+						ci_display="${COLOR_CI_PENDING}⏳${COLOR_RESET}"
+					elif [ "$passed" -gt 0 ] 2>/dev/null; then
+						ci_display="${COLOR_CI_PASS}✓${COLOR_RESET}"
+					fi
+				fi
+				echo "$ci_display" > "$ci_cache_file"
+			fi
 		elif [ "$pr_state" = "OPEN" ]; then
-			pr_display="${COLOR_PR}#${pr_number}${COLOR_RESET}"
+			pr_display="${COLOR_PR_OPEN} #${pr_number}${COLOR_RESET}"
 
 			# CI status only for open PRs
 			ci_cache_file="$PR_CACHE_DIR/${pr_cache_key}_ci"
@@ -321,7 +353,7 @@ if [ -n "$branch" ] && [ -n "$cwd" ]; then
 				echo "$ci_display" > "$ci_cache_file"
 			fi
 		elif [ "$pr_state" = "CLOSED" ]; then
-			pr_display="${COLOR_DIM}#${pr_number} closed${COLOR_RESET}"
+			pr_display="${COLOR_DIM} #${pr_number} closed${COLOR_RESET}"
 		fi
 	fi
 fi
@@ -338,7 +370,7 @@ fi
 # ─── Assemble output ─────────────────────────────────────────────────
 sep=" ${COLOR_DIM}·${COLOR_RESET} "
 
-# Line 1: session vitals + commit age + diff stats + PR + CI
+# Line 1: session vitals + commit age
 line1="${COLOR_COST}${cost_display}${COLOR_RESET}"
 if [[ ! "$model_short" =~ ^Opus ]]; then
 	line1="${COLOR_MODEL}${model_short}${COLOR_RESET}${sep}${line1}"
@@ -347,36 +379,146 @@ fi
 [ -n "$duration_display" ] && line1+="${sep}${COLOR_DUR}${duration_display}${COLOR_RESET}"
 line1+="${sep}${context_bar}${cache_display}"
 [ -n "$commit_age_display" ] && line1+="${sep}${commit_age_display}"
-[ -n "$lines_display" ] && line1+="${sep}${lines_display}"
-if [ -n "$pr_display" ]; then
-	line1+="${sep}${pr_display}"
-	[ -n "$ci_display" ] && line1+=" ${ci_display}"
+
+# Line 2: 🌿 branch ←base  sync  dirty  🐳 docker  ⬡ node
+line2=""
+docker_display=""
+node_display=""
+
+# Project name: use main repo name when in a worktree, else cwd basename
+project_name=""
+if [ "$is_worktree" = true ] && [ -n "$git_common" ]; then
+	main_repo=$(cd "$cwd" 2>/dev/null && cd "$git_common/.." 2>/dev/null && pwd)
+	[ -n "$main_repo" ] && project_name="${main_repo##*/}"
+elif [ -n "$cwd" ]; then
+	project_name="${cwd##*/}"
 fi
 
-# Line 2: branch ←base  sync  dirty
-line2=""
-
 if [ -n "$branch" ]; then
-	line2+="${COLOR_GIT}${branch}${COLOR_RESET}"
+	[ -n "$project_name" ] && line2+="${COLOR_WHITE}${project_name}${COLOR_RESET}${sep}"
+	# Worktree indicator: ⎇ #PR (color-coded by state + CI) or ⎇ wt-name
+	if [ "$is_worktree" = true ] && [ -n "$wt_name" ]; then
+		if [ -n "$pr_number" ]; then
+			# Color ⎇ #PR by state: green=open, gray=draft, purple=merged, dim=closed
+			pr_color="$COLOR_PR_OPEN"
+			if [ "$pr_state" = "MERGED" ]; then
+				pr_color="$COLOR_PR_MERGED"
+			elif [ "$pr_state" = "OPEN" ] && [ "$pr_draft" = "true" ]; then
+				pr_color="$COLOR_PR_DRAFT"
+			elif [ "$pr_state" = "CLOSED" ]; then
+				pr_color="$COLOR_DIM"
+			fi
+			line2+="${pr_color}⎇ #${pr_number}${COLOR_RESET}${sep}"
+		else
+			norm_wt=$(echo "$wt_name" | tr '/' '-')
+			norm_br=$(echo "$branch" | tr '/' '-')
+			[ "$norm_wt" != "$norm_br" ] && line2+="${COLOR_WORKTREE}⎇ ${wt_name}${COLOR_RESET}${sep}"
+		fi
+	elif [ -n "$pr_url" ]; then
+		# Non-worktree but has PR: show color-coded PR indicator
+		pr_color="$COLOR_PR_OPEN"
+		if [ "$pr_state" = "MERGED" ]; then
+			pr_color="$COLOR_PR_MERGED"
+		elif [ "$pr_state" = "OPEN" ] && [ "$pr_draft" = "true" ]; then
+			pr_color="$COLOR_PR_DRAFT"
+		elif [ "$pr_state" = "CLOSED" ]; then
+			pr_color="$COLOR_DIM"
+		fi
+		line2+="${pr_color}#${pr_number}${COLOR_RESET}${sep}"
+	fi
+	line2+="${COLOR_DIM}🌿 ${COLOR_GIT}${branch}${COLOR_RESET}"
 	[ -n "$base_branch_display" ] && line2+=" ${base_branch_display}"
 	[ -n "$sync_display" ] && line2+="${sep}${sync_display}"
 	[ -n "$dirty_display" ] && line2+="${sep}${dirty_display}"
 fi
 
 if [ -z "$line2" ] && [ -n "$cwd" ]; then
-	display_cwd="${cwd/#$HOME/~}"
-	line2="${COLOR_DIM}${display_cwd}${COLOR_RESET}"
+	# No git — show full path with ~ shorthand
+	display_path="${cwd/#$HOME/~}"
+	line2="${COLOR_WHITE}${display_path}${COLOR_RESET}"
 fi
 
-# Line 3: worktree name (only when in a worktree)
-line3=""
+# Lines changed always shows on line 2 (session-level, not git-specific)
+[ -n "$lines_display" ] && { [ -n "$line2" ] && line2+="${sep}"; line2+="${lines_display}"; }
+
+# Docker + Node detection (only when in a worktree)
 if [ "$is_worktree" = true ]; then
-	line3="${COLOR_DIM}🌿 ${COLOR_WORKTREE}${wt_name}${COLOR_RESET}"
+	mkdir -p "$DOCKER_CACHE_DIR"
+	wt_cache_key=$(printf '%s' "$wt_name" | md5 -q 2>/dev/null || printf '%s' "$wt_name" | md5sum | cut -d' ' -f1)
+
+	# Docker container detection for this worktree
+	if command -v docker &>/dev/null; then
+		docker_cache_key="$wt_cache_key"
+		docker_cache_file="$DOCKER_CACHE_DIR/$docker_cache_key"
+
+		if cache_fresh "$docker_cache_file" "$DOCKER_CACHE_TTL"; then
+			docker_display=$(cat "$docker_cache_file")
+		else
+			running_containers=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -F "$wt_name" || true)
+			if [ -n "$running_containers" ]; then
+				# Extract service names (last segment after worktree name)
+				services=""
+				while IFS= read -r container; do
+					svc="${container##*"${wt_name}"-}"
+					[ -n "$services" ] && services+=","
+					services+="$svc"
+				done <<< "$running_containers"
+				docker_display="${COLOR_DOCKER}🐳 ${services}${COLOR_RESET}"
+			fi
+			echo "$docker_display" > "$docker_cache_file"
+		fi
+	fi
+	[ -n "$docker_display" ] && line2+="${sep}${docker_display}"
+
+	# Node app detection for this worktree (apps listening on ports)
+	if [ -n "$cwd" ]; then
+		node_cache_file="$DOCKER_CACHE_DIR/${wt_cache_key}_node"
+
+		if cache_fresh "$node_cache_file" "$DOCKER_CACHE_TTL"; then
+			node_display=$(cat "$node_cache_file")
+		else
+			# Get all node PIDs listening on TCP ports
+			listening=$(lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | awk '$1 == "node" && $2 ~ /^[0-9]+$/ {print $2, $9}' | sort -u)
+			app_entries=""
+			if [ -n "$listening" ]; then
+				while read -r l_pid l_addr; do
+					l_port=$(echo "$l_addr" | grep -oE '[0-9]+$')
+					[ -z "$l_port" ] && continue
+					# Check if this process belongs to our worktree via args OR cwd
+					proc_args=$(ps -p "$l_pid" -o args= 2>/dev/null || true)
+					proc_cwd=$(lsof -p "$l_pid" -a -d cwd -Fn 2>/dev/null | grep '^n/' | head -1 | cut -c2-)
+					in_worktree=false
+					if echo "$proc_args" | grep -qF "$cwd"; then
+						in_worktree=true
+					elif [ -n "$proc_cwd" ] && echo "$proc_cwd" | grep -qF "$cwd"; then
+						in_worktree=true
+					fi
+					[ "$in_worktree" = false ] && continue
+					# Extract app name from args or cwd path
+					app_name=""
+					combined="$proc_args $proc_cwd"
+					if echo "$combined" | grep -qE 'apps/backend/[^/]+/dist'; then
+						app_name=$(echo "$combined" | sed -n 's|.*apps/backend/\([^/]*\)/dist.*|\1|p' | head -1)
+					elif echo "$combined" | grep -qE 'apps/frontend/[^/]+'; then
+						app_name=$(echo "$combined" | sed -n 's|.*apps/frontend/\([^/]*\).*|\1|p' | head -1)
+					elif echo "$proc_args" | grep -qE 'nx\.js run [^:]+:'; then
+						app_name=$(echo "$proc_args" | sed -n 's|.*nx\.js run \([^:]*\):.*|\1|p')
+					fi
+					[ -n "$app_name" ] && app_entries="${app_entries}${app_name}:${l_port}\n"
+				done <<< "$listening"
+			fi
+			if [ -n "$app_entries" ]; then
+				parts=$(printf '%b' "$app_entries" | sort -u -t: -k1,1 | tr '\n' ',' | sed 's/,$//')
+				node_display="${COLOR_DOCKER}⬡ ${parts}${COLOR_RESET}"
+			fi
+			echo "$node_display" > "$node_cache_file"
+		fi
+	fi
+	[ -n "$node_display" ] && line2+="${sep}${node_display}"
 fi
 
 # Print
 printf "%b\n" "$line1"
 [ -n "$line2" ] && printf "%b\n" "$line2"
-[ -n "$line3" ] && printf "%b\n" "$line3"
 
 exit 0

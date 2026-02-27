@@ -148,7 +148,7 @@ assert_not_contains "hides cache when zero reads" "$out" "⚡"
 printf "\n\033[38;5;141m━━━ Fallback CWD (no git) ━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 out=$(run_statusline_plain "$INPUT_FULL")
-assert_contains "shows cwd when no git" "$out" "/tmp"
+assert_contains "shows project name when no git" "$out" "tmp"
 
 printf "\n\033[38;5;141m━━━ Output Structure ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
