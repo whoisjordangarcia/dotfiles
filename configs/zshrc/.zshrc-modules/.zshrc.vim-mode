@@ -14,8 +14,19 @@ zle -N zle-keymap-select
 # Start with beam cursor
 echo -ne '\e[5 q'
 
+# Fix paste switching to normal mode — bracketed paste escape sequences
+# start with \e which vi-mode interprets as Escape
+if [[ ${ZSH_VERSION} == (5.<8->*|<6->.*) ]]; then
+  autoload -Uz bracketed-paste-magic
+  zle -N bracketed-paste bracketed-paste-magic
+fi
+
 # Better vi mode bindings (preserve useful emacs-style shortcuts)
 # Note: Ctrl-R is handled by fzf plugin for fuzzy history search
+# Allow backspace/delete to work freely past insertion point
+bindkey '^?' backward-delete-char                  # Backspace
+bindkey '^H' backward-delete-char                  # Ctrl-H (alternate backspace)
+
 bindkey '^A' beginning-of-line                    # Keep Ctrl-A
 bindkey '^E' end-of-line                          # Keep Ctrl-E
 bindkey '^K' kill-line                            # Keep Ctrl-K
