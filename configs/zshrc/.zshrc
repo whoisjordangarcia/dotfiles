@@ -12,8 +12,9 @@ source_files() {
 }
 
 # defaults
+source ~/.zshrc-modules/.zshrc.history
 source ~/.zshrc-modules/.zshrc.init
-source ~/.zshrc-modules/.zshrc.ohmyzsh
+source ~/.zshrc-modules/.zshrc.plugins
 source ~/.zshrc-modules/.zshrc.envvars
 source ~/.zshrc-modules/.zshrc.aliases
 source ~/.zshrc-modules/.zshrc.functions
@@ -21,26 +22,23 @@ source ~/.zshrc-modules/.zshrc.paths
 source ~/.zshrc-modules/.zshrc.appearance
 source ~/.zshrc-modules/.zshrc.vim-mode
 
-
-export PATH="$HOME/.pyenv/shims:$PATH"
+#export PATH="$HOME/.pyenv/shims:$PATH"
 
 # Custom man pages for dotfiles
 export MANPATH="$HOME/dev/dotfiles/configs/man:$MANPATH"
-
-# special config files to try loading
-special_config_files=(
-    ~/.zshrc-work-mode
-)
 
 # secrets
 [[ -f ~/.zshrc-modules/.zshrc.sec ]] && source ~/.zshrc-modules/.zshrc.sec
 [[ -f ~/.zshrc-sec ]] && source ~/.zshrc-sec
 
-if ! source_files "${special_config_files[@]}"; then
-  [[ -f ~/.zshrc-modules/.zshrc.personal ]] && source ~/.zshrc-modules/.zshrc.personal
+# Work mode: touch ~/.zshrc-work-mode to enable
+if [[ -f ~/.zshrc-work-mode ]]; then
+    [[ -f ~/.zshrc-modules/.zshrc.work ]] && source ~/.zshrc-modules/.zshrc.work
+else
+    [[ -f ~/.zshrc-modules/.zshrc.personal ]] && source ~/.zshrc-modules/.zshrc.personal
 fi
 
-export GPG_TTY=$(tty)
+export GPG_TTY=$TTY
 export PATH="$HOME/.local/bin:$PATH"
 
-alias claude-mem='bun "/Users/nest/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'
+#alias claude-mem='bun "/Users/nest/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'

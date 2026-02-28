@@ -22,6 +22,7 @@ component_installation=(
 	claude
 	codex
 	fastfetch
+	ssh
 	opencode
 	brave/mac
 )

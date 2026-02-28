@@ -7,11 +7,7 @@
 *.cursorrules
 .aider*
 avante.md
-.claude
-AGENTS.md
 CLAUDE.md
-.github/copilot-instructions.md
-GEMINI.md
 
 # OS generated files #
 ######################
@@ -31,6 +27,7 @@ Thumbs.db
 *.swo
 *~
 pyrightconfig.json
+oxlint.json
 .rgignore
 .metals
 
@@ -60,5 +57,12 @@ pytest.local.ini
 #*.sqlite
 
 
-# work specific
-requirements-filtered.txt
+# Plans
+docs/plans/
+
+# Ralph
+.ralph
+.ralphrc
+tasks/*
+
+.settings.local.json

@@ -62,6 +62,10 @@ gui:
   nerdFontsVersion: "3"
   showFileIcons: true
   filterMode: fuzzy
+refresher:
+  refreshInterval: 30
+  fetchInterval: 120
 git:
   commit:
     signOff: true
+  branchPrefix: "jordan"

@@ -15,8 +15,13 @@ clipboard-write = allow
 
 confirm-close-surface = false
 
-font-family = GohuFont 14 Nerd Font
+#font-family = GohuFont 14 Nerd Font
+font-family = CozetteVector
 font-size = 16
+
+# Platform-specific overrides (only loaded if file exists)
+config-file = ?platform-linux
+config-file = ?platform-macos
 
 macos-titlebar-style = hidden
 
@@ -26,15 +31,25 @@ mouse-hide-while-typing = true
 
 unfocused-split-opacity = 0.9
 
-window-decoration = auto 
-window-padding-x = 14
-window-padding-y = 14
+window-decoration = true
+window-padding-x = 5
+window-padding-y = 14,0
+window-padding-balance = true
+window-padding-color = extend
 confirm-close-surface = false
 resize-overlay = never
 
 cursor-style = "block"
 cursor-style-blink = false
 
-# Fix double input with tmux - disable shell integration entirely
-shell-integration = zsh 
-term = xterm-256color 
+# Cursor styling + SSH session terminfo
+# no-cursor: prevent shell integration from overriding cursor-style settings above
+# ssh-env: auto-send TERM/TERMINFO to remote hosts so ghostty terminfo works over SSH
+shell-integration-features = no-cursor,ssh-env
+
+shell-integration = zsh
+term = ghostty
+
+# Fix general slowness on Hyprland
+async-backend = epoll
+

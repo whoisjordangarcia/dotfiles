@@ -11,26 +11,26 @@ PLIST_FILE="$MANAGED_PREFS_DIR/com.brave.Browser.plist"
 
 # Check if Brave is installed
 if [ ! -d "/Applications/Brave Browser.app" ]; then
-    info "Brave Browser not found. Install via: brew install --cask brave-browser"
-    info "Skipping Brave policy setup..."
-    exit 0
+	warn "Brave Browser not found. Install via: brew install --cask brave-browser"
+	warn "Skipping Brave policy setup..."
+	exit 0
 fi
 
 # Create Managed Preferences directory if needed (requires sudo)
 if [ ! -d "$MANAGED_PREFS_DIR" ]; then
-    info "Creating Managed Preferences directory (requires sudo)..."
-    sudo mkdir -p "$MANAGED_PREFS_DIR"
-    sudo chown root:wheel "$MANAGED_PREFS_DIR"
-    sudo chmod 755 "$MANAGED_PREFS_DIR"
+	info "Creating Managed Preferences directory (requires sudo)..."
+	sudo mkdir -p "$MANAGED_PREFS_DIR"
+	sudo chown root:wheel "$MANAGED_PREFS_DIR"
+	sudo chmod 755 "$MANAGED_PREFS_DIR"
 fi
 
-step "Configuring Brave managed policies..."
+info "Configuring Brave managed policies..."
 
 # Skip if plist already exists
 if [ -f "$PLIST_FILE" ]; then
-    info "Brave policies already configured at $PLIST_FILE"
-    info "To reconfigure, remove the file first: sudo rm \"$PLIST_FILE\""
-    exit 0
+	info "Brave policies already configured at $PLIST_FILE"
+	info "To reconfigure, remove the file first: sudo rm \"$PLIST_FILE\""
+	exit 0
 fi
 
 # Create new plist
@@ -52,6 +52,12 @@ sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderEnabled bool true" "$
 sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderName string 'DuckDuckGo'" "$PLIST_FILE"
 sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderSearchURL string 'https://duckduckgo.com/?q={searchTerms}'" "$PLIST_FILE"
 sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderSuggestURL string 'https://duckduckgo.com/ac/?q={searchTerms}&type=list'" "$PLIST_FILE"
+
+# Default search provider for private/incognito windows
+sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderInPrivateEnabled bool true" "$PLIST_FILE"
+sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderInPrivateName string 'DuckDuckGo'" "$PLIST_FILE"
+sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderInPrivateSearchURL string 'https://duckduckgo.com/?q={searchTerms}'" "$PLIST_FILE"
+sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderInPrivateSuggestURL string 'https://duckduckgo.com/ac/?q={searchTerms}&type=list'" "$PLIST_FILE"
 
 # Disable built-in password manager and autofill (use external like 1Password)
 sudo /usr/libexec/PlistBuddy -c "Add :PasswordManagerEnabled bool false" "$PLIST_FILE"

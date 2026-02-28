@@ -18,7 +18,7 @@ component_installation=(
 	node
 	brave/mac
 	fonts/mac
-	aerospace/mac
+	rift/mac
 	lazygit/mac
 	starship
 	work/mac

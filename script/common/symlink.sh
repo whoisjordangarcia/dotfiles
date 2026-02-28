@@ -3,6 +3,34 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 source "$SCRIPT_DIR/log.sh"
 
+# Resolve a path from a git worktree to the equivalent path in the main repo.
+# Prevents symlinks from pointing into worktrees that may be deleted later.
+_resolve_to_main_worktree() {
+	local abs_path
+	abs_path=$(realpath "$1" 2>/dev/null || echo "$1")
+
+	local dir="$(dirname "$abs_path")"
+	local git_toplevel git_common_dir main_root
+
+	git_toplevel=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null) || { echo "$abs_path"; return; }
+	git_common_dir=$(git -C "$dir" rev-parse --git-common-dir 2>/dev/null) || { echo "$abs_path"; return; }
+
+	# Make git-common-dir absolute
+	if [[ "$git_common_dir" != /* ]]; then
+		git_common_dir=$(cd "$git_toplevel" && realpath "$git_common_dir")
+	fi
+	main_root=$(dirname "$git_common_dir")
+
+	# If toplevel differs from main root, we're in a worktree — rewrite the path
+	if [ "$git_toplevel" != "$main_root" ]; then
+		local relative="${abs_path#"$git_toplevel"}"
+		debug "Remapped worktree path to main repo: ${main_root}${relative}"
+		echo "${main_root}${relative}"
+	else
+		echo "$abs_path"
+	fi
+}
+
 link_file() {
 	local source="$1"
 	local target="$2"
@@ -30,7 +58,7 @@ link_file() {
 			# Absolute path - try to resolve it
 			if command -v realpath >/dev/null 2>&1; then
 				# Try realpath first (works if file exists)
-				resolved_link=$(realpath "$link_dest" 2>/dev/null)
+				resolved_link=$(realpath "$link_dest" 2>/dev/null || true)
 				if [ -z "$resolved_link" ]; then
 					# If realpath fails, use Python to resolve the path
 					resolved_link=$(python3 -c "import os.path; print(os.path.abspath('$link_dest'))" 2>/dev/null || echo "$link_dest")
@@ -56,9 +84,13 @@ link_file() {
 			return
 		fi
 
-		# Symlink points elsewhere - prompt user
-		user "Symlink '$target' points to '$link_dest'. [O]verride/[B]ackup/[S]kip?"
-		read -r choice
+		# Symlink points elsewhere - prompt or auto-resolve
+		if [ "${DOT_SYMLINK_MODE:-interactive}" != "interactive" ]; then
+			choice="${DOT_SYMLINK_MODE:0:1}"
+		else
+			user "Symlink '$target' points to '$link_dest'. [O]verride/[B]ackup/[S]kip?"
+			read -r choice
+		fi
 		case "$choice" in
 		[Oo])
 			rm -f "$target" && ln -s "$source" "$target"
@@ -91,9 +123,13 @@ link_file() {
 			return
 		fi
 
-		# Regular file/directory exists - prompt user
-		user "The $type '$target' already exists. [O]verride/[B]ackup/[S]kip?"
-		read -r choice
+		# Regular file/directory exists - prompt or auto-resolve
+		if [ "${DOT_SYMLINK_MODE:-interactive}" != "interactive" ]; then
+			choice="${DOT_SYMLINK_MODE:0:1}"
+		else
+			user "The $type '$target' already exists. [O]verride/[B]ackup/[S]kip?"
+			read -r choice
+		fi
 		case "$choice" in
 		[Oo])
 			rm -rf "$target" && ln -s "$source" "$target"

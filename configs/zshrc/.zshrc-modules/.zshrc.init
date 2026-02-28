@@ -1,21 +1,93 @@
-# Load starship
-if command -v starship &> /dev/null; then
-  eval "$(starship init zsh)"
-  export STARSHIP_CONFIG=~/.config/starship.toml
+# ==============================================================================
+#  Cached init helper — avoids spawning subprocesses on every shell start
+# ==============================================================================
+# Caches output of "tool init zsh" commands in ~/.cache/zsh/.
+# Cache invalidates when the binary's modification time changes.
+zmodload zsh/stat 2>/dev/null
+
+_cached_init() {
+  local cmd=$1; shift
+  local cache_dir="${HOME}/.cache/zsh"
+  local bin_path="${commands[$cmd]}"
+  [[ -z "$bin_path" ]] && return 1
+
+  local cache_file="${cache_dir}/${cmd}.zsh"
+  local stamp_file="${cache_dir}/${cmd}.stamp"
+  local bin_mtime
+  zstat -A bin_mtime +mtime "$bin_path" 2>/dev/null || return 1
+
+  if [[ -f "$cache_file" && -f "$stamp_file" && "$(<"$stamp_file")" == "$bin_mtime" ]]; then
+    source "$cache_file"
+  else
+    mkdir -p "$cache_dir"
+    "$cmd" "$@" > "$cache_file"
+    echo "$bin_mtime" > "$stamp_file"
+    source "$cache_file"
+  fi
+}
+
+# Load starship (cached)
+_cached_init starship init zsh
+export STARSHIP_CONFIG=~/.config/starship.toml
+
+# Load zoxide (cached)
+_cached_init zoxide init zsh
+
+# Load fzf (cached)
+_cached_init fzf --zsh
+
+# ==============================================================================
+#  Lightweight node version manager (replaces nvm for speed)
+# ==============================================================================
+# Uses nvm's installed versions at ~/.nvm/versions/node/ but skips the 0.9s nvm.sh load
+export NVM_DIR="$HOME/.nvm"
+
+_node_use() {
+  local version_dir="$NVM_DIR/versions/node"
+  local target="${${1#v}%%[[:space:]]*}"  # Strip 'v' prefix and whitespace
+
+  # Find best matching installed version (prefix match, pick latest)
+  local matches=("$version_dir"/v${target}*(N))  # (N) = nullglob, no error if no match
+  if (( ${#matches} == 0 )); then
+    echo "node: v${target} not installed. Installed:" >&2
+    command ls "$version_dir" 2>/dev/null >&2
+    return 1
+  fi
+  local match=${matches[-1]}  # Last element = highest version after glob sort
+
+  # Remove any existing node version from PATH, add new one
+  path=(${match}/bin ${path:#*${version_dir}*})
+}
+
+# Auto-switch node version on cd when .nvmrc exists
+_auto_node_switch() {
+  local dir="$PWD"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -f "$dir/.nvmrc" ]]; then
+      local want="${$(<"$dir/.nvmrc")#v}"
+      local current="${$(node --version 2>/dev/null)#v}"
+      # Only switch if major version differs
+      if [[ "${current%%.*}" != "${want%%.*}" ]]; then
+        _node_use "$want" 2>/dev/null  # Silence errors for missing versions
+      fi
+      return
+    fi
+    dir="${dir:h}"
+  done
+}
+
+# Set default node version at startup
+if [[ -d "$NVM_DIR/versions/node" ]]; then
+  if [[ -f "$NVM_DIR/alias/default" ]]; then
+    _node_use "$(<"$NVM_DIR/alias/default")"
+  else
+    local _versions=("$NVM_DIR/versions/node"/*(N))
+    (( ${#_versions} )) && path=(${_versions[-1]}/bin ${path:#*nvm/versions/node*})
+  fi
 fi
 
-# Load zoxide
-if command -v zoxide &> /dev/null; then
-  eval "$(zoxide init zsh)"
-fi
-
-# Load fzf (fuzzy finder)
-if command -v fzf &> /dev/null; then
-  eval "$(fzf --zsh)"
-fi
-
-# Load nvm
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" # This loads nvm
-#source /usr/share/nvm/init-nvm.sh
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
+# Hook into cd to auto-switch
+autoload -U add-zsh-hook
+add-zsh-hook chpwd _auto_node_switch
+# Run once for initial directory
+_auto_node_switch

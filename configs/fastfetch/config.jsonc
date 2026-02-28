@@ -1,112 +1,98 @@
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
   "logo": {
-    "type": "none",
+    "type": "none"
   },
   "display": {
-    "separator": " ",
+    "separator": "  ",
     "color": {
-      "keys": "blue",
-      "output": "default",
-    },
+      "title": "38;2;180;190;254",
+      "keys": "38;2;166;173;200",
+      "separator": "38;2;88;91;112",
+      "output": "38;2;186;194;222"
+    }
   },
   "modules": [
     {
       "type": "title",
-      "format": "{user-name}@{host-name}",
+      "format": "{user-name-colored}@{host-name-colored}"
     },
     {
       "type": "separator",
-      "string": "─",
+      "string": "─"
     },
     {
       "type": "os",
-      "keyColor": "blue",
+      "key": "  ",
+      "keyColor": "38;2;137;180;250"
     },
     {
       "type": "kernel",
-      "keyColor": "cyan",
+      "key": "  ",
+      "keyColor": "38;2;137;180;250",
+      "format": "{release}"
     },
     {
       "type": "uptime",
-      "key": "󰅐 ",
-      "keyColor": "green",
+      "key": " 󰅐 ",
+      "keyColor": "38;2;166;227;161"
     },
     {
       "type": "packages",
-      "key": "󰏖 ",
-      "keyColor": "yellow",
+      "key": " 󰏖 ",
+      "keyColor": "38;2;249;226;175"
     },
     {
       "type": "shell",
-      "key": "󰆍 ",
-      "keyColor": "magenta",
+      "key": " 󰆍 ",
+      "keyColor": "38;2;245;194;231",
+      "format": "{pretty-name} {version}"
     },
-    {
-      "type": "cpu",
-      "key": "󰻠 ",
-      "keyColor": "red",
-      "format": "{name}",
-    },
-    {
-      "type": "memory",
-      "key": "󰍛 ",
-      "keyColor": "blue",
-    },
-    {
-      "type": "de",
-      "key": "󰨇 ",
-      "keyColor": "magenta",
-    },
+    "break",
     {
       "type": "wm",
-      "key": "󰖙 ",
-      "keyColor": "magenta",
+      "key": " 󰖙 ",
+      "keyColor": "38;2;148;226;213"
     },
     {
       "type": "terminal",
-      "key": "󰠥 ",
-      "keyColor": "magenta",
-    },
-    {
-      "type": "terminalfont",
-      "key": "󰛖 ",
-      "keyColor": "magenta",
-    },
-    {
-      "type": "host",
-      "key": "󰌢 ",
-      "keyColor": "cyan",
-    },
-    {
-      "type": "gpu",
-      "key": "󰛲 ",
-      "keyColor": "red",
+      "key": " 󰠥 ",
+      "keyColor": "38;2;148;226;213",
+      "format": "{pretty-name} {version}"
     },
     {
       "type": "display",
-      "key": "󰍹 ",
-      "keyColor": "blue",
+      "key": " 󰍹 ",
+      "keyColor": "38;2;137;220;235",
+      "format": "{width}x{height} @ {refresh-rate}Hz"
+    },
+    "break",
+    {
+      "type": "cpu",
+      "key": " 󰻠 ",
+      "keyColor": "38;2;250;179;135"
     },
     {
-      "type": "processes",
-      "key": "󰯝 ",
-      "keyColor": "cyan",
+      "type": "gpu",
+      "key": " 󰛲 ",
+      "keyColor": "38;2;250;179;135"
     },
     {
-      "type": "localip",
-      "key": "󰩟 ",
-      "keyColor": "cyan",
+      "type": "memory",
+      "key": " 󰍛 ",
+      "keyColor": "38;2;249;226;175"
     },
     {
-      "type": "battery",
-      "key": "󰁾 ",
-      "keyColor": "green",
+      "type": "disk",
+      "key": " 󰋊 ",
+      "keyColor": "38;2;249;226;175",
+      "folders": "/"
     },
+    "break",
     {
       "type": "colors",
       "symbol": "circle",
-      "paddingLeft": 2,
-    },
-  ],
+      "paddingLeft": 2
+    }
+  ]
 }
