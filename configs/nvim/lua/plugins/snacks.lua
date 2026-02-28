@@ -90,9 +90,19 @@ return {
     "folke/snacks.nvim",
     opts = function()
       return {
-        -- Disable features that conflict with Telescope
         scroll = { enabled = false },
-        picker = { enabled = false },
+        picker = {
+          sources = {
+            files = {
+              hidden = true,
+              args = { "--exclude", ".git", "--exclude", "node_modules", "--exclude", ".nx", "--exclude", ".next" },
+            },
+            grep = {
+              hidden = true,
+              args = { "--hidden", "-g", "!.git", "-g", "!node_modules", "-g", "!.nx", "-g", "!.next" },
+            },
+          },
+        },
         explorer = { enabled = false },
         -- Enable just the dashboard
         dashboard = {

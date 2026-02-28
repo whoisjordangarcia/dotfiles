@@ -9,6 +9,7 @@ alias wm='workmux'
 alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 
 #development
+alias c="claude"
 alias lg="lazygit"
 alias vim="nvim"
 alias vi="nvim"

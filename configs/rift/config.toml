@@ -1,0 +1,160 @@
+# rift config — ported from aerospace (i3/sway style)
+
+[settings]
+animate = true
+animation_duration = 0.3
+animation_fps = 100.0
+
+focus_follows_mouse = false 
+mouse_follows_focus = false 
+mouse_hides_on_focus = false 
+default_disable = false
+
+auto_focus_blacklist = []
+hot_reload = true
+
+# Sketchybar integration — subscribe to rift events and forward them
+run_on_start = [
+  "rift-cli subscribe cli --event workspace_changed --command sh --args -c --args 'sketchybar --trigger rift_workspace_changed RIFT_WORKSPACE_NAME=\"$RIFT_WORKSPACE_NAME\" RIFT_WORKSPACE_ID=\"$RIFT_WORKSPACE_ID\"'",
+  "rift-cli subscribe cli --event windows_changed --command sh --args -c --args 'sketchybar --trigger rift_windows_changed RIFT_WORKSPACE_NAME=\"$RIFT_WORKSPACE_NAME\" RIFT_WINDOW_COUNT=\"$RIFT_WINDOW_COUNT\"'",
+  "sh -c '$HOME/dev/dotfiles/configs/rift/bordersrc'",
+]
+
+[settings.layout]
+mode = "traditional"
+
+[settings.layout.master_stack]
+master_ratio = 0.6
+master_count = 1
+master_side = "left"
+new_window_placement = "master"
+
+[settings.layout.stack]
+stack_offset = 40.0
+default_orientation = "perpendicular"
+
+[settings.layout.gaps.outer]
+top = 10
+left = 10
+bottom = 10
+right = 10
+
+[settings.layout.gaps.inner]
+horizontal = 10
+vertical = 10
+
+[settings.ui.menu_bar]
+enabled = false
+
+[settings.ui.stack_line]
+enabled = false
+
+[settings.ui.mission_control]
+enabled = false
+
+[settings.gestures]
+enabled = false
+
+[settings.window_snapping]
+drag_swap_fraction = 0.3
+
+[virtual_workspaces]
+enabled = true
+default_workspace_count = 10
+auto_assign_windows = true
+preserve_focus_per_workspace = true
+workspace_auto_back_and_forth = false
+reapply_app_rules_on_title_change = false
+workspace_rules = []
+workspace_names = [
+  "1", "2", "3", "4", "5",
+  "6", "7", "8", "9", "10",
+]
+
+# App rules — ported from aerospace
+# app_rules = [
+#   # Floating
+#   { app_id = "com.apple.finder", floating = true },
+#   { app_id = "io.rancherdesktop.app", floating = true },
+#   { app_id = "com.cisco.secureclient.gui", floating = true },
+#   { app_id = "com.apple.systempreferences", floating = true },
+#   { app_id = "com.1password.1password", floating = true },
+#   { app_id = "com.flexibits.fantastical2.mac", floating = true },
+#
+# ]
+
+# Modifier combinations (i3/sway style: Option as $mod)
+[modifier_combinations]
+comb1 = "Option + Shift"
+
+[keys]
+# i3/sway keybinds using Option as $mod
+# Navigation: jkl; (i3 default)
+
+# Layout toggle
+"Option + J" = "toggle_orientation"
+
+# Workspaces (Option + 1-9,0)
+"Option + 1" = { switch_to_workspace = 0 }
+"Option + 2" = { switch_to_workspace = 1 }
+"Option + 3" = { switch_to_workspace = 2 }
+"Option + 4" = { switch_to_workspace = 3 }
+"Option + 5" = { switch_to_workspace = 4 }
+"Option + 6" = { switch_to_workspace = 5 }
+"Option + 7" = { switch_to_workspace = 6 }
+"Option + 8" = { switch_to_workspace = 7 }
+"Option + 9" = { switch_to_workspace = 8 }
+"Option + 0" = { switch_to_workspace = 9 }
+
+# Move window to workspace and follow
+"comb1 + 1" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 0 && rift-cli execute workspace switch 0"] }
+"comb1 + 2" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 1 && rift-cli execute workspace switch 1"] }
+"comb1 + 3" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 2 && rift-cli execute workspace switch 2"] }
+"comb1 + 4" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 3 && rift-cli execute workspace switch 3"] }
+"comb1 + 5" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 4 && rift-cli execute workspace switch 4"] }
+"comb1 + 6" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 5 && rift-cli execute workspace switch 5"] }
+"comb1 + 7" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 6 && rift-cli execute workspace switch 6"] }
+"comb1 + 8" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 7 && rift-cli execute workspace switch 7"] }
+"comb1 + 9" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 8 && rift-cli execute workspace switch 8"] }
+"comb1 + 0" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 9 && rift-cli execute workspace switch 9"] }
+
+# Workspace back and forth
+"Option + Tab" = "switch_to_last_workspace"
+
+# Layout toggles (matching aerospace: s=stack, e=toggle orientation)
+"Option + S" = "toggle_stack"
+"Option + E" = "toggle_orientation"
+
+# Fullscreen
+"Option + F" = "toggle_fullscreen"
+"Option + Shift + F" = "toggle_fullscreen_within_gaps"
+
+# Floating
+"Option + W" = "toggle_window_floating"
+"Option + Shift + Space" = "toggle_window_floating"
+"comb1 + Ctrl + Space" = "toggle_focus_floating"
+
+# Join/stack windows (arrow keys)
+"Option + Shift + Left" = { join_window = "left" }
+"Option + Shift + Right" = { join_window = "right" }
+"Option + Shift + Up" = { join_window = "up" }
+"Option + Shift + Down" = { join_window = "down" }
+"Option + Ctrl + E" = "unjoin_windows"
+
+# Resize (no mode in rift, direct keybinds)
+"Option + Shift + Equal" = "resize_window_grow"
+"Option + Shift + Minus" = "resize_window_shrink"
+
+# Toggle space activated
+"Option + Z" = "toggle_space_activated"
+
+# App launchers
+"Option + B" = { exec = ["open", "-a", "Brave Browser"] }
+"Option + O" = { exec = ["open", "-a", "Obsidian"] }
+"Option + T" = { exec = ["open", "-a", "Ghostty"] }
+"Option + Slash" = { exec = ["open", "-a", "1Password"] }
+
+# System
+"Option + Shift + D" = "debug"
+"Option + Ctrl + S" = "serialize"
+"Option + Ctrl + Q" = "save_and_exit"

@@ -13,7 +13,7 @@ if [[ "$active" != "1" ]]; then
     label="$cmd"
     is_claude "$cmd" && label="claude"
     [[ "$cmd" == "zsh" ]] && label="$path"
-    echo "#[align=centre,fg=colour238] $label "
+    echo "#[align=left,fg=colour238] $label "
     exit 0
 fi
 

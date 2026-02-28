@@ -16,12 +16,12 @@ brew 'bat'
 brew 'tmuxinator'
 brew 'yq' # tmux statusbar
 brew 'go'
-brew 'terminal-notifier' # macOS notifications for scripts
 cask 'tailscale-app'
 
 # Essential Apps
 cask 'ghostty'
 cask 'brave-browser'
+cask 'music-decoy'
 
 # Essential Fonts
 cask 'font-sf-mono'

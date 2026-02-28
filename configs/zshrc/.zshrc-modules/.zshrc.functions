@@ -83,6 +83,37 @@ web2app-remove() {
 }
 
 # ==============================================================================
+#  Git Worktree Helpers
+# ==============================================================================
+
+# Wrapper: auto-remove stale index.lock before mutating git commands
+git() {
+  if [[ "$1" == "commit" || "$1" == "add" || "$1" == "merge" || "$1" == "rebase" || "$1" == "checkout" ]]; then
+    local git_dir
+    git_dir=$(command git rev-parse --git-dir 2>/dev/null)
+    if [[ -n "$git_dir" && -f "$git_dir/index.lock" ]]; then
+      if ! pgrep -f "git (commit|add|merge|rebase|checkout)" > /dev/null 2>&1; then
+        rm -f "$git_dir/index.lock"
+        echo "Removed stale index.lock"
+      fi
+    fi
+  fi
+  command git "$@"
+}
+
+# Manual unlock for any worktree
+git-unlock() {
+  local git_dir
+  git_dir=$(command git rev-parse --git-dir 2>/dev/null)
+  if [[ -n "$git_dir" && -f "$git_dir/index.lock" ]]; then
+    rm -f "$git_dir/index.lock"
+    echo "Removed $git_dir/index.lock"
+  else
+    echo "No lock found"
+  fi
+}
+
+# ==============================================================================
 #  Custom Man Page System
 # ==============================================================================
 

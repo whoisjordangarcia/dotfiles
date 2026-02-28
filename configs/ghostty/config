@@ -27,7 +27,7 @@ mouse-hide-while-typing = true
 
 unfocused-split-opacity = 0.9
 
-window-decoration = false
+window-decoration = true
 window-padding-x = 5
 window-padding-y = 14,0
 window-padding-balance = true
@@ -39,5 +39,6 @@ cursor-style = "block"
 cursor-style-blink = false
 
 # Fix double input with tmux - disable shell integration entirely
-shell-integration = zsh 
-term = xterm-256color 
+shell-integration = zsh
+term = xterm-256color
+
