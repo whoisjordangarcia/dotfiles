@@ -38,6 +38,12 @@ lazy-lock.json
 # Git worktrees
 .worktrees/
 
+# HyDE themes (large wallpaper assets)
+configs/hyde/themes/
+
+# Rust build artifacts
+crates/*/target/
+
 # Compiled Go binaries
 bin/otobun
 bin/nxps
