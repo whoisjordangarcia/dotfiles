@@ -229,6 +229,7 @@ Context rules for AI coding assistants:
 
 | Directory | Purpose |
 |-----------|---------|
+| `configs/ssh/` | SSH config with global defaults + `Include ~/.ssh/hosts.local` for per-machine host aliases |
 | `configs/git/` | `.gitconfig.template`, `.gitignore_global`, work.gitconfig |
 | `configs/bat/` | Syntax highlighting for cat replacement |
 | `configs/brave/` | Browser customization |
@@ -272,6 +273,21 @@ Context rules for AI coding assistants:
 ```
 
 **Installs:** Core dev tools via apt, Node, LazyGit, Starship, Fastfetch, Wezterm (Windows-compatible)
+
+### Server (`linux_server`)
+
+```bash
+./bin/dot --system linux_server
+```
+
+**Installs:** Core apt packages, Neovim (PPA), eza, Node.js, zoxide, Starship, Fastfetch (minimal), Git, Zsh, kickstart.nvim, Tmux, Claude Code
+
+**Target:** Proxmox LXC containers, headless Debian/Ubuntu servers — nice shell experience with no GUI.
+
+**One-liner for fresh servers:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/boot.sh | bash -s -- --system linux_server
+```
 
 ### Fedora (`linux_fedora`)
 

@@ -30,7 +30,13 @@ main() {
 		git clone "$DOTFILES_REPO" "$DOTFILES_DIR" || fail "Failed to clone repository"
 		cd "$DOTFILES_DIR"
 	fi
-	./bootstrap.sh || fail "Bootstrap failed"
+
+	# If arguments passed (e.g. --system linux_server), use bin/dot directly
+	if [[ $# -gt 0 ]]; then
+		./bin/dot "$@"
+	else
+		./bootstrap.sh || fail "Bootstrap failed"
+	fi
 }
 
 # Run main function

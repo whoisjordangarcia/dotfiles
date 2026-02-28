@@ -3,6 +3,34 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 source "$SCRIPT_DIR/log.sh"
 
+# Resolve a path from a git worktree to the equivalent path in the main repo.
+# Prevents symlinks from pointing into worktrees that may be deleted later.
+_resolve_to_main_worktree() {
+	local abs_path
+	abs_path=$(realpath "$1" 2>/dev/null || echo "$1")
+
+	local dir="$(dirname "$abs_path")"
+	local git_toplevel git_common_dir main_root
+
+	git_toplevel=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null) || { echo "$abs_path"; return; }
+	git_common_dir=$(git -C "$dir" rev-parse --git-common-dir 2>/dev/null) || { echo "$abs_path"; return; }
+
+	# Make git-common-dir absolute
+	if [[ "$git_common_dir" != /* ]]; then
+		git_common_dir=$(cd "$git_toplevel" && realpath "$git_common_dir")
+	fi
+	main_root=$(dirname "$git_common_dir")
+
+	# If toplevel differs from main root, we're in a worktree — rewrite the path
+	if [ "$git_toplevel" != "$main_root" ]; then
+		local relative="${abs_path#"$git_toplevel"}"
+		debug "Remapped worktree path to main repo: ${main_root}${relative}"
+		echo "${main_root}${relative}"
+	else
+		echo "$abs_path"
+	fi
+}
+
 link_file() {
 	local source="$1"
 	local target="$2"

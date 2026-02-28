@@ -1,0 +1,31 @@
+# ── Local host aliases (machine-specific, not in git) ──────────────
+# Create ~/.ssh/hosts.local with your Host entries, e.g.:
+#
+#   Host proxmox
+#       HostName 192.168.1.100
+#       User root
+#
+#   Host lxc-media
+#       HostName 192.168.1.201
+#       User jordan
+#       ProxyJump proxmox
+#
+Include ~/.ssh/hosts.local
+
+# ── Global defaults ────────────────────────────────────────────────
+Host *
+    # Keep connections alive (prevents SSH timeout on idle)
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+
+    # Reuse connections (faster subsequent SSH/SCP to same host)
+    ControlMaster auto
+    ControlPath ~/.ssh/sockets/%r@%h-%p
+    ControlPersist 600
+
+    # Add keys to ssh-agent automatically on first use
+    AddKeysToAgent yes
+
+    # Use the macOS keychain (ignored on Linux)
+    IgnoreUnknown UseKeychain
+    UseKeychain yes
