@@ -1,0 +1,73 @@
+# Server Aliases
+
+# General
+alias ll='ls -alFh'
+alias la='ls -A'
+alias ..='cd ..'
+
+# System
+alias meminfo='free -h'
+alias cpuinfo='lscpu'
+alias diskinfo='df -h'
+alias ports='netstat -tulanp'
+alias psmem='ps aux --sort=-%mem | head -10'
+alias pscpu='ps aux --sort=-%cpu | head -10'
+
+# Services (systemd)
+alias sc='systemctl'
+alias scs='systemctl status'
+alias scr='systemctl restart'
+alias scst='systemctl stop'
+alias scstart='systemctl start'
+alias scf='systemctl --failed'
+
+# Logs
+alias journal='journalctl -xe'
+alias jerr='journalctl -p err -b'
+alias logfollow='tail -f /var/log/syslog'
+
+# Proxmox (if available)
+[[ -f /etc/pve/proxmox-release ]] && alias pveversion='pveversion'
+[[ -f /etc/pve/proxmox-release ]] && alias vmlist='qm list && pct list'
+[[ -f /etc/pve/proxmox-release ]] && alias vmr='qm restart'
+[[ -f /etc/pve/proxmox-release ]] && alias vms='qm stop'
+[[ -f /etc/pve/proxmox-release ]] && alias vmstart='qm start'
+[[ -f /etc/pve/proxmox-release ]] && alias ctr='pct'
+[[ -f /etc/pve/proxmox-release ]] && alias ctrlist='pct list'
+
+# Docker
+alias d='docker'
+alias dps='docker ps'
+alias dpsa='docker ps -a'
+alias dex='docker exec -it'
+alias dlog='docker logs -f'
+alias dcup='docker compose up -d'
+alias dcd='docker compose down'
+
+# Git
+alias g='git'
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git pull'
+alias gd='git diff'
+alias gco='git checkout'
+alias gb='git branch'
+
+# Network
+alias myip='curl -s ifconfig.me'
+alias ipinfo='curl ipinfo.io'
+
+# Security
+alias fw='ufw'
+alias fwstat='ufw status verbose'
+alias f2bstatus='sudo fail2ban-client status'
+
+# Tmux
+alias t='tmux'
+alias ta='tmux attach'
+alias tnew='tmux new -s'
+
+# Update
+alias update='apt update && apt upgrade -y'
