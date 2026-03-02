@@ -1,0 +1,24 @@
+[user]
+    name = Jordan Garcia
+    email = jordan@example.com
+
+[core]
+    editor = vim
+
+[init]
+    defaultBranch = main
+
+[push]
+    default = simple
+
+[pull]
+    rebase = false
+
+[alias]
+    s = status
+    a = add
+    c = commit
+    co = checkout
+    br = branch
+    d = diff
+    l = log --oneline --graph --decorate
