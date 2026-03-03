@@ -41,3 +41,5 @@ lazy-lock.json
 # Compiled Go binaries
 bin/otobun
 bin/nxps
+
+nxps

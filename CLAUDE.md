@@ -331,6 +331,8 @@ git config --global commit.gpgsign true
 ### macOS
 - **Window Manager**: Aerospace window manager
 - **Terminal**: Ghostty (replaces Alacritty/Kitty)
+- **Menu Bar**: SketchyBar (custom menu bar replacement)
+  - Restart if frozen: `brew services restart sketchybar`
 - **Brewfile**: Environment-aware (work/personal package lists)
 - **System Tweaks**: Disables press-and-hold, sets Screenshots folder
 
