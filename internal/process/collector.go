@@ -3,6 +3,7 @@ package process
 import (
 	"os/exec"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -127,6 +128,10 @@ func (c *Collector) Collect() ([]NodeProcess, error) {
 	// Resolve worktrees concurrently with bounded parallelism
 	c.resolveWorktrees(procs)
 
+	// Batch-resolve uptime, memory, and ports via single system calls
+	c.resolveMetadata(procs)
+	c.resolveAllPorts(procs)
+
 	return procs, nil
 }
 
@@ -154,7 +159,6 @@ func (c *Collector) resolveWorktrees(procs []NodeProcess) {
 		// MCP servers and language servers are always "background"
 		if procs[i].Kind == KindMCPServer || procs[i].Kind == KindLanguageServer {
 			procs[i].Worktree = "background"
-			continue
 		}
 
 		wg.Add(1)
@@ -163,7 +167,9 @@ func (c *Collector) resolveWorktrees(procs []NodeProcess) {
 			defer wg.Done()
 			defer func() { <-sem }() // release
 
-			procs[idx].Worktree = c.resolveWorktree(procs[idx].PID)
+			if procs[idx].Worktree == "" {
+				procs[idx].Worktree = c.resolveWorktree(procs[idx].PID)
+			}
 		}(i)
 	}
 	wg.Wait()
@@ -189,6 +195,145 @@ func (c *Collector) resolveWorktree(pid int) string {
 		return c.shortenPath(path)
 	}
 	return "unknown"
+}
+
+// resolveAllPorts discovers listening TCP ports for each process by:
+// 1. Running a single global lsof to map PID → listening ports
+// 2. Building a process tree from ps to find all descendants of each discovered PID
+// 3. Attributing descendant ports back to the ancestor process
+//
+// This handles the common nx pattern where:
+//   npm exec nx serve (our PID) → node nx.js → node dev.server.js (actual listener)
+func (c *Collector) resolveAllPorts(procs []NodeProcess) {
+	if len(procs) == 0 {
+		return
+	}
+
+	// Step 1: global listening ports → PID map
+	lsofOut, err := c.Runner.Run("lsof", "-iTCP", "-sTCP:LISTEN", "-P", "-n")
+	if err != nil {
+		return
+	}
+
+	pidPorts := map[int]map[int]bool{}
+	for _, line := range strings.Split(lsofOut, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "COMMAND") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 9 {
+			continue
+		}
+		pid, err := strconv.Atoi(fields[1])
+		if err != nil {
+			continue
+		}
+		name := fields[8]
+		if idx := strings.LastIndex(name, ":"); idx >= 0 {
+			if port, err := strconv.Atoi(name[idx+1:]); err == nil {
+				if pidPorts[pid] == nil {
+					pidPorts[pid] = map[int]bool{}
+				}
+				pidPorts[pid][port] = true
+			}
+		}
+	}
+
+	// Step 2: build process tree (PID → children)
+	psOut, err := c.Runner.Run("ps", "-eo", "pid=,ppid=")
+	if err != nil {
+		return
+	}
+
+	children := map[int][]int{} // parent → children
+	for _, line := range strings.Split(psOut, "\n") {
+		fields := strings.Fields(strings.TrimSpace(line))
+		if len(fields) < 2 {
+			continue
+		}
+		pid, err1 := strconv.Atoi(fields[0])
+		ppid, err2 := strconv.Atoi(fields[1])
+		if err1 != nil || err2 != nil {
+			continue
+		}
+		children[ppid] = append(children[ppid], pid)
+	}
+
+	// Step 3: for each discovered process, walk descendants and collect ports
+	for i := range procs {
+		portSet := map[int]bool{}
+		collectDescendantPorts(procs[i].PID, children, pidPorts, portSet)
+		if len(portSet) > 0 {
+			var ports []int
+			for p := range portSet {
+				ports = append(ports, p)
+			}
+			sort.Ints(ports)
+			procs[i].Ports = ports
+		}
+	}
+}
+
+// collectDescendantPorts walks the process tree from pid downward,
+// collecting any listening ports owned by pid or its descendants.
+func collectDescendantPorts(pid int, tree map[int][]int, pidPorts map[int]map[int]bool, result map[int]bool) {
+	// Collect this PID's ports
+	for port := range pidPorts[pid] {
+		result[port] = true
+	}
+	// Recurse into children
+	for _, child := range tree[pid] {
+		collectDescendantPorts(child, tree, pidPorts, result)
+	}
+}
+
+// resolveMetadata fetches uptime and RSS for all PIDs in a single ps call.
+func (c *Collector) resolveMetadata(procs []NodeProcess) {
+	if len(procs) == 0 {
+		return
+	}
+
+	// Build PID list
+	pidArgs := make([]string, len(procs))
+	for i, p := range procs {
+		pidArgs[i] = strconv.Itoa(p.PID)
+	}
+
+	out, err := c.Runner.Run("ps", "-o", "pid=,etime=,rss=", "-p", strings.Join(pidArgs, ","))
+	if err != nil {
+		return
+	}
+
+	// Build lookup: PID → (etime, rss)
+	type meta struct {
+		etime string
+		rss   int
+	}
+	lookup := map[int]meta{}
+	for _, line := range strings.Split(out, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 3 {
+			continue
+		}
+		pid, err := strconv.Atoi(fields[0])
+		if err != nil {
+			continue
+		}
+		rss, _ := strconv.Atoi(fields[2])
+		lookup[pid] = meta{etime: fields[1], rss: rss}
+	}
+
+	for i := range procs {
+		if m, ok := lookup[procs[i].PID]; ok {
+			procs[i].Uptime = m.etime
+			procs[i].MemoryKB = m.rss
+		}
+	}
 }
 
 // trimToProjectRoot strips trailing path segments like /.nx/*, /apps/*, /node_modules/*, /dist/*
