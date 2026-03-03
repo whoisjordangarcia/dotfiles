@@ -40,5 +40,3 @@ fi
 
 export GPG_TTY=$TTY
 export PATH="$HOME/.local/bin:$PATH"
-
-#alias claude-mem='bun "/Users/nest/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'
