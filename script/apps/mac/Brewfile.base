@@ -9,6 +9,14 @@ brew 'jq'
 brew 'fastfetch'
 brew 'rg'
 
+# System monitoring
+tap 'narugit/smctemp'
+brew 'smctemp'
+
+# Streaming
+tap 'LizardByte/homebrew'
+brew 'sunshine'
+
 # Development
 brew 'nvm'
 brew 'lazygit'
