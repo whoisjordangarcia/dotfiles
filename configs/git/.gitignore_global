@@ -66,3 +66,4 @@ docs/plans/
 tasks/*
 
 settings.local.json
+CLAUDE.local.json
