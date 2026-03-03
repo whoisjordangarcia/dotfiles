@@ -50,3 +50,4 @@ crates/*/target/
 # Compiled Go binaries
 bin/otobun
 bin/nxps
+nxps
