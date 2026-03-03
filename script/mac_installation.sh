@@ -20,6 +20,7 @@ component_installation=(
 	lazygit/mac
 	#bun/mac
 	claude
+	claude-mem
 	codex
 	fastfetch
 	opencode
