@@ -6,11 +6,22 @@ local max_workspaces = 10
 local query_workspaces = "rift-cli query workspaces"
 
 local workspaces = {}
+local last_focused = nil
+
+-- Generation counter per workspace: prevents stale async callbacks from rendering
+local update_gen = {}
+for i = 1, max_workspaces do update_gen[i] = 0 end
 
 local function updateWindows(workspace_index)
 	local rift_ws_index = workspace_index - 1
 
+	-- Bump generation so any in-flight query for this workspace is invalidated
+	update_gen[workspace_index] = update_gen[workspace_index] + 1
+	local my_gen = update_gen[workspace_index]
+
 	sbar.exec(query_workspaces, function(all_workspaces)
+		-- If a newer updateWindows was called for this workspace, discard this result
+		if update_gen[workspace_index] ~= my_gen then return end
 		if not all_workspaces then return end
 
 		local focused_index = nil
@@ -41,32 +52,28 @@ local function updateWindows(workspace_index)
 			sbar.trigger("workspace_app_change", { HAS_APP = no_app and "false" or "true" })
 		end
 
-		sbar.animate("tanh", 10, function()
-			if no_app and is_focused then
-				workspaces[workspace_index]:set({
-					icon = { drawing = true, padding_right = 8 },
-					label = {
-						string = "",
-						drawing = false,
-					},
-					background = { drawing = true },
-					padding_right = 1,
-					padding_left = 1,
-				})
-				return
-			end
-
-			if no_app then
-				workspaces[workspace_index]:set({
-					icon = { drawing = false },
-					label = { drawing = false },
-					background = { drawing = false },
-					padding_right = 0,
-					padding_left = 0,
-				})
-				return
-			end
-
+		-- No animation here — structural drawing changes must be instant
+		-- to avoid overlapping animations from rapid event bursts
+		if no_app and is_focused then
+			workspaces[workspace_index]:set({
+				icon = { drawing = true, padding_right = 8 },
+				label = {
+					string = "",
+					drawing = false,
+				},
+				background = { drawing = true },
+				padding_right = 1,
+				padding_left = 1,
+			})
+		elseif no_app then
+			workspaces[workspace_index]:set({
+				icon = { drawing = false },
+				label = { drawing = false },
+				background = { drawing = false },
+				padding_right = 0,
+				padding_left = 0,
+			})
+		else
 			workspaces[workspace_index]:set({
 				icon = { drawing = true },
 				label = { drawing = true, string = icon_line },
@@ -74,7 +81,7 @@ local function updateWindows(workspace_index)
 				padding_right = 1,
 				padding_left = 1,
 			})
-		end)
+		end
 	end)
 end
 
@@ -113,6 +120,7 @@ for workspace_index = 1, max_workspaces do
 
 	workspace:subscribe("rift_workspace_changed", function(env)
 		local focused_name = env.RIFT_WORKSPACE_NAME
+		local focused_index = tonumber(focused_name)
 		local is_focused = focused_name == tostring(workspace_index)
 
 		sbar.animate("tanh", 10, function()
@@ -125,11 +133,24 @@ for workspace_index = 1, max_workspaces do
 			})
 		end)
 
-		updateWindows(workspace_index)
+		-- Update windows for both the newly focused workspace and the one that lost focus
+		-- (updateWindows branches on is_focused, so both need a refresh)
+		if is_focused then
+			-- Update the previously focused workspace (it may need to hide/change)
+			if last_focused and last_focused ~= workspace_index then
+				updateWindows(last_focused)
+			end
+			last_focused = workspace_index
+			updateWindows(workspace_index)
+		end
 	end)
 
-	workspace:subscribe("rift_windows_changed", function()
-		updateWindows(workspace_index)
+	workspace:subscribe("rift_windows_changed", function(env)
+		-- Only update the workspace that actually changed
+		local changed_name = env.RIFT_WORKSPACE_NAME
+		if changed_name == tostring(workspace_index) then
+			updateWindows(workspace_index)
+		end
 	end)
 
 	workspace:subscribe("display_change", function()
