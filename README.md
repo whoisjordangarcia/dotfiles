@@ -229,6 +229,7 @@ Context rules for AI coding assistants:
 
 | Directory | Purpose |
 |-----------|---------|
+| `configs/ssh/` | SSH config with global defaults + `Include ~/.ssh/hosts.local` for per-machine host aliases |
 | `configs/git/` | `.gitconfig.template`, `.gitignore_global`, work.gitconfig |
 | `configs/bat/` | Syntax highlighting for cat replacement |
 | `configs/brave/` | Browser customization |

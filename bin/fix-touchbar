@@ -1,0 +1,60 @@
+#!/bin/bash
+set -euo pipefail
+
+# Fix Touch Bar on T2 MacBooks running Linux
+# Reloads apple_bce kernel module to re-initialize Touch Bar device nodes
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+info()    { echo -e "${GREEN}[✓]${NC} $1"; }
+warn()    { echo -e "${YELLOW}[!]${NC} $1"; }
+err()     { echo -e "${RED}[✗]${NC} $1"; }
+
+FORCE=false
+[[ "${1:-}" == "-f" || "${1:-}" == "--force" ]] && FORCE=true
+
+# Check if we're on a T2 Mac
+if [[ ! -d /sys/module/apple_bce ]]; then
+    err "apple_bce module not found — this doesn't appear to be a T2 Mac."
+    exit 1
+fi
+
+# Check if Touch Bar is already working
+if systemctl is-active --quiet tiny-dfr 2>/dev/null && [[ "$FORCE" == false ]]; then
+    info "tiny-dfr is already running. Touch Bar should be working."
+    echo "    Run with -f to force reload."
+    exit 0
+fi
+
+echo "Fixing Touch Bar..."
+
+# Stop audio (holds a reference to apple_bce)
+info "Stopping audio services..."
+systemctl --user stop pipewire pipewire-pulse wireplumber 2>/dev/null || true
+
+# Reload the kernel module
+info "Reloading apple_bce module..."
+if ! sudo modprobe -r apple_bce; then
+    err "Failed to unload apple_bce. Something else may be using it."
+    info "Restarting audio services..."
+    systemctl --user start pipewire pipewire-pulse wireplumber 2>/dev/null || true
+    exit 1
+fi
+sudo modprobe apple_bce
+
+# Restart audio
+info "Restarting audio services..."
+systemctl --user start pipewire pipewire-pulse wireplumber 2>/dev/null || true
+
+# Wait for tiny-dfr to start via device activation
+sleep 2
+
+if systemctl is-active --quiet tiny-dfr 2>/dev/null; then
+    info "Touch Bar is back!"
+else
+    warn "tiny-dfr didn't auto-start. Starting manually..."
+    sudo systemctl start tiny-dfr 2>/dev/null && info "Touch Bar is back!" || err "Failed to start tiny-dfr."
+fi

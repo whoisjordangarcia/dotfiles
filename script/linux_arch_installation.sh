@@ -16,11 +16,14 @@ component_installation=(
 	ghostty/linux
 	fonts/linux
 	starship
-	# now using HyDE
-	#hypr/linux
-	#waybar/linux
+	# symlinks custom overrides on top of HyDE
+	hypr/linux
+	rofi/linux
+	btop/linux
+	gh/linux
 	brave/linux
 	fastfetch
+	ssh
 	codex
 	claude
 	dolphin/linux

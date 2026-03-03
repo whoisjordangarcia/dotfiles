@@ -1,0 +1,13 @@
+[Unit]
+Description=Fix Touch Bar after boot/resume on T2 MacBooks
+After=multi-user.target
+ConditionPathExists=/sys/module/apple_bce
+
+[Service]
+Type=oneshot
+ExecCondition=/bin/bash -c '! test -e /dev/tiny_dfr_display'
+ExecStart=/bin/bash -c 'modprobe -r apple_bce && modprobe apple_bce'
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

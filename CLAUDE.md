@@ -377,4 +377,26 @@ AI assistant rules in `configs/ai-rules/`:
 - **Cursor**: `.mdc` format rules with file patterns
 - **Aider**: Framework-specific guidance (TypeScript, Next.js, NestJS, Django)
 - **Avante**: Planning workflow rules
-- add to memory
+
+## Security — No Sensitive Data in This Repository
+
+This is a **public dotfiles repository**. Never commit secrets, credentials, or machine-specific data.
+
+**Never commit or create files containing:**
+- Private keys (SSH, GPG, TLS) — `id_rsa`, `id_ed25519`, `*.pem`, `*.key`
+- API tokens, passwords, or authentication credentials
+- `.env` files with real values
+- IP addresses, hostnames, or network topology of real machines
+- Personal identifiers beyond what's already public (name, public email)
+
+**Safe patterns already in use — follow these:**
+- `.dotconfig` — generated at install time, gitignored; stores `DOT_NAME`, `DOT_EMAIL`, etc.
+- `configs/ssh/config` — uses `Include ~/.ssh/hosts.local` so real host aliases stay local
+- `configs/git/.gitconfig.template` — variable substitution (`DOT_EMAIL`, `DOT_YUBIKEY`) at install time
+- `.zshrc.sec` — gitignored file for secret shell exports (API keys, tokens)
+
+**When adding new configurations:**
+- Use templates with `DOT_*` variable substitution for user-specific values
+- Use `Include` or `source` directives to load machine-specific files that are gitignored
+- Add any new sensitive file patterns to `.gitignore`
+- Prefer placeholder/example values over real ones in committed configs

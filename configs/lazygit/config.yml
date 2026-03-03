@@ -68,5 +68,4 @@ refresher:
 git:
   commit:
     signOff: true
-
   branchPrefix: "jordan"

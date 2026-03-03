@@ -18,31 +18,30 @@
     "break",
     {
       "type": "title",
-      "format": "{user-name-colored}@{host-name-colored}",
-      "keyColor": "blue"
+      "format": "{user-name-colored}@{host-name-colored}"
     },
     {
       "type": "separator",
-      "string": "━"
+      "string": "─"
     },
     {
       "type": "os",
-      "key": " ",
+      "key": "  ",
       "keyColor": "blue"
     },
     {
       "type": "shell",
-      "key": "󰆍 ",
+      "key": " 󰆍 ",
       "keyColor": "magenta"
     },
     {
       "type": "uptime",
-      "key": "󰅐 ",
+      "key": " 󰅐 ",
       "keyColor": "green"
     },
     {
       "type": "separator",
-      "string": "━"
+      "string": "─"
     }
   ]
 }

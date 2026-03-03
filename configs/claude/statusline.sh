@@ -426,7 +426,11 @@ if [ -n "$branch" ]; then
 		fi
 		line2+="${pr_color}#${pr_number}${COLOR_RESET}${sep}"
 	fi
-	line2+="${COLOR_DIM}🌿 ${COLOR_GIT}${branch}${COLOR_RESET}"
+	if [ "$is_worktree" = true ]; then
+		line2+="${COLOR_DIM}🌿 ${COLOR_GIT}${branch}${COLOR_RESET}"
+	else
+		line2+="${COLOR_GIT}${branch}${COLOR_RESET}"
+	fi
 	[ -n "$base_branch_display" ] && line2+=" ${base_branch_display}"
 	[ -n "$sync_display" ] && line2+="${sep}${sync_display}"
 	[ -n "$dirty_display" ] && line2+="${sep}${dirty_display}"

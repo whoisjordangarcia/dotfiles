@@ -23,6 +23,7 @@ component_installation=(
 	claude-mem
 	codex
 	fastfetch
+	ssh
 	opencode
 	brave/mac
 )

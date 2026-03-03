@@ -11,5 +11,10 @@ source "$COMPONENT_ROOT/../common/symlink.sh"
 debug "Ensuring $HOME/.config/fastfetch exists"
 mkdir -p "$HOME/.config/fastfetch"
 
-link_file "$DOTFILES_ROOT/configs/fastfetch/config.jsonc" "$HOME/.config/fastfetch/config.jsonc"
-link_file "$DOTFILES_ROOT/configs/fastfetch/config-minimal.jsonc" "$HOME/.config/fastfetch/config-minimal.jsonc"
+# On server profiles, use minimal config as the default
+if [[ "${DOT_SYSTEM:-}" == "linux_server" ]]; then
+	link_file "$DOTFILES_ROOT/configs/fastfetch/config-minimal.jsonc" "$HOME/.config/fastfetch/config.jsonc"
+else
+	link_file "$DOTFILES_ROOT/configs/fastfetch/config.jsonc" "$HOME/.config/fastfetch/config.jsonc"
+	link_file "$DOTFILES_ROOT/configs/fastfetch/config-minimal.jsonc" "$HOME/.config/fastfetch/config-minimal.jsonc"
+fi
