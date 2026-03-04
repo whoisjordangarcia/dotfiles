@@ -20,11 +20,13 @@ component_installation=(
 	lazygit/mac
 	#bun/mac
 	claude
+	claude-mem
 	codex
 	fastfetch
 	ssh
 	opencode
 	brave/mac
+	sunshine/mac
 )
 
 for component in "${component_installation[@]}"; do

@@ -36,6 +36,12 @@ var (
 	serviceStyle = lipgloss.NewStyle().
 			Foreground(theme.White)
 
+	portStyle = lipgloss.NewStyle().
+			Foreground(theme.Cyan)
+
+	metaStyle = lipgloss.NewStyle().
+			Foreground(theme.Muted)
+
 	emptyStyle = lipgloss.NewStyle().
 			Foreground(theme.Muted).
 			Italic(true).
@@ -80,6 +86,22 @@ func PrintListView(groups []process.WorktreeGroup) string {
 			b.WriteString(" ")
 			b.WriteString(pidStyle.Render(fmt.Sprintf("%d", proc.PID)))
 			b.WriteString(serviceStyle.Render(proc.Service))
+			if ps := proc.PortsHyperlinks(); ps != "" {
+				b.WriteString("  ")
+				b.WriteString(portStyle.Render(ps))
+			}
+			// Uptime and memory on same line, right-aligned feel
+			var meta []string
+			if proc.Uptime != "" {
+				meta = append(meta, proc.Uptime)
+			}
+			if ms := proc.MemoryString(); ms != "" {
+				meta = append(meta, ms)
+			}
+			if len(meta) > 0 {
+				b.WriteString("  ")
+				b.WriteString(metaStyle.Render(strings.Join(meta, " · ")))
+			}
 			b.WriteString("\n")
 		}
 

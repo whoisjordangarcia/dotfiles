@@ -29,21 +29,27 @@ local docker = sbar.add("item", "docker", {
 local cmd = "/usr/local/bin/docker ps -q 2>/dev/null | wc -l | tr -d ' '"
 
 docker:subscribe({ "routine", "forced" }, function()
-	sbar.exec(cmd, function(result)
-		if not result or result == "" or result == "\n" then
+	sbar.exec("pgrep -x Docker", function(pid)
+		if not pid or pid == "" or pid == "\n" then
 			docker:set({ drawing = false })
 			return
 		end
-		local count = tonumber(result:match("%d+"))
-		if not count or count == 0 then
-			docker:set({ drawing = false })
-			return
-		end
-		docker:set({
-			drawing = true,
-			icon = { color = colors.green },
-			label = { string = count .. " up" },
-		})
+		sbar.exec(cmd, function(result)
+			if not result or result == "" or result == "\n" then
+				docker:set({ drawing = false })
+				return
+			end
+			local count = tonumber(result:match("%d+"))
+			if not count or count == 0 then
+				docker:set({ drawing = false })
+				return
+			end
+			docker:set({
+				drawing = true,
+				icon = { color = colors.green },
+				label = { string = count .. " up" },
+			})
+		end)
 	end)
 end)
 

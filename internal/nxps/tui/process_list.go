@@ -316,6 +316,26 @@ func (m ProcessList) renderProcessList(b *strings.Builder) {
 				b.WriteString(theme.Unselected.Render(proc.Service))
 			}
 
+			// Port (clickable hyperlink)
+			if ps := proc.PortsHyperlinks(); ps != "" {
+				b.WriteString("  ")
+				b.WriteString(lipgloss.NewStyle().Foreground(theme.Cyan).Render(ps))
+			}
+
+			// Uptime and memory
+			var meta []string
+			if proc.Uptime != "" {
+				meta = append(meta, proc.Uptime)
+			}
+			if ms := proc.MemoryString(); ms != "" {
+				meta = append(meta, ms)
+			}
+			if len(meta) > 0 {
+				b.WriteString("  ")
+				b.WriteString(lipgloss.NewStyle().Foreground(theme.Muted).Render(
+					strings.Join(meta, " · ")))
+			}
+
 			b.WriteString("\n")
 			globalIdx++
 		}

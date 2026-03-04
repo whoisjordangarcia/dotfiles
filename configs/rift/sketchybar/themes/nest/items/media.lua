@@ -41,20 +41,26 @@ media:subscribe("media_change", function(env)
 end)
 
 media:subscribe({ "routine", "forced" }, function()
-	sbar.exec(spotify_cmd, function(result)
-		if not result or result == "" or result == "\n" then
+	sbar.exec("pgrep -x Spotify", function(pid)
+		if not pid or pid == "" or pid == "\n" then
 			media:set({ drawing = false })
 			return
 		end
-		result = result:match("^%s*(.-)%s*$")
-		if result == "" then
-			media:set({ drawing = false })
-			return
-		end
-		local state, track_info = result:match("^(.-)%|%|(.+)$")
-		if state and track_info then
-			update_media(state, track_info)
-		end
+		sbar.exec(spotify_cmd, function(result)
+			if not result or result == "" or result == "\n" then
+				media:set({ drawing = false })
+				return
+			end
+			result = result:match("^%s*(.-)%s*$")
+			if result == "" then
+				media:set({ drawing = false })
+				return
+			end
+			local state, track_info = result:match("^(.-)%|%|(.+)$")
+			if state and track_info then
+				update_media(state, track_info)
+			end
+		end)
 	end)
 end)
 

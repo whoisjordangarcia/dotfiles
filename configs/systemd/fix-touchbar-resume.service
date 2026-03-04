@@ -1,0 +1,13 @@
+[Unit]
+Description=Fix Touch Bar after resume on T2 MacBooks
+After=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
+ConditionPathExists=/sys/module/apple_bce
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 2
+ExecCondition=/bin/bash -c '! test -e /dev/tiny_dfr_display'
+ExecStart=/bin/bash -c 'modprobe -r apple_bce || true; modprobe apple_bce'
+
+[Install]
+WantedBy=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target

@@ -9,6 +9,15 @@ brew 'jq'
 brew 'fastfetch'
 brew 'rg'
 
+# System monitoring
+tap 'narugit/smctemp'
+brew 'smctemp'
+
+# Streaming
+tap 'LizardByte/homebrew'
+brew 'sunshine'
+cask 'blackhole-2ch'
+
 # Development
 brew 'nvm'
 brew 'lazygit'
@@ -22,6 +31,8 @@ cask 'tailscale-app'
 cask 'ghostty'
 cask 'brave-browser'
 cask 'music-decoy'
+cask 'betterdisplay'
+cask 'raycast'
 
 # Essential Fonts
 cask 'font-sf-mono'

@@ -1,0 +1,17 @@
+{
+    "apps": [
+        {
+            "auto-detach": true,
+            "detached": [],
+            "exclude-global-prep-cmd": false,
+            "exit-timeout": 5,
+            "image-path": "desktop.png",
+            "name": "Desktop",
+            "prep-cmd": [],
+            "wait-all": true
+        }
+    ],
+    "env": {
+        "PATH": "$(PATH):$(HOME)/.local/bin"
+    }
+}
