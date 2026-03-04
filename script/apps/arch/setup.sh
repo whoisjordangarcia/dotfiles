@@ -37,6 +37,11 @@ PACKAGES=(
 	podman
 	podman-docker
 
+	# VPN / networking
+	wireguard-tools
+	dnsmasq
+	ufw
+
 	# smart card
 	yubikey-manager
 	yubikey-personalization

@@ -4,23 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-**otobun** - Opinionated, cross-platform dotfiles supporting macOS, Linux (Fedora, Ubuntu, Arch), and WSL with personal/work environment configurations. Uses a modular, script-based architecture with symlink-based configuration management.
+Opinionated, cross-platform dotfiles supporting macOS, Linux (Fedora, Ubuntu, Arch), and WSL with personal/work environment configurations. Uses a modular, script-based architecture with symlink-based configuration management.
+
+### Target Systems
+
+These dotfiles are actively used across four environments:
+
+| System | Platform | Profile | Use Case |
+|--------|----------|---------|----------|
+| **Main desktop** | Arch Linux | `linux_arch` / personal | Primary dev machine — full setup with Hyprland, VPN split tunnel, all tools |
+| **Work laptop** | macOS | `mac` / work | Work environment — Brewfile.work packages, work git email, Aerospace WM |
+| **Personal laptop** | Arch Linux (omarchy) | `linux_arch` / personal | Omarchy base + dotfiles customizations layered on top |
+| **LXC containers** | Ubuntu/Debian (homelab) | `linux_server` | Lightweight — tmux, neovim, zsh, git only (no desktop/GUI components) |
+
+When adding new features, consider which systems they apply to. Desktop-specific configs (Hyprland, VPN, fonts) only belong in the full Arch/mac profiles. Core CLI tools (tmux, nvim, zsh, git) should work across all profiles including the server/LXC setup.
 
 ## Key Commands
 
-### otobun (Go TUI — preferred)
-```bash
-otobun                    # Full TUI: wizard → module selector → installer
-otobun --setup            # Force setup wizard (even if .dotconfig exists)
-otobun --config           # Show current configuration
-otobun --system           # Show detected system
-
-# Build from source (requires Go 1.22+)
-go build -o bin/otobun ./cmd/otobun
-go test ./...             # Run all tests
-```
-
-### Installation & Setup (Legacy Shell)
+### Installation & Setup
 ```bash
 # Remote installation (YOLO method)
 curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/boot.sh | bash
@@ -60,27 +61,13 @@ Individual components can be installed directly:
 ## Architecture
 
 ### Entry Points & Installation Flow
-1. **Go TUI**: `otobun` (cmd/otobun) - Bubble Tea TUI with wizard, module selector, and installation runner
-2. **Remote Bootstrap**: `boot.sh` - Clones repo, fetches updates, launches interactive setup
-3. **CLI Tool**: `bin/dot` - Legacy shell management interface with system detection and configuration
-4. **Legacy**: `bootstrap.sh` - Original installation script (maintained for compatibility)
+1. **Remote Bootstrap**: `boot.sh` - Clones repo, fetches updates, launches interactive setup
+2. **CLI Tool**: `bin/dot` - Shell management interface with system detection and configuration
+3. **Legacy**: `bootstrap.sh` - Original installation script (maintained for compatibility)
 
 ### Directory Structure
 ```
-cmd/otobun/main.go                # Go TUI entry point
-internal/
-  ├── config/config.go            # .dotconfig read/write (shared with shell scripts)
-  ├── detector/system.go          # OS/platform detection (Go port of detect_system())
-  ├── installer/
-  │   ├── components.go           # Parse component arrays from installation scripts
-  │   └── runner.go               # Execute setup.sh scripts with output capture
-  └── tui/
-      ├── app.go                  # Screen routing & sudo preflight
-      ├── wizard/wizard.go        # Huh? form: name, email, env, yubikey
-      ├── selector/selector.go    # Checkbox module picker
-      ├── runner/runner.go        # Progress spinner + viewport
-      └── theme/theme.go          # Lip Gloss brand styles + progress bar
-bin/dot                           # Legacy shell CLI
+bin/dot                           # Shell CLI
 script/
   ├── common/
   │   ├── log.sh                 # Logging utilities (info, success, fail, etc.)
@@ -95,7 +82,6 @@ configs/                          # Configuration files (symlinked to home)
   ├── hypr/                      # Hyprland (Arch)
   ├── aerospace/                 # Aerospace window manager (macOS)
   └── ai-rules/                  # AI assistant rules (Cursor, Aider, Avante)
-go.mod                            # Go module (github.com/whoisjordangarcia/dotfiles)
 .dotconfig                        # Generated config file (DOT_NAME, DOT_EMAIL, etc.)
 ```
 
@@ -158,12 +144,12 @@ link_file "$SOURCE" "$TARGET"
 - **[B]ackup**: Rename to `{file}_YYYYMMDD.bak`, create new symlink
 - **[S]kip**: Keep existing file/symlink unchanged
 
-**Non-Interactive Mode** (for otobun TUI):
+**Non-Interactive Mode**:
 ```bash
-DOT_SYMLINK_MODE=override  # Auto-override (default in otobun TUI)
+DOT_SYMLINK_MODE=override  # Auto-override all conflicts
 DOT_SYMLINK_MODE=backup    # Auto-backup existing files
 DOT_SYMLINK_MODE=skip      # Auto-skip conflicts
-DOT_SYMLINK_MODE=interactive # Prompt user (default in shell)
+DOT_SYMLINK_MODE=interactive # Prompt user (default)
 
 **Common Symlink Patterns**:
 ```bash
@@ -247,35 +233,6 @@ export LOG_LEVEL=error    # Only errors
 
 ## Development Patterns
 
-### otobun Go TUI Development
-
-**Tech Stack**: Go 1.22+, Bubble Tea (TUI framework), Lip Gloss (styling), Bubbles (components), Huh? (forms)
-
-**Building & Testing**:
-```bash
-go build -o bin/otobun ./cmd/otobun    # Build binary
-go test ./...                           # Run all tests (14 tests across 3 packages)
-go run ./cmd/otobun --help              # Run without building
-```
-
-**Package Layout** (`internal/`):
-- `config/` — Reads/writes `.dotconfig` (same format as shell scripts). Functions: `Load()`, `Save()`, `Exists()`, `ToEnv()`
-- `detector/` — Platform detection via `runtime.GOOS` + `/etc/os-release`. Returns `DetectedSystem{OS, Distro, System}`
-- `installer/components.go` — Parses `component_installation=(...)` bash arrays from installation scripts using regex
-- `installer/runner.go` — Executes `script/{component}/setup.sh` via `bash -c`, sources `log.sh` and `symlink.sh`, exports `DOT_*` env vars
-- `tui/app.go` — Orchestrates screen flow: sudo preflight → wizard → selector → runner
-- `tui/wizard/` — Huh? form with branded theme (purple/cyan)
-- `tui/selector/` — Bubble Tea model with `●`/`○` checkboxes, `❯` cursor, vim keys (j/k/space/a/n/enter)
-- `tui/runner/` — Spinner progress with `████░░░` bar, viewport for script output
-- `tui/theme/` — Lip Gloss styles, brand colors, `ProgressBar()` helper
-
-**Key Design Decisions**:
-- otobun does NOT reimplement installation logic — it orchestrates existing shell scripts
-- Shell scripts remain the source of truth for what gets installed
-- `DOT_SYMLINK_MODE=override` is set automatically so symlink.sh doesn't prompt during TUI
-- `sudo -v` runs before any Bubble Tea screen to cache credentials while terminal is pristine
-- Component lists are parsed from bash arrays, not duplicated in Go
-
 ### Adding New Components
 
 1. **Create platform-specific setup script**:
@@ -296,11 +253,10 @@ go run ./cmd/otobun --help              # Run without building
    ```
 
 4. **Place configs** in `configs/{component}/` for symlinking
-5. The `otobun` TUI automatically picks up new components (it parses the bash arrays)
 
 ### Supporting New Platforms
 
-1. **Add detection** to `internal/detector/system.go` (Go) and `bin/dot` `detect_system()` (shell)
+1. **Add detection** to `bin/dot` `detect_system()` function
 2. **Create installer**: `script/{platform}_installation.sh`
 3. **Implement component scripts**: `script/{component}/{platform}/setup.sh`
 4. **Choose package manager**: brew (macOS), apt (Ubuntu), dnf (Fedora), pacman (Arch)
@@ -337,6 +293,7 @@ git config --global commit.gpgsign true
 ### Arch Linux
 - **Window Manager**: Hyprland with HyDE theme
 - **Display**: Waybar panel, Rofi launcher (Wayland)
+- **VPN**: AirVPN with WireGuard split tunneling (see VPN Split Tunneling section)
 - **T2 MacBook Support**: Requires manual `apple-bce` driver installation
 - **Kernel**: Use `linux-t2` for MacBook hardware compatibility
 
@@ -352,6 +309,53 @@ git config --global commit.gpgsign true
 ### WSL
 - **Wezterm**: Configure wezterm.lua in your Windows user directory
 - Cross-platform file access considerations
+
+## VPN Split Tunneling (AirVPN + WireGuard)
+
+Split-tunnel VPN that routes all traffic through AirVPN **except** configurable domains (streaming CDNs, etc.) which route directly.
+
+### How It Works
+
+The bypass chain: **dnsmasq** intercepts DNS queries → adds resolved IPs to an **nftables** dynamic set → nftables marks matching packets with `fwmark 0x2` → **ip rule** routes marked packets through the main table (direct) instead of the WireGuard tunnel. Set entries auto-expire after 1 hour.
+
+### Architecture
+
+```
+configs/vpn-split/
+  ├── cdn-bypass.nft                  # nftables rules (dynamic IP set + packet marking)
+  ├── exclude-domains.example.txt     # Template domain list (checked into repo)
+  ├── vpn-gen-config.sh               # Generates dnsmasq rules from domain list
+  ├── vpn-up.sh                       # Start VPN + load bypass rules
+  └── vpn-down.sh                     # Stop VPN + clean up
+script/vpn/linux/setup.sh            # Component setup (symlinks, dnsmasq/nftables config)
+~/.config/vpn-split/
+  ├── exclude-domains.txt             # LOCAL ONLY — user's domain list (never committed)
+  └── (symlinked scripts)             # vpn-up.sh, vpn-down.sh, vpn-gen-config.sh
+```
+
+### Setup (one-time)
+
+1. Run `script/vpn/linux/setup.sh` (or include `vpn/linux` in the Arch installation array)
+2. Generate a WireGuard config from https://airvpn.org/generator/ (select WireGuard protocol)
+3. Copy to `/etc/wireguard/airvpn.conf`
+4. Edit `~/.config/vpn-split/exclude-domains.txt` to customize bypassed domains
+
+### Shell Aliases
+
+| Alias | Action |
+|-------|--------|
+| `vpn-up` | Start VPN with CDN bypass |
+| `vpn-down` | Stop VPN and clean up routes |
+| `vpn-gen-config` | Regenerate dnsmasq rules after editing domain list |
+| `vpn-status` | Show WireGuard interface status |
+| `vpn-exclude` | Open domain exclude list in `$EDITOR` |
+
+### Important Notes
+
+- **Domain list is local only**: `~/.config/vpn-split/exclude-domains.txt` is never committed. The repo only contains `exclude-domains.example.txt` as a template.
+- **After editing domains**: Run `vpn-gen-config` then `sudo systemctl restart dnsmasq` (or just `vpn-down && vpn-up`)
+- **WireGuard config is not managed by dotfiles**: `/etc/wireguard/airvpn.conf` contains private keys and must be manually placed
+- **Dependencies**: `wireguard-tools` and `dnsmasq` are installed by `apps/arch` in the pacman package list
 
 ## Post-Installation Manual Steps
 
