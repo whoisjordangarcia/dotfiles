@@ -26,6 +26,7 @@ component_installation=(
 	ssh
 	opencode
 	brave/mac
+	sunshine/mac
 )
 
 for component in "${component_installation[@]}"; do

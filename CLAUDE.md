@@ -366,6 +366,19 @@ tmux source ~/.tmux.conf
 <prefix> + I    # Default prefix is Ctrl+b, then press I
 ```
 
+### Tmux Continuum Caveat
+
+**tmux-continuum auto-save relies on a `#(continuum_save.sh)` call embedded in `status-right`.**
+Any custom `status-right` set **after** `run '~/.tmux/plugins/tpm/tpm'` will overwrite continuum's hook and silently break auto-save. When customizing the statusline, always include:
+```bash
+#(~/.tmux/plugins/tmux-continuum/scripts/continuum_save.sh)
+```
+at the start of your `status-right` value. It produces no visible output — it purely triggers the save-interval check on each status bar refresh.
+
+- Save files live at `~/.local/share/tmux/resurrect/`
+- Manual save/restore: `<prefix> + S` (save) / `<prefix> + R` (restore)
+- Current auto-save interval: 1 minute (`@continuum-save-interval '1'`)
+
 ### Shell Integration
 ```bash
 # Add to .zshrc if not already present
