@@ -1,7 +1,7 @@
 # rift config — ported from aerospace (i3/sway style)
 
 [settings]
-animate = true
+animate = false
 animation_duration = 0.3
 animation_fps = 100.0
 
@@ -14,10 +14,10 @@ auto_focus_blacklist = []
 hot_reload = true
 
 # Sketchybar integration — subscribe to rift events and forward them
-# Uses a lockfile-based debounce (50ms) to prevent process pile-up from rapid events
+# Uses a lockfile-based debounce (200ms) to prevent process pile-up from rapid events
 run_on_start = [
-  "rift-cli subscribe cli --event workspace_changed --command sh --args -c --args 'LOCK=/tmp/.sb_ws_lock; [ -f $LOCK ] && exit 0; touch $LOCK; sketchybar --trigger rift_workspace_changed RIFT_WORKSPACE_NAME=\"$RIFT_WORKSPACE_NAME\" RIFT_WORKSPACE_ID=\"$RIFT_WORKSPACE_ID\"; (sleep 0.05 && rm -f $LOCK) &'",
-  "rift-cli subscribe cli --event windows_changed --command sh --args -c --args 'LOCK=/tmp/.sb_win_lock; [ -f $LOCK ] && exit 0; touch $LOCK; sketchybar --trigger rift_windows_changed RIFT_WORKSPACE_NAME=\"$RIFT_WORKSPACE_NAME\" RIFT_WINDOW_COUNT=\"$RIFT_WINDOW_COUNT\"; (sleep 0.05 && rm -f $LOCK) &'",
+  "rift-cli subscribe cli --event workspace_changed --command sh --args -c --args 'LOCK=/tmp/.sb_ws_lock; [ -f $LOCK ] && exit 0; touch $LOCK; sketchybar --trigger rift_workspace_changed RIFT_WORKSPACE_NAME=\"$RIFT_WORKSPACE_NAME\" RIFT_WORKSPACE_ID=\"$RIFT_WORKSPACE_ID\"; (sleep 0.2 && rm -f $LOCK) &'",
+  "rift-cli subscribe cli --event windows_changed --command sh --args -c --args 'LOCK=/tmp/.sb_win_lock; [ -f $LOCK ] && exit 0; touch $LOCK; sketchybar --trigger rift_windows_changed RIFT_WORKSPACE_NAME=\"$RIFT_WORKSPACE_NAME\" RIFT_WINDOW_COUNT=\"$RIFT_WINDOW_COUNT\"; (sleep 0.2 && rm -f $LOCK) &'",
   "sh -c '$HOME/dev/dotfiles/configs/rift/bordersrc'",
 ]
 
@@ -96,6 +96,7 @@ app_rules = [
   { app_id = "com.apple.systempreferences", floating = true },
   { app_id = "com.1password.1password", floating = true },
   { app_id = "com.flexibits.fantastical2.mac", floating = true },
+  { app_id = "pro.betterdisplay.BetterDisplay", floating = true },
 ]
 
 # Modifier combinations (i3/sway style: Option as $mod)

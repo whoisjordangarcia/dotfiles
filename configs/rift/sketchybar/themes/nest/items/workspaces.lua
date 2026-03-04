@@ -8,79 +8,90 @@ local query_workspaces = "rift-cli query workspaces"
 local workspaces = {}
 local last_focused = nil
 
--- Generation counter per workspace: prevents stale async callbacks from rendering
-local update_gen = {}
-for i = 1, max_workspaces do update_gen[i] = 0 end
+-- Global generation counter: prevents stale async callbacks from rendering
+-- when rapid events trigger multiple refreshAllWorkspaces() calls
+local refresh_gen = 0
 
-local function updateWindows(workspace_index)
+local function applyWorkspaceState(workspace_index, ws_data, focused_index)
 	local rift_ws_index = workspace_index - 1
+	local windows = {}
 
-	-- Bump generation so any in-flight query for this workspace is invalidated
-	update_gen[workspace_index] = update_gen[workspace_index] + 1
-	local my_gen = update_gen[workspace_index]
+	if ws_data then
+		windows = ws_data.windows or {}
+	end
+
+	local icon_line = ""
+	local no_app = (#windows == 0)
+	local is_focused = (focused_index == rift_ws_index)
+
+	for _, win in ipairs(windows) do
+		local app = win.app_name
+		local lookup = app_icons[app]
+		local icon = ((lookup == nil) and app_icons["Default"] or lookup)
+		icon_line = icon_line .. " " .. icon
+	end
+
+	if is_focused then
+		sbar.trigger("workspace_app_change", { HAS_APP = no_app and "false" or "true" })
+	end
+
+	-- No animation here — structural drawing changes must be instant
+	-- to avoid overlapping animations from rapid event bursts
+	if no_app and is_focused then
+		workspaces[workspace_index]:set({
+			icon = { drawing = true, padding_right = 8 },
+			label = {
+				string = "",
+				drawing = false,
+			},
+			background = { drawing = true },
+			padding_right = 1,
+			padding_left = 1,
+		})
+	elseif no_app then
+		workspaces[workspace_index]:set({
+			icon = { drawing = false },
+			label = { drawing = false },
+			background = { drawing = false },
+			padding_right = 0,
+			padding_left = 0,
+		})
+	else
+		workspaces[workspace_index]:set({
+			icon = { drawing = true },
+			label = { drawing = true, string = icon_line },
+			background = { drawing = true },
+			padding_right = 1,
+			padding_left = 1,
+		})
+	end
+end
+
+-- Single query, distributes results to all workspaces
+local function refreshAllWorkspaces()
+	refresh_gen = refresh_gen + 1
+	local my_gen = refresh_gen
 
 	sbar.exec(query_workspaces, function(all_workspaces)
-		-- If a newer updateWindows was called for this workspace, discard this result
-		if update_gen[workspace_index] ~= my_gen then return end
+		-- If a newer refresh was triggered, discard this result
+		if refresh_gen ~= my_gen then return end
 		if not all_workspaces then return end
 
+		-- Build a lookup table: rift_index -> workspace data
+		local ws_by_index = {}
 		local focused_index = nil
-		local windows = {}
 
 		for _, ws in ipairs(all_workspaces) do
+			ws_by_index[ws.index] = ws
 			if ws.is_active then
 				focused_index = ws.index
 			end
-			if ws.index == rift_ws_index then
-				windows = ws.windows or {}
-			end
 		end
 
-		local icon_line = ""
-		local no_app = (#windows == 0)
-
-		for _, win in ipairs(windows) do
-			local app = win.app_name
-			local lookup = app_icons[app]
-			local icon = ((lookup == nil) and app_icons["Default"] or lookup)
-			icon_line = icon_line .. " " .. icon
-		end
-
-		local is_focused = (focused_index == rift_ws_index)
-
-		if is_focused then
-			sbar.trigger("workspace_app_change", { HAS_APP = no_app and "false" or "true" })
-		end
-
-		-- No animation here — structural drawing changes must be instant
-		-- to avoid overlapping animations from rapid event bursts
-		if no_app and is_focused then
-			workspaces[workspace_index]:set({
-				icon = { drawing = true, padding_right = 8 },
-				label = {
-					string = "",
-					drawing = false,
-				},
-				background = { drawing = true },
-				padding_right = 1,
-				padding_left = 1,
-			})
-		elseif no_app then
-			workspaces[workspace_index]:set({
-				icon = { drawing = false },
-				label = { drawing = false },
-				background = { drawing = false },
-				padding_right = 0,
-				padding_left = 0,
-			})
-		else
-			workspaces[workspace_index]:set({
-				icon = { drawing = true },
-				label = { drawing = true, string = icon_line },
-				background = { drawing = true },
-				padding_right = 1,
-				padding_left = 1,
-			})
+		-- Update all workspaces from cached query
+		for i = 1, max_workspaces do
+			local rift_ws_index = i - 1
+			applyWorkspaceState(i, ws_by_index[rift_ws_index], focused_index)
 		end
 	end)
 end
@@ -120,7 +131,6 @@ for workspace_index = 1, max_workspaces do
 
 	workspace:subscribe("rift_workspace_changed", function(env)
 		local focused_name = env.RIFT_WORKSPACE_NAME
-		local focused_index = tonumber(focused_name)
 		local is_focused = focused_name == tostring(workspace_index)
 
 		sbar.animate("tanh", 10, function()
@@ -133,43 +143,47 @@ for workspace_index = 1, max_workspaces do
 			})
 		end)
 
-		-- Update windows for both the newly focused workspace and the one that lost focus
-		-- (updateWindows branches on is_focused, so both need a refresh)
+		-- Only the newly focused workspace triggers a full refresh
+		-- (the refresh updates ALL workspaces, so old+new both get correct state)
 		if is_focused then
-			-- Update the previously focused workspace (it may need to hide/change)
-			if last_focused and last_focused ~= workspace_index then
-				updateWindows(last_focused)
-			end
 			last_focused = workspace_index
-			updateWindows(workspace_index)
+			refreshAllWorkspaces()
 		end
 	end)
 
 	workspace:subscribe("rift_windows_changed", function(env)
-		-- Only update the workspace that actually changed
+		-- Any windows_changed event triggers a full refresh
+		-- (only the first workspace to receive it actually fires the query —
+		-- subsequent ones within the same event cycle will be debounced by gen counter)
 		local changed_name = env.RIFT_WORKSPACE_NAME
 		if changed_name == tostring(workspace_index) then
-			updateWindows(workspace_index)
+			refreshAllWorkspaces()
 		end
 	end)
 
 	workspace:subscribe("display_change", function()
-		updateWindows(workspace_index)
-	end)
-
-	updateWindows(workspace_index)
-	sbar.exec(query_workspaces, function(all_workspaces)
-		if not all_workspaces then return end
-		for _, ws in ipairs(all_workspaces) do
-			if ws.is_active and ws.name == tostring(workspace_index) then
-				workspaces[workspace_index]:set({
-					icon = { highlight = true },
-					label = { highlight = true },
-					background = {
-						color = colors.with_alpha(colors.white, 0.15),
-					},
-				})
-			end
+		-- Only workspace 1 triggers the refresh on display_change
+		-- (all workspaces get updated from the single query)
+		if workspace_index == 1 then
+			refreshAllWorkspaces()
 		end
 	end)
 end
+
+-- Initial load: single query to set up all workspaces
+refreshAllWorkspaces()
+sbar.exec(query_workspaces, function(all_workspaces)
+	if not all_workspaces then return end
+	for _, ws in ipairs(all_workspaces) do
+		local ws_index = ws.index + 1
+		if ws.is_active and ws_index >= 1 and ws_index <= max_workspaces then
+			workspaces[ws_index]:set({
+				icon = { highlight = true },
+				label = { highlight = true },
+				background = {
+					color = colors.with_alpha(colors.white, 0.15),
+				},
+			})
+		end
+	end
+end)
