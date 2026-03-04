@@ -10,6 +10,7 @@ alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 
 #development
 alias c="claude"
+alias cr="claude --resume"
 alias claude-yolo="claude --dangerously-skip-permissions"
 alias cy="claude --dangerously-skip-permissions"
 alias lg="lazygit"
