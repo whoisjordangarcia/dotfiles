@@ -94,22 +94,22 @@
     "context7@claude-plugins-official": false,
     "dev-browser@dev-browser-marketplace": false,
     "explanatory-output-style@claude-plugins-official": true,
-    "playwright-skill@playwright-skill": false,
+    "nest-ai-skill-audit@nest-genomics-skills": true,
     "nest-linear@nest-genomics-skills": true,
+    "nest-portal-sign-in@nest-genomics-skills": true,
+    "nest-posthog@nest-genomics-skills": true,
     "nest-pr@nest-genomics-skills": true,
     "nest-preview-branch@nest-genomics-skills": true,
     "nest-preview-cleanup@nest-genomics-skills": true,
     "nest-release-stg@nest-genomics-skills": true,
     "nest-release-summary@nest-genomics-skills": true,
     "nest-retool-json-schema-forms@nest-genomics-skills": true,
-    "nest-slite@nest-genomics-skills": true,
-    "superpowers@superpowers-marketplace": true,
-    "nest-ai-skill-audit@nest-genomics-skills": true,
-    "nest-portal-sign-in@nest-genomics-skills": true,
-    "nest-posthog@nest-genomics-skills": true,
     "nest-sentry@nest-genomics-skills": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "swift-lsp@claude-plugins-official": true
+    "nest-slite@nest-genomics-skills": true,
+    "playwright-skill@playwright-skill": false,
+    "superpowers@superpowers-marketplace": true,
+    "swift-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
   },
   "outputStyle": "Explanatory",
   "sandbox": {
@@ -123,7 +123,7 @@
       "git"
     ]
   },
-  "spinnerTipsEnabled": false,
+  "spinnerTipsEnabled": true,
   "spinnerVerbs": {
     "mode": "append",
     "verbs": [
@@ -133,10 +133,8 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "companyAnnouncements": [
-    "Nest Genomics"
-  ],
   "autoUpdatesChannel": "latest",
   "skipDangerousModePermissionPrompt": true,
-  "effortLevel": "medium"
+  "effortLevel": "medium",
+  "model": "opus"
 }
