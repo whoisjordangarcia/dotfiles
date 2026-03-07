@@ -14,10 +14,11 @@ auto_focus_blacklist = []
 hot_reload = true
 
 # Sketchybar integration — subscribe to rift events and forward them
-# Uses a lockfile-based debounce (200ms) to prevent process pile-up from rapid events
+# workspace_changed: no debounce needed, Lua gen counter handles races
+# windows_changed: lockfile debounce (500ms) to prevent pile-up from display hotplug cascades
 run_on_start = [
-  "rift-cli subscribe cli --event workspace_changed --command sh --args -c --args 'LOCK=/tmp/.sb_ws_lock; [ -f $LOCK ] && exit 0; touch $LOCK; sketchybar --trigger rift_workspace_changed RIFT_WORKSPACE_NAME=\"$RIFT_WORKSPACE_NAME\" RIFT_WORKSPACE_ID=\"$RIFT_WORKSPACE_ID\"; (sleep 0.2 && rm -f $LOCK) &'",
-  "rift-cli subscribe cli --event windows_changed --command sh --args -c --args 'LOCK=/tmp/.sb_win_lock; [ -f $LOCK ] && exit 0; touch $LOCK; sketchybar --trigger rift_windows_changed RIFT_WORKSPACE_NAME=\"$RIFT_WORKSPACE_NAME\" RIFT_WINDOW_COUNT=\"$RIFT_WINDOW_COUNT\"; (sleep 0.2 && rm -f $LOCK) &'",
+  "rift-cli subscribe cli --event workspace_changed --command sketchybar --args --trigger --args rift_workspace_changed --args RIFT_WORKSPACE_NAME=$RIFT_WORKSPACE_NAME --args RIFT_WORKSPACE_ID=$RIFT_WORKSPACE_ID",
+  "rift-cli subscribe cli --event windows_changed --command sh --args -c --args 'LOCK=/tmp/.sb_win_lock; [ -f $LOCK ] && exit 0; touch $LOCK; sketchybar --trigger rift_windows_changed RIFT_WORKSPACE_NAME=\"$RIFT_WORKSPACE_NAME\" RIFT_WINDOW_COUNT=\"$RIFT_WINDOW_COUNT\"; (sleep 0.5 && rm -f $LOCK) &'",
   "sh -c '$HOME/dev/dotfiles/configs/rift/bordersrc'",
 ]
 
@@ -69,8 +70,8 @@ drag_swap_fraction = 0.5
 [virtual_workspaces]
 enabled = true
 default_workspace_count = 10
-# disabled: caused random window repositioning on external display connect/disconnect
-# auto_assign_windows = false
+# auto-assign is enabled but display-change flicker is handled by
+# the debounced display-change script (configs/rift/display-change.sh)
 auto_assign_windows = true
 preserve_focus_per_workspace = true
 workspace_auto_back_and_forth = false
@@ -97,6 +98,8 @@ app_rules = [
   { app_id = "com.1password.1password", floating = true },
   { app_id = "com.flexibits.fantastical2.mac", floating = true },
   { app_id = "pro.betterdisplay.BetterDisplay", floating = true },
+  { app_id = "com.apple.iphonesimulator", floating = true },
+  { app_id = "com.apple.dt.Xcode", floating = true },
 ]
 
 # Modifier combinations (i3/sway style: Option as $mod)
@@ -122,17 +125,17 @@ comb1 = "Option + Shift"
 "Option + 9" = { switch_to_workspace = 8 }
 "Option + 0" = { switch_to_workspace = 9 }
 
-# Move window to workspace and follow
-"comb1 + 1" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 0 && rift-cli execute workspace switch 0"] }
-"comb1 + 2" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 1 && rift-cli execute workspace switch 1"] }
-"comb1 + 3" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 2 && rift-cli execute workspace switch 2"] }
-"comb1 + 4" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 3 && rift-cli execute workspace switch 3"] }
-"comb1 + 5" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 4 && rift-cli execute workspace switch 4"] }
-"comb1 + 6" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 5 && rift-cli execute workspace switch 5"] }
-"comb1 + 7" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 6 && rift-cli execute workspace switch 6"] }
-"comb1 + 8" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 7 && rift-cli execute workspace switch 7"] }
-"comb1 + 9" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 8 && rift-cli execute workspace switch 8"] }
-"comb1 + 0" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 9 && rift-cli execute workspace switch 9"] }
+# Move window to workspace (stay on current workspace)
+"comb1 + 1" = { exec = ["rift-cli", "execute", "workspace", "move-window", "0"] }
+"comb1 + 2" = { exec = ["rift-cli", "execute", "workspace", "move-window", "1"] }
+"comb1 + 3" = { exec = ["rift-cli", "execute", "workspace", "move-window", "2"] }
+"comb1 + 4" = { exec = ["rift-cli", "execute", "workspace", "move-window", "3"] }
+"comb1 + 5" = { exec = ["rift-cli", "execute", "workspace", "move-window", "4"] }
+"comb1 + 6" = { exec = ["rift-cli", "execute", "workspace", "move-window", "5"] }
+"comb1 + 7" = { exec = ["rift-cli", "execute", "workspace", "move-window", "6"] }
+"comb1 + 8" = { exec = ["rift-cli", "execute", "workspace", "move-window", "7"] }
+"comb1 + 9" = { exec = ["rift-cli", "execute", "workspace", "move-window", "8"] }
+"comb1 + 0" = { exec = ["rift-cli", "execute", "workspace", "move-window", "9"] }
 
 # Workspace back and forth
 "Option + Tab" = "switch_to_last_workspace"
