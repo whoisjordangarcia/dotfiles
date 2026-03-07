@@ -1,0 +1,21 @@
+# Domains to exclude from VPN (route directly)
+# One domain per line. Lines starting with # are comments.
+# Subdomains are included automatically (e.g. "netflix.com" covers "*.netflix.com")
+#
+# After editing, run: vpn-gen-config to regenerate dnsmasq rules
+# Then: sudo systemctl restart dnsmasq
+
+# ── Streaming ─────────────────────────────────────────────────────────
+netflix.com
+nflxvideo.net
+youtube.com
+googlevideo.com
+twitch.tv
+ttvnw.net
+
+# ── CDNs (used by many video services) ───────────────────────────────
+# Uncomment if you want general CDN traffic to bypass VPN:
+# akamaihd.net
+# cloudfront.net
+# fbcdn.net
+# fastly.net

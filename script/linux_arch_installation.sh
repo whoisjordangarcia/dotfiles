@@ -27,6 +27,8 @@ component_installation=(
 	codex
 	claude
 	dolphin/linux
+	vpn/linux
+	ufw/linux
 )
 
 for component in "${component_installation[@]}"; do
