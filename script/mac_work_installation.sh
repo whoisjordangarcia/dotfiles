@@ -23,6 +23,7 @@ component_installation=(
 	starship
 	work/mac
 	claude
+	claude-mem
 	codex
 	fastfetch
 )

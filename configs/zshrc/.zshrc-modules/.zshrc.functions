@@ -128,5 +128,23 @@ dotref() {
   ~/.zshrc-modules/scripts/dotfiles-quick-ref
 }
 
+# ==============================================================================
+#  Clamshell / Sunshine Streaming
+# ==============================================================================
+
+clamshell() {
+  sudo pmset -a disablesleep 1
+  sudo pmset -a displaysleep 0
+  sudo pmset -a sleep 0
+  echo "Clamshell mode enabled — safe to close lid"
+}
+
+clamshell-undo() {
+  sudo pmset -a disablesleep 0
+  sudo pmset -a displaysleep 10
+  sudo pmset -a sleep 1
+  echo "Clamshell mode disabled — normal sleep restored"
+}
+
 # Aliases for convenience
 alias dothelp="dotman"

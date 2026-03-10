@@ -1,27 +1,14 @@
 add_newline = true
 command_timeout = 500
-format = "$username$hostname$directory$git_branch$git_status$character"
+format = "${custom.prompt_info}$git_status$character"
 
-[username]
-show_always = false
-format = "[$user]($style)@"
-style_user = "bold yellow"
-style_root = "bold red"
-
-[hostname]
-ssh_only = true
-format = "[$hostname]($style) "
-style = "bold yellow"
-
-[directory]
-truncation_length = 1
-truncate_to_repo = false
-format = "[$path]($style)"
+[custom.prompt_info]
+when = true
+command = '~/.config/starship/prompt_info.sh'
+shell = ["bash", "--noprofile", "--norc"]
+format = "[$output ]($style)"
 style = "bold cyan"
-
-[git_branch]
-format = " [$branch]($style)"
-style = "cyan"
+description = "Shows repo/worktree name and conditional branch"
 
 [character]
 error_symbol = " [✗](bold cyan)"

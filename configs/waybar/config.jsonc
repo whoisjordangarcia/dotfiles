@@ -82,7 +82,8 @@
       "memory",
       "custom/gpuinfo",
       "custom/cpuinfo",
-      "custom/sensorsinfo"
+      "custom/sensorsinfo",
+      "custom/gpupower"
     ],
     "orientation": "inherit"
   },

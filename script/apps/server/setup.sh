@@ -83,13 +83,7 @@ else
 	info "Node.js already installed: $(node --version)"
 fi
 
-# ── Claude Code ────────────────────────────────────────────────────
-if ! command -v claude &>/dev/null; then
-	step "Installing Claude Code"
-	curl -fsSL https://claude.ai/install.sh | bash
-else
-	info "Claude Code already installed"
-fi
+# Claude Code is installed via script/claude/setup.sh
 
 # ── zoxide (smart cd) ─────────────────────────────────────────────
 if ! command -v zoxide &>/dev/null; then

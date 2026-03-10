@@ -10,8 +10,10 @@ alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 
 #development
 alias c="claude"
+alias cr="claude --resume"
 alias claude-yolo="claude --dangerously-skip-permissions"
 alias cy="claude --dangerously-skip-permissions"
+alias update-claude="curl -fsSL https://claude.ai/install.sh | bash"
 alias lg="lazygit"
 alias vim="nvim"
 alias vi="nvim"
@@ -20,6 +22,19 @@ alias nvim-kickstart='NVIM_APPNAME="nvim-starter" nvim'
 alias nvchad='NVIM_APPNAME="nvchad" nvim'
 alias avante='nvim -c "lua vim.defer_fn(function()require(\"avante.api\").zen_mode()end, 100)"'
 alias reqrepo-env='~/.zshrc-modules/scripts/activate-reqrepo-env'
+
+#firewall
+alias fw="sudo ufw status verbose"
+alias fw-allow="sudo ufw allow"
+alias fw-deny="sudo ufw deny"
+alias fw-reload="sudo ufw reload"
+
+#vpn
+alias vpn-up="bash ~/.config/vpn-split/vpn-up.sh"
+alias vpn-down="bash ~/.config/vpn-split/vpn-down.sh"
+alias vpn-gen-config="bash ~/.config/vpn-split/vpn-gen-config.sh"
+alias vpn-status="nmcli connection show --active | grep vpn"
+alias vpn-exclude="$EDITOR ~/.config/vpn-split/exclude-domains.txt"
 
 alias :q="exit"
 alias :wq="exit"

@@ -1,0 +1,50 @@
+[user]
+    name = Jordan Garcia
+    email = jordan@example.com
+
+[core]
+    editor = vim
+    pager = delta
+    autocrlf = input
+
+[init]
+    defaultBranch = main
+
+[push]
+    default = simple
+    followTags = true
+
+[pull]
+    rebase = false
+
+[fetch]
+    prune = true
+    pruneTags = true
+
+[alias]
+    s = status
+    a = add
+    c = commit
+    co = checkout
+    br = branch
+    d = diff
+    ds = diff --staged
+    l = log --oneline --graph --decorate
+    ll = log --oneline --graph --all --decorate
+    last = log -1 HEAD
+    undo = reset --soft HEAD~1
+    amend = commit --amend --no-edit
+    alias = "!git config --list | grep 'alias.' | sed 's/alias.//' | sed 's/=/ = /'"
+
+[diff]
+    color = auto
+    mnemonicPrefix = true
+
+[color]
+    ui = auto
+
+[log]
+    decorate = auto
+
+[rerere]
+    enabled = true

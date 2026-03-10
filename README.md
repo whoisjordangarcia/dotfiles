@@ -274,21 +274,6 @@ Context rules for AI coding assistants:
 
 **Installs:** Core dev tools via apt, Node, LazyGit, Starship, Fastfetch, Wezterm (Windows-compatible)
 
-### Server (`linux_server`)
-
-```bash
-./bin/dot --system linux_server
-```
-
-**Installs:** Core apt packages, Neovim (PPA), eza, Node.js, zoxide, Starship, Fastfetch (minimal), Git, Zsh, kickstart.nvim, Tmux, Claude Code
-
-**Target:** Proxmox LXC containers, headless Debian/Ubuntu servers — nice shell experience with no GUI.
-
-**One-liner for fresh servers:**
-```bash
-curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/boot.sh | bash -s -- --system linux_server
-```
-
 ### Fedora (`linux_fedora`)
 
 ```bash

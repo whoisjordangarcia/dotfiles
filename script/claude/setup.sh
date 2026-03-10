@@ -7,6 +7,14 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 source "$SCRIPT_DIR/../common/log.sh"
 source "$SCRIPT_DIR/../common/symlink.sh"
 
+# Install Claude Code CLI if not present
+if ! command -v claude &>/dev/null; then
+	step "Installing Claude Code"
+	curl -fsSL https://claude.ai/install.sh | bash
+else
+	debug "Claude Code already installed"
+fi
+
 debug "Ensuring $HOME/.claude exists"
 mkdir -p "$HOME/.claude"
 

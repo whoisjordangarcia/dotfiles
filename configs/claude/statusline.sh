@@ -370,8 +370,53 @@ fi
 # ─── Assemble output ─────────────────────────────────────────────────
 sep=" ${COLOR_DIM}·${COLOR_RESET} "
 
-# Line 1: session vitals + commit age
-line1="${COLOR_COST}${cost_display}${COLOR_RESET}"
+# Project name: use main repo name when in a worktree, else cwd basename
+project_name=""
+if [ "$is_worktree" = true ] && [ -n "$git_common" ]; then
+	main_repo=$(cd "$cwd" 2>/dev/null && cd "$git_common/.." 2>/dev/null && pwd)
+	[ -n "$main_repo" ] && project_name="${main_repo##*/}"
+elif [ -n "$cwd" ]; then
+	project_name="${cwd##*/}"
+fi
+
+# Worktree/PR indicator (built here so it can appear on line 1)
+wt_pr_display=""
+if [ -n "$branch" ]; then
+	if [ "$is_worktree" = true ] && [ -n "$wt_name" ]; then
+		if [ -n "$pr_number" ]; then
+			pr_color="$COLOR_PR_OPEN"
+			if [ "$pr_state" = "MERGED" ]; then
+				pr_color="$COLOR_PR_MERGED"
+			elif [ "$pr_state" = "OPEN" ] && [ "$pr_draft" = "true" ]; then
+				pr_color="$COLOR_PR_DRAFT"
+			elif [ "$pr_state" = "CLOSED" ]; then
+				pr_color="$COLOR_DIM"
+			fi
+			wt_pr_display="${pr_color}⎇ #${pr_number}${COLOR_RESET}"
+		else
+			norm_wt=$(echo "$wt_name" | tr '/' '-')
+			norm_br=$(echo "$branch" | tr '/' '-')
+			[ "$norm_wt" != "$norm_br" ] && wt_pr_display="${COLOR_WORKTREE}⎇ ${wt_name}${COLOR_RESET}"
+		fi
+	elif [ -n "$pr_url" ]; then
+		pr_color="$COLOR_PR_OPEN"
+		if [ "$pr_state" = "MERGED" ]; then
+			pr_color="$COLOR_PR_MERGED"
+		elif [ "$pr_state" = "OPEN" ] && [ "$pr_draft" = "true" ]; then
+			pr_color="$COLOR_PR_DRAFT"
+		elif [ "$pr_state" = "CLOSED" ]; then
+			pr_color="$COLOR_DIM"
+		fi
+		wt_pr_display="${pr_color}#${pr_number}${COLOR_RESET}"
+	fi
+fi
+
+# Line 1: project · PR indicator · session vitals · commit age
+line1=""
+[ -n "$project_name" ] && line1+="${COLOR_WHITE}${project_name}${COLOR_RESET}"
+[ -n "$wt_pr_display" ] && { [ -n "$line1" ] && line1+="${sep}"; line1+="${wt_pr_display}"; }
+[ -n "$line1" ] && line1+="${sep}"
+line1+="${COLOR_COST}${cost_display}${COLOR_RESET}"
 if [[ ! "$model_short" =~ ^Opus ]]; then
 	line1="${COLOR_MODEL}${model_short}${COLOR_RESET}${sep}${line1}"
 fi
@@ -385,51 +430,18 @@ line2=""
 docker_display=""
 node_display=""
 
-# Project name: use main repo name when in a worktree, else cwd basename
-project_name=""
-if [ "$is_worktree" = true ] && [ -n "$git_common" ]; then
-	main_repo=$(cd "$cwd" 2>/dev/null && cd "$git_common/.." 2>/dev/null && pwd)
-	[ -n "$main_repo" ] && project_name="${main_repo##*/}"
-elif [ -n "$cwd" ]; then
-	project_name="${cwd##*/}"
-fi
-
 if [ -n "$branch" ]; then
-	[ -n "$project_name" ] && line2+="${COLOR_WHITE}${project_name}${COLOR_RESET}${sep}"
-	# Worktree indicator: ⎇ #PR (color-coded by state + CI) or ⎇ wt-name
-	if [ "$is_worktree" = true ] && [ -n "$wt_name" ]; then
-		if [ -n "$pr_number" ]; then
-			# Color ⎇ #PR by state: green=open, gray=draft, purple=merged, dim=closed
-			pr_color="$COLOR_PR_OPEN"
-			if [ "$pr_state" = "MERGED" ]; then
-				pr_color="$COLOR_PR_MERGED"
-			elif [ "$pr_state" = "OPEN" ] && [ "$pr_draft" = "true" ]; then
-				pr_color="$COLOR_PR_DRAFT"
-			elif [ "$pr_state" = "CLOSED" ]; then
-				pr_color="$COLOR_DIM"
-			fi
-			line2+="${pr_color}⎇ #${pr_number}${COLOR_RESET}${sep}"
-		else
-			norm_wt=$(echo "$wt_name" | tr '/' '-')
-			norm_br=$(echo "$branch" | tr '/' '-')
-			[ "$norm_wt" != "$norm_br" ] && line2+="${COLOR_WORKTREE}⎇ ${wt_name}${COLOR_RESET}${sep}"
-		fi
-	elif [ -n "$pr_url" ]; then
-		# Non-worktree but has PR: show color-coded PR indicator
-		pr_color="$COLOR_PR_OPEN"
-		if [ "$pr_state" = "MERGED" ]; then
-			pr_color="$COLOR_PR_MERGED"
-		elif [ "$pr_state" = "OPEN" ] && [ "$pr_draft" = "true" ]; then
-			pr_color="$COLOR_PR_DRAFT"
-		elif [ "$pr_state" = "CLOSED" ]; then
-			pr_color="$COLOR_DIM"
-		fi
-		line2+="${pr_color}#${pr_number}${COLOR_RESET}${sep}"
+	# Truncate long branch names with ellipsis
+	branch_max=45
+	if [ "${#branch}" -gt "$branch_max" ]; then
+		branch_display="${branch:0:$branch_max}…"
+	else
+		branch_display="$branch"
 	fi
 	if [ "$is_worktree" = true ]; then
-		line2+="${COLOR_DIM}🌿 ${COLOR_GIT}${branch}${COLOR_RESET}"
+		line2+="${COLOR_DIM}🌿 ${COLOR_GIT}${branch_display}${COLOR_RESET}"
 	else
-		line2+="${COLOR_GIT}${branch}${COLOR_RESET}"
+		line2+="${COLOR_GIT}${branch_display}${COLOR_RESET}"
 	fi
 	[ -n "$base_branch_display" ] && line2+=" ${base_branch_display}"
 	[ -n "$sync_display" ] && line2+="${sep}${sync_display}"

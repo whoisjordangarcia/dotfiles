@@ -7,54 +7,54 @@ source "$SCRIPT_DIR/../../common/log.sh"
 # Parse command line arguments
 FORCE_ENVIRONMENT=""
 while [[ $# -gt 0 ]]; do
-	case $1 in
-	--work)
-		FORCE_ENVIRONMENT="work"
-		shift
-		;;
-	--personal)
-		FORCE_ENVIRONMENT="personal"
-		shift
-		;;
-	-h | --help)
-		echo "Usage: $0 [--work|--personal]"
-		echo "  --work      Force work environment setup"
-		echo "  --personal  Force personal environment setup"
-		echo "  If no flag is provided, environment is auto-detected"
-		exit 0
-		;;
-	*)
-		echo "Unknown option $1"
-		exit 1
-		;;
-	esac
+  case $1 in
+  --work)
+    FORCE_ENVIRONMENT="work"
+    shift
+    ;;
+  --personal)
+    FORCE_ENVIRONMENT="personal"
+    shift
+    ;;
+  -h | --help)
+    echo "Usage: $0 [--work|--personal]"
+    echo "  --work      Force work environment setup"
+    echo "  --personal  Force personal environment setup"
+    echo "  If no flag is provided, environment is auto-detected"
+    exit 0
+    ;;
+  *)
+    echo "Unknown option $1"
+    exit 1
+    ;;
+  esac
 done
 
 # Install xCode cli tools
 if xcode-select -p &>/dev/null; then
-	debug "Xcode command line tools already installed. Skipping."
+  debug "Xcode command line tools already installed. Skipping."
 else
-	info "Installing Xcode command line tools..."
-	xcode-select --install
+  info "Installing Xcode command line tools..."
+  xcode-select --install
 fi
 
 # Check if Homebrew is installed
 if ! command -v brew &>/dev/null; then
-	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-	echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>$HOME/.zprofile
-	eval "$(/opt/homebrew/bin/brew shellenv)"
+  echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>$HOME/.zprofile
+  eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
 brew analytics off
 
 # Determine environment type
 if [[ -n "$FORCE_ENVIRONMENT" ]]; then
-	ENVIRONMENT="$FORCE_ENVIRONMENT"
+  ENVIRONMENT="$FORCE_ENVIRONMENT"
 elif [[ -n "${WORK_ENV:-}" ]] || [[ "$(git config user.email)" == *"@nestgenomics.com" ]]; then
-	ENVIRONMENT="work"
+  ENVIRONMENT="work"
 else
-	ENVIRONMENT="personal" # Default to personal
+  ENVIRONMENT="personal" # Default to personal
 fi
 
 debug "Detected environment: $ENVIRONMENT"
@@ -62,17 +62,17 @@ debug "Detected environment: $ENVIRONMENT"
 # Install base packages first
 debug "Installing base packages..."
 if [[ -f "$SCRIPT_DIR/Brewfile.base" ]]; then
-	brew bundle --file="$SCRIPT_DIR/Brewfile.base"
+  brew bundle --file="$SCRIPT_DIR/Brewfile.base"
 else
-	debug "Brewfile.base not found, skipping base packages"
+  debug "Brewfile.base not found, skipping base packages"
 fi
 
 # Install environment-specific packages
 if [[ -f "$SCRIPT_DIR/Brewfile.$ENVIRONMENT" ]]; then
-	debug "Installing $ENVIRONMENT-specific packages..."
-	brew bundle --file="$SCRIPT_DIR/Brewfile.$ENVIRONMENT"
+  debug "Installing $ENVIRONMENT-specific packages..."
+  brew bundle --file="$SCRIPT_DIR/Brewfile.$ENVIRONMENT"
 else
-	debug "No environment-specific Brewfile found, skipping package installation"
+  debug "No environment-specific Brewfile found, skipping package installation"
 fi
 
 # =============================================================================
@@ -84,9 +84,12 @@ fi
 # Disable press-and-hold for keys in favor of key repeat (essential for Neovim)
 defaults write -g ApplePressAndHoldEnabled -bool false
 
-# Blazing fast key repeat
-defaults write NSGlobalDomain KeyRepeat -int 1
-defaults write NSGlobalDomain InitialKeyRepeat -int 10
+# Use 12-hour time format in menu bar clock
+defaults write com.apple.menuextra.clock AppleICUForce12HourTime -bool true
+
+# Fast key repeat (moderate — comfortable for general use, still snappy for Neovim)
+defaults write NSGlobalDomain KeyRepeat -int 2
+defaults write NSGlobalDomain InitialKeyRepeat -int 25
 
 # Disable smart quotes and dashes (they break code in terminals/editors)
 defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
@@ -198,10 +201,14 @@ defaults write com.apple.dock mru-spaces -bool false
 # Don't show recent apps in Dock
 defaults write com.apple.dock show-recents -bool false
 
+# Disable Spotlight (replaced by Raycast)
+defaults write com.apple.Spotlight "NSStatusItem Visible Item-0" -bool false
+sudo mdutil -a -i off 2>/dev/null || true
+
 # --- Suppress login message ---
 touch "$HOME/.hushlogin"
 
 # --- Restart affected apps ---
 for app in "Activity Monitor" "Finder" "Photos" "SystemUIServer"; do
-	killall "${app}" &>/dev/null || true
+  killall "${app}" &>/dev/null || true
 done

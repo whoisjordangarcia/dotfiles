@@ -1,0 +1,645 @@
+#!/bin/bash
+#===============================================================================
+# .bash_aliases - Command Aliases for Server/Proxmox Environment
+#===============================================================================
+
+#------------------------------------------------------------------------------
+# 1. GENERAL & NAVIGATION ALIASES
+#------------------------------------------------------------------------------
+
+# Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias -- -='cd -'
+alias ~='cd ~'
+
+# Directory listings - prioritize modern replacements
+if command -v eza &>/dev/null; then
+    alias ls='eza --icons=auto'
+    alias ll='eza -la --icons=auto'
+    alias la='eza -a --icons=auto'
+    alias l='eza -l --icons=auto'
+    alias lt='eza --tree --icons=auto'
+    alias llt='eza -la --tree --icons=auto'
+elif command -v exa &>/dev/null; then
+    alias ls='exa --icons'
+    alias ll='exa -la --icons'
+    alias la='exa -a --icons'
+    alias l='exa -l --icons'
+    alias lt='exa --tree --icons'
+    alias llt='exa -la --tree --icons'
+else
+    # Standard ls with colors
+    alias ls='ls --color=auto 2>/dev/null || ls -G'
+    alias ll='ls -la'
+    alias la='ls -A'
+    alias l='ls -CF'
+fi
+
+# File display - prioritize bat
+test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || true
+alias dir='dir --color=auto 2>/dev/null || ls -d */
+alias vdir='vdir --color=auto'
+
+if command -v bat &>/dev/null; then
+    alias cat='bat --paging=never --style=plain'
+    alias bathelp='bat --plain --language=help'
+    help() { "$@" --help 2>&1 | bathelp; }
+else
+    alias cat='cat'
+fi
+
+# Quick file creation/editing
+alias touch='touch'
+alias mkdir='mkdir -pv'
+alias mkd='mkdir'
+alias rmdir='rmdir -v'
+
+#------------------------------------------------------------------------------
+# 2. SERVER ESSENTIALS - SYSTEM MONITORING
+#------------------------------------------------------------------------------
+
+# System status shortcuts
+alias df='df -h'
+alias du='du -h'
+alias free='free -h'
+alias top='htop 2>/dev/null || top'
+alias htop='htop 2>/dev/null || echo "htop not installed; using top" && top'
+
+# Process management
+alias psa='ps aux'
+alias psf='ps auxf'
+alias psg='ps aux | grep -v grep | grep'
+alias psmem='ps aux --sort=-%mem | head -20'
+alias pscpu='ps aux --sort=-%cpu | head -20'
+alias pg='pgrep -a'
+alias pk='pkill'
+
+# Quick system info
+alias meminfo='free -h -l -t'
+alias cpuinfo='lscpu'
+alias distro='cat /etc/*-release 2>/dev/null | head -20'
+alias kernel='uname -r'
+alias arch='uname -m'
+alias osinfo='hostnamectl 2>/dev/null || echo "hostnamectl not available"'
+
+# Storage
+alias disks='df -h'
+alias disklarge='df -h | sort -k5 -n'
+alias largest='du -hsx * 2>/dev/null | sort -rh | head -20'
+alias largest-files='find . -type f -printf "%s %p\\n" | sort -rn | head -20'
+
+# Network
+alias ports='netstat -tulanp 2>/dev/null || netstat -tulan'
+alias listening='ss -tlnp 2>/dev/null || netstat -tlnp'
+alias connections='ss -tan | grep ESTABLISHED | wc -l'
+alias netcon='ss -tulpn'
+alias ipinfo='ip addr show'
+alias myip='curl -s https://ipinfo.io/ip 2>/dev/null || curl -s https://api.ipify.org 2>/dev/null || echo "Cannot determine external IP"'
+alias localip='hostname -I'
+alias speedtest='curl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python3 -'
+
+# Hardware
+alias hwinfo='lshw 2>/dev/null || echo "Install lshw for hardware info"'
+alias sensors='sensors 2>/dev/null || echo "Install lm-sensors for temperature data"'
+
+#------------------------------------------------------------------------------
+# 3. PROXMOX-SPECIFIC ALIASES
+#------------------------------------------------------------------------------
+
+# Proxmox VE status
+alias pveversion='pveversion 2>/dev/null || echo "Not a Proxmox host"'
+alias pvestatus='pvesh get /cluster/status --output-format json-pretty 2>/dev/null || echo "Not a Proxmox host"'
+alias pvenodes='pvesh get /nodes --output-format json-pretty 2>/dev/null || echo "Not a Proxmox host"'
+
+# VM management (qm)
+alias qml='qm list'
+alias qms='qm status'
+alias qmstart='qm start'
+alias qmstop='qm stop'
+alias qmreboot='qm reboot'
+alias qmreset='qm reset'
+alias qmshutdown='qm shutdown'
+alias qmsuspend='qm suspend'
+alias qmresume='qm resume'
+alias qmconfig='qm config'
+
+# Container management (pct)
+alias pctl='pct list'
+alias pcts='pct status'
+alias pctstart='pct start'
+alias pctstop='pct stop'
+alias pctreboot='pct reboot'
+alias pctenter='pct enter'
+alias pctexec='pct exec'
+alias pctconfig='pct config'
+
+# Storage and resources
+alias pvestorage='pvesh get /storage --output-format json-pretty 2>/dev/null || echo "Not a Proxmox host"'
+alias pveresources='pvesh get /cluster/resources --output-format json-pretty 2>/dev/null || echo "Not a Proxmox host"'
+alias pvetasks='pvesh get /cluster/tasks --output-format json-pretty 2>/dev/null || echo "Not a Proxmox host"'
+
+# Cluster management
+alias pveha='pvesh get /cluster/ha/status 2>/dev/null || echo "HA not configured or not Proxmox"'
+
+# Useful Proxmox one-liners
+alias vmlist='qm list | grep -E "^(VMID|^\\s+[0-9])" | column -t'
+alias ctlist='pct list | column -t'
+alias runningvms='qm list | grep running'
+alias runningcts='pct list | grep running'
+alias allrunning='echo "=== VMs ==="; qm list | grep running; echo ""; echo "=== CTs ==="; pct list | grep running'
+
+# LXC shortcuts (useful for pct)
+alias ctexec='pct exec'
+alias ctenter='pct enter'
+alias ctsnapshot='pct snapshot'
+alias ctrollback='pct rollback'
+
+# Backup shortcuts
+alias vzbackup='vzdump --all --compress zstd --mode snapshot --storage local'
+alias vzbackupstop='vzdump --all --compress zstd --mode stop --storage local'
+
+#------------------------------------------------------------------------------
+# 4. DOCKER & CONTAINER HELPERS
+#------------------------------------------------------------------------------
+
+# Docker general
+alias d='docker'
+alias dc='docker compose'
+alias dps='docker ps'
+alias dpsa='docker ps -a'
+alias dimg='docker images'
+alias dvol='docker volume ls'
+alias dnet='docker network ls'
+
+# Container management
+alias dstart='docker start'
+alias dstop='docker stop'
+alias drestart='docker restart'
+alias drm='docker rm'
+alias drmi='docker rmi'
+alias drun='docker run -it --rm'
+alias dex='docker exec -it'
+alias dsh='docker exec -it'
+alias dlogs='docker logs'
+alias dlogsf='docker logs -f'
+
+# Cleanup
+alias dclean='docker system prune -f'
+alias dcleanall='docker system prune -a -f --volumes'
+alias dvolumeprune='docker volume prune -f'
+
+# Build
+alias dbuild='docker build'
+alias dtag='docker tag'
+alias dpush='docker push'
+alias dpull='docker pull'
+
+# Image info
+alias dinspect='docker inspect'
+alias dstats='docker stats'
+alias dip='docker inspect -f "{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"'
+alias dips='docker ps -q | xargs -n 1 docker inspect -f "{{.Name}}: {{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}" 2>/dev/null'
+
+# Compose
+alias dcu='docker compose up -d'
+alias dcub='docker compose up -d --build'
+alias dcd='docker compose down'
+alias dcdv='docker compose down -v'
+alias dcr='docker compose restart'
+alias dcl='docker compose logs'
+alias dclf='docker compose logs -f'
+alias dce='docker compose exec'
+alias dcb='docker compose build'
+
+# Docker Swarm
+alias dswarm='docker swarm'
+alias dstack='docker stack'
+alias dservice='docker service'
+alias dnode='docker node'
+
+# Podman compatibility
+if command -v podman &>/dev/null && ! command -v docker &>/dev/null; then
+    alias docker='podman'
+    alias d='podman'
+    alias docker-compose='podman-compose 2>/dev/null || echo "Install podman-compose"'
+    alias dc='podman-compose 2>/dev/null || echo "Install podman-compose"'
+fi
+
+#------------------------------------------------------------------------------
+# 5. SECURITY ALIASES
+#------------------------------------------------------------------------------
+
+# UFW (Uncomplicated Firewall)
+alias ufw='sudo ufw'
+alias ufwstatus='sudo ufw status verbose'
+alias ufwenable='sudo ufw enable'
+alias ufwdisable='sudo ufw disable'
+alias ufwlist='sudo ufw app list'
+alias ufwallow='sudo ufw allow'
+alias ufwdeny='sudo ufw deny'
+alias ufwdelete='sudo ufw delete'
+alias ufwnumbered='sudo ufw status numbered'
+
+# fail2ban
+alias f2bstatus='sudo fail2ban-client status'
+alias f2bstatusjail='sudo fail2ban-client status'
+alias f2bjails='f2bstatus | grep "Jail list"'
+alias f2blist='sudo fail2ban-client status sshd'
+alias f2bban='sudo fail2ban-client set sshd banip'
+alias f2bunban='sudo fail2ban-client set sshd unbanip'
+alias f2brestart='sudo systemctl restart fail2ban'
+alias f2breload='sudo fail2ban-client reload'
+
+# SSH security
+alias sshconfig='cat ~/.ssh/config 2>/dev/null || echo "No ~/.ssh/config found"'
+alias sshkeys='ls -la ~/.ssh/*.pub 2>/dev/null || echo "No public keys found"'
+alias sshcopy='ssh-copy-id'
+
+# View logs
+alias authlog='sudo tail -f /var/log/auth.log'
+alias syslog='sudo tail -f /var/log/syslog'
+alias kernlog='sudo tail -f /var/log/kern.log'
+alias dmesg='sudo dmesg -H'
+
+# Audit
+alias lastlogins='last -20 | head -20'
+alias lastfailed='sudo lastb | head -20'
+alias loggedin='who'
+alias sessions='w'
+
+# Certificate and SSL
+alias sslcheck='openssl x509 -in'
+alias sslverify='openssl verify'
+alias sslinfo='openssl x509 -text -noout -in'
+alias sslconnect='openssl s_client -connect'
+
+#------------------------------------------------------------------------------
+# 6. DEVELOPMENT TOOLS
+#------------------------------------------------------------------------------
+
+# Git shortcuts
+alias g='git'
+alias gs='git status -sb'
+alias ga='git add'
+alias gaa='git add -A'
+alias gc='git commit -v'
+alias gca='git commit -av'
+alias gcm='git commit -m'
+alias gcam='git commit -am'
+alias gd='git diff'
+alias gds='git diff --staged'
+alias gdw='git diff --word-diff'
+alias gf='git fetch'
+alias gfa='git fetch --all'
+alias gl='git log --oneline --graph --decorate'
+alias gla='git log --oneline --graph --decorate --all'
+alias gl5='git log --oneline --graph --decorate -5'
+alias gl10='git log --oneline --graph --decorate -10'
+alias gl20='git log --oneline --graph --decorate -20'
+alias gll='git log --stat'
+alias gp='git push'
+alias gpf='git push --force-with-lease'
+alias gpl='git pull'
+alias gplo='git pull origin'
+alias gco='git checkout'
+alias gcb='git checkout -b'
+alias gb='git branch -v'
+alias gba='git branch -va'
+alias gbd='git branch -d'
+alias gbD='git branch -D'
+alias gm='git merge'
+alias gr='git rebase'
+alias gri='git rebase -i'
+alias grc='git rebase --continue'
+alias gra='git rebase --abort'
+alias grs='git rebase --skip'
+alias gst='git stash'
+alias gsta='git stash save'
+alias gstp='git stash pop'
+alias gstl='git stash list'
+alias gstd='git stash drop'
+alias grh='git reset --hard'
+alias grs1='git reset --soft HEAD~1'
+alias gcl='git clone'
+alias gclean='git clean -fd'
+alias gignored='git ls-files -o -i --exclude-standard'
+
+# Tmux shortcuts
+alias tm='tmux'
+alias tma='tmux attach'
+alias tmat='tmux attach -t'
+alias tms='tmux new-session -s'
+alias tml='tmux ls'
+alias tmk='tmux kill-session -t'
+alias tmd='tmux detach'
+
+# Editor shortcuts
+alias v='vim'
+alias nv='nvim 2>/dev/null || vim'
+alias vi='vim'
+alias svi='sudo vim'
+
+# Python
+alias py='python3'
+alias py2='python2 2>/dev/null || echo "Python 2 not installed"'
+alias pip='pip3'
+alias ve='python3 -m venv'
+alias activate='source venv/bin/activate 2>/dev/null || source .venv/bin/activate 2>/dev/null || echo "No venv found"'
+
+# Node.js
+alias npmi='npm install'
+alias npmg='npm install -g'
+alias nr='npm run'
+alias nrs='npm run start'
+alias nrd='npm run dev'
+alias nrb='npm run build'
+alias npmlist='npm list -g --depth=0'
+alias yarn='yarnpkg 2>/dev/null || echo "Yarn not installed"'
+
+#------------------------------------------------------------------------------
+# 7. SYSTEMD & SERVICE MANAGEMENT
+#------------------------------------------------------------------------------
+
+alias sc='systemctl'
+alias sstatus='systemctl status'
+alias sstart='sudo systemctl start'
+alias sstop='sudo systemctl stop'
+alias srstart='sudo systemctl restart'
+alias sreload='sudo systemctl reload'
+alias senable='sudo systemctl enable'
+alias sdisable='sudo systemctl disable'
+alias sedit='sudo systemctl edit'
+alias slogs='journalctl -u'
+alias sfailed='systemctl --failed'
+alias sactive='systemctl list-units --type=service --state=active'
+alias sdaemons='systemctl list-unit-files --type=service'
+
+# Journal
+alias jlogs='journalctl -xe'
+alias jsince='journalctl --since'
+alias juntil='journalctl --until'
+alias jfollow='journalctl -f'
+alias jboot='journalctl -b'
+alias jbootprev='journalctl -b -1'
+alias jkernel='journalctl -k'
+
+#------------------------------------------------------------------------------
+# 8. PACKAGE MANAGEMENT (APT/YUM/PACMAN)
+#------------------------------------------------------------------------------
+
+# Detect package manager
+if command -v apt-get &>/dev/null; then
+    # Debian/Ubuntu
+    alias aptup='sudo apt update'
+    alias aptug='sudo apt upgrade -y'
+    alias aptupg='sudo apt update && sudo apt upgrade -y'
+    alias apts='apt search'
+    alias aptsh='apt show'
+    alias apti='sudo apt install'
+    alias aptr='sudo apt remove'
+    alias aptp='sudo apt purge'
+    alias apta='sudo apt autoremove -y'
+    alias aptac='sudo apt autoclean'
+    alias aptf='sudo apt full-upgrade'
+    alias aptlist='apt list --installed | grep'
+    alias aptdep='apt-cache depends'
+    alias aptrev='apt-cache rdepends'
+
+elif command -v dnf &>/dev/null; then
+    # Fedora/RHEL 8+
+    alias dnfup='sudo dnf upgrade'
+    alias dnfi='sudo dnf install'
+    alias dnfrm='sudo dnf remove'
+    alias dnfs='dnf search'
+    alias dnfi='sudo dnf install'
+    alias dnfinfo='dnf info'
+    alias dnfclean='sudo dnf clean all'
+
+elif command -v yum &>/dev/null; then
+    # RHEL/CentOS 7
+    alias yumup='sudo yum update'
+    alias yumi='sudo yum install'
+    alias yumr='sudo yum remove'
+    alias yums='yum search'
+    alias yumclean='sudo yum clean all'
+
+elif command -v pacman &>/dev/null; then
+    # Arch
+    alias pacup='sudo pacman -Syu'
+    alias paci='sudo pacman -S'
+    alias pacr='sudo pacman -R'
+    alias pacs='pacman -Ss'
+    alias pacinfo='pacman -Qi'
+    alias pacclean='sudo pacman -Sc'
+    alias pacorphan='pacman -Qdt'
+fi
+
+# Flatpak/Snap
+if command -v flatpak &>/dev/null; then
+    alias flatup='flatpak update'
+    alias flati='flatpak install'
+    alias flatr='flatpak uninstall'
+    alias flats='flatpak search'
+fi
+
+if command -v snap &>/dev/null; then
+    alias snapup='sudo snap refresh'
+    alias snapl='snap list'
+    alias snapinfo='snap info'
+fi
+
+#------------------------------------------------------------------------------
+# 9. MISCELLANEOUS ALIASES
+#------------------------------------------------------------------------------
+
+# Safety
+alias cp='cp -i'
+alias mv='mv -i'
+alias rm='rm -I --preserve-root'
+alias ln='ln -i'
+
+# Create parent directories
+alias mkdir='mkdir -pv'
+
+# Shortcut for creating and cd into directory
+mkcd() {
+    mkdir -pv "$1" && cd "$1"
+}
+
+# Quick backups
+alias bak='cp -a'
+
+# Remove common flags
+alias rmi='rm -i'
+alias cpf='cp -f'
+alias mvf='mv -f'
+
+#------------------------------------------------------------------------------
+# 10. QUERY & SEARCH ALIASES
+#------------------------------------------------------------------------------
+
+# Grep with color
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+# Search in history
+alias hgrep='history | grep'
+alias fhgrep='history | grep -i'
+
+# Find shortcuts
+alias findn='find . -name'
+alias findi='find . -iname'
+alias findtype='find . -type'
+
+# Which/where shortcuts
+alias which='which -a'
+
+# Quick commands
+alias now='date +"%Y-%m-%d %H:%M:%S"'
+alias today='date +%Y-%m-%d'
+alias week='date +%U'
+
+# Clipboard (if xclip/xsel available)
+if command -v xclip &>/dev/null; then
+    alias clip='xclip -selection clipboard'
+    alias clipin='xclip -selection clipboard -o'
+elif command -v xsel &>/dev/null; then
+    alias clip='xsel --clipboard --input'
+    alias clipout='xsel --clipboard --output'
+fi
+
+#------------------------------------------------------------------------------
+# 11. ARCHIVE & FILE OPERATIONS
+#------------------------------------------------------------------------------
+
+# Extract various archives
+extract() {
+    if [[ -f "$1" ]]; then
+        case "$1" in
+            *.tar.bz2)   tar xjf "$1"    ;;
+            *.tar.gz)    tar xzf "$1"    ;;
+            *.tar.xz)    tar xJf "$1"    ;;
+            *.bz2)       bunzip2 "$1"    ;;
+            *.rar)       unrar x "$1"    ;;
+            *.gz)        gunzip "$1"     ;;
+            *.tar)       tar xf "$1"     ;;
+            *.tbz2)      tar xjf "$1"    ;;
+            *.tgz)       tar xzf "$1"    ;;
+            *.zip)       unzip "$1"      ;;
+            *.Z)         uncompress "$1" ;;
+            *.7z)        7z x "$1"       ;;
+            *.deb)       ar x "$1"       ;;
+            *.tar.zst)   tar --zstd -xf "$1" ;;
+            *)           echo "\$1 cannot be extracted via extract()" ;;
+        esac
+    else
+        echo "\$1 is not a valid file"
+    fi
+}
+
+# Create compressed archives
+mktar() { tar czf "\${1}.tar.gz" "\${1}"; }
+mktbz() { tar cjf "\${1}.tar.bz2" "\${1}"; }
+mkzip() { zip -r "\${1}.zip" "\${1}"; }
+
+#------------------------------------------------------------------------------
+# 12. ECHO/EASY INFO ALIASES
+#------------------------------------------------------------------------------
+
+alias path='echo $PATH | tr ":" "\\n"'
+alias pathcount='echo $PATH | tr ":" "\\n" | wc -l'
+alias envvars='env | sort'
+alias aliaslist='alias | sort'
+alias fnlist='declare -f | grep -v "^_[a-zA-Z]" | head -50'
+
+#------------------------------------------------------------------------------
+# 13. HOMELAB/DEVOPS HELPERS
+#------------------------------------------------------------------------------
+
+# Kubernetes (kubectl)
+if command -v kubectl &>/dev/null; then
+    alias k='kubectl'
+    alias kg='kubectl get'
+    alias kd='kubectl describe'
+    alias kgp='kubectl get pods'
+    alias kgs='kubectl get svc'
+    alias kgd='kubectl get deployments'
+    alias kgn='kubectl get nodes'
+    alias kl='kubectl logs'
+    alias klf='kubectl logs -f'
+    alias kex='kubectl exec -it'
+    alias kpf='kubectl port-forward'
+    alias kc='kubectl config'
+    alias kctx='kubectl config current-context'
+    alias kcon='kubectl config get-contexts'
+    alias kuse='kubectl config use-context'
+    alias kdel='kubectl delete'
+    alias kapp='kubectl apply -f'
+fi
+
+# Terraform
+if command -v terraform &>/dev/null; then
+    alias tf='terraform'
+    alias tfi='terraform init'
+    alias tfv='terraform validate'
+    alias tfp='terraform plan'
+    alias tfa='terraform apply'
+    alias tfd='terraform destroy'
+    alias tfst='terraform state'
+    alias tff='terraform fmt'
+fi
+
+# Ansible
+if command -v ansible &>/dev/null; then
+    alias ap='ansible-playbook'
+    alias ag='ansible-galaxy'
+    alias av='ansible-vault'
+    alias ac='ansible-console'
+    alias adoc='ansible-doc'
+fi
+
+#------------------------------------------------------------------------------
+# 14. HELPER SHORTCUTS
+#------------------------------------------------------------------------------
+
+# Kill process by port
+killport() {
+    local port="$1"
+    local pid=$(lsof -t -i:"$port" 2>/dev/null || ss -tlnp | grep ":$port " | awk '{print $7}' | cut -d',' -f2 | cut -d'=' -f2 | head -1)
+    if [[ -n "$pid" ]]; then
+        echo "Killing process $pid on port $port"
+        kill -9 "$pid" 2>/dev/null || sudo kill -9 "$pid"
+    else
+        echo "No process found on port $port"
+    fi
+}
+
+# Quick HTTP server
+serve() {
+    local port="\${1:-8080}"
+    echo "Serving current directory on http://localhost:$port"
+    python3 -m http.server "$port" 2>/dev/null || python -m SimpleHTTPServer "$port"
+}
+
+# Quick weather
+weather() {
+    local city="\${1:-}"
+    curl -s wttr.in/"$city"
+}
+
+# Quick cheat sheet
+cheat() {
+    curl -s "https://cheat.sh/$1" 2>/dev/null | head -50
+}
+
+# Quick nano second editor (for quick edits)
+alias q='exit'
+alias h='history 20'
+alias c='clear'
+alias e='exit'
+
+:ENDOFFILE

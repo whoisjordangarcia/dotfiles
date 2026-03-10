@@ -46,4 +46,3 @@ export PATH="$HOME/.local/bin:$PATH"
 # bun completions
 [ -s "/home/jordan/.bun/_bun" ] && source "/home/jordan/.bun/_bun"
 
-. "$HOME/.local/share/../bin/env"

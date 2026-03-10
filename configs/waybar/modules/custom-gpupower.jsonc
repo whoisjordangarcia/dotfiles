@@ -1,0 +1,9 @@
+{
+  "custom/gpupower": {
+    "exec": "nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits | awk '{printf \"󱪉 %.0fW\", $1}'",
+    "interval": 5,
+    "format": "{}",
+    "tooltip": false,
+    "class": "default-margin-padding"
+  }
+}

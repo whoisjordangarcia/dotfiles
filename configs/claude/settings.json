@@ -3,7 +3,8 @@
   "env": {
     "DISABLE_TELEMETRY": "1",
     "DISABLE_BUG_COMMAND": "1",
-    "DISABLE_ERROR_REPORTING": "1"
+    "DISABLE_ERROR_REPORTING": "1",
+    "ENABLE_LSP_TOOL": "1"
   },
   "includeCoAuthoredBy": false,
   "permissions": {
@@ -39,16 +40,44 @@
       "mcp__pencil"
     ],
     "deny": [
+      "Read(./**/*.htpasswd)",
+      "Read(./**/*.jks)",
+      "Read(./**/*.key)",
+      "Read(./**/*.keystore)",
+      "Read(./**/*.netrc)",
+      "Read(./**/*.npmrc)",
+      "Read(./**/*.p12)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.pfx)",
+      "Read(./**/*.pgpass)",
+      "Read(./**/*.pypirc)",
+      "Read(./**/*.tfstate)",
+      "Read(./**/*.tfvars)",
       "Read(./**/*credentials*)",
+      "Read(./**/*id_ed25519*)",
+      "Read(./**/*id_rsa*)",
+      "Read(./**/*password*)",
+      "Read(./**/*secret*)",
+      "Read(./**/kubeconfig)",
+      "Read(./**/serviceAccountKey*)",
       "Read(./.env)",
       "Read(./.env.*)",
+      "Read(./.envrc)",
       "Read(./secrets/**)",
       "Read(~/.aws/**)",
+      "Read(~/.config/gh/hosts.yml)",
+      "Read(~/.config/nest-skills/*)",
+      "Read(~/.docker/config.json)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.kube/config)",
       "Read(~/.ssh/**)",
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
-    "ask": ["Bash(git push *)", "Bash(curl *)"],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(curl *)"
+    ],
     "defaultMode": "default"
   },
   "hooks": {},
@@ -63,33 +92,26 @@
     "code-simplifier@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": false,
     "context7@claude-plugins-official": false,
-    "dev-browser@dev-browser-marketplace": true,
+    "dev-browser@dev-browser-marketplace": false,
     "explanatory-output-style@claude-plugins-official": true,
-    "feature-dev@claude-plugins-official": false,
-    "frontend-design@claude-plugins-official": true,
-    "linear@claude-plugins-official": false,
-    "nest-linear@nest-genomics-skills": false,
-    "nest-pr@nest-genomics-skills": false,
-    "nest-retool-json-schema-forms@nest-genomics-skills": false,
-    "playwright-skill@playwright-skill": true,
-    "playwright@claude-plugins-official": false,
-    "pr-review-toolkit@claude-plugins-official": false,
-    "ralph-loop@claude-plugins-official": false,
-    "security-guidance@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": false,
+    "nest-ai-skill-audit@nest-genomics-skills": true,
+    "nest-linear@nest-genomics-skills": true,
+    "nest-portal-sign-in@nest-genomics-skills": true,
+    "nest-posthog@nest-genomics-skills": true,
+    "nest-pr@nest-genomics-skills": true,
+    "nest-preview-branch@nest-genomics-skills": true,
+    "nest-preview-cleanup@nest-genomics-skills": true,
+    "nest-release-stg@nest-genomics-skills": true,
+    "nest-release-summary@nest-genomics-skills": true,
+    "nest-retool-json-schema-forms@nest-genomics-skills": true,
+    "nest-sentry@nest-genomics-skills": true,
+    "nest-slite@nest-genomics-skills": true,
+    "playwright-skill@playwright-skill": false,
     "superpowers@superpowers-marketplace": true,
+    "swift-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true
   },
   "outputStyle": "Explanatory",
-  "spinnerTipsEnabled": false,
-  "spinnerVerbs": {
-    "mode": "append",
-    "verbs": ["Nesting", "sahh good", "ralphing"]
-  },
-  "alwaysThinkingEnabled": true,
-  "autoUpdatesChannel": "latest",
-  "skipDangerousModePermissionPrompt": false,
-  "effortLevel": "medium",
   "sandbox": {
     "enabled": false,
     "autoAllowBashIfSandboxed": true,
@@ -97,6 +119,22 @@
     "network": {
       "allowLocalBinding": true
     },
-    "excludedCommands": ["git"]
-  }
+    "excludedCommands": [
+      "git"
+    ]
+  },
+  "spinnerTipsEnabled": true,
+  "spinnerVerbs": {
+    "mode": "append",
+    "verbs": [
+      "Nesting",
+      "sahh good",
+      "ralphing"
+    ]
+  },
+  "alwaysThinkingEnabled": true,
+  "autoUpdatesChannel": "latest",
+  "skipDangerousModePermissionPrompt": true,
+  "effortLevel": "medium",
+  "model": "opus"
 }
