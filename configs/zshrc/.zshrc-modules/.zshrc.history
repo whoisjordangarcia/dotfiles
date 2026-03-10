@@ -21,7 +21,7 @@ setopt HIST_VERIFY            # Show command before executing from history
 
 # Ignore common commands from history
 # Add commands here that you don't want cluttering your history
-HISTORY_IGNORE="(ls|ll|la|cd|cd ..|pwd|exit|clear|cls|q|history|h)"
+HISTORY_IGNORE="^(ls|ll|la|cd|cd \.\.|pwd|exit|clear|cls|q|history|h)$"
 
 # Hook to filter commands from history
 zshaddhistory() {
