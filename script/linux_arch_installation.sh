@@ -18,6 +18,7 @@ component_installation=(
 	starship
 	# symlinks custom overrides on top of HyDE
 	hypr/linux
+	theming/linux
 	rofi/linux
 	btop/linux
 	gh/linux
