@@ -15,10 +15,11 @@ brew 'smctemp'
 
 # Streaming
 tap 'LizardByte/homebrew'
-brew 'sunshine'
+brew 'sunshine-beta'
 cask 'blackhole-2ch'
 
 # Development
+cask '1password-cli'
 brew 'nvm'
 brew 'lazygit'
 brew 'bat'

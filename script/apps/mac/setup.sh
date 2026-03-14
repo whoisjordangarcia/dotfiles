@@ -87,9 +87,9 @@ defaults write -g ApplePressAndHoldEnabled -bool false
 # Use 12-hour time format in menu bar clock
 defaults write com.apple.menuextra.clock AppleICUForce12HourTime -bool true
 
-# Blazing fast key repeat
-defaults write NSGlobalDomain KeyRepeat -int 1
-defaults write NSGlobalDomain InitialKeyRepeat -int 10
+# Fast key repeat (moderate — comfortable for general use, still snappy for Neovim)
+defaults write NSGlobalDomain KeyRepeat -int 2
+defaults write NSGlobalDomain InitialKeyRepeat -int 25
 
 # Disable smart quotes and dashes (they break code in terminals/editors)
 defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
@@ -200,6 +200,10 @@ defaults write com.apple.dock mru-spaces -bool false
 
 # Don't show recent apps in Dock
 defaults write com.apple.dock show-recents -bool false
+
+# Disable Spotlight (replaced by Raycast)
+defaults write com.apple.Spotlight "NSStatusItem Visible Item-0" -bool false
+sudo mdutil -a -i off 2>/dev/null || true
 
 # --- Suppress login message ---
 touch "$HOME/.hushlogin"

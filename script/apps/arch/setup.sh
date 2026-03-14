@@ -67,6 +67,7 @@ ensure_setuid /usr/bin/newgidmap
 
 # AUR apps (installed with yay if present)
 AUR_PKGS=(
+	1password-cli
 	ghostty-git
 	neovim-nightly-bin
 	claude-desktop-appimage

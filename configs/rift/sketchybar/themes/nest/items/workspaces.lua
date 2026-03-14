@@ -11,6 +11,7 @@ local last_focused = nil
 -- Global generation counter: prevents stale async callbacks from rendering
 -- when rapid events trigger multiple refreshAllWorkspaces() calls
 local refresh_gen = 0
+local display_change_gen = 0
 
 local function applyWorkspaceState(workspace_index, ws_data, focused_index)
 	local rift_ws_index = workspace_index - 1
@@ -152,20 +153,26 @@ for workspace_index = 1, max_workspaces do
 	end)
 
 	workspace:subscribe("rift_windows_changed", function(env)
-		-- Any windows_changed event triggers a full refresh
-		-- (only the first workspace to receive it actually fires the query —
-		-- subsequent ones within the same event cycle will be debounced by gen counter)
-		local changed_name = env.RIFT_WORKSPACE_NAME
-		if changed_name == tostring(workspace_index) then
+		-- Only workspace 1 triggers the refresh to avoid 10 simultaneous queries.
+		-- The gen counter handles any remaining races from rapid events.
+		if workspace_index == 1 then
 			refreshAllWorkspaces()
 		end
 	end)
 
 	workspace:subscribe("display_change", function()
-		-- Only workspace 1 triggers the refresh on display_change
-		-- (all workspaces get updated from the single query)
+		-- Only workspace 1 triggers the display-change handler
+		-- The script debounces by pausing Rift's auto_assign_windows during
+		-- macOS display negotiation, then re-enables it for a single clean re-tile
 		if workspace_index == 1 then
-			refreshAllWorkspaces()
+			display_change_gen = display_change_gen + 1
+			local my_gen = display_change_gen
+
+			-- Fire the debounced display-change script (handles Rift auto-assign toggle)
+			sbar.exec(os.getenv("HOME") .. "/dev/dotfiles/configs/rift/display-change.sh", function()
+				if display_change_gen ~= my_gen then return end
+				refreshAllWorkspaces()
+			end)
 		end
 	end)
 end

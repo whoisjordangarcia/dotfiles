@@ -46,3 +46,9 @@ export PATH="$HOME/.local/bin:$PATH"
 # bun completions
 [ -s "/home/jordan/.bun/_bun" ] && source "/home/jordan/.bun/_bun"
 
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/home/jordan/google-cloud-sdk/path.zsh.inc' ]; then . '/home/jordan/google-cloud-sdk/path.zsh.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/home/jordan/google-cloud-sdk/completion.zsh.inc' ]; then . '/home/jordan/google-cloud-sdk/completion.zsh.inc'; fi

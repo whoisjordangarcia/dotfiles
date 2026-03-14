@@ -19,3 +19,13 @@ export PYENV_ROOT="$HOME/.pyenv"
 export MANPAGER="sh -c 'col -bx | bat -l man --paging=always'"
 export MANROFFOPT="-c"
 
+# ==============================================================================
+#  Homebrew
+# ==============================================================================
+
+export HOMEBREW_NO_ENV_HINTS=1
+export HOMEBREW_NO_ANALYTICS=1
+export HOMEBREW_NO_AUTO_UPDATE=1
+export HOMEBREW_BAT=1
+export HOMEBREW_AUTOREMOVE=1
+
