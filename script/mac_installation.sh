@@ -27,6 +27,7 @@ component_installation=(
 	opencode
 	brave/mac
 	sunshine/mac
+	appearance-watcher/mac
 )
 
 for component in "${component_installation[@]}"; do
