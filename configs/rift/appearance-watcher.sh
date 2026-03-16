@@ -2,6 +2,9 @@
 # Triggered by launchd when macOS appearance changes.
 # Reloads SketchyBar and restarts borders to pick up new colors.
 
+# launchd uses a minimal PATH — add Homebrew so sketchybar/borders are found
+export PATH="/opt/homebrew/bin:$PATH"
+
 # Reload SketchyBar (re-runs init.lua, which re-requires colors.lua)
 sketchybar --reload
 
