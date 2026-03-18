@@ -22,7 +22,7 @@ A comprehensive cross-platform dotfiles repository that makes strong choices abo
 ### YOLO It
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/boot.sh | bash
+curl -fsSL https://jordangarcia.me/dotfiles/boot.sh | bash
 ```
 
 This will automatically clone/update the repo, fetch latest changes, and run interactive setup.
