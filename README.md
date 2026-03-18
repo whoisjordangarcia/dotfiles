@@ -40,7 +40,6 @@ cd dotfiles
 ```bash
 ./bin/dot --system mac --work         # Direct installation
 ./bin/dot --system linux_ubuntu --personal
-./bootstrap.sh                        # Legacy method
 ```
 
 ---
@@ -321,7 +320,6 @@ dotfiles/
 ├── bin/
 │   └── dot                    # Shell management CLI
 ├── boot.sh                    # Remote bootstrap script
-├── bootstrap.sh               # Legacy installation
 ├── script/
 │   ├── common/
 │   │   ├── log.sh            # Logging utilities (section, step, info, success, fail)
