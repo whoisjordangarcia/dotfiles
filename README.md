@@ -1,14 +1,11 @@
-# dotfiles - Otobun
+# dotfiles
 
 **Opinionated, curated dotfiles for the discerning developer**
 
-Otobun is a comprehensive cross-platform dotfiles repository that makes strong choices about your development environment. Supporting macOS, Linux (Ubuntu, Fedora, Arch), and WSL with both personal and work configurations, it's designed for developers who want a thoughtfully curated setup without the decision fatigue.
-
-> **Why "otobun"?** These dotfiles are opinionated ("oto" from opinionated) and bundled ("bun") together as a cohesive package. No endless options—just curated choices that work across multiple platforms.
+A comprehensive cross-platform dotfiles repository that makes strong choices about your development environment. Supporting macOS, Linux (Ubuntu, Fedora, Arch), and WSL with both personal and work configurations, it's designed for developers who want a thoughtfully curated setup without the decision fatigue.
 
 ## Features
 
-- **Go TUI installer** - Beautiful terminal UI built with Bubble Tea for setup wizard, module selection, and installation progress
 - **Opinionated tool selection** - Carefully curated applications and configurations that work well together
 - **Cross-platform compatibility** - Consistent experience across macOS, Ubuntu, Fedora, Arch Linux, and WSL
 - **Environment-aware setup** - Thoughtfully separated configurations for personal and work environments
@@ -35,15 +32,12 @@ This will automatically clone/update the repo, fetch latest changes, and run int
 ```bash
 git clone https://github.com/whoisjordangarcia/dotfiles.git
 cd dotfiles
-./bin/otobun              # Go TUI experience
+./bin/dot -i              # Interactive setup
 ```
-
-The `otobun` TUI walks you through setup with a wizard, lets you pick modules with a checkbox selector, and shows real-time installation progress with spinners.
 
 ### Alternative Methods
 
 ```bash
-./bin/dot -i                          # Legacy interactive setup (shell-based)
 ./bin/dot --system mac --work         # Direct installation
 ./bin/dot --system linux_ubuntu --personal
 ./bootstrap.sh                        # Legacy method
@@ -150,15 +144,15 @@ Terminal Git UI with custom commands:
 
 ### Window Managers
 
-#### Aerospace (`configs/aerospace/`) - macOS
-i3-inspired tiling window manager:
+#### Rift (`configs/rift/`) - macOS
+Tiling window manager with integrated SketchyBar:
 
 - **Navigation**: Alt+j/k/l/; for focus, Alt+Shift to move windows
 - **Workspaces**: Alt+1-0 for 10 workspaces
 - **Modes**: Visual resize mode, accordion layouts (vertical/horizontal)
 - **Integration**: Auto-hides dock and menu bar
 
-**Sketchybar Integration:**
+**SketchyBar Integration:**
 - Dynamic status bar with workspace info
 - SbarLua for Lua scripting
 - Theme switching capability
@@ -290,7 +284,7 @@ Context rules for AI coding assistants:
 
 **Installs:** Git, Zsh, Neovim nightly, Node, Tmux+TPM, Fonts, Starship, Ghostty, LazyGit, Claude/Codex/OpenCode, Fastfetch, Brave
 
-**Work variant** (`mac_work`): Adds Homebrew apps + Aerospace + enterprise tools
+**Work variant** (`mac_work`): Adds Homebrew apps + Rift + enterprise tools
 
 ### Arch Linux (`linux_arch`)
 
@@ -324,19 +318,8 @@ Context rules for AI coding assistants:
 
 ```
 dotfiles/
-├── cmd/otobun/main.go         # Go TUI entry point
-├── internal/                   # Go packages
-│   ├── config/                # .dotconfig read/write
-│   ├── detector/              # OS/platform detection
-│   ├── installer/             # Component parsing & script runner
-│   └── tui/                   # Bubble Tea screens
-│       ├── wizard/            # Setup wizard (Huh? forms)
-│       ├── selector/          # Module checkbox selector
-│       ├── runner/            # Installation progress view
-│       └── theme/             # Lip Gloss brand styles
 ├── bin/
-│   ├── dot                    # Legacy shell management CLI
-│   └── otobun                 # Compiled Go TUI binary (gitignored)
+│   └── dot                    # Shell management CLI
 ├── boot.sh                    # Remote bootstrap script
 ├── bootstrap.sh               # Legacy installation
 ├── script/
@@ -347,7 +330,7 @@ dotfiles/
 │   └── {component}/          # Component setup scripts
 │       └── {platform}/setup.sh
 ├── configs/                   # Configuration files (symlinked to home)
-│   ├── aerospace/            # macOS tiling WM + sketchybar
+│   ├── rift/                 # macOS tiling WM + SketchyBar
 │   ├── nvim/                 # Neovim + LazyVim
 │   ├── tmux/                 # Tmux + custom scripts
 │   ├── zshrc/                # Zsh + modular configs
@@ -359,7 +342,6 @@ dotfiles/
 │   ├── lazygit/              # Git TUI
 │   ├── ai-rules/             # AI assistant rules
 │   └── ...
-├── go.mod                     # Go module definition
 └── .dotconfig                 # User preferences (auto-generated)
 ```
 
@@ -378,17 +360,7 @@ DOT_YUBIKEY="ABC123..."  # Optional GPG key for git signing
 
 ## Management Commands
 
-### otobun (Go TUI)
-
-```bash
-otobun                    # Full TUI: wizard → module selector → installer
-otobun --setup            # Force setup wizard (even if .dotconfig exists)
-otobun --config           # Show current configuration
-otobun --system           # Show detected system
-otobun --help             # Show help
-```
-
-### bin/dot (Legacy Shell)
+### bin/dot
 
 ```bash
 ./bin/dot -h              # Show help
@@ -429,31 +401,17 @@ gpg --list-secret-keys --keyid-format=long  # Find key ID
 
 ## Development
 
-### Building otobun
-
-```bash
-# Requires Go 1.22+
-go build -o bin/otobun ./cmd/otobun
-
-# Run tests
-go test ./...
-
-# Cross-compile
-GOOS=darwin GOARCH=arm64 go build -o bin/otobun-darwin-arm64 ./cmd/otobun
-GOOS=linux GOARCH=amd64 go build -o bin/otobun-linux-amd64 ./cmd/otobun
-```
-
 ### Adding Components
 
 1. Create setup script: `script/{component}/{platform}/setup.sh`
 2. Add to installation array in `script/{platform}_installation.sh`
 3. Use logging from `script/common/log.sh`
 4. Place configs in `configs/{component}/`
-5. The `otobun` TUI automatically picks up new components from the installation arrays
+5. New components are automatically picked up from the installation arrays
 
 ### Supporting New Platforms
 
-1. Add detection to `internal/detector/system.go` (Go) and `bin/dot` `detect_system()` (shell)
+1. Add detection to `bin/dot` `detect_system()`
 2. Create `script/{platform}_installation.sh`
 3. Implement component scripts
 4. Choose package manager (brew/apt/dnf/pacman)
