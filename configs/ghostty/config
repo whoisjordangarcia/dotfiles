@@ -16,7 +16,8 @@ clipboard-write = allow
 confirm-close-surface = false
 
 #font-family = GohuFont 14 Nerd Font
-font-family = CozetteVector
+#font-family = CozetteVector
+font-family = JetBrainsMono Nerd Font
 font-size = 16
 
 # Platform-specific overrides (only loaded if file exists)
@@ -51,5 +52,5 @@ shell-integration = zsh
 term = ghostty
 
 # Fix general slowness on Hyprland
-async-backend = epoll
+# async-backend = epoll  # disabled — causes 100% CPU spin on NVIDIA 590.x
 

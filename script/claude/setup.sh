@@ -26,3 +26,12 @@ link_file "$SCRIPT_DIR/../../configs/claude/commands/" "$HOME/.claude/commands" 
 link_file "$SCRIPT_DIR/../../configs/claude/prompts/" "$HOME/.claude/prompts" "directory"
 link_file "$SCRIPT_DIR/../../configs/claude/statusline.sh" "$HOME/.claude/statusline.sh"
 link_file "$SCRIPT_DIR/../../configs/claude/settings.json" "$HOME/.claude/settings.json"
+
+# Install TypeScript language server for Claude Code's typescript-lsp plugin
+if ! command -v typescript-language-server &>/dev/null; then
+	info "Installing typescript-language-server..."
+	npm install -g typescript-language-server typescript
+	success "typescript-language-server installed."
+else
+	debug "typescript-language-server already installed. Skipping."
+fi

@@ -176,6 +176,42 @@ Modern Wayland compositor:
 
 **HyDE Integration**: Uses HyDE distribution for theming and extended configs.
 
+#### Desktop Theming (`configs/gtk-3.0/`, `gtk-4.0/`, `kvantum/`, `qt6ct/`) - Arch Linux
+
+Linux apps use two different UI toolkits, each with their own theming stack. These configs lock in a readable dark theme and prevent HyDE's wallbash auto-theming from generating unreadable color combinations.
+
+**GTK apps** (themed by `gtk-3.0/settings.ini` + `gtk-4.0/settings.ini` + gsettings):
+
+| App | What it is |
+|-----|-----------|
+| Brave | Web browser |
+| Firefox | Web browser |
+| Ghostty | Terminal emulator |
+| Spotify | Music |
+| Lutris | Game launcher |
+| Nautilus | GNOME file manager |
+| Pavucontrol | Volume control |
+| Waybar | Status bar |
+| File picker dialogs | xdg-desktop-portal-gtk |
+
+**Qt apps** (themed by `qt6ct/qt6ct.conf` + `kvantum/kvantum.kvconfig`):
+
+| App | What it is |
+|-----|-----------|
+| Dolphin | KDE file manager |
+| Ark | Archive manager |
+| Claude Desktop | AppImage |
+| Steam | Uses Qt underneath |
+
+**Current theme choices:**
+- GTK: `Gruvbox-Retro` (dark) with `Gruvbox-Plus-Dark` icons
+- Qt style: Kvantum with `KvGnomeDark` engine
+- Qt colors: `darker.conf` color scheme
+- Cursor: `catppuccin-mocha-green-cursors`
+
+> [!NOTE]
+> HyDE's wallbash system dynamically generates a `Wallbash-Gtk` theme from wallpaper colors and sets it via gsettings. The `theming/linux` setup script overrides this back to `Gruvbox-Retro` for consistent readability.
+
 #### Waybar (`configs/waybar/`) - Wayland Status Bar
 Customizable panel for Hyprland:
 

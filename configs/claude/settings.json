@@ -23,7 +23,6 @@
       "Bash(git fetch *)",
       "Bash(git log *)",
       "Bash(git pull *)",
-      "Bash(git rm *)",
       "Bash(git stash *)",
       "Bash(git status *)",
       "Bash(docker build *)",
@@ -36,8 +35,7 @@
       "Bash(task *)",
       "Bash(wt *)",
       "Skill(superpowers:brainstorming)",
-      "Skill(superpowers:writing-plans)",
-      "mcp__pencil"
+      "Skill(superpowers:writing-plans)"
     ],
     "deny": [
       "Read(./**/*.htpasswd)",
@@ -74,10 +72,7 @@
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
-    "ask": [
-      "Bash(git push *)",
-      "Bash(curl *)"
-    ],
+    "ask": ["Bash(git push *)", "Bash(curl *)"],
     "defaultMode": "default"
   },
   "hooks": {},
@@ -123,23 +118,26 @@
     "network": {
       "allowLocalBinding": true
     },
-    "excludedCommands": [
-      "git"
-    ]
+    "excludedCommands": ["git"]
   },
   "spinnerTipsEnabled": true,
   "spinnerVerbs": {
     "mode": "append",
-    "verbs": [
-      "Nesting",
-      "sahh good",
-      "ralphing"
-    ]
+    "verbs": ["Nesting", "sahh good", "ralphing"]
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "medium",
   "autoUpdatesChannel": "latest",
   "voiceEnabled": true,
   "showThinkingSummaries": true,
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "mcpServers": {
+    "tavily": {
+      "command": "npx",
+      "args": ["-y", "tavily-mcp@latest"],
+      "env": {
+        "TAVILY_API_KEY": "${TAVILY_API_KEY}"
+      }
+    }
+  },
+  "effortLevel": "medium"
 }
