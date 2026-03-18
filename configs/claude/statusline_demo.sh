@@ -16,34 +16,34 @@ expect() { printf '\033[38;5;245m   expected: %s\033[0m\n' "$1"; }
 
 # ─── Helper: create a git repo with a commit ────────────────────
 make_repo() {
-	local dir="$1" branch="${2:-main}"
-	mkdir -p "$dir" && cd "$dir"
-	git init -q -b "$branch"
-	git config user.email "demo@test.com"
-	git config user.name "Demo"
-	git commit --allow-empty -m "init" -q
+  local dir="$1" branch="${2:-main}"
+  mkdir -p "$dir" && cd "$dir"
+  git init -q -b "$branch"
+  git config user.email "demo@test.com"
+  git config user.name "Demo"
+  git commit --allow-empty -m "init" -q
 }
 
 # ─── Helper: pre-populate PR cache ──────────────────────────────
 set_pr_cache() {
-	local cwd="$1" branch="$2" url="$3" state="$4" draft="$5"
-	local ci="${6:-}"
-	local dir="/tmp/claude-statusline-pr-cache"
-	mkdir -p "$dir"
-	local key=$(printf '%s:%s' "$cwd" "$branch" | md5 -q 2>/dev/null || printf '%s:%s' "$cwd" "$branch" | md5sum | cut -d' ' -f1)
-	printf '%s\t%s\t%s' "$url" "$state" "$draft" > "$dir/$key"
-	if [ -n "$ci" ]; then printf '%s' "$ci" > "$dir/${key}_ci"; fi
+  local cwd="$1" branch="$2" url="$3" state="$4" draft="$5"
+  local ci="${6:-}"
+  local dir="/tmp/claude-statusline-pr-cache"
+  mkdir -p "$dir"
+  local key=$(printf '%s:%s' "$cwd" "$branch" | md5 -q 2>/dev/null || printf '%s:%s' "$cwd" "$branch" | md5sum | cut -d' ' -f1)
+  printf '%s\t%s\t%s' "$url" "$state" "$draft" >"$dir/$key"
+  if [ -n "$ci" ]; then printf '%s' "$ci" >"$dir/${key}_ci"; fi
 }
 
 # ─── Helper: clear git caches so each demo is fresh ─────────────
 clear_caches() {
-	rm -rf /tmp/claude-statusline-git-cache
-	rm -rf /tmp/claude-statusline-pr-cache
+  rm -rf /tmp/claude-statusline-git-cache
+  rm -rf /tmp/claude-statusline-pr-cache
 }
 
 run() {
-	echo "$1" | bash "$STATUSLINE" 2>/dev/null
-	echo ""
+  echo "$1" | bash "$STATUSLINE" 2>/dev/null
+  echo ""
 }
 
 # ═════════════════════════════════════════════════════════════════

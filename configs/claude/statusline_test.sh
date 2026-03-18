@@ -14,53 +14,53 @@ errors=""
 strip_ansi() { sed $'s/\033\[[0-9;]*m//g'; }
 
 run_statusline() {
-	echo "$1" | bash "$STATUSLINE" 2>/dev/null
+  echo "$1" | bash "$STATUSLINE" 2>/dev/null
 }
 
 run_statusline_plain() {
-	run_statusline "$1" | strip_ansi
+  run_statusline "$1" | strip_ansi
 }
 
 assert_contains() {
-	local test_name="$1" output="$2" expected="$3"
-	if echo "$output" | grep -qF -- "$expected"; then
-		passed=$((passed + 1))
-		printf "  \033[38;5;114m✓\033[0m %s\n" "$test_name"
-	else
-		failed=$((failed + 1))
-		errors+="  FAIL: $test_name — expected to contain: '$expected'\n"
-		printf "  \033[38;5;203m✗\033[0m %s\n" "$test_name"
-		printf "    expected to contain: %s\n" "$expected"
-		printf "    got: %s\n" "$output"
-	fi
+  local test_name="$1" output="$2" expected="$3"
+  if echo "$output" | grep -qF -- "$expected"; then
+    passed=$((passed + 1))
+    printf "  \033[38;5;114m✓\033[0m %s\n" "$test_name"
+  else
+    failed=$((failed + 1))
+    errors+="  FAIL: $test_name — expected to contain: '$expected'\n"
+    printf "  \033[38;5;203m✗\033[0m %s\n" "$test_name"
+    printf "    expected to contain: %s\n" "$expected"
+    printf "    got: %s\n" "$output"
+  fi
 }
 
 assert_not_contains() {
-	local test_name="$1" output="$2" unexpected="$3"
-	if ! echo "$output" | grep -qF -- "$unexpected"; then
-		passed=$((passed + 1))
-		printf "  \033[38;5;114m✓\033[0m %s\n" "$test_name"
-	else
-		failed=$((failed + 1))
-		errors+="  FAIL: $test_name — expected NOT to contain: '$unexpected'\n"
-		printf "  \033[38;5;203m✗\033[0m %s\n" "$test_name"
-		printf "    expected NOT to contain: %s\n" "$unexpected"
-	fi
+  local test_name="$1" output="$2" unexpected="$3"
+  if ! echo "$output" | grep -qF -- "$unexpected"; then
+    passed=$((passed + 1))
+    printf "  \033[38;5;114m✓\033[0m %s\n" "$test_name"
+  else
+    failed=$((failed + 1))
+    errors+="  FAIL: $test_name — expected NOT to contain: '$unexpected'\n"
+    printf "  \033[38;5;203m✗\033[0m %s\n" "$test_name"
+    printf "    expected NOT to contain: %s\n" "$unexpected"
+  fi
 }
 
 assert_exit_code() {
-	local test_name="$1" input="$2" expected_code="$3"
-	local actual_code
-	echo "$input" | bash "$STATUSLINE" >/dev/null 2>&1
-	actual_code=$?
-	if [ "$actual_code" -eq "$expected_code" ]; then
-		passed=$((passed + 1))
-		printf "  \033[38;5;114m✓\033[0m %s\n" "$test_name"
-	else
-		failed=$((failed + 1))
-		errors+="  FAIL: $test_name — expected exit $expected_code, got $actual_code\n"
-		printf "  \033[38;5;203m✗\033[0m %s (expected %d, got %d)\n" "$test_name" "$expected_code" "$actual_code"
-	fi
+  local test_name="$1" input="$2" expected_code="$3"
+  local actual_code
+  echo "$input" | bash "$STATUSLINE" >/dev/null 2>&1
+  actual_code=$?
+  if [ "$actual_code" -eq "$expected_code" ]; then
+    passed=$((passed + 1))
+    printf "  \033[38;5;114m✓\033[0m %s\n" "$test_name"
+  else
+    failed=$((failed + 1))
+    errors+="  FAIL: $test_name — expected exit $expected_code, got $actual_code\n"
+    printf "  \033[38;5;203m✗\033[0m %s (expected %d, got %d)\n" "$test_name" "$expected_code" "$actual_code"
+  fi
 }
 
 # ─── Test fixtures ──────────────────────────────────────────────────
@@ -154,29 +154,29 @@ printf "\n\033[38;5;141m━━━ Output Structure ━━━━━━━━━�
 
 line_count=$(run_statusline_plain "$INPUT_FULL" | wc -l | tr -d ' ')
 if [ "$line_count" -ge 1 ] && [ "$line_count" -le 3 ]; then
-	passed=$((passed + 1))
-	printf "  \033[38;5;114m✓\033[0m outputs 1-3 lines (got %s)\n" "$line_count"
+  passed=$((passed + 1))
+  printf "  \033[38;5;114m✓\033[0m outputs 1-3 lines (got %s)\n" "$line_count"
 else
-	failed=$((failed + 1))
-	printf "  \033[38;5;203m✗\033[0m outputs 1-3 lines (got %s)\n" "$line_count"
+  failed=$((failed + 1))
+  printf "  \033[38;5;203m✗\033[0m outputs 1-3 lines (got %s)\n" "$line_count"
 fi
 
 out_empty=$(run_statusline_plain "$INPUT_EMPTY")
 if [ -n "$out_empty" ]; then
-	passed=$((passed + 1))
-	printf "  \033[38;5;114m✓\033[0m produces output even with empty JSON\n"
+  passed=$((passed + 1))
+  printf "  \033[38;5;114m✓\033[0m produces output even with empty JSON\n"
 else
-	failed=$((failed + 1))
-	printf "  \033[38;5;203m✗\033[0m produces output even with empty JSON\n"
+  failed=$((failed + 1))
+  printf "  \033[38;5;203m✗\033[0m produces output even with empty JSON\n"
 fi
 
 # ─── Summary ────────────────────────────────────────────────────────
 total=$((passed + failed))
 printf "\n\033[38;5;141m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 if [ "$failed" -eq 0 ]; then
-	printf "\033[38;5;114m✓ All %d tests passed\033[0m\n\n" "$total"
+  printf "\033[38;5;114m✓ All %d tests passed\033[0m\n\n" "$total"
 else
-	printf "\033[38;5;203m✗ %d/%d tests failed\033[0m\n" "$failed" "$total"
-	printf "\n%b\n" "$errors"
-	exit 1
+  printf "\033[38;5;203m✗ %d/%d tests failed\033[0m\n" "$failed" "$total"
+  printf "\n%b\n" "$errors"
+  exit 1
 fi
