@@ -21,7 +21,6 @@ require("lazy").setup({
     -- import any extras modules here
     --{ import = "lazyvim.plugins.extras.lang.go" },
     --{ import = "lazyvim.plugins.extras.lang.scala" },
-
     -- import/override with your plugins
     { import = "plugins" },
   },

@@ -88,6 +88,9 @@ end
 return {
   {
     "folke/snacks.nvim",
+    keys = {
+      { "<leader>gD", false }, -- disable Snacks git_diff, diffview owns this key
+    },
     opts = function()
       return {
         scroll = { enabled = false },
