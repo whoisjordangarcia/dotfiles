@@ -425,10 +425,8 @@ fi
 line1+="${sep}${context_bar}${cache_display}"
 [ -n "$commit_age_display" ] && line1+="${sep}${commit_age_display}"
 
-# Line 2: 🌿 branch ←base  sync  dirty  🐳 docker  ⬡ node
+# Line 2: 🌿 branch ←base  sync  dirty
 line2=""
-docker_display=""
-node_display=""
 
 if [ -n "$branch" ]; then
 	# Truncate long branch names with ellipsis
@@ -457,14 +455,16 @@ fi
 # Lines changed always shows on line 2 (session-level, not git-specific)
 [ -n "$lines_display" ] && { [ -n "$line2" ] && line2+="${sep}"; line2+="${lines_display}"; }
 
-# Docker + Node detection (only when in a worktree)
-if [ "$is_worktree" = true ]; then
-	mkdir -p "$DOCKER_CACHE_DIR"
-	wt_cache_key=$(printf '%s' "$wt_name" | md5 -q 2>/dev/null || printf '%s' "$wt_name" | md5sum | cut -d' ' -f1)
+# ─── Docker + Node detection (line 3) ──────────────────────────────
+docker_display=""
+node_display=""
 
-	# Docker container detection for this worktree
-	if command -v docker &>/dev/null; then
-		docker_cache_key="$wt_cache_key"
+if command -v docker &>/dev/null; then
+	mkdir -p "$DOCKER_CACHE_DIR"
+
+	if [ "$is_worktree" = true ] && [ -n "$wt_name" ]; then
+		# Worktree mode: filter containers by worktree name
+		docker_cache_key=$(printf '%s' "wt-$wt_name" | md5 -q 2>/dev/null || printf '%s' "wt-$wt_name" | md5sum | cut -d' ' -f1)
 		docker_cache_file="$DOCKER_CACHE_DIR/$docker_cache_key"
 
 		if cache_fresh "$docker_cache_file" "$DOCKER_CACHE_TTL"; then
@@ -472,7 +472,6 @@ if [ "$is_worktree" = true ]; then
 		else
 			running_containers=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -F "$wt_name" || true)
 			if [ -n "$running_containers" ]; then
-				# Extract service names (last segment after worktree name)
 				services=""
 				while IFS= read -r container; do
 					svc="${container##*"${wt_name}"-}"
@@ -483,58 +482,105 @@ if [ "$is_worktree" = true ]; then
 			fi
 			echo "$docker_display" > "$docker_cache_file"
 		fi
-	fi
-	[ -n "$docker_display" ] && line2+="${sep}${docker_display}"
-
-	# Node app detection for this worktree (apps listening on ports)
-	if [ -n "$cwd" ]; then
-		node_cache_file="$DOCKER_CACHE_DIR/${wt_cache_key}_node"
-
-		if cache_fresh "$node_cache_file" "$DOCKER_CACHE_TTL"; then
-			node_display=$(cat "$node_cache_file")
-		else
-			# Get all node PIDs listening on TCP ports
-			listening=$(lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | awk '$1 == "node" && $2 ~ /^[0-9]+$/ {print $2, $9}' | sort -u)
-			app_entries=""
-			if [ -n "$listening" ]; then
-				while read -r l_pid l_addr; do
-					l_port=$(echo "$l_addr" | grep -oE '[0-9]+$')
-					[ -z "$l_port" ] && continue
-					# Check if this process belongs to our worktree via args OR cwd
-					proc_args=$(ps -p "$l_pid" -o args= 2>/dev/null || true)
-					proc_cwd=$(lsof -p "$l_pid" -a -d cwd -Fn 2>/dev/null | grep '^n/' | head -1 | cut -c2-)
-					in_worktree=false
-					if echo "$proc_args" | grep -qF "$cwd"; then
-						in_worktree=true
-					elif [ -n "$proc_cwd" ] && echo "$proc_cwd" | grep -qF "$cwd"; then
-						in_worktree=true
-					fi
-					[ "$in_worktree" = false ] && continue
-					# Extract app name from args or cwd path
-					app_name=""
-					combined="$proc_args $proc_cwd"
-					if echo "$combined" | grep -qE 'apps/backend/[^/]+/dist'; then
-						app_name=$(echo "$combined" | sed -n 's|.*apps/backend/\([^/]*\)/dist.*|\1|p' | head -1)
-					elif echo "$combined" | grep -qE 'apps/frontend/[^/]+'; then
-						app_name=$(echo "$combined" | sed -n 's|.*apps/frontend/\([^/]*\).*|\1|p' | head -1)
-					elif echo "$proc_args" | grep -qE 'nx\.js run [^:]+:'; then
-						app_name=$(echo "$proc_args" | sed -n 's|.*nx\.js run \([^:]*\):.*|\1|p')
-					fi
-					[ -n "$app_name" ] && app_entries="${app_entries}${app_name}:${l_port}\n"
-				done <<< "$listening"
+	else
+		# Non-worktree: only show containers belonging to this project's compose stack
+		# Detect compose project name from docker-compose.yml in cwd
+		compose_project=""
+		if [ -n "$cwd" ]; then
+			if [ -f "$cwd/docker-compose.yml" ] || [ -f "$cwd/docker-compose.yaml" ] || [ -f "$cwd/compose.yml" ] || [ -f "$cwd/compose.yaml" ]; then
+				compose_project="${cwd##*/}"
 			fi
-			if [ -n "$app_entries" ]; then
-				parts=$(printf '%b' "$app_entries" | sort -u -t: -k1,1 | tr '\n' ',' | sed 's/,$//')
-				node_display="${COLOR_DOCKER}⬡ ${parts}${COLOR_RESET}"
+		fi
+
+		if [ -n "$compose_project" ]; then
+			docker_cache_key=$(printf '%s' "proj-$compose_project" | md5 -q 2>/dev/null || printf '%s' "proj-$compose_project" | md5sum | cut -d' ' -f1)
+			docker_cache_file="$DOCKER_CACHE_DIR/$docker_cache_key"
+
+			if cache_fresh "$docker_cache_file" "$DOCKER_CACHE_TTL"; then
+				docker_display=$(cat "$docker_cache_file")
+			else
+				# Filter by compose project label matching cwd directory name
+				raw=$(docker ps --filter 'status=running' --filter "label=com.docker.compose.project=$compose_project" --format '{{.Label "com.docker.compose.service"}}\t{{.Names}}\t{{.Ports}}' 2>/dev/null)
+				services=""
+				if [ -n "$raw" ]; then
+					while IFS=$'\t' read -r svc_label cname ports; do
+						if [ -n "$svc_label" ]; then
+							svc="$svc_label"
+						else
+							svc="${cname##*-}"
+						fi
+						port=$(echo "$ports" | grep -oE '0\.0\.0\.0:[0-9]+' | head -1 | cut -d: -f2)
+						entry="$svc"
+						[ -n "$port" ] && entry="${svc}:${port}"
+						[ -n "$services" ] && services+=$'\n'
+						services+="$entry"
+					done <<< "$raw"
+					services=$(echo "$services" | sort -u | tr '\n' ',' | sed 's/,$//')
+				fi
+				[ -n "$services" ] && docker_display="${COLOR_DOCKER}🐳 ${services}${COLOR_RESET}"
+				echo "$docker_display" > "$docker_cache_file"
 			fi
-			echo "$node_display" > "$node_cache_file"
 		fi
 	fi
-	[ -n "$node_display" ] && line2+="${sep}${node_display}"
 fi
+
+# Node app detection (apps listening on ports)
+mkdir -p "$DOCKER_CACHE_DIR"
+if [ "$is_worktree" = true ] && [ -n "$wt_name" ]; then
+	node_cache_key=$(printf '%s' "$wt_name" | md5 -q 2>/dev/null || printf '%s' "$wt_name" | md5sum | cut -d' ' -f1)
+else
+	node_cache_key="global"
+fi
+node_cache_file="$DOCKER_CACHE_DIR/${node_cache_key}_node"
+
+if cache_fresh "$node_cache_file" "$DOCKER_CACHE_TTL"; then
+	node_display=$(cat "$node_cache_file")
+else
+	listening=$(lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | awk '$1 == "node" && $2 ~ /^[0-9]+$/ {print $2, $9}' | sort -u)
+	app_entries=""
+	if [ -n "$listening" ]; then
+		while read -r l_pid l_addr; do
+			l_port=$(echo "$l_addr" | grep -oE '[0-9]+$')
+			[ -z "$l_port" ] && continue
+			proc_args=$(ps -p "$l_pid" -o args= 2>/dev/null || true)
+			proc_cwd=$(lsof -p "$l_pid" -a -d cwd -Fn 2>/dev/null | grep '^n/' | head -1 | cut -c2-)
+			# Only show apps belonging to the current project directory
+			if [ -n "$cwd" ]; then
+				in_scope=false
+				if echo "$proc_args" | grep -qF "$cwd"; then
+					in_scope=true
+				elif [ -n "$proc_cwd" ] && echo "$proc_cwd" | grep -qF "$cwd"; then
+					in_scope=true
+				fi
+				[ "$in_scope" = false ] && continue
+			fi
+			app_name=""
+			combined="$proc_args $proc_cwd"
+			if echo "$combined" | grep -qE 'apps/backend/[^/]+/dist'; then
+				app_name=$(echo "$combined" | sed -n 's|.*apps/backend/\([^/]*\)/dist.*|\1|p' | head -1)
+			elif echo "$combined" | grep -qE 'apps/frontend/[^/]+'; then
+				app_name=$(echo "$combined" | sed -n 's|.*apps/frontend/\([^/]*\).*|\1|p' | head -1)
+			elif echo "$proc_args" | grep -qE 'nx\.js run [^:]+:'; then
+				app_name=$(echo "$proc_args" | sed -n 's|.*nx\.js run \([^:]*\):.*|\1|p')
+			fi
+			[ -n "$app_name" ] && app_entries="${app_entries}${app_name}:${l_port}\n"
+		done <<< "$listening"
+	fi
+	if [ -n "$app_entries" ]; then
+		parts=$(printf '%b' "$app_entries" | sort -u -t: -k1,1 | tr '\n' ',' | sed 's/,$//')
+		node_display="${COLOR_DOCKER}⬡ ${parts}${COLOR_RESET}"
+	fi
+	echo "$node_display" > "$node_cache_file"
+fi
+
+# Build line 3: 🐳 docker · ⬡ node
+line3=""
+[ -n "$docker_display" ] && line3+="${docker_display}"
+[ -n "$node_display" ] && { [ -n "$line3" ] && line3+="${sep}"; line3+="${node_display}"; }
 
 # Print
 printf "%b\n" "$line1"
 [ -n "$line2" ] && printf "%b\n" "$line2"
+[ -n "$line3" ] && printf "%b\n" "$line3"
 
 exit 0
