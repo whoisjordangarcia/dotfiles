@@ -35,11 +35,11 @@ mkdir -p "$BACKUP_DIR"
 
 # Backup
 backup_if_exists() {
-    local file="$1"
-    if [[ -f "$file" && ! -L "$file" ]]; then
-        cp "$file" "$BACKUP_DIR/"
-        success "Backed up $(basename "$file")"
-    fi
+  local file="$1"
+  if [[ -f "$file" && ! -L "$file" ]]; then
+    cp "$file" "$BACKUP_DIR/"
+    success "Backed up $(basename "$file")"
+  fi
 }
 
 log "Backing up existing dotfiles..."
@@ -67,9 +67,9 @@ chmod 600 "$HOME/.logs/bash/"*.log 2>/dev/null
 
 # SSH hardening check (if root)
 if [[ $EUID -eq 0 ]] && [[ -f /etc/ssh/sshd_config ]]; then
-    log "Checking SSH..."
-    grep -q "^PermitRootLogin yes" /etc/ssh/sshd_config && warning "Root login enabled - consider disabling"
-    grep -q "^PasswordAuthentication yes" /etc/ssh/sshd_config && warning "Password auth enabled - consider key-only"
+  log "Checking SSH..."
+  grep -q "^PermitRootLogin yes" /etc/ssh/sshd_config && warning "Root login enabled - consider disabling"
+  grep -q "^PasswordAuthentication yes" /etc/ssh/sshd_config && warning "Password auth enabled - consider key-only"
 fi
 
 echo ""
