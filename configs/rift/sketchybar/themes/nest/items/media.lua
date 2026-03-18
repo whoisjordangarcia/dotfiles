@@ -2,7 +2,7 @@ local colors = require("colors")
 local settings = require("settings")
 
 local media = sbar.add("item", "media", {
-	position = "e",
+	position = "q",
 	icon = { drawing = false },
 	label = {
 		font = {

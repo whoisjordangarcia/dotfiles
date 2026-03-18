@@ -10,16 +10,12 @@ UPDATE_FREQ="${2:-5.0}"
 sketchybar --add event "$EVENT_NAME"
 
 while true; do
-  smc_dump=$(smctemp -l 2>/dev/null)
+  # Apple Silicon (M-series) needs retries with short intervals for reliable reads
+  cpu_temp=$(smctemp -c -n180 -i25 -f 2>/dev/null)
+  gpu_temp=$(smctemp -g -n180 -i25 -f 2>/dev/null)
 
-  # CPU package temp (TCHP) — most representative for Apple Silicon
-  cpu_temp=$(echo "$smc_dump" | awk '/TCHP/ {printf "%.1f", $3}')
-  # GPU temp — try Tg0f first, fall back to TG0V
-  gpu_temp=$(echo "$smc_dump" | awk '/Tg0f/ {printf "%.1f", $3}')
-  if [ -z "$gpu_temp" ] || [ "$gpu_temp" = "0.0" ]; then
-    gpu_temp=$(echo "$smc_dump" | awk '/TG0V/ {printf "%.1f", $3}')
-  fi
-  # Fan speeds
+  # Fan speeds from raw SMC dump
+  smc_dump=$(smctemp -l 2>/dev/null)
   fan0=$(echo "$smc_dump" | awk '/F0Ac/ {printf "%.0f", $3}')
   fan1=$(echo "$smc_dump" | awk '/F1Ac/ {printf "%.0f", $3}')
 
