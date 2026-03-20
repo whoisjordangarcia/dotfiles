@@ -6,6 +6,7 @@ component_installation=(
 	apps/arch
 	# code
 	git
+	notes
 	node
 	lazygit/linux
 	# essentials

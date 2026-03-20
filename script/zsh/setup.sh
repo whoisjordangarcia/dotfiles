@@ -33,7 +33,7 @@ fi
 SECRETS_TPL="$ZSHRC_MODULES_SOURCE/.zshrc.sec.tpl"
 SECRETS_OUT="$ZSHRC_MODULES_TARGET/.zshrc.sec"
 if [ -f "$SECRETS_TPL" ]; then
-	if command -v op &>/dev/null && op account list &>/dev/null 2>&1; then
+	if command -v op &>/dev/null && op whoami &>/dev/null 2>&1; then
 		op inject -i "$SECRETS_TPL" -o "$SECRETS_OUT"
 		chmod 600 "$SECRETS_OUT"
 		success "Secrets injected from 1Password"

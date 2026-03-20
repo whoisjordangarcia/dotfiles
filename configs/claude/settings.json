@@ -133,6 +133,7 @@
     ]
   },
   "alwaysThinkingEnabled": true,
+  "effortLevel": "medium",
   "autoUpdatesChannel": "latest",
   "skipDangerousModePermissionPrompt": true,
   "mcpServers": {
@@ -146,6 +147,5 @@
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
       }
     }
-  },
-  "effortLevel": "medium"
+  }
 }
