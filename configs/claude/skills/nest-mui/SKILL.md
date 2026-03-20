@@ -18,11 +18,11 @@ Material-UI v7 (`@mui/material ^7.3.8`) with Emotion styling. Three theme files 
 
 ### Theme Files
 
-| App | Path | Extras |
-|-----|------|--------|
-| Provider Portal | `apps/frontend/provider-portal/src/components/NestMuiTheme.ts` | `nestBrandColors`, `assistantColors`, custom Chip `tertiary` variant |
-| Patient Navigator | `apps/frontend/patient-navigator/src/components/NestMuiTheme.ts` | Account-level custom `primaryColor`, `secondaryColor`, `background` |
-| Retool | `apps/retool/components/src/NestMuiTheme.ts` | Shared subset |
+| App               | Path                                                             | Extras                                                               |
+| ----------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Provider Portal   | `apps/frontend/provider-portal/src/components/NestMuiTheme.ts`   | `nestBrandColors`, `assistantColors`, custom Chip `tertiary` variant |
+| Patient Navigator | `apps/frontend/patient-navigator/src/components/NestMuiTheme.ts` | Account-level custom `primaryColor`, `secondaryColor`, `background`  |
+| Retool            | `apps/retool/components/src/NestMuiTheme.ts`                     | Shared subset                                                        |
 
 All themes export `getTheme(mode, options?)`, `mixins`, and `getPreferredThemeMode()`.
 
@@ -50,14 +50,14 @@ import { mixins } from '@nest/provider-portal/components/NestMuiTheme'
 ### Brand Colors (Provider Portal)
 
 ```typescript
-import { nestBrandColors } from '@nest/provider-portal/components/NestMuiTheme'
+import { nestBrandColors } from "@nest/provider-portal/components/NestMuiTheme";
 
 // Each color: base, light20, light40, light60, light80
-nestBrandColors.orange.base   // '#e65732' (primary)
-nestBrandColors.gold.base     // '#e78d32'
-nestBrandColors.pink.base     // '#c45567'
-nestBrandColors.darkRed.base  // '#a23c23'
-nestBrandColors.purple.base   // '#a367c8'
+nestBrandColors.orange.base; // '#e65732' (primary)
+nestBrandColors.gold.base; // '#e78d32'
+nestBrandColors.pink.base; // '#c45567'
+nestBrandColors.darkRed.base; // '#a23c23'
+nestBrandColors.purple.base; // '#a367c8'
 ```
 
 ---
@@ -66,16 +66,16 @@ nestBrandColors.purple.base   // '#a367c8'
 
 ```typescript
 // Named imports from barrel (most common)
-import { Box, Button, Typography, Stack } from '@mui/material'
+import { Box, Button, Typography, Stack } from "@mui/material";
 
 // Icons — always individual deep imports
-import SearchIcon from '@mui/icons-material/Search'
-import EditRoundedIcon from '@mui/icons-material/EditRounded'
+import SearchIcon from "@mui/icons-material/Search";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
 
 // Date pickers
-import { DatePicker } from '@mui/x-date-pickers/DatePicker'
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 ```
 
 ---
@@ -114,15 +114,15 @@ function MyComponent() {
 
 ```typescript
 // UserProfile.styles.ts
-import type { SxProps, Theme } from '@mui/material'
+import type { SxProps, Theme } from "@mui/material";
 
 export const userProfileStyles: Record<string, SxProps<Theme>> = {
-  container: { p: 3, maxWidth: 800, mx: 'auto' },
-  header: { display: 'flex', justifyContent: 'space-between', mb: 3 },
-}
+  container: { p: 3, maxWidth: 800, mx: "auto" },
+  header: { display: "flex", justifyContent: "space-between", mb: 3 },
+};
 
 // UserProfile.tsx
-import { userProfileStyles as styles } from './UserProfile.styles'
+import { userProfileStyles as styles } from "./UserProfile.styles";
 ```
 
 ### Theme Callback in sx
@@ -180,23 +180,23 @@ function MyComponent() {
 ### AppSnackbar (provider-portal)
 
 ```typescript
-import { useAppSnackbar } from '@nest/provider-portal/components/AppSnackbar'
+import { useAppSnackbar } from "@nest/provider-portal/components/AppSnackbar";
 
 function MyComponent() {
-  const { show } = useAppSnackbar()
+  const { show } = useAppSnackbar();
 
   const handleSave = async () => {
     try {
-      await saveData()
-      show({ severity: 'success', message: 'Saved successfully' })
+      await saveData();
+      show({ severity: "success", message: "Saved successfully" });
     } catch {
       show({
-        severity: 'error',
-        message: 'Failed to save',
-        action: { label: 'Retry', onClick: handleSave },
-      })
+        severity: "error",
+        message: "Failed to save",
+        action: { label: "Retry", onClick: handleSave },
+      });
     }
-  }
+  };
 }
 ```
 
@@ -334,15 +334,17 @@ Key props: `gridId` + `storePreferences` for localStorage persistence, `totalRow
 ## Best Practices
 
 ### Always type sx props
+
 ```typescript
 // Good
-const styles: Record<string, SxProps<Theme>> = { container: { p: 2 } }
+const styles: Record<string, SxProps<Theme>> = { container: { p: 2 } };
 
 // Bad — no type safety
-const styles = { container: { p: 2 } }
+const styles = { container: { p: 2 } };
 ```
 
 ### Use theme tokens, not hardcoded values
+
 ```typescript
 // Good
 <Box sx={{ color: 'primary.main', p: 2 }} />
@@ -352,6 +354,7 @@ const styles = { container: { p: 2 } }
 ```
 
 ### Use spacing scale consistently
+
 ```typescript
 // Good — spacing units (1 = 8px)
 <Box sx={{ p: 2, mb: 3, gap: 1.5 }} />
@@ -361,6 +364,7 @@ const styles = { container: { p: 2 } }
 ```
 
 ### Use project wrappers over raw MUI
+
 - `useDialog` over manual open/close state
 - `useAppSnackbar` over custom Snackbar setup
 - Shared `TextField` over raw MUI `TextField`
@@ -368,15 +372,17 @@ const styles = { container: { p: 2 } }
 - `LoadingBackdrop` over Backdrop + CircularProgress
 
 ### Use data-testid for test selectors
+
 ```typescript
 <Button data-testid="submit-btn" variant="contained">Submit</Button>
 ```
 
 ### styled() is rare — only for non-MUI elements needing theme access
+
 ```typescript
 // Only when wrapping third-party components that can't use sx
-import { styled } from '@mui/material'
+import { styled } from "@mui/material";
 const StyledCalendar = styled(Calendar)(({ theme }) => ({
   color: theme.palette.text.primary,
-}))
+}));
 ```

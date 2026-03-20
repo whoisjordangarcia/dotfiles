@@ -10,10 +10,4 @@ else
 	./bin/dot
 fi
 
-# Build Go CLI tools (otobun, nxps) if Go is available
-if command -v go &>/dev/null; then
-	echo "🔨 Building Go tools..."
-	make build 2>/dev/null || true
-fi
-
 echo "✨ Dotfiles installation completed successfully!"

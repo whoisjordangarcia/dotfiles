@@ -38,6 +38,12 @@ vim.keymap.set("n", "<C-k>", "<C-w><C-k>", { desc = "Move focus to the upper win
 -- -- Expand 'cc' into 'CodeCompanion' in the command line
 -- vim.cmd([[cab cc CodeCompanion]])
 
+-- Hunk diff: side-by-side with balanced splits
+vim.keymap.set("n", "<leader>ghd", function()
+  require("gitsigns").diffthis()
+  vim.cmd("wincmd =")
+end, { desc = "Diff this file (side-by-side)" })
+
 -- NX commands for nearest project (finds project.json)
 local function get_nx_project()
   local project_json = vim.fs.find("project.json", {
