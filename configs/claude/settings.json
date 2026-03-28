@@ -78,7 +78,7 @@
       "Bash(git push *)",
       "Bash(curl *)"
     ],
-    "defaultMode": "default"
+    "defaultMode": "auto"
   },
   "hooks": {},
   "statusLine": {
@@ -109,7 +109,17 @@
     "playwright-skill@playwright-skill": false,
     "superpowers@superpowers-marketplace": true,
     "swift-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true
+    "typescript-lsp@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "impeccable@impeccable": true
+  },
+  "extraKnownMarketplaces": {
+    "impeccable": {
+      "source": {
+        "source": "github",
+        "repo": "pbakaus/impeccable"
+      }
+    }
   },
   "outputStyle": "Explanatory",
   "sandbox": {
@@ -133,6 +143,7 @@
     ]
   },
   "alwaysThinkingEnabled": true,
+  "effortLevel": "medium",
   "autoUpdatesChannel": "latest",
   "skipDangerousModePermissionPrompt": true,
   "mcpServers": {
@@ -147,5 +158,5 @@
       }
     }
   },
-  "effortLevel": "medium"
+  "skipAutoPermissionPrompt": true
 }
