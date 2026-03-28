@@ -25,6 +25,8 @@ PACKAGES=(
 
 	# Fonts
 	ttf-jetbrains-mono-nerd
+	ttf-gohu-nerd
+	ttf-terminus-nerd
 
 	# Desktop/Games
 	mangohud
