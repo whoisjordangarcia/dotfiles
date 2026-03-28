@@ -6,6 +6,7 @@ component_installation=(
 	apps/fedora
 	# code
 	git
+	notes
 	zsh
 	vim
 	tmux

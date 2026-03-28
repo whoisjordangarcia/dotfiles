@@ -9,11 +9,10 @@ source "$BRAVE_SCRIPT_DIR/../../common/log.sh"
 MANAGED_PREFS_DIR="/Library/Managed Preferences"
 PLIST_FILE="$MANAGED_PREFS_DIR/com.brave.Browser.plist"
 
-# Check if Brave is installed
+# Check if Brave is installed, install if missing
 if [ ! -d "/Applications/Brave Browser.app" ]; then
-	warn "Brave Browser not found. Install via: brew install --cask brave-browser"
-	warn "Skipping Brave policy setup..."
-	exit 0
+	info "Brave Browser not found. Installing via Homebrew..."
+	brew install --cask brave-browser
 fi
 
 # Create Managed Preferences directory if needed (requires sudo)

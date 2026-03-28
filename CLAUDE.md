@@ -32,9 +32,6 @@ curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/boo
 # Direct installation with explicit configuration
 ./bin/dot --system mac --work          # Mac work environment
 ./bin/dot --system linux_ubuntu --personal
-
-# Legacy method
-./bootstrap.sh
 ```
 
 ### Management Commands
@@ -63,7 +60,6 @@ Individual components can be installed directly:
 ### Entry Points & Installation Flow
 1. **Remote Bootstrap**: `boot.sh` - Clones repo, fetches updates, launches interactive setup
 2. **CLI Tool**: `bin/dot` - Shell management interface with system detection and configuration
-3. **Legacy**: `bootstrap.sh` - Original installation script (maintained for compatibility)
 
 ### Directory Structure
 ```

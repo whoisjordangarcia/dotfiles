@@ -1,13 +1,25 @@
 #!/bin/bash
 
+if defaults read -g AppleInterfaceStyle &>/dev/null; then
+	# Dark mode — Catppuccin Mocha
+	active_color=0xffcba6f7
+	inactive_color=0xff585b70
+	background_color=0x301e1e2e
+else
+	# Light mode — Catppuccin Latte
+	active_color=0xff8839ef
+	inactive_color=0xffacb0be
+	background_color=0x30eff1f5
+fi
+
 options=(
 	style=round
 	width=4.0
 	hidpi=off
-	active_color=0xffcba6f7
-	inactive_color=0xff585b70
-	background_color=0x301e1e2e
-	blacklist="sketchybar"
+	active_color=$active_color
+	inactive_color=$inactive_color
+	background_color=$background_color
+	blacklist="sketchybar,Screen Studio,Finder,System Settings,Fantastical,1Password,Simulator,Xcode"
 )
 
 borders "${options[@]}"

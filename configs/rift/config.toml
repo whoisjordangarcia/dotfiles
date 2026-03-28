@@ -36,7 +36,7 @@ stack_offset = 40.0
 default_orientation = "perpendicular"
 
 [settings.layout.gaps.outer]
-top = 45
+top = 44
 left = 10
 bottom = 10
 right = 10
@@ -100,6 +100,7 @@ app_rules = [
   { app_id = "pro.betterdisplay.BetterDisplay", floating = true },
   { app_id = "com.apple.iphonesimulator", floating = true },
   { app_id = "com.apple.dt.Xcode", floating = true },
+  { app_id = "com.timpler.screenstudio", floating = true },
 ]
 
 # Modifier combinations (i3/sway style: Option as $mod)
@@ -174,6 +175,7 @@ comb1 = "Option + Shift"
 "Option + Slash" = { exec = ["open", "-a", "1Password"] }
 
 # System
+"Option + Shift + R" = { exec = ["sh", "-c", "brew services restart rift"] }
 "Option + Shift + D" = "debug"
 "Option + Ctrl + S" = "serialize"
 "Option + Ctrl + Q" = "save_and_exit"

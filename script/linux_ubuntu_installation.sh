@@ -5,6 +5,7 @@ source ./script/common/log.sh
 component_installation=(
 	apps/ubuntu
 	git
+	notes
 	zsh
 	vim
 	tmux

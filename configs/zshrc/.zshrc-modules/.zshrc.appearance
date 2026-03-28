@@ -1,5 +1,7 @@
-if [[ -n "$TMUX" ]]; then
-  fastfetch --config ~/.config/fastfetch/config-minimal.jsonc
-else
-  fastfetch
+if command -v fastfetch &>/dev/null; then
+  if [[ -n "$TMUX" ]]; then
+    fastfetch --config ~/.config/fastfetch/config-minimal.jsonc
+  else
+    fastfetch
+  fi
 fi

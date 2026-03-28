@@ -78,9 +78,12 @@ _auto_node_switch() {
 
 # Set default node version at startup
 if [[ -d "$NVM_DIR/versions/node" ]]; then
+  local _resolved=0
   if [[ -f "$NVM_DIR/alias/default" ]]; then
-    _node_use "$(<"$NVM_DIR/alias/default")"
-  else
+    _node_use "$(<"$NVM_DIR/alias/default")" 2>/dev/null && _resolved=1
+  fi
+  if (( ! _resolved )); then
+    # Fallback: use latest installed version (handles lts/*, symbolic aliases)
     local _versions=("$NVM_DIR/versions/node"/*(N))
     (( ${#_versions} )) && path=(${_versions[-1]}/bin ${path:#*nvm/versions/node*})
   fi

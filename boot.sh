@@ -9,7 +9,7 @@ BLUE="\033[00;34m"
 RESET="\033[0m"
 
 # Configuration
-DOTFILES_REPO="https://github.com/whoisjordangarcia/dotfiles.git"
+DOTFILES_REPO="git@github.com:whoisjordangarcia/dotfiles.git"
 DOTFILES_DIR="$HOME/dev/dotfiles"
 
 # Main installation function
@@ -31,11 +31,14 @@ main() {
 		cd "$DOTFILES_DIR"
 	fi
 
-	# If arguments passed (e.g. --system linux_server), use bin/dot directly
+	# Reattach stdin to the terminal so interactive prompts work
+	# when piped via `curl | bash`
+	exec </dev/tty
+
 	if [[ $# -gt 0 ]]; then
 		./bin/dot "$@"
 	else
-		./bootstrap.sh || fail "Bootstrap failed"
+		./bin/dot -i
 	fi
 }
 

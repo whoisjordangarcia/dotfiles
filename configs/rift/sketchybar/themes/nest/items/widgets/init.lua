@@ -1,4 +1,5 @@
 require("items.widgets.battery")
+require("items.widgets.brightness")
 require("items.widgets.volume")
 require("items.widgets.temp")
 require("items.widgets.memory")

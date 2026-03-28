@@ -29,9 +29,13 @@ link_file "$SCRIPT_DIR/../../configs/claude/settings.json" "$HOME/.claude/settin
 
 # Install TypeScript language server for Claude Code's typescript-lsp plugin
 if ! command -v typescript-language-server &>/dev/null; then
-	info "Installing typescript-language-server..."
-	npm install -g typescript-language-server typescript
-	success "typescript-language-server installed."
+	if command -v npm &>/dev/null; then
+		info "Installing typescript-language-server..."
+		npm install -g typescript-language-server typescript
+		success "typescript-language-server installed."
+	else
+		info "npm not found — skipping typescript-language-server install. Run 'npm install -g typescript-language-server typescript' manually after installing Node.js."
+	fi
 else
 	debug "typescript-language-server already installed. Skipping."
 fi

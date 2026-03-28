@@ -12,3 +12,17 @@ else
 	curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
 	success "nvm installed."
 fi
+
+# Load nvm into current shell session
+export NVM_DIR="${HOME}/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# Install LTS node if no version is active
+if ! command -v node &>/dev/null; then
+	info "installing node LTS via nvm..."
+	nvm install --lts
+	nvm use --lts
+	success "node installed."
+else
+	debug "node already available. Skipping."
+fi

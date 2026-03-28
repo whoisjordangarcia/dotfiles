@@ -41,9 +41,9 @@ fi
 # Choose sound based on session name
 # Use longer, more alerting sound for ralph-related sessions
 if echo "$SESSION" | grep -qi 'ralph'; then
-  SOUND='Funk'    # Longer, more dramatic alert for Ralph
+  SOUND='Funk' # Longer, more dramatic alert for Ralph
 else
-  SOUND='Glass'   # Subtle notification sound
+  SOUND='Glass' # Subtle notification sound
 fi
 
 # Send notification using terminal-notifier

@@ -1,1 +1,2 @@
 model = "gpt-5-codex"
+personality = "pragmatic"
