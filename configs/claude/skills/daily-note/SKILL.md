@@ -1,6 +1,6 @@
 ---
 name: daily-note
-description: "Use when creating a daily note, adding notes for today, or jotting down ideas. Triggers on: daily note, create a note, add to today's note, jot this down, note this."
+description: "Use whenever the user mentions the vault, daily note, today's notes, or ~/dev/notes — for creating, appending to, OR retrieving/showing today's Obsidian daily note. Triggers on: vault, daily note, daily-note, today's note, show me today's note, what's in my note today, read my daily note, add to my notes, add to notes for today, jot this down, note this, save to vault, put in my notes, ~/dev/notes."
 user-invocable: true
 ---
 
@@ -65,6 +65,16 @@ ls "/Users/nest/dev/notes/03 - Daily Notes/" | grep "^$(date +%Y-%m-%d)"
 
 - [ ] <task items if applicable>
 ```
+
+## Retrieving / Showing Today's Note
+
+When the user asks to see, read, show, or review today's daily note:
+
+1. Find today's file in `/Users/nest/dev/notes/03 - Daily Notes/` matching `YYYY-MM-DD*.md`
+2. If multiple files exist for today (different topic slugs), list them and ask which to show — or show all if the user said "everything for today"
+3. Read the file and present its contents to the user verbatim (preserve markdown formatting)
+4. Do NOT edit or append anything when the user is only asking to view
+5. If no note exists for today, say so plainly — don't create an empty one just to display it
 
 ## Appending to Existing Notes
 
