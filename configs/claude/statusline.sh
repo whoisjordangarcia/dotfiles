@@ -79,7 +79,7 @@ format_commit_age() {
     label="$((secs / 86400))d ago"
     color="$COLOR_COMMIT_OLD"
   fi
-  echo "${COLOR_DIM}${label} since commit${COLOR_RESET}"
+  echo "${COLOR_DIM}${label}${COLOR_RESET}"
 }
 
 # ─── Single jq call to extract all fields ────────────────────────────
@@ -234,14 +234,14 @@ if [ -n "$cwd" ] && [ -d "$cwd" ] && { [ -d "$cwd/.git" ] || [ -f "$cwd/.git" ];
       staged=$(grep -c '^[MADRC]' <<<"$git_status" 2>/dev/null) || staged=0
       unstaged=$(grep -c '^.[MD]' <<<"$git_status" 2>/dev/null) || unstaged=0
       untracked=$(grep -c '^??' <<<"$git_status" 2>/dev/null) || untracked=0
-      [ "$staged" -gt 0 ] && dirty_display+="${COLOR_ADD}● ${staged} staged${COLOR_RESET}"
+      [ "$staged" -gt 0 ] && dirty_display+="${COLOR_ADD}●${staged}${COLOR_RESET}"
       [ "$unstaged" -gt 0 ] && {
         [ -n "$dirty_display" ] && dirty_display+=" "
-        dirty_display+="${COLOR_SYNC_AHEAD}◦ ${unstaged} modified${COLOR_RESET}"
+        dirty_display+="${COLOR_SYNC_AHEAD}◦${unstaged}${COLOR_RESET}"
       }
       [ "$untracked" -gt 0 ] && {
         [ -n "$dirty_display" ] && dirty_display+=" "
-        dirty_display+="${COLOR_CACHE}+${untracked} new${COLOR_RESET}"
+        dirty_display+="${COLOR_CACHE}+${untracked}${COLOR_RESET}"
       }
     fi
     echo "$dirty_display" >"$dirty_cache"
@@ -384,7 +384,7 @@ if [ "$lines_added" -gt 0 ] 2>/dev/null || [ "$lines_removed" -gt 0 ] 2>/dev/nul
   parts=""
   [ "$lines_added" -gt 0 ] && parts+="${COLOR_ADD}+${lines_added}${COLOR_RESET}"
   [ "$lines_removed" -gt 0 ] && parts+=" ${COLOR_DEL}-${lines_removed}${COLOR_RESET}"
-  lines_display="${parts} ${COLOR_DIM}written${COLOR_RESET}"
+  lines_display="${parts}"
 fi
 
 # ─── Assemble output ─────────────────────────────────────────────────
@@ -414,9 +414,13 @@ if [ -n "$branch" ]; then
       fi
       wt_pr_display="${pr_color}⎇ #${pr_number}${COLOR_RESET}"
     else
-      norm_wt=$(echo "$wt_name" | tr '/' '-')
-      norm_br=$(echo "$branch" | tr '/' '-')
-      [ "$norm_wt" != "$norm_br" ] && wt_pr_display="${COLOR_WORKTREE}⎇ ${wt_name}${COLOR_RESET}"
+      # Always show truncated worktree/branch name
+      wt_label="$wt_name"
+      wt_max=25
+      if [ "${#wt_label}" -gt "$wt_max" ]; then
+        wt_label="${wt_label:0:$wt_max}…"
+      fi
+      wt_pr_display="${COLOR_WORKTREE}⎇ ${wt_label}${COLOR_RESET}"
     fi
   elif [ -n "$pr_url" ]; then
     pr_color="$COLOR_PR_OPEN"
@@ -431,13 +435,9 @@ if [ -n "$branch" ]; then
   fi
 fi
 
-# Line 1: project · PR indicator · session vitals · commit age
+# Line 1: project · session vitals · commit age
 line1=""
 [ -n "$project_name" ] && line1+="${COLOR_WHITE}${project_name}${COLOR_RESET}"
-[ -n "$wt_pr_display" ] && {
-  [ -n "$line1" ] && line1+="${sep}"
-  line1+="${wt_pr_display}"
-}
 [ -n "$line1" ] && line1+="${sep}"
 line1+="${COLOR_COST}${cost_display}${COLOR_RESET}"
 if [[ ! "$model_short" =~ ^Opus ]]; then
@@ -452,25 +452,35 @@ line1+="${sep}${context_bar}${cache_display}"
 line2=""
 
 if [ -n "$branch" ]; then
-  # Truncate long branch names with ellipsis
-  branch_max=45
-  if [ "${#branch}" -gt "$branch_max" ]; then
-    branch_display="${branch:0:$branch_max}…"
-  else
-    branch_display="$branch"
-  fi
   if [ "$is_worktree" = true ]; then
-    line2+="${COLOR_DIM}🌿 ${COLOR_GIT}${branch_display}${COLOR_RESET}"
+    # Worktree: show ⎇ indicator + sync + dirty
+    [ -n "$wt_pr_display" ] && line2+="${wt_pr_display}"
+    [ -n "$sync_display" ] && {
+      [ -n "$line2" ] && line2+="${sep}"
+      line2+="${sync_display}"
+    }
+    [ -n "$dirty_display" ] && {
+      [ -n "$line2" ] && line2+="${sep}"
+      line2+="${dirty_display}"
+    }
   else
+    # Truncate long branch names with ellipsis
+    branch_max=25
+    if [ "${#branch}" -gt "$branch_max" ]; then
+      branch_display="${branch:0:$branch_max}…"
+    else
+      branch_display="$branch"
+    fi
     line2+="${COLOR_GIT}${branch_display}${COLOR_RESET}"
+    [ -n "$wt_pr_display" ] && line2+=" ${wt_pr_display}"
+    [ -n "$base_branch_display" ] && line2+=" ${base_branch_display}"
+    [ -n "$sync_display" ] && line2+="${sep}${sync_display}"
+    [ -n "$dirty_display" ] && line2+="${sep}${dirty_display}"
   fi
-  [ -n "$base_branch_display" ] && line2+=" ${base_branch_display}"
-  [ -n "$sync_display" ] && line2+="${sep}${sync_display}"
-  [ -n "$dirty_display" ] && line2+="${sep}${dirty_display}"
 fi
 
-if [ -z "$line2" ] && [ -n "$cwd" ]; then
-  # No git — show full path with ~ shorthand
+if [ -z "$line2" ] && [ -n "$cwd" ] && [ "$is_worktree" != true ]; then
+  # No git (and not a worktree) — show full path with ~ shorthand
   display_path="${cwd/#$HOME/~}"
   line2="${COLOR_WHITE}${display_path}${COLOR_RESET}"
 fi

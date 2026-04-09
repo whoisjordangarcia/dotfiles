@@ -72,7 +72,10 @@
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
-    "ask": ["Bash(git push *)", "Bash(curl *)"],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(curl *)"
+    ],
     "defaultMode": "default"
   },
   "hooks": {},
@@ -94,7 +97,17 @@
     "swift-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "nest-slite@nest-genomics-skills": true,
-    "impeccable@impeccable": true
+    "impeccable@impeccable": true,
+    "nest-ai-skill-audit@nest-genomics-skills": true,
+    "nest-ehr-research@nest-genomics-skills": true,
+    "nest-linear@nest-genomics-skills": true,
+    "nest-portal-sign-in@nest-genomics-skills": true,
+    "nest-posthog@nest-genomics-skills": true,
+    "nest-pr@nest-genomics-skills": true,
+    "nest-ralph-prd@nest-genomics-skills": true,
+    "nest-release-stg@nest-genomics-skills": true,
+    "nest-release-summary@nest-genomics-skills": true,
+    "nest-sentry@nest-genomics-skills": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -118,26 +131,35 @@
     "network": {
       "allowLocalBinding": true
     },
-    "excludedCommands": ["git"]
+    "excludedCommands": [
+      "git"
+    ]
   },
   "spinnerTipsEnabled": true,
   "spinnerVerbs": {
     "mode": "append",
-    "verbs": ["Nesting", "sahh good", "ralphing"]
+    "verbs": [
+      "Nesting",
+      "sahh good",
+      "ralphing"
+    ]
   },
   "alwaysThinkingEnabled": true,
-  "autoUpdatesChannel": "latest",
+  "autoUpdatesChannel": "stable",
   "voiceEnabled": true,
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
   "mcpServers": {
     "tavily": {
       "command": "npx",
-      "args": ["-y", "tavily-mcp@latest"],
+      "args": [
+        "-y",
+        "tavily-mcp@latest"
+      ],
       "env": {
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
       }
     }
   },
-  "effortLevel": "medium"
+  "minimumVersion": "2.1.90"
 }
