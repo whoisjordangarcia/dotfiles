@@ -17,7 +17,8 @@ confirm-close-surface = false
 
 #font-family = GohuFont 14 Nerd Font
 #font-family = CozetteVector
-font-family = JetBrainsMono Nerd Font
+#font-family = JetBrainsMono Nerd Font
+font-family = GohuFont 14 Nerd Font Mono
 font-size = 16
 
 # Platform-specific overrides (only loaded if file exists)
@@ -28,14 +29,14 @@ macos-titlebar-style = hidden
 
 mouse-hide-while-typing = true
 
-#theme = dark:catppuccin-macchiato,light:catppuccin-frappe
+theme = dark:Catppuccin Mocha,light:Catppuccin Frappe
 
 unfocused-split-opacity = 0.9
 
 window-decoration = true
 window-padding-x = 5
 window-padding-y = 14,0
-window-padding-balance = true
+window-padding-balance = false
 window-padding-color = extend
 confirm-close-surface = false
 resize-overlay = never
