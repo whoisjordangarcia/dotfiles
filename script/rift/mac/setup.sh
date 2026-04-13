@@ -37,6 +37,18 @@ else
     debug "sketchybar-app-font already installed, skipping"
 fi
 
+# Install and start rift service
+RIFT_PLIST="$HOME/Library/LaunchAgents/git.acsandmann.rift.plist"
+if [ ! -f "$RIFT_PLIST" ]; then
+    step "Installing rift service..."
+    rift service install
+else
+    debug "rift service already installed, skipping"
+fi
+
+rift service restart
+success "rift service started"
+
 # allows to move windows by dragging any part of the window using Ctrl + Cmd
 defaults write -g NSWindowShouldDragOnGesture -bool true
 
@@ -55,3 +67,11 @@ defaults write com.apple.finder CreateDesktop -bool false
 killall Dock
 killall SystemUIServer
 killall Finder
+
+# macOS bug: Accessibility permissions require dragging the real binary (not symlink)
+# Must run AFTER killall Finder so the window stays open
+RIFT_BIN=$(realpath "$(command -v rift)")
+info "Drag rift into the Accessibility pane opening now:"
+info "  $RIFT_BIN"
+open -R "$RIFT_BIN"
+open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"

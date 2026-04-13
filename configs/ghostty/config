@@ -1,39 +1,26 @@
-#font-family = JetBrainsMono Nerd Font
-#font-family = Terminess Nerd Font
-
-#gtk-adwaita = false
-#gtk-titlebar = false
-
-#keybind = global:cmd+s=toggle_quick_terminal
-
-background-blur-radius = 20 
-background-blur = true 
 #background-opacity = 0.90
-
 clipboard-read = allow
 clipboard-write = allow
 
 confirm-close-surface = false
 
-#font-family = GohuFont 14 Nerd Font
 #font-family = CozetteVector
 #font-family = JetBrainsMono Nerd Font
+#font-family = JetBrainsMono Nerd Font Mono
+#font-family = Terminess Nerd Font Mono
 font-family = GohuFont 14 Nerd Font Mono
 font-size = 16
 
 # Platform-specific overrides (only loaded if file exists)
 config-file = ?platform-linux
 config-file = ?platform-macos
-
 macos-titlebar-style = hidden
-
 mouse-hide-while-typing = true
 
 theme = dark:Catppuccin Mocha,light:Catppuccin Frappe
-
 unfocused-split-opacity = 0.9
 
-window-decoration = true
+window-decoration = false
 window-padding-x = 5
 window-padding-y = 14,0
 window-padding-balance = false
@@ -53,5 +40,5 @@ shell-integration = zsh
 term = ghostty
 
 # Fix general slowness on Hyprland
-# async-backend = epoll  # disabled — causes 100% CPU spin on NVIDIA 590.x
+async-backend = epoll  
 

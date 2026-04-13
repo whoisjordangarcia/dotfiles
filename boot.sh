@@ -9,7 +9,7 @@ BLUE="\033[00;34m"
 RESET="\033[0m"
 
 # Configuration
-DOTFILES_REPO="https://github.com/whoisjordangarcia/dotfiles.git"
+DOTFILES_REPO="git@github.com:whoisjordangarcia/dotfiles.git"
 DOTFILES_DIR="$HOME/dev/dotfiles"
 
 # Main installation function

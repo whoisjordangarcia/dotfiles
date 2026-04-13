@@ -236,6 +236,50 @@ auto_select_installation() {
 	echo ""
 }
 
+show_installation_plan() {
+	local system="${1:-$DOT_SYSTEM}"
+	local script="$dotfilesDirectory/script/${system}_installation.sh"
+
+	if [[ ! -f "$script" ]]; then
+		return
+	fi
+
+	local modules=()
+	while IFS= read -r module; do
+		modules+=("$module")
+	done < <(get_modules_from_script "$script")
+
+	if [[ ${#modules[@]} -eq 0 ]]; then
+		return
+	fi
+
+	# Determine current platform suffix to filter out irrelevant entries
+	local current_os=""
+	if [[ "$OSTYPE" == "darwin"* ]]; then
+		current_os="mac"
+	else
+		current_os="linux"
+	fi
+	local other_os
+	if [[ "$current_os" == "mac" ]]; then other_os="linux"; else other_os="mac"; fi
+
+	echo ""
+	printf "  ${BLUE}Installation plan:${RESET}\n"
+	for module in "${modules[@]}"; do
+		# Skip entries that are explicitly for the other platform
+		if [[ "$module" == *"/$other_os" || "$module" == *"/$other_os/"* ]]; then
+			continue
+		fi
+		local script_path="$dotfilesDirectory/script/${module}/setup.sh"
+		if [[ -f "$script_path" ]]; then
+			printf "    ${GREEN}✓${RESET}  %s\n" "$module"
+		else
+			printf "    ${RED}✗${RESET}  %s ${RED}(no setup.sh)${RESET}\n" "$module"
+		fi
+	done
+	echo ""
+}
+
 show_logo() {
 	local logo_file="$dotfilesDirectory/art/logo"
 	if [[ -f "$logo_file" ]]; then
@@ -321,6 +365,8 @@ interactive_setup() {
 	printf "  ${GREEN}System:${RESET}       %s\n" "$DOT_SYSTEM"
 	printf "  ${GREEN}YubiKey:${RESET}      %s\n" "${DOT_YUBIKEY:-not set}"
 	echo ""
+
+	show_installation_plan "$DOT_SYSTEM"
 
 	prompt "Continue? [Y/n]: "
 	read proceed
@@ -473,6 +519,8 @@ else
 	printf "  ${GREEN}System:${RESET}       %s\n" "$DOT_SYSTEM"
 	printf "  ${GREEN}YubiKey:${RESET}      %s\n" "${DOT_YUBIKEY:-not set}"
 	echo ""
+
+	show_installation_plan "$DOT_SYSTEM"
 
 	prompt "Continue with this configuration? [Y/n]: "
 	read proceed

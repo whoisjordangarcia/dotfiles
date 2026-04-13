@@ -86,28 +86,29 @@
   },
   "enabledPlugins": {
     "claude-mem@thedotmack": true,
-    "code-review@claude-plugins-official": false,
+    "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": false,
+    "commit-commands@claude-plugins-official": true,
     "context7@claude-plugins-official": false,
-    "dev-browser@dev-browser-marketplace": false,
     "explanatory-output-style@claude-plugins-official": true,
     "playwright-skill@playwright-skill": false,
     "superpowers@superpowers-marketplace": true,
     "swift-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
     "nest-slite@nest-genomics-skills": true,
     "impeccable@impeccable": true,
-    "nest-ai-skill-audit@nest-genomics-skills": true,
+    "nest-ai-skill-audit@nest-genomics-skills": false,
     "nest-ehr-research@nest-genomics-skills": true,
     "nest-linear@nest-genomics-skills": true,
     "nest-portal-sign-in@nest-genomics-skills": true,
     "nest-posthog@nest-genomics-skills": true,
     "nest-pr@nest-genomics-skills": true,
     "nest-ralph-prd@nest-genomics-skills": true,
-    "nest-release-stg@nest-genomics-skills": true,
+    "nest-release-stg@nest-genomics-skills": false,
     "nest-release-summary@nest-genomics-skills": true,
-    "nest-sentry@nest-genomics-skills": true
+    "nest-sentry@nest-genomics-skills": true,
+    "nest-ticket-writer@nest-genomics-skills": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -120,7 +121,8 @@
       "source": {
         "source": "github",
         "repo": "Nest-Genomics/ai-skills"
-      }
+      },
+      "autoUpdate": true
     }
   },
   "outputStyle": "Explanatory",
@@ -145,10 +147,13 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "autoUpdatesChannel": "stable",
+  "effortLevel": "medium",
+  "autoUpdatesChannel": "latest",
   "voiceEnabled": true,
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true,
+  "useAutoModeDuringPlan": true,
   "mcpServers": {
     "tavily": {
       "command": "npx",
@@ -160,6 +165,5 @@
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
       }
     }
-  },
-  "minimumVersion": "2.1.90"
+  }
 }

@@ -148,3 +148,32 @@ clamshell-undo() {
 
 # Aliases for convenience
 alias dothelp="dotman"
+
+# ==============================================================================
+#  System Update with Optional Timeshift Backup
+# ==============================================================================
+
+syu() {
+  echo "== Arch System Update =="
+  echo ""
+  read -q "backup?Create a Timeshift backup before updating? [y/N] "
+  echo ""
+
+  if [[ "$backup" == "y" ]]; then
+    local timestamp=$(date +"%Y-%m-%d_%H:%M")
+    local comment="pre-syu_${timestamp}"
+    echo "Creating Timeshift snapshot: $comment"
+    sudo timeshift --create --comments "$comment"
+    if [[ $? -ne 0 ]]; then
+      echo "Timeshift backup failed!"
+      read -q "proceed?Continue with update anyway? [y/N] "
+      echo ""
+      [[ "$proceed" != "y" ]] && echo "Update cancelled." && return 1
+    fi
+    echo "Backup complete."
+    echo ""
+  fi
+
+  echo "Running pacman -Syu..."
+  sudo pacman -Syu
+}

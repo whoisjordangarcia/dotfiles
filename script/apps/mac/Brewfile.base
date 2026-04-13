@@ -1,32 +1,51 @@
-brew 'zsh' 
+# Taps (must be first)
+tap 'LizardByte/homebrew'
+tap 'FelixKratz/formulae'
+tap 'acsandmann/tap'
+
+# CLI Tools
+brew 'zsh'
 brew 'fzf'
-#brew 'ripgrep'
 brew 'fd'
 brew 'tmux'
 brew 'zoxide'
-#brew 'starship'
+brew 'starship'
 brew 'jq'
 brew 'fastfetch'
-brew 'rg'
-
-# System monitoring
-tap 'narugit/smctemp'
-brew 'smctemp'
-
-# Streaming
-tap 'LizardByte/homebrew'
-brew 'sunshine-beta'
-cask 'blackhole-2ch'
+brew 'ripgrep'
+brew 'bat'
+brew 'eza'
+brew 'btop'
+brew 'yq' # tmux statusbar
+brew 'cmatrix'
+brew 'gh'
+brew 'yazi'
 
 # Development
 cask '1password-cli'
 brew 'nvm'
 brew 'lazygit'
-brew 'bat'
 brew 'tmuxinator'
-brew 'yq' # tmux statusbar
 brew 'go'
-cask 'tailscale-app'
+brew 'lazydocker'
+
+# Security / YubiKey
+brew 'gnupg'
+brew 'yubico-piv-tool'
+brew 'pcsc-lite'
+
+# Streaming
+brew 'sunshine-beta'
+
+# Sketchybar
+brew 'FelixKratz/formulae/sketchybar'
+brew 'FelixKratz/formulae/borders'
+brew 'lua'
+brew 'switchaudio-osx'
+brew 'nowplaying-cli'
+
+# Window Management
+brew 'acsandmann/tap/rift'
 
 # Essential Apps
 cask 'ghostty'
@@ -34,13 +53,16 @@ cask 'brave-browser'
 cask 'music-decoy'
 cask 'betterdisplay'
 cask 'raycast'
+cask 'bartender'
+cask 'obsidian'
+cask 'tailscale-app'
 
 # Essential Fonts
 cask 'font-sf-mono'
 cask 'font-sf-pro'
 cask 'font-hack-nerd-font'
 
-# fonts
+# Fonts
 cask 'sf-symbols'
 cask 'font-jetbrains-mono'
 cask 'font-fira-code'
