@@ -75,8 +75,7 @@
     "ask": [
       "Bash(git push *)",
       "Bash(curl *)"
-    ],
-    "defaultMode": "auto"
+    ]
   },
   "hooks": {},
   "statusLine": {
@@ -85,20 +84,15 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "claude-mem@thedotmack": true,
-    "code-review@claude-plugins-official": false,
+    "claude-md-management@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": false,
     "context7@claude-plugins-official": false,
-    "dev-browser@dev-browser-marketplace": false,
     "explanatory-output-style@claude-plugins-official": true,
-    "playwright-skill@playwright-skill": false,
+    "impeccable@impeccable": true,
     "superpowers@superpowers-marketplace": true,
     "swift-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true,
-    "nest-slite@nest-genomics-skills": true,
-    "impeccable@impeccable": true
+    "claude-mem@thedotmack": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -112,6 +106,12 @@
         "source": "github",
         "repo": "Nest-Genomics/ai-skills"
       }
+    },
+    "superpowers-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers-marketplace"
+      }
     }
   },
   "outputStyle": "Explanatory",
@@ -122,12 +122,18 @@
     "network": {
       "allowLocalBinding": true
     },
-    "excludedCommands": ["git"]
+    "excludedCommands": [
+      "git"
+    ]
   },
   "spinnerTipsEnabled": true,
   "spinnerVerbs": {
     "mode": "append",
-    "verbs": ["Nesting", "sahh good", "ralphing"]
+    "verbs": [
+      "Nesting",
+      "sahh good",
+      "ralphing"
+    ]
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "medium",
@@ -135,14 +141,18 @@
   "voiceEnabled": true,
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true,
   "mcpServers": {
     "tavily": {
       "command": "npx",
-      "args": ["-y", "tavily-mcp@latest"],
+      "args": [
+        "-y",
+        "tavily-mcp@latest"
+      ],
       "env": {
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
       }
     }
   },
-  "skipAutoPermissionPrompt": true
+  "model": "opus"
 }
