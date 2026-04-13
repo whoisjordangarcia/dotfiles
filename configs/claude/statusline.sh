@@ -90,12 +90,17 @@ read_data=$(echo "$input" | jq -r '[
 	(.cost.total_lines_removed // 0 | tostring),
 	.session_id // "",
 	(.cwd // .workspace.current_dir // ""),
-	(.context_window.context_window_size // 0 | tostring),
-	((.context_window.current_usage // null) | if . then (.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens | tostring) else "0" end),
-	((.context_window.current_usage // null) | if . then (.cache_read_input_tokens // 0 | tostring) else "0" end)
+	(.context_window.used_percentage // 0 | tostring),
+	((.context_window.current_usage // null) | if . then ((.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0) | tostring) else "0" end),
+	((.context_window.current_usage // null) | if . then (.cache_read_input_tokens // 0 | tostring) else "0" end),
+	(.rate_limits.five_hour.used_percentage // -1 | tostring),
+	(.rate_limits.seven_day.used_percentage // -1 | tostring),
+	(.session_name // "__NONE__"),
+	(.cost.total_duration_ms // 0 | tostring)
 ] | @tsv')
 
-IFS=$'\t' read -r model_full cost lines_added lines_removed session_id cwd ctx_size ctx_current ctx_cache_read <<<"$read_data"
+IFS=$'\t' read -r model_full cost lines_added lines_removed session_id cwd ctx_used_pct ctx_current ctx_cache_read rate_5h rate_7d session_name duration_ms <<<"$read_data"
+[ "$session_name" = "__NONE__" ] && session_name=""
 
 # ─── Model name (shorten "Claude Opus 4.6" → "Opus 4.6") ────────────
 if [[ "$model_full" =~ Claude\ ([0-9.]+\ )?(.+) ]]; then
@@ -109,19 +114,13 @@ fi
 # ─── Session cost ────────────────────────────────────────────────────
 cost_display=$(printf '$%.2f' "$cost")
 
-# ─── Session duration (wall-clock via marker file) ───────────────────
-SESSION_MARKER_DIR="/tmp/claude-statusline-sessions"
+# ─── Session duration (from JSON total_duration_ms) ─────────────────
 duration_display=""
 duration_seconds=0
 cost_rate_display=""
 
-if [ -n "$session_id" ]; then
-  mkdir -p "$SESSION_MARKER_DIR"
-  marker_file="$SESSION_MARKER_DIR/$session_id"
-  [ -f "$marker_file" ] || date +%s >"$marker_file"
-
-  session_start=$(cat "$marker_file")
-  duration_seconds=$(($(date +%s) - session_start))
+if [ "$duration_ms" -gt 0 ] 2>/dev/null; then
+  duration_seconds=$((duration_ms / 1000))
 
   if [ "$duration_seconds" -lt 60 ]; then
     duration_display="${duration_seconds}s"
@@ -140,8 +139,7 @@ if [ -n "$session_id" ]; then
 fi
 
 # ─── Context usage bar ───────────────────────────────────────────────
-pct=0
-[ "$ctx_size" -gt 0 ] 2>/dev/null && pct=$((ctx_current * 100 / ctx_size))
+pct=$(printf '%.0f' "$ctx_used_pct" 2>/dev/null || echo 0)
 
 bar_len=10
 filled=$((pct * bar_len / 100))
@@ -174,6 +172,28 @@ if [ "$ctx_current" -gt 0 ] 2>/dev/null && [ "$ctx_cache_read" -gt 0 ] 2>/dev/nu
   if [ "$cache_pct" -lt 80 ]; then
     cache_display=" ${COLOR_CACHE}⚡${cache_pct}%${COLOR_RESET}"
   fi
+fi
+
+# ─── Rate limit display ─────────────────────────────────────────────
+rate_display=""
+if [ "$rate_5h" != "-1" ] 2>/dev/null || [ "$rate_7d" != "-1" ] 2>/dev/null; then
+  parts=""
+  if [ "$rate_5h" != "-1" ] 2>/dev/null; then
+    r5=$(printf '%.0f' "$rate_5h")
+    if [ "$r5" -ge 80 ] 2>/dev/null; then r5_color="$COLOR_DEL"
+    elif [ "$r5" -ge 50 ] 2>/dev/null; then r5_color="$COLOR_WARN"
+    else r5_color="$COLOR_DIM"; fi
+    parts+="${r5_color}5h:${r5}%${COLOR_RESET}"
+  fi
+  if [ "$rate_7d" != "-1" ] 2>/dev/null; then
+    r7=$(printf '%.0f' "$rate_7d")
+    if [ "$r7" -ge 80 ] 2>/dev/null; then r7_color="$COLOR_DEL"
+    elif [ "$r7" -ge 50 ] 2>/dev/null; then r7_color="$COLOR_WARN"
+    else r7_color="$COLOR_DIM"; fi
+    [ -n "$parts" ] && parts+=" "
+    parts+="${r7_color}7d:${r7}%${COLOR_RESET}"
+  fi
+  rate_display="$parts"
 fi
 
 # ─── Git info (cached for performance) ───────────────────────────────
@@ -390,9 +410,11 @@ fi
 # ─── Assemble output ─────────────────────────────────────────────────
 sep=" ${COLOR_DIM}·${COLOR_RESET} "
 
-# Project name: use main repo name when in a worktree, else cwd basename
+# Project name: session name if set, else main repo name for worktrees, else cwd basename
 project_name=""
-if [ "$is_worktree" = true ] && [ -n "$git_common" ]; then
+if [ -n "$session_name" ]; then
+  project_name="$session_name"
+elif [ "$is_worktree" = true ] && [ -n "$git_common" ]; then
   main_repo=$(cd "$cwd" 2>/dev/null && cd "$git_common/.." 2>/dev/null && pwd)
   [ -n "$main_repo" ] && project_name="${main_repo##*/}"
 elif [ -n "$cwd" ]; then
@@ -446,6 +468,7 @@ fi
 [ -n "$cost_rate_display" ] && line1+="${cost_rate_display}"
 [ -n "$duration_display" ] && line1+="${sep}${COLOR_DUR}${duration_display}${COLOR_RESET}"
 line1+="${sep}${context_bar}${cache_display}"
+[ -n "$rate_display" ] && line1+="${sep}${rate_display}"
 [ -n "$commit_age_display" ] && line1+="${sep}${commit_age_display}"
 
 # Line 2: 🌿 branch ←base  sync  dirty
