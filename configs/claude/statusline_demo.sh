@@ -257,5 +257,19 @@ header "23. No rate limits (API key user — should not show 5h/7d)"
 expect "no rate limit indicators"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.00,"total_duration_ms":120000},"session_id":"demo-23","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":15}}'
 
+# ─── 19. Long worktree name truncation ─────────────────────────
+clear_caches
+REPO5="$DEMO_DIR/nest3"
+make_repo "$REPO5"
+git checkout -q -b jordan-nes-4331-bug-yoda-deep-links-ignore-url-account-and-redirect-to-first
+git checkout -q -b main-tmp2
+mkdir -p "$REPO5/.claude/worktrees"
+git worktree add -q "$REPO5/.claude/worktrees/jordan-nes-4331-bug-yoda-deep-links-ignore-url-account-and-redirect-to-first" jordan-nes-4331-bug-yoda-deep-links-ignore-url-account-and-redirect-to-first
+WT3="$REPO5/.claude/worktrees/jordan-nes-4331-bug-yoda-deep-links-ignore-url-account-and-redirect-to-first"
+
+header "19. Long worktree name (truncated at 25 chars)"
+expect "L1: nest3 · ⎇ jordan-nes-4331-bug-yoda-… · \$0.00 · 0s · [░░░░░░░░░░] 0%"
+run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},"session_id":"demo-19","cwd":"'"$WT3"'","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
+
 printf '\033[38;5;141m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
 printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 23

@@ -67,17 +67,29 @@ bin/dot                           # Shell CLI
 script/
   ├── common/
   │   ├── log.sh                 # Logging utilities (info, success, fail, etc.)
-  │   └── symlink.sh             # Symlink creation with override/backup/skip prompts
-  │                              # Supports DOT_SYMLINK_MODE for non-interactive use
+  │   ├── symlink.sh             # Symlink creation with override/backup/skip prompts
+  │   │                          # Supports DOT_SYMLINK_MODE for non-interactive use
+  │   └── check_ssh.sh           # GitHub SSH preflight check
   ├── {platform}_installation.sh # Platform installers (mac, linux_ubuntu, etc.)
   └── {component}/{platform}/setup.sh  # Component-specific setup scripts
 configs/                          # Configuration files (symlinked to home)
   ├── nvim/                      # Neovim with LazyVim
   ├── tmux/                      # Tmux with TPM plugins
   ├── zshrc/                     # Zsh configuration and modules
+  ├── git/                       # Git config templates (personal + work)
+  ├── ssh/                       # SSH config with Include for local hosts
+  ├── ghostty/                   # Ghostty terminal (macOS)
+  ├── starship/                  # Starship prompt
   ├── hypr/                      # Hyprland (Arch)
-  ├── aerospace/                 # Aerospace window manager (macOS)
-  └── ai-rules/                  # AI assistant rules (Cursor, Aider, Avante)
+  ├── i3/, sway/                 # i3/Sway window managers (Linux)
+  ├── claude/, codex/, opencode/ # AI tool configs
+  ├── ai-rules/                  # AI assistant rules (Cursor, Aider, Avante)
+  ├── vpn-split/                 # AirVPN WireGuard split tunnel (Arch)
+  └── ...                        # ~40 total config dirs (lazygit, bat, btop, etc.)
+crates/
+  └── otobun/                    # Rust TUI — interactive dotfiles installer (WIP)
+functions/
+  └── system-funcs.sh            # Shared shell functions
 .dotconfig                        # Generated config file (DOT_NAME, DOT_EMAIL, etc.)
 ```
 
@@ -97,13 +109,13 @@ DOT_YUBIKEY="ABC123..."            # GPG key ID for git signing (optional)
 - All `DOT_*` variables exported for component scripts
 
 **Environment Auto-Detection Logic**:
-1. Check git config email for `@labcorp.com` → work environment
+1. Check git config email for `@nestgenomics.com` → work environment
 2. Check `WORK_ENV` or `--work` flag → work environment
 3. Default → personal environment
 
 ### Platform Detection
 
-**System Detection** (`detect_system()` in bin/dot:23):
+**System Detection** (`detect_system()` in `bin/dot`):
 - macOS: `$OSTYPE == "darwin"*` → `mac`
 - Linux: Parse `/etc/os-release` → `linux_ubuntu`, `linux_fedora`, `linux_arch`
 - Maps to installation scripts: `script/{detected}_installation.sh`
@@ -115,7 +127,7 @@ DOT_YUBIKEY="ABC123..."            # GPG key ID for git signing (optional)
 
 ### Brewfile Management (macOS Only)
 
-**Brewfile Selection** (script/apps/mac/setup.sh:52-74):
+**Brewfile Selection** (`script/apps/mac/setup.sh`):
 1. Install `Brewfile.base` (core packages for all environments)
 2. Install environment-specific:
    - `Brewfile.work` - Work environment packages
@@ -130,7 +142,7 @@ DOT_YUBIKEY="ABC123..."            # GPG key ID for git signing (optional)
 
 **Core Principle**: Configs are symlinked (not copied) from `configs/` to their standard locations, enabling centralized version control.
 
-**Symlink Utility** (`script/common/symlink.sh:6`):
+**Symlink Utility** (`script/common/symlink.sh`):
 ```bash
 link_file "$SOURCE" "$TARGET"
 ```
@@ -146,6 +158,7 @@ DOT_SYMLINK_MODE=override  # Auto-override all conflicts
 DOT_SYMLINK_MODE=backup    # Auto-backup existing files
 DOT_SYMLINK_MODE=skip      # Auto-skip conflicts
 DOT_SYMLINK_MODE=interactive # Prompt user (default)
+```
 
 **Common Symlink Patterns**:
 ```bash
@@ -186,15 +199,25 @@ link_file "$SOURCE" "$TARGET"
 - Platform: `mac/`, `linux/`, `fedora/`, `ubuntu/`, `arch/`
 - Example: `script/lazygit/mac/setup.sh`, `script/hypr/linux/setup.sh`
 
-**Installation Array Pattern** (script/mac_installation.sh:7):
+**Installation Array Pattern** (`script/mac_installation.sh`):
 ```bash
 component_installation=(
+    apps/mac
+    1password/mac
     git
+    ssh
+    gh/mac
     zsh
     vim
     neovim/mac    # Platform-specific path
     tmux
     fonts/mac
+    starship
+    ghostty/mac
+    lazygit/mac
+    claude
+    codex
+    # ... more components
 )
 
 for component in "${component_installation[@]}"; do
@@ -281,12 +304,12 @@ git config --global commit.gpgsign true
 ## Platform-Specific Notes
 
 ### macOS
-- **Window Manager**: Aerospace window manager
 - **Terminal**: Ghostty (replaces Alacritty/Kitty)
 - **Menu Bar**: SketchyBar (custom menu bar replacement)
   - Restart if frozen: `brew services restart sketchybar`
 - **Brewfile**: Environment-aware (work/personal package lists)
 - **System Tweaks**: Disables press-and-hold, sets Screenshots folder
+- **Work variant**: `script/mac_work_installation.sh` extends the base mac install
 
 ### Arch Linux
 - **Window Manager**: Hyprland with HyDE theme
@@ -298,15 +321,13 @@ git config --global commit.gpgsign true
 ### Fedora
 - **Window Manager**: i3wm
 - **Display**: Polybar panel
-- **Terminal**: Wezterm
 
 ### Ubuntu
 - **Desktop**: GNOME with extensions
-- **Terminal**: GNOME Terminal or Wezterm
 
-### WSL
-- **Wezterm**: Configure wezterm.lua in your Windows user directory
-- Cross-platform file access considerations
+### Linux Server (LXC)
+- Lightweight profile: tmux, neovim, zsh, git only
+- Installation: `script/linux_server_installation.sh`
 
 ## VPN Split Tunneling (AirVPN + WireGuard)
 

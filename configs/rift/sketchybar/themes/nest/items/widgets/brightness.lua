@@ -31,8 +31,11 @@ local brightness = sbar.add("item", "widgets.brightness", {
   padding_right = 4,
 })
 
+local brightness_spacer = sbar.add("item", "widgets.brightness.spacer", { position = "right", width = 4 })
+
 brightness:subscribe("brightness_update", function(env)
   local val = tonumber(env.brightness) or 0
+  local visible = val > 0
   local icon = "󰃟"
   local color = colors.with_alpha(colors.yellow, 0.7)
 
@@ -48,9 +51,9 @@ brightness:subscribe("brightness_update", function(env)
   end
 
   brightness:set({
+    drawing = visible,
     icon = { string = icon, color = color },
     label = { string = val .. "%" },
   })
+  brightness_spacer:set({ drawing = visible })
 end)
-
-sbar.add("item", { position = "right", width = 4 })
