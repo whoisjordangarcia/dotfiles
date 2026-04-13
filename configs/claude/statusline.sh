@@ -47,8 +47,8 @@ PR_CACHE_DIR="/tmp/claude-statusline-pr-cache"
 PR_CACHE_TTL=300   # 5 minutes
 CI_CACHE_TTL=120   # 2 minutes — CI changes more often than PR metadata
 BASE_CACHE_TTL=600 # 10 minutes — base branch rarely changes
-DOCKER_CACHE_DIR="/tmp/claude-statusline-docker-cache"
-DOCKER_CACHE_TTL=30 # 30 seconds — containers can start/stop frequently
+NODE_CACHE_DIR="/tmp/claude-statusline-node-cache"
+NODE_CACHE_TTL=30 # 30 seconds — apps can start/stop frequently
 
 # ─── Helper: check if cache file is fresh ────────────────────────────
 cache_fresh() {
@@ -56,6 +56,29 @@ cache_fresh() {
   [ -f "$file" ] || return 1
   local age=$(($(date +%s) - $(stat -f %m "$file" 2>/dev/null || stat -c %Y "$file" 2>/dev/null || echo 0)))
   [ "$age" -lt "$ttl" ]
+}
+
+# ─── Helper: format reset countdown from epoch ──────────────────────
+format_reset() {
+  local resets_at="$1" now
+  now=$(date +%s)
+  local remaining=$((resets_at - now))
+  [ "$remaining" -le 0 ] && echo "now" && return
+  if [ "$remaining" -lt 60 ]; then
+    echo "<1m"
+  elif [ "$remaining" -lt 3600 ]; then
+    echo "$((remaining / 60))m"
+  else
+    local h=$((remaining / 3600))
+    local m=$(((remaining % 3600) / 60))
+    [ "$m" -gt 0 ] && echo "${h}h${m}m" || echo "${h}h"
+  fi
+}
+
+# ─── Helper: wrap text in an OSC 8 clickable link ───────────────────
+osc_link() {
+  local url="$1" text="$2"
+  printf '\e]8;;%s\a%s\e]8;;\a' "$url" "$text"
 }
 
 # ─── Helper: format seconds as human-readable age with color ─────────
@@ -90,38 +113,30 @@ read_data=$(echo "$input" | jq -r '[
 	(.cost.total_lines_removed // 0 | tostring),
 	.session_id // "",
 	(.cwd // .workspace.current_dir // ""),
-	(.context_window.context_window_size // 0 | tostring),
+	(.context_window.used_percentage // 0 | tostring),
+	(.context_window.remaining_percentage // 100 | tostring),
+	((.context_window.current_usage // null) | if . then (.cache_read_input_tokens // 0 | tostring) else "0" end),
 	((.context_window.current_usage // null) | if . then (.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens | tostring) else "0" end),
-	((.context_window.current_usage // null) | if . then (.cache_read_input_tokens // 0 | tostring) else "0" end)
+	(.cost.total_duration_ms // 0 | tostring),
+	(.rate_limits.five_hour.used_percentage // "" | tostring),
+	(.rate_limits.seven_day.used_percentage // "" | tostring),
+	(.rate_limits.five_hour.resets_at // "" | tostring),
+	(.rate_limits.seven_day.resets_at // "" | tostring),
+	(.workspace.git_worktree // "")
 ] | @tsv')
 
-IFS=$'\t' read -r model_full cost lines_added lines_removed session_id cwd ctx_size ctx_current ctx_cache_read <<<"$read_data"
-
-# ─── Model name (shorten "Claude Opus 4.6" → "Opus 4.6") ────────────
-if [[ "$model_full" =~ Claude\ ([0-9.]+\ )?(.+) ]]; then
-  version="${BASH_REMATCH[1]}"
-  name="${BASH_REMATCH[2]}"
-  model_short="${name}${version:+ ${version% }}"
-else
-  model_short="$model_full"
-fi
+IFS=$'\t' read -r model_short cost lines_added lines_removed session_id cwd ctx_pct ctx_remaining ctx_cache_read ctx_current duration_ms rate_5h rate_7d rate_5h_resets rate_7d_resets ws_worktree <<<"$read_data"
 
 # ─── Session cost ────────────────────────────────────────────────────
 cost_display=$(printf '$%.2f' "$cost")
 
-# ─── Session duration (wall-clock via marker file) ───────────────────
-SESSION_MARKER_DIR="/tmp/claude-statusline-sessions"
+# ─── Session duration (from Claude's total_duration_ms) ─────────────
 duration_display=""
 duration_seconds=0
 cost_rate_display=""
 
-if [ -n "$session_id" ]; then
-  mkdir -p "$SESSION_MARKER_DIR"
-  marker_file="$SESSION_MARKER_DIR/$session_id"
-  [ -f "$marker_file" ] || date +%s >"$marker_file"
-
-  session_start=$(cat "$marker_file")
-  duration_seconds=$(($(date +%s) - session_start))
+if [ "$duration_ms" -gt 0 ] 2>/dev/null; then
+  duration_seconds=$((duration_ms / 1000))
 
   if [ "$duration_seconds" -lt 60 ]; then
     duration_display="${duration_seconds}s"
@@ -140,8 +155,7 @@ if [ -n "$session_id" ]; then
 fi
 
 # ─── Context usage bar ───────────────────────────────────────────────
-pct=0
-[ "$ctx_size" -gt 0 ] 2>/dev/null && pct=$((ctx_current * 100 / ctx_size))
+pct=$(printf '%.0f' "$ctx_pct" 2>/dev/null || echo "0")
 
 bar_len=10
 filled=$((pct * bar_len / 100))
@@ -185,6 +199,12 @@ dirty_display=""
 commit_age_display=""
 base_branch_display=""
 
+# Use Claude's worktree data if available
+if [ -n "$ws_worktree" ]; then
+  is_worktree=true
+  wt_name="$ws_worktree"
+fi
+
 if [ -n "$cwd" ] && [ -d "$cwd" ] && { [ -d "$cwd/.git" ] || [ -f "$cwd/.git" ]; }; then
   mkdir -p "$GIT_CACHE_DIR"
   cache_key=$(printf '%s' "$cwd" | md5 -q 2>/dev/null || printf '%s' "$cwd" | md5sum | cut -d' ' -f1)
@@ -192,15 +212,19 @@ if [ -n "$cwd" ] && [ -d "$cwd" ] && { [ -d "$cwd/.git" ] || [ -f "$cwd/.git" ];
   # Branch name (cheap — always fetch live)
   branch=$(cd "$cwd" 2>/dev/null && git -c core.useBuiltinFSMonitor=false branch --show-current 2>/dev/null)
 
-  # Worktree detection (cheap)
+  # Git dirs (needed for project name resolution + worktree fallback)
   git_dir=$(cd "$cwd" 2>/dev/null && git rev-parse --git-dir 2>/dev/null)
   git_common=$(cd "$cwd" 2>/dev/null && git rev-parse --git-common-dir 2>/dev/null)
-  if [ -n "$git_dir" ] && [ -n "$git_common" ] && [ "$git_dir" != "$git_common" ]; then
-    is_worktree=true
-    if [[ "$cwd" =~ (/\.claude/worktrees/|/\.worktrees/|/\.worktree/)([^/]+)(/|$) ]]; then
-      wt_name="${BASH_REMATCH[2]}"
-    else
-      wt_name="${git_dir##*/}"
+
+  # Worktree detection fallback (if Claude didn't provide it)
+  if [ "$is_worktree" = false ]; then
+    if [ -n "$git_dir" ] && [ -n "$git_common" ] && [ "$git_dir" != "$git_common" ]; then
+      is_worktree=true
+      if [[ "$cwd" =~ (/\.claude/worktrees/|/\.worktrees/|/\.worktree/)([^/]+)(/|$) ]]; then
+        wt_name="${BASH_REMATCH[2]}"
+      else
+        wt_name="${git_dir##*/}"
+      fi
     fi
   fi
 
@@ -320,10 +344,11 @@ if [ -n "$branch" ] && [ -n "$cwd" ]; then
 
   if [ -n "$pr_url" ]; then
     pr_number="${pr_url##*/}"
+    pr_link=$(osc_link "$pr_url" "#${pr_number}")
     if [ "$pr_state" = "MERGED" ]; then
-      pr_display="${COLOR_PR_MERGED} #${pr_number} merged${COLOR_RESET}"
+      pr_display="${COLOR_PR_MERGED} ${pr_link} merged${COLOR_RESET}"
     elif [ "$pr_state" = "OPEN" ] && [ "$pr_draft" = "true" ]; then
-      pr_display="${COLOR_PR_DRAFT} #${pr_number} draft${COLOR_RESET}"
+      pr_display="${COLOR_PR_DRAFT} ${pr_link} draft${COLOR_RESET}"
 
       # CI status for draft PRs too
       ci_cache_file="$PR_CACHE_DIR/${pr_cache_key}_ci"
@@ -348,7 +373,7 @@ if [ -n "$branch" ] && [ -n "$cwd" ]; then
         echo "$ci_display" >"$ci_cache_file"
       fi
     elif [ "$pr_state" = "OPEN" ]; then
-      pr_display="${COLOR_PR_OPEN} #${pr_number}${COLOR_RESET}"
+      pr_display="${COLOR_PR_OPEN} ${pr_link}${COLOR_RESET}"
 
       # CI status only for open PRs
       ci_cache_file="$PR_CACHE_DIR/${pr_cache_key}_ci"
@@ -373,7 +398,7 @@ if [ -n "$branch" ] && [ -n "$cwd" ]; then
         echo "$ci_display" >"$ci_cache_file"
       fi
     elif [ "$pr_state" = "CLOSED" ]; then
-      pr_display="${COLOR_DIM} #${pr_number} closed${COLOR_RESET}"
+      pr_display="${COLOR_DIM} ${pr_link} closed${COLOR_RESET}"
     fi
   fi
 fi
@@ -412,7 +437,7 @@ if [ -n "$branch" ]; then
       elif [ "$pr_state" = "CLOSED" ]; then
         pr_color="$COLOR_DIM"
       fi
-      wt_pr_display="${pr_color}⎇ #${pr_number}${COLOR_RESET}"
+      wt_pr_display="${pr_color}⎇ $(osc_link "$pr_url" "#${pr_number}")${COLOR_RESET}"
     else
       # Always show truncated worktree/branch name
       wt_label="$wt_name"
@@ -431,11 +456,11 @@ if [ -n "$branch" ]; then
     elif [ "$pr_state" = "CLOSED" ]; then
       pr_color="$COLOR_DIM"
     fi
-    wt_pr_display="${pr_color}#${pr_number}${COLOR_RESET}"
+    wt_pr_display="${pr_color}$(osc_link "$pr_url" "#${pr_number}")${COLOR_RESET}"
   fi
 fi
 
-# Line 1: project · session vitals · commit age
+# Line 1: project · session vitals
 line1=""
 [ -n "$project_name" ] && line1+="${COLOR_WHITE}${project_name}${COLOR_RESET}"
 [ -n "$line1" ] && line1+="${sep}"
@@ -446,15 +471,51 @@ fi
 [ -n "$cost_rate_display" ] && line1+="${cost_rate_display}"
 [ -n "$duration_display" ] && line1+="${sep}${COLOR_DUR}${duration_display}${COLOR_RESET}"
 line1+="${sep}${context_bar}${cache_display}"
-[ -n "$commit_age_display" ] && line1+="${sep}${commit_age_display}"
-
-# Line 2: 🌿 branch ←base  sync  dirty
+# Rate limits (5h / 7d) with reset countdown
+rate_display=""
+if [ -n "$rate_5h" ] && [ "$rate_5h" != "null" ]; then
+  rate_5h_int=$(printf '%.0f' "$rate_5h" 2>/dev/null || echo "0")
+  reset_label=""
+  if [ -n "$rate_5h_resets" ] && [ "$rate_5h_resets" != "null" ] && [ "$rate_5h_int" -gt 0 ] 2>/dev/null; then
+    reset_label=" $(format_reset "$rate_5h_resets")"
+  fi
+  if [ "$rate_5h_int" -ge 80 ] 2>/dev/null; then
+    rate_display+="${COLOR_DEL}5h:${rate_5h_int}%${reset_label}${COLOR_RESET}"
+  elif [ "$rate_5h_int" -ge 50 ] 2>/dev/null; then
+    rate_display+="${COLOR_WARN}5h:${rate_5h_int}%${reset_label}${COLOR_RESET}"
+  else
+    rate_display+="${COLOR_DIM}5h:${rate_5h_int}%${reset_label}${COLOR_RESET}"
+  fi
+fi
+if [ -n "$rate_7d" ] && [ "$rate_7d" != "null" ]; then
+  rate_7d_int=$(printf '%.0f' "$rate_7d" 2>/dev/null || echo "0")
+  reset_label=""
+  if [ -n "$rate_7d_resets" ] && [ "$rate_7d_resets" != "null" ] && [ "$rate_7d_int" -gt 0 ] 2>/dev/null; then
+    reset_label=" $(format_reset "$rate_7d_resets")"
+  fi
+  [ -n "$rate_display" ] && rate_display+=" "
+  if [ "$rate_7d_int" -ge 80 ] 2>/dev/null; then
+    rate_display+="${COLOR_DEL}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
+  elif [ "$rate_7d_int" -ge 50 ] 2>/dev/null; then
+    rate_display+="${COLOR_WARN}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
+  else
+    rate_display+="${COLOR_DIM}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
+  fi
+fi
+# Line 2: worktree · branch · sync · dirty · lines · commit age
 line2=""
 
 if [ -n "$branch" ]; then
   if [ "$is_worktree" = true ]; then
-    # Worktree: show ⎇ indicator + sync + dirty
+    # Worktree: show ⎇ indicator + branch + sync + dirty
     [ -n "$wt_pr_display" ] && line2+="${wt_pr_display}"
+    if [ -n "$branch" ]; then
+      br_label="$branch"
+      [ "${#br_label}" -gt 25 ] && br_label="${br_label:0:25}…"
+      [ -n "$line2" ] && line2+=" "
+      line2+="${COLOR_GIT}${br_label}${COLOR_RESET}"
+    fi
+    [ -n "$base_branch_display" ] && line2+=" ${base_branch_display}"
     [ -n "$sync_display" ] && {
       [ -n "$line2" ] && line2+="${sep}"
       line2+="${sync_display}"
@@ -485,91 +546,29 @@ if [ -z "$line2" ] && [ -n "$cwd" ] && [ "$is_worktree" != true ]; then
   line2="${COLOR_WHITE}${display_path}${COLOR_RESET}"
 fi
 
-# Lines changed always shows on line 2 (session-level, not git-specific)
+# Lines changed on line 2
 [ -n "$lines_display" ] && {
   [ -n "$line2" ] && line2+="${sep}"
   line2+="${lines_display}"
 }
 
-# ─── Docker + Node detection (line 3) ──────────────────────────────
-docker_display=""
+# Commit age on line 2
+[ -n "$commit_age_display" ] && {
+  [ -n "$line2" ] && line2+="${sep}"
+  line2+="${commit_age_display}"
+}
+
+# ─── Node app detection (line 3) ───────────────────────────────────
 node_display=""
-
-if command -v docker &>/dev/null; then
-  mkdir -p "$DOCKER_CACHE_DIR"
-
-  if [ "$is_worktree" = true ] && [ -n "$wt_name" ]; then
-    # Worktree mode: filter containers by worktree name
-    docker_cache_key=$(printf '%s' "wt-$wt_name" | md5 -q 2>/dev/null || printf '%s' "wt-$wt_name" | md5sum | cut -d' ' -f1)
-    docker_cache_file="$DOCKER_CACHE_DIR/$docker_cache_key"
-
-    if cache_fresh "$docker_cache_file" "$DOCKER_CACHE_TTL"; then
-      docker_display=$(cat "$docker_cache_file")
-    else
-      running_containers=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -F "$wt_name" || true)
-      if [ -n "$running_containers" ]; then
-        services=""
-        while IFS= read -r container; do
-          svc="${container##*"${wt_name}"-}"
-          [ -n "$services" ] && services+=","
-          services+="$svc"
-        done <<<"$running_containers"
-        docker_display="${COLOR_DOCKER}🐳 ${services}${COLOR_RESET}"
-      fi
-      echo "$docker_display" >"$docker_cache_file"
-    fi
-  else
-    # Non-worktree: only show containers belonging to this project's compose stack
-    # Detect compose project name from docker-compose.yml in cwd
-    compose_project=""
-    if [ -n "$cwd" ]; then
-      if [ -f "$cwd/docker-compose.yml" ] || [ -f "$cwd/docker-compose.yaml" ] || [ -f "$cwd/compose.yml" ] || [ -f "$cwd/compose.yaml" ]; then
-        compose_project="${cwd##*/}"
-      fi
-    fi
-
-    if [ -n "$compose_project" ]; then
-      docker_cache_key=$(printf '%s' "proj-$compose_project" | md5 -q 2>/dev/null || printf '%s' "proj-$compose_project" | md5sum | cut -d' ' -f1)
-      docker_cache_file="$DOCKER_CACHE_DIR/$docker_cache_key"
-
-      if cache_fresh "$docker_cache_file" "$DOCKER_CACHE_TTL"; then
-        docker_display=$(cat "$docker_cache_file")
-      else
-        # Filter by compose project label matching cwd directory name
-        raw=$(docker ps --filter 'status=running' --filter "label=com.docker.compose.project=$compose_project" --format '{{.Label "com.docker.compose.service"}}\t{{.Names}}\t{{.Ports}}' 2>/dev/null)
-        services=""
-        if [ -n "$raw" ]; then
-          while IFS=$'\t' read -r svc_label cname ports; do
-            if [ -n "$svc_label" ]; then
-              svc="$svc_label"
-            else
-              svc="${cname##*-}"
-            fi
-            port=$(echo "$ports" | grep -oE '0\.0\.0\.0:[0-9]+' | head -1 | cut -d: -f2)
-            entry="$svc"
-            [ -n "$port" ] && entry="${svc}:${port}"
-            [ -n "$services" ] && services+=$'\n'
-            services+="$entry"
-          done <<<"$raw"
-          services=$(echo "$services" | sort -u | tr '\n' ',' | sed 's/,$//')
-        fi
-        [ -n "$services" ] && docker_display="${COLOR_DOCKER}🐳 ${services}${COLOR_RESET}"
-        echo "$docker_display" >"$docker_cache_file"
-      fi
-    fi
-  fi
-fi
-
-# Node app detection (apps listening on ports)
-mkdir -p "$DOCKER_CACHE_DIR"
+mkdir -p "$NODE_CACHE_DIR"
 if [ "$is_worktree" = true ] && [ -n "$wt_name" ]; then
   node_cache_key=$(printf '%s' "$wt_name" | md5 -q 2>/dev/null || printf '%s' "$wt_name" | md5sum | cut -d' ' -f1)
 else
   node_cache_key="global"
 fi
-node_cache_file="$DOCKER_CACHE_DIR/${node_cache_key}_node"
+node_cache_file="$NODE_CACHE_DIR/${node_cache_key}_node"
 
-if cache_fresh "$node_cache_file" "$DOCKER_CACHE_TTL"; then
+if cache_fresh "$node_cache_file" "$NODE_CACHE_TTL"; then
   node_display=$(cat "$node_cache_file")
 else
   listening=$(lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | awk '$1 == "node" && $2 ~ /^[0-9]+$/ {print $2, $9}' | sort -u)
@@ -603,23 +602,35 @@ else
     done <<<"$listening"
   fi
   if [ -n "$app_entries" ]; then
-    parts=$(printf '%b' "$app_entries" | sort -u -t: -k1,1 | tr '\n' ',' | sed 's/,$//')
-    node_display="${COLOR_DOCKER}⬡ ${parts}${COLOR_RESET}"
+    parts=$(printf '%b' "$app_entries" | sort -u -t: -k1,1 | tr '\n' ' ' | sed 's/ $//')
+    node_display="${COLOR_DOCKER}${parts}${COLOR_RESET}"
   fi
   echo "$node_display" >"$node_cache_file"
 fi
 
-# Build line 3: 🐳 docker · ⬡ node
+# Rate limit display for line 3 (only when >= 70%)
+rate_line3=""
+if [ "$rate_5h_int" -ge 70 ] 2>/dev/null || [ "$rate_7d_int" -ge 70 ] 2>/dev/null; then
+  rate_line3="$rate_display"
+fi
+
+# Build line 3: rate warnings · running apps
 line3=""
-[ -n "$docker_display" ] && line3+="${docker_display}"
-[ -n "$node_display" ] && {
+
+# Rate limit warning (only when >= 70%)
+if [ -n "$rate_line3" ]; then
+  line3+="${rate_line3}"
+fi
+
+# Running apps
+if [ -n "$node_display" ]; then
   [ -n "$line3" ] && line3+="${sep}"
   line3+="${node_display}"
-}
+fi
 
-# Print
-printf "%b\n" "$line1"
-[ -n "$line2" ] && printf "%b\n" "$line2"
-[ -n "$line3" ] && printf "%b\n" "$line3"
+# Print (printf %b for reliable OSC 8 link rendering)
+printf '%b\n' "$line1"
+[ -n "$line2" ] && printf '%b\n' "$line2"
+[ -n "$line3" ] && printf '%b\n' "$line3"
 
 exit 0
