@@ -9,10 +9,10 @@ alias wm='workmux'
 alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 
 #development
-alias c="claude"
-alias cr="claude --resume"
-alias claude-yolo="claude --dangerously-skip-permissions"
-alias cy="claude --dangerously-skip-permissions"
+alias c="CLAUDE_CODE_NO_FLICKER=1 claude"
+alias cr="CLAUDE_CODE_NO_FLICKER=1 claude --resume"
+alias claude-yolo="CLAUDE_CODE_NO_FLICKER=1 claude --dangerously-skip-permissions"
+alias cy="CLAUDE_CODE_NO_FLICKER=1 claude --dangerously-skip-permissions"
 alias update-claude="curl -fsSL https://claude.ai/install.sh | bash"
 alias lg="lazygit"
 alias vim="nvim"
