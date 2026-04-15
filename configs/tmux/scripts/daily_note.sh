@@ -1,23 +1,21 @@
-#!/usr/bin/env bash
-# Opens today's Obsidian daily note in $EDITOR.
-# If no note exists for today, creates one from template.
+#!/bin/bash
+# Open today's daily note in a floating popup
+# Finds an existing note for today or creates a new one from template
 
-VAULT="$HOME/dev/notes"
-DAILY_DIR="$VAULT/03 - Daily Notes"
+VAULT="${OBSIDIAN_VAULT:-$HOME/dev/notes}"
+NOTES_DIR="$VAULT/03 - Daily Notes"
 TODAY=$(date +%Y-%m-%d)
 EDITOR="${EDITOR:-nvim}"
 
-# Find existing note for today (may have a title suffix)
-existing=$(find "$DAILY_DIR" -maxdepth 1 -name "${TODAY}*" -type f | head -1)
+# Find an existing note for today (any title suffix)
+existing=$(find "$NOTES_DIR" -maxdepth 1 -name "${TODAY}*.md" 2>/dev/null | sort | head -1)
 
 if [ -n "$existing" ]; then
-  exec "$EDITOR" "$existing"
+    "$EDITOR" "$existing"
 else
-  # Create a new daily note with the standard template
-  note="$DAILY_DIR/${TODAY}.md"
-  cat > "$note" << 'EOF'
-# Daily Note
-
+    # Create new plain daily note
+    new_note="$NOTES_DIR/${TODAY}.md"
+    cat > "$new_note" << 'TEMPLATE'
 ## Notes
 
 ---
@@ -25,6 +23,6 @@ else
 ## Tasks
 
 - [ ] Initial
-EOF
-  exec "$EDITOR" "$note"
+TEMPLATE
+    "$EDITOR" "$new_note"
 fi

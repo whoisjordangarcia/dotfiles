@@ -48,3 +48,5 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
+
+alias claude-mem='bun "/Users/nest/.claude/plugins/cache/thedotmack/claude-mem/12.1.3/scripts/worker-service.cjs"'

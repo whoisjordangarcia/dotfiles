@@ -114,18 +114,27 @@ read_data=$(echo "$input" | jq -r '[
 	.session_id // "",
 	(.cwd // .workspace.current_dir // ""),
 	(.context_window.used_percentage // 0 | tostring),
-	(.context_window.remaining_percentage // 100 | tostring),
+	((.context_window.current_usage // null) | if . then ((.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0) | tostring) else "0" end),
 	((.context_window.current_usage // null) | if . then (.cache_read_input_tokens // 0 | tostring) else "0" end),
-	((.context_window.current_usage // null) | if . then (.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens | tostring) else "0" end),
-	(.cost.total_duration_ms // 0 | tostring),
-	(.rate_limits.five_hour.used_percentage // "" | tostring),
-	(.rate_limits.seven_day.used_percentage // "" | tostring),
+	(.rate_limits.five_hour.used_percentage // -1 | tostring),
+	(.rate_limits.seven_day.used_percentage // -1 | tostring),
 	(.rate_limits.five_hour.resets_at // "" | tostring),
 	(.rate_limits.seven_day.resets_at // "" | tostring),
-	(.workspace.git_worktree // "")
+	(.session_name // "__NONE__"),
+	(.cost.total_duration_ms // 0 | tostring)
 ] | @tsv')
 
-IFS=$'\t' read -r model_short cost lines_added lines_removed session_id cwd ctx_pct ctx_remaining ctx_cache_read ctx_current duration_ms rate_5h rate_7d rate_5h_resets rate_7d_resets ws_worktree <<<"$read_data"
+IFS=$'\t' read -r model_full cost lines_added lines_removed session_id cwd ctx_pct ctx_current ctx_cache_read rate_5h rate_7d rate_5h_resets rate_7d_resets session_name duration_ms <<<"$read_data"
+[ "$session_name" = "__NONE__" ] && session_name=""
+
+# ─── Model name (shorten "Claude Opus 4.6" → "Opus 4.6") ────────────
+if [[ "$model_full" =~ Claude\ ([0-9.]+\ )?(.+) ]]; then
+  version="${BASH_REMATCH[1]}"
+  name="${BASH_REMATCH[2]}"
+  model_short="${name}${version:+ ${version% }}"
+else
+  model_short="$model_full"
+fi
 
 # ─── Session cost ────────────────────────────────────────────────────
 cost_display=$(printf '$%.2f' "$cost")
@@ -415,9 +424,11 @@ fi
 # ─── Assemble output ─────────────────────────────────────────────────
 sep=" ${COLOR_DIM}·${COLOR_RESET} "
 
-# Project name: use main repo name when in a worktree, else cwd basename
+# Project name: session name if set, else main repo name for worktrees, else cwd basename
 project_name=""
-if [ "$is_worktree" = true ] && [ -n "$git_common" ]; then
+if [ -n "$session_name" ]; then
+  project_name="$session_name"
+elif [ "$is_worktree" = true ] && [ -n "$git_common" ]; then
   main_repo=$(cd "$cwd" 2>/dev/null && cd "$git_common/.." 2>/dev/null && pwd)
   [ -n "$main_repo" ] && project_name="${main_repo##*/}"
 elif [ -n "$cwd" ]; then
@@ -473,7 +484,7 @@ fi
 line1+="${sep}${context_bar}${cache_display}"
 # Rate limits (5h / 7d) with reset countdown
 rate_display=""
-if [ -n "$rate_5h" ] && [ "$rate_5h" != "null" ]; then
+if [ "$rate_5h" != "-1" ] 2>/dev/null; then
   rate_5h_int=$(printf '%.0f' "$rate_5h" 2>/dev/null || echo "0")
   reset_label=""
   if [ -n "$rate_5h_resets" ] && [ "$rate_5h_resets" != "null" ] && [ "$rate_5h_int" -gt 0 ] 2>/dev/null; then
@@ -487,7 +498,7 @@ if [ -n "$rate_5h" ] && [ "$rate_5h" != "null" ]; then
     rate_display+="${COLOR_DIM}5h:${rate_5h_int}%${reset_label}${COLOR_RESET}"
   fi
 fi
-if [ -n "$rate_7d" ] && [ "$rate_7d" != "null" ]; then
+if [ "$rate_7d" != "-1" ] 2>/dev/null; then
   rate_7d_int=$(printf '%.0f' "$rate_7d" 2>/dev/null || echo "0")
   reset_label=""
   if [ -n "$rate_7d_resets" ] && [ "$rate_7d_resets" != "null" ] && [ "$rate_7d_int" -gt 0 ] 2>/dev/null; then
@@ -502,6 +513,8 @@ if [ -n "$rate_7d" ] && [ "$rate_7d" != "null" ]; then
     rate_display+="${COLOR_DIM}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
   fi
 fi
+[ -n "$rate_display" ] && line1+="${sep}${rate_display}"
+
 # Line 2: worktree · branch · sync · dirty · lines · commit age
 line2=""
 

@@ -65,25 +65,37 @@ assert_exit_code() {
 
 # ─── Test fixtures ──────────────────────────────────────────────────
 # Minimal valid input
-INPUT_MINIMAL='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0},"context_window":{"context_window_size":200000}}'
+INPUT_MINIMAL='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"context_window":{"context_window_size":200000,"used_percentage":0}}'
 
 # Full input (non-git cwd so we skip git/PR paths)
-INPUT_FULL='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_lines_added":42,"total_lines_removed":7},"session_id":"test-sess","cwd":"/tmp","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
+INPUT_FULL='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":120000,"total_lines_added":42,"total_lines_removed":7},"session_id":"test-sess","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
 
 # Sonnet model (should show model name since it's not Opus)
-INPUT_SONNET='{"model":{"display_name":"Claude 3.7 Sonnet"},"cost":{"total_cost_usd":0.50},"context_window":{"context_window_size":200000,"current_usage":{"input_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
+INPUT_SONNET='{"model":{"display_name":"Claude 3.7 Sonnet"},"cost":{"total_cost_usd":0.50,"total_duration_ms":60000},"context_window":{"context_window_size":200000,"used_percentage":3,"current_usage":{"input_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
 
 # High context usage (>80%) — session_id required to prevent bash read field collapse
-INPUT_HIGH_CTX='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":5.00},"session_id":"test-hi","cwd":"/tmp","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":170000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":5000}}}'
+INPUT_HIGH_CTX='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":5.00,"total_duration_ms":600000},"session_id":"test-hi","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":92,"current_usage":{"input_tokens":170000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":5000}}}'
 
 # Medium context usage (50-80%)
-INPUT_MED_CTX='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":2.00},"session_id":"test-med","cwd":"/tmp","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":110000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":5000}}}'
+INPUT_MED_CTX='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":2.00,"total_duration_ms":300000},"session_id":"test-med","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":62,"current_usage":{"input_tokens":110000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":5000}}}'
 
 # No lines changed
-INPUT_NO_LINES='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.10},"session_id":"test-nol","cwd":"/tmp","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
+INPUT_NO_LINES='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.10,"total_duration_ms":30000},"session_id":"test-nol","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":3,"current_usage":{"input_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
 
 # Sonnet with session_id (for field alignment)
-INPUT_SONNET_FULL='{"model":{"display_name":"Claude 3.7 Sonnet"},"cost":{"total_cost_usd":0.50},"session_id":"test-son","cwd":"/tmp","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
+INPUT_SONNET_FULL='{"model":{"display_name":"Claude 3.7 Sonnet"},"cost":{"total_cost_usd":0.50,"total_duration_ms":60000},"session_id":"test-son","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":3,"current_usage":{"input_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
+
+# Rate limits — high usage (should show yellow/red)
+INPUT_RATE_HIGH='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":8.00,"total_duration_ms":3600000},"session_id":"test-rate-hi","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3},"seven_day":{"used_percentage":62.1}}}'
+
+# Rate limits — low usage (should show dim)
+INPUT_RATE_LOW='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.50,"total_duration_ms":600000},"session_id":"test-rate-lo","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":10},"rate_limits":{"five_hour":{"used_percentage":12.0},"seven_day":{"used_percentage":5.4}}}'
+
+# No rate limits (API key user)
+INPUT_NO_RATE='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.00,"total_duration_ms":120000},"session_id":"test-no-rate","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":15}}'
+
+# Session name
+INPUT_SESSION_NAME='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.75,"total_duration_ms":180000},"session_id":"test-named","session_name":"refactor-auth","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":20}}'
 
 # Empty/null JSON
 INPUT_EMPTY='{}'
@@ -149,6 +161,31 @@ printf "\n\033[38;5;141m━━━ Fallback CWD (no git) ━━━━━━━━
 
 out=$(run_statusline_plain "$INPUT_FULL")
 assert_contains "shows project name when no git" "$out" "tmp"
+
+printf "\n\033[38;5;141m━━━ Rate Limits ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+
+out=$(run_statusline_plain "$INPUT_RATE_HIGH")
+assert_contains "shows 5h rate limit" "$out" "5h:85%"
+assert_contains "shows 7d rate limit" "$out" "7d:62%"
+
+out=$(run_statusline_plain "$INPUT_RATE_LOW")
+assert_contains "shows low 5h rate" "$out" "5h:12%"
+assert_contains "shows low 7d rate" "$out" "7d:5%"
+
+out=$(run_statusline_plain "$INPUT_NO_RATE")
+assert_not_contains "hides rate limits when absent" "$out" "5h:"
+assert_not_contains "hides 7d when absent" "$out" "7d:"
+
+printf "\n\033[38;5;141m━━━ Session Name ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+
+out=$(run_statusline_plain "$INPUT_SESSION_NAME")
+assert_contains "shows session name as project" "$out" "refactor-auth"
+
+# Session name in a git repo should not show cwd basename on line 1
+INPUT_SESSION_NAME_GIT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.75,"total_duration_ms":180000},"session_id":"test-named-git","session_name":"refactor-auth","cwd":"'"$(pwd)"'","context_window":{"context_window_size":200000,"used_percentage":20}}'
+out_line1=$(run_statusline_plain "$INPUT_SESSION_NAME_GIT" | head -1)
+assert_contains "session name replaces project on line 1" "$out_line1" "refactor-auth"
+assert_not_contains "cwd basename hidden when session name set" "$out_line1" "dotfiles"
 
 printf "\n\033[38;5;141m━━━ Output Structure ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 

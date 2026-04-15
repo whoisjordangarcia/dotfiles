@@ -49,8 +49,6 @@
       "Read(./**/*.pfx)",
       "Read(./**/*.pgpass)",
       "Read(./**/*.pypirc)",
-      "Read(./**/*.tfstate)",
-      "Read(./**/*.tfvars)",
       "Read(./**/*credentials*)",
       "Read(./**/*id_ed25519*)",
       "Read(./**/*id_rsa*)",
@@ -72,12 +70,9 @@
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
-    "ask": [
-      "Bash(git push *)",
-      "Bash(curl *)"
-    ],
-    "defaultMode": "default"
+    "ask": ["Bash(git push *)", "Bash(curl *)"]
   },
+  "model": "opus",
   "hooks": {},
   "statusLine": {
     "type": "command",
@@ -85,18 +80,13 @@
     "padding": 0
   },
   "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true,
     "claude-mem@thedotmack": true,
     "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
     "context7@claude-plugins-official": false,
     "explanatory-output-style@claude-plugins-official": true,
-    "playwright-skill@playwright-skill": false,
-    "superpowers@superpowers-marketplace": true,
-    "swift-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true,
-    "nest-slite@nest-genomics-skills": true,
     "impeccable@impeccable": true,
     "nest-ai-skill-audit@nest-genomics-skills": false,
     "nest-ehr-research@nest-genomics-skills": true,
@@ -108,7 +98,12 @@
     "nest-release-stg@nest-genomics-skills": false,
     "nest-release-summary@nest-genomics-skills": true,
     "nest-sentry@nest-genomics-skills": true,
-    "nest-ticket-writer@nest-genomics-skills": true
+    "nest-slite@nest-genomics-skills": true,
+    "nest-ticket-writer@nest-genomics-skills": true,
+    "superpowers@superpowers-marketplace": true,
+    "swift-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "nest-test-planning@nest-genomics-skills": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -121,8 +116,13 @@
       "source": {
         "source": "github",
         "repo": "Nest-Genomics/ai-skills"
-      },
-      "autoUpdate": true
+      }
+    },
+    "superpowers-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers-marketplace"
+      }
     }
   },
   "outputStyle": "Explanatory",
@@ -133,18 +133,12 @@
     "network": {
       "allowLocalBinding": true
     },
-    "excludedCommands": [
-      "git"
-    ]
+    "excludedCommands": ["git"]
   },
   "spinnerTipsEnabled": true,
   "spinnerVerbs": {
     "mode": "append",
-    "verbs": [
-      "Nesting",
-      "sahh good",
-      "ralphing"
-    ]
+    "verbs": ["Nesting", "sahh good", "ralphing"]
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "medium",
@@ -157,10 +151,7 @@
   "mcpServers": {
     "tavily": {
       "command": "npx",
-      "args": [
-        "-y",
-        "tavily-mcp@latest"
-      ],
+      "args": ["-y", "tavily-mcp@latest"],
       "env": {
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
       }
