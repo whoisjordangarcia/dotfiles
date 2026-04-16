@@ -476,42 +476,34 @@ line1=""
 [ -n "$project_name" ] && line1+="${COLOR_WHITE}${project_name}${COLOR_RESET}"
 [ -n "$line1" ] && line1+="${sep}"
 line1+="${COLOR_COST}${cost_display}${COLOR_RESET}"
-if [[ ! "$model_short" =~ ^Opus ]]; then
+if [[ "$model_short" != "Opus 4.7" ]]; then
   line1="${COLOR_MODEL}${model_short}${COLOR_RESET}${sep}${line1}"
 fi
 [ -n "$cost_rate_display" ] && line1+="${cost_rate_display}"
 [ -n "$duration_display" ] && line1+="${sep}${COLOR_DUR}${duration_display}${COLOR_RESET}"
 line1+="${sep}${context_bar}${cache_display}"
-# Rate limits (5h / 7d) with reset countdown
+# Rate limits: hide when low; show 5h at ≥70% and 7d at ≥80%
 rate_display=""
-if [ "$rate_5h" != "-1" ] 2>/dev/null; then
-  rate_5h_int=$(printf '%.0f' "$rate_5h" 2>/dev/null || echo "0")
+rate_5h_int=0
+rate_7d_int=0
+[ "$rate_5h" != "-1" ] 2>/dev/null && rate_5h_int=$(printf '%.0f' "$rate_5h" 2>/dev/null || echo "0")
+[ "$rate_7d" != "-1" ] 2>/dev/null && rate_7d_int=$(printf '%.0f' "$rate_7d" 2>/dev/null || echo "0")
+
+if [ "$rate_5h_int" -ge 70 ] 2>/dev/null; then
   reset_label=""
-  if [ -n "$rate_5h_resets" ] && [ "$rate_5h_resets" != "null" ] && [ "$rate_5h_int" -gt 0 ] 2>/dev/null; then
-    reset_label=" $(format_reset "$rate_5h_resets")"
-  fi
+  [ -n "$rate_5h_resets" ] && [ "$rate_5h_resets" != "null" ] && reset_label=" $(format_reset "$rate_5h_resets")"
   if [ "$rate_5h_int" -ge 80 ] 2>/dev/null; then
     rate_display+="${COLOR_DEL}5h:${rate_5h_int}%${reset_label}${COLOR_RESET}"
-  elif [ "$rate_5h_int" -ge 50 ] 2>/dev/null; then
-    rate_display+="${COLOR_WARN}5h:${rate_5h_int}%${reset_label}${COLOR_RESET}"
   else
-    rate_display+="${COLOR_DIM}5h:${rate_5h_int}%${reset_label}${COLOR_RESET}"
+    rate_display+="${COLOR_WARN}5h:${rate_5h_int}%${reset_label}${COLOR_RESET}"
   fi
 fi
-if [ "$rate_7d" != "-1" ] 2>/dev/null; then
-  rate_7d_int=$(printf '%.0f' "$rate_7d" 2>/dev/null || echo "0")
+
+if [ "$rate_7d_int" -ge 80 ] 2>/dev/null; then
   reset_label=""
-  if [ -n "$rate_7d_resets" ] && [ "$rate_7d_resets" != "null" ] && [ "$rate_7d_int" -gt 0 ] 2>/dev/null; then
-    reset_label=" $(format_reset "$rate_7d_resets")"
-  fi
+  [ -n "$rate_7d_resets" ] && [ "$rate_7d_resets" != "null" ] && reset_label=" $(format_reset "$rate_7d_resets")"
   [ -n "$rate_display" ] && rate_display+=" "
-  if [ "$rate_7d_int" -ge 80 ] 2>/dev/null; then
-    rate_display+="${COLOR_DEL}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
-  elif [ "$rate_7d_int" -ge 50 ] 2>/dev/null; then
-    rate_display+="${COLOR_WARN}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
-  else
-    rate_display+="${COLOR_DIM}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
-  fi
+  rate_display+="${COLOR_DEL}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
 fi
 [ -n "$rate_display" ] && line1+="${sep}${rate_display}"
 
