@@ -76,24 +76,9 @@ _auto_node_switch() {
   done
 }
 
-# Set default node version at startup
-if [[ -d "$NVM_DIR/versions/node" ]]; then
-  local _resolved=0
-  if [[ -f "$NVM_DIR/alias/default" ]]; then
-    _node_use "$(<"$NVM_DIR/alias/default")" 2>/dev/null && _resolved=1
-  fi
-  if (( ! _resolved )); then
-    # Fallback: use latest installed version (handles lts/*, symbolic aliases)
-    local _versions=("$NVM_DIR/versions/node"/*(N))
-    (( ${#_versions} )) && path=(${_versions[-1]}/bin ${path:#*nvm/versions/node*})
-  fi
-fi
-
-# Hook into cd to auto-switch
-autoload -U add-zsh-hook
-add-zsh-hook chpwd _auto_node_switch
-# Run once for initial directory
-_auto_node_switch
+# Note: the startup invocation of the lightweight node manager
+# (default-version resolution + chpwd hook) lives in .zshrc.paths,
+# so it runs *after* `brew shellenv` and its PATH prepend wins.
 
 # Lazy wrapper — full nvm.sh loads only on first `nvm` invocation.
 # _node_use / _auto_node_switch above handle the 99% case (point PATH at

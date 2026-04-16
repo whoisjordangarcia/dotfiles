@@ -1,5 +1,5 @@
 add_newline = true
-command_timeout = 500
+command_timeout = 1500
 format = "${custom.prompt_info}$git_status$character"
 
 [custom.prompt_info]

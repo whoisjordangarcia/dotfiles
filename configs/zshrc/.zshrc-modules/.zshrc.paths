@@ -21,6 +21,28 @@ if [[ -n "$_brew_bin" ]]; then
 fi
 unset _brew_bin _p
 
+# ==============================================================================
+#  Node (lightweight nvm) startup invocation
+# ==============================================================================
+# Runs AFTER `brew shellenv` above so nvm's PATH prepend wins over brew node.
+# Functions (_node_use, _auto_node_switch) are defined in .zshrc.init.
+if [[ -d "$NVM_DIR/versions/node" ]]; then
+  _resolved=0
+  if [[ -f "$NVM_DIR/alias/default" ]]; then
+    _node_use "$(<"$NVM_DIR/alias/default")" 2>/dev/null && _resolved=1
+  fi
+  if (( ! _resolved )); then
+    _versions=("$NVM_DIR/versions/node"/*(N))
+    (( ${#_versions} )) && path=(${_versions[-1]}/bin ${path:#*nvm/versions/node*})
+    unset _versions
+  fi
+  unset _resolved
+fi
+
+autoload -U add-zsh-hook
+add-zsh-hook chpwd _auto_node_switch
+_auto_node_switch
+
 # dotfiles bin
 export PATH="${HOME}/dev/dotfiles/bin:$PATH"
 
