@@ -1,13 +1,42 @@
+# ==============================================================================
+#  Shell greeting
+# ==============================================================================
+# First shell per tmux session (and every non-tmux shell) gets full fastfetch.
+# Subsequent panes in the same session — and shells where fastfetch isn't
+# installed — get _mini_greeting: a compact ASCII banner so they aren't blank.
+
+_mini_greeting() {
+  local _ctx _date _host
+  _host="${HOST%%.*}"
+  _date=$(date '+%a %b %d · %I:%M %p')
+  if [[ -n "$TMUX" ]]; then
+    _ctx="tmux:$(tmux display -p '#{session_name}') · pane $(tmux display -p '#{window_index}.#{pane_index}')"
+  else
+    _ctx="${USER}@${_host}"
+  fi
+  # Banner: figlet -f smshadow "HACK THE WORLD" (re-run to regenerate).
+  # Use print -rP so backslashes in figlet's output stay literal while
+  # %F{}/%f still expand to 256-color escapes.
+  print -P ""
+  print -rP '  %F{141} |  |   \    __| |  / __ __||  | __| \ \      /_ \ _ \ |    _ \%f'
+  print -rP '  %F{141} __ |  _ \  (    . <     |  __ | _|   \ \ \  /(   |  / |    |  |%f'
+  print -rP '  %F{141}_| _|_/  _\\___|_|\_\   _| _| _|___|   \_/\_/\___/_|_\____|___/%f'
+  print -P ""
+  print -P "  %F{141}▸%f %F{117}${USER}@${_host}%f %F{240}·%f %F{117}${_ctx}%f"
+  print -P "  %F{141}▸%f %F{245}${_date}%f"
+  print -P ""
+}
+
 if command -v fastfetch &>/dev/null; then
   if [[ -n "$TMUX" ]]; then
-    # Only render once per tmux session (first pane) — every subsequent
-    # pane/split in the same session skips it to avoid visual noise.
     _session_id=$(tmux display -p '#{session_id}' 2>/dev/null | tr -d '$')
     if [[ -n "$_session_id" ]]; then
       _sentinel="${TMPDIR:-/tmp}/.fastfetch-tmux-${_session_id}"
       if [[ ! -f "$_sentinel" ]]; then
         fastfetch --config ~/.config/fastfetch/config-minimal.jsonc
         : > "$_sentinel"
+      else
+        _mini_greeting
       fi
       unset _sentinel
     fi
@@ -15,4 +44,6 @@ if command -v fastfetch &>/dev/null; then
   else
     fastfetch
   fi
+else
+  _mini_greeting
 fi
