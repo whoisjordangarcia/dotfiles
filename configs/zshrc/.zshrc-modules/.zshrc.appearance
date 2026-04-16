@@ -6,23 +6,22 @@
 # installed — get _mini_greeting: a compact ASCII banner so they aren't blank.
 
 _mini_greeting() {
-  local _ctx _date _host
+  local _suffix _date _host
   _host="${HOST%%.*}"
   _date=$(date '+%a %b %d · %I:%M %p')
   if [[ -n "$TMUX" ]]; then
-    _ctx="tmux:$(tmux display -p '#{session_name}') · pane $(tmux display -p '#{window_index}.#{pane_index}')"
+    _suffix=" %F{240}·%f %F{117}tmux:$(tmux display -p '#{session_name}')%f"
   else
-    _ctx="${USER}@${_host}"
+    _suffix=""
   fi
-  # Banner: figlet -f smshadow "HACK THE WORLD" (re-run to regenerate).
-  # Use print -rP so backslashes in figlet's output stay literal while
-  # %F{}/%f still expand to 256-color escapes.
+  # Banner uses Unicode half-block glyphs (U+2580–U+2593), not ASCII
+  # slashes/pipes — block chars render crisp in any nerd/programming
+  # font, whereas figlet slash-fonts misalign under ligatures.
   print -P ""
-  print -rP '  %F{141} |  |   \    __| |  / __ __||  | __| \ \      /_ \ _ \ |    _ \%f'
-  print -rP '  %F{141} __ |  _ \  (    . <     |  __ | _|   \ \ \  /(   |  / |    |  |%f'
-  print -rP '  %F{141}_| _|_/  _\\___|_|\_\   _| _| _|___|   \_/\_/\___/_|_\____|___/%f'
+  print -P "  %F{141}█░█ ▄▀█ █▀▀ █▄▀   ▀█▀ █░█ █▀▀   █░█░█ █▀█ █▀█ █░░ █▀▄%f"
+  print -P "  %F{141}█▀█ █▀█ █▄▄ █░█   ░█░ █▀█ ██▄   ▀▄▀▄▀ █▄█ █▀▄ █▄▄ █▄▀%f"
   print -P ""
-  print -P "  %F{141}▸%f %F{117}${USER}@${_host}%f %F{240}·%f %F{117}${_ctx}%f"
+  print -P "  %F{141}▸%f %F{117}${USER}@${_host}%f${_suffix}"
   print -P "  %F{141}▸%f %F{245}${_date}%f"
   print -P ""
 }
