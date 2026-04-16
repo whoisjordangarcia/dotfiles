@@ -56,4 +56,4 @@ superpowers/
 tasks/*
 
 settings.local.json
-CLAUDE.local.json
+CLAUDE.local.md
