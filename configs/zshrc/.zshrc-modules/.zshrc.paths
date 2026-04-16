@@ -1,9 +1,25 @@
-# homebrew (macOS)
-if [[ -x /opt/homebrew/bin/brew ]]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-elif [[ -x /usr/local/bin/brew ]]; then
-  eval "$(/usr/local/bin/brew shellenv)"
+# homebrew (macOS) — cache `brew shellenv` output; invalidate when brew's
+# mtime changes. Uncached `brew shellenv` eval is ~30ms per interactive shell.
+_brew_bin=
+for _p in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+  [[ -x "$_p" ]] && { _brew_bin=$_p; break; }
+done
+if [[ -n "$_brew_bin" ]]; then
+  _brew_cache="$HOME/.cache/zsh/brew-shellenv.zsh"
+  _brew_stamp="$HOME/.cache/zsh/brew-shellenv.stamp"
+  zmodload zsh/stat 2>/dev/null
+  zstat -A _brew_mtime +mtime "$_brew_bin" 2>/dev/null
+  if [[ -f "$_brew_cache" && -f "$_brew_stamp" && "$(<"$_brew_stamp")" == "$_brew_mtime" ]]; then
+    source "$_brew_cache"
+  else
+    mkdir -p "${_brew_cache:h}"
+    "$_brew_bin" shellenv > "$_brew_cache"
+    print -r -- "$_brew_mtime" > "$_brew_stamp"
+    source "$_brew_cache"
+  fi
+  unset _brew_cache _brew_stamp _brew_mtime
 fi
+unset _brew_bin _p
 
 # dotfiles bin
 export PATH="${HOME}/dev/dotfiles/bin:$PATH"

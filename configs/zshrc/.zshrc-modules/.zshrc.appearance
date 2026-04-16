@@ -1,6 +1,17 @@
 if command -v fastfetch &>/dev/null; then
   if [[ -n "$TMUX" ]]; then
-    fastfetch --config ~/.config/fastfetch/config-minimal.jsonc
+    # Only render once per tmux session (first pane) — every subsequent
+    # pane/split in the same session skips it to avoid visual noise.
+    _session_id=$(tmux display -p '#{session_id}' 2>/dev/null | tr -d '$')
+    if [[ -n "$_session_id" ]]; then
+      _sentinel="${TMPDIR:-/tmp}/.fastfetch-tmux-${_session_id}"
+      if [[ ! -f "$_sentinel" ]]; then
+        fastfetch --config ~/.config/fastfetch/config-minimal.jsonc
+        : > "$_sentinel"
+      fi
+      unset _sentinel
+    fi
+    unset _session_id
   else
     fastfetch
   fi

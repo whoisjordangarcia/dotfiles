@@ -687,8 +687,19 @@ ghcrerun() {
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/nest/dev/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/nest/dev/google-cloud-sdk/path.zsh.inc'; fi
 
-# The next line enables shell command completion for gcloud.
-if [ -f '/Users/nest/dev/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/nest/dev/google-cloud-sdk/completion.zsh.inc'; fi
+# gcloud shell completion — lazy-loaded on first invocation of gcloud/bq/gsutil.
+# Sourcing completion.zsh.inc eagerly costs ~100-300ms at shell startup.
+_gcloud_completion_inc='/Users/nest/dev/google-cloud-sdk/completion.zsh.inc'
+if [ -f "$_gcloud_completion_inc" ]; then
+  _lazy_gcloud_load() {
+    unset -f gcloud bq gsutil _lazy_gcloud_load 2>/dev/null
+    . "$_gcloud_completion_inc"
+    unset _gcloud_completion_inc
+  }
+  gcloud()  { _lazy_gcloud_load; gcloud "$@"; }
+  bq()      { _lazy_gcloud_load; bq "$@"; }
+  gsutil()  { _lazy_gcloud_load; gsutil "$@"; }
+fi
 
 alias claude-mem='bun "/Users/nest/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'
 
