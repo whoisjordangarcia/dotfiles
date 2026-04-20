@@ -121,10 +121,11 @@ read_data=$(echo "$input" | jq -r '[
 	(.rate_limits.five_hour.resets_at // "" | tostring),
 	(.rate_limits.seven_day.resets_at // "" | tostring),
 	(.session_name // "__NONE__"),
-	(.cost.total_duration_ms // 0 | tostring)
-] | @tsv')
+	(.cost.total_duration_ms // 0 | tostring),
+	(.effortLevel // .reasoning_effort // .model.reasoning_effort // .output_style.effortLevel // "")
+] | map(tostring) | join("\u001f")')
 
-IFS=$'\t' read -r model_full cost lines_added lines_removed session_id cwd ctx_pct ctx_current ctx_cache_read rate_5h rate_7d rate_5h_resets rate_7d_resets session_name duration_ms <<<"$read_data"
+IFS=$'\x1f' read -r model_full cost lines_added lines_removed session_id cwd ctx_pct ctx_current ctx_cache_read rate_5h rate_7d rate_5h_resets rate_7d_resets session_name duration_ms effort_level <<<"$read_data"
 [ "$session_name" = "__NONE__" ] && session_name=""
 
 # ─── Model name (shorten "Claude Opus 4.6" → "Opus 4.6") ────────────
@@ -135,6 +136,10 @@ if [[ "$model_full" =~ Claude\ ([0-9.]+\ )?(.+) ]]; then
 else
   model_short="$model_full"
 fi
+
+# ─── Reasoning effort display (value extracted from statusline JSON) ─
+effort_display=""
+[ -n "$effort_level" ] && effort_display="${COLOR_DIM}◯ ${COLOR_ACCENT}${effort_level}${COLOR_RESET}"
 
 # ─── Session cost ────────────────────────────────────────────────────
 cost_display=$(printf '$%.2f' "$cost")
@@ -450,13 +455,17 @@ if [ -n "$branch" ]; then
       fi
       wt_pr_display="${pr_color}⎇ $(osc_link "$pr_url" "#${pr_number}")${COLOR_RESET}"
     else
-      # Always show truncated worktree/branch name
-      wt_label="$wt_name"
-      wt_max=25
-      if [ "${#wt_label}" -gt "$wt_max" ]; then
-        wt_label="${wt_label:0:$wt_max}…"
+      # Skip ⎇ label when worktree name matches the branch (ignoring / and - and case)
+      norm_branch=$(printf '%s' "$branch" | tr -d '/-' | tr '[:upper:]' '[:lower:]')
+      norm_wt=$(printf '%s' "$wt_name" | tr -d '/-' | tr '[:upper:]' '[:lower:]')
+      if [ "$norm_branch" != "$norm_wt" ]; then
+        wt_label="$wt_name"
+        wt_max=25
+        if [ "${#wt_label}" -gt "$wt_max" ]; then
+          wt_label="${wt_label:0:$wt_max}…"
+        fi
+        wt_pr_display="${COLOR_WORKTREE}⎇ ${wt_label}${COLOR_RESET}"
       fi
-      wt_pr_display="${COLOR_WORKTREE}⎇ ${wt_label}${COLOR_RESET}"
     fi
   elif [ -n "$pr_url" ]; then
     pr_color="$COLOR_PR_OPEN"
@@ -506,6 +515,7 @@ if [ "$rate_7d_int" -ge 80 ] 2>/dev/null; then
   rate_display+="${COLOR_DEL}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
 fi
 [ -n "$rate_display" ] && line1+="${sep}${rate_display}"
+[ -n "$effort_display" ] && line1+="${sep}${effort_display}"
 
 # Line 2: worktree · branch · sync · dirty · lines · commit age
 line2=""

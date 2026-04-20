@@ -288,6 +288,22 @@ export LOG_LEVEL=error    # Only errors
 - **Preserve permissions**: `chmod 600 ~/.zshrc` for sensitive configs
 - **Export for sub-scripts**: Configuration vars must be exported for sourced scripts
 
+### Claude Code Statusline
+
+The statusline lives at `configs/claude/statusline.sh` and has a regression test + visual demo:
+
+- `configs/claude/statusline_test.sh` — assertion-based tests (`✓/✗` output)
+- `configs/claude/statusline_demo.sh` — side-by-side "expect vs actual" renderings for every scenario
+
+**When modifying `configs/claude/statusline.sh`, always run both:**
+
+```bash
+bash configs/claude/statusline_test.sh   # must end with "All N tests passed"
+bash configs/claude/statusline_demo.sh   # visually confirm each variation still matches the expect line
+```
+
+If you add a new field, branch/PR/worktree case, or line-3 indicator, add a corresponding test in `statusline_test.sh` and a scenario in `statusline_demo.sh` before considering the change complete. The demo doubles as living documentation for every supported rendering.
+
 ### YubiKey Git Signing Setup
 
 GPG signing configuration for commits (optional):

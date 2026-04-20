@@ -155,7 +155,7 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "medium",
+  "effortLevel": "xhigh",
   "autoUpdatesChannel": "latest",
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,

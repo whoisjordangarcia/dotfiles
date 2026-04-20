@@ -271,5 +271,11 @@ header "19. Long worktree name (truncated at 25 chars)"
 expect "L1: nest3 · ⎇ jordan-nes-4331-bug-yoda-… · \$0.00 · 0s · [░░░░░░░░░░] 0%"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},"session_id":"demo-19","cwd":"'"$WT3"'","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
 
+# ─── 24. Reasoning effort indicator ─────────────────────────────
+clear_caches
+header "24. Reasoning effort (sourced from statusline JSON)"
+expect "L1: ... · ◯ xhigh"
+run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.25,"total_duration_ms":60000},"session_id":"demo-24","cwd":"/tmp","context_window":{"used_percentage":12},"effortLevel":"xhigh"}'
+
 printf '\033[38;5;141m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
-printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 23
+printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 24
