@@ -1,12 +1,8 @@
-model = "gpt-5.4"
+model = "gpt-5.5"
 personality = "pragmatic"
 model_reasoning_effort = "xhigh"
 plan_mode_reasoning_effort = "xhigh"
-
-[marketplaces.openai-bundled]
-last_updated = "2026-04-21T15:41:44Z"
-source_type = "local"
-source = "/Users/nest/.codex/.tmp/bundled-marketplaces/openai-bundled"
+service_tier = "fast"
 
 [plugins."computer-use@openai-bundled"]
 enabled = true
@@ -17,13 +13,17 @@ enabled = true
 [plugins."linear@openai-curated"]
 enabled = true
 
-[projects."/Users/nest/projects/nest"]
-trust_level = "trusted"
+[plugins."superpowers@openai-curated"]
+enabled = true
 
 [notice.model_migrations]
 gpt-5-codex = "gpt-5.3-codex"
 
 [tui]
 theme = "coldark-dark"
-status_line = ["model-with-reasoning", "git-branch", "context-remaining", "five-hour-limit", "weekly-limit", "context-window-size", "fast-mode", "thread-title"]
+status_line = ["model-with-reasoning", "current-dir", "project-name", "git-branch", "context-remaining", "five-hour-limit", "weekly-limit", "context-window-size", "fast-mode", "thread-title"]
 terminal_title = ["spinner", "project", "app-name", "task-progress"]
+
+[mcp_servers.xcode]
+command = "xcrun"
+args = ["mcpbridge"]
