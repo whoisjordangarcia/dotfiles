@@ -24,6 +24,7 @@ component_installation=(
 	work/mac
 	claude
 	claude-mem
+	agents
 	codex
 	fastfetch
 )

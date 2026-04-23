@@ -28,6 +28,7 @@ component_installation=(
 	ssh
 	codex
 	claude
+	agents
 	dolphin/linux
 	vpn/linux
 	ufw/linux
