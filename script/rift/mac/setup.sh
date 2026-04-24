@@ -46,7 +46,15 @@ else
     debug "rift service already installed, skipping"
 fi
 
-rift service restart
+# `restart` uses `launchctl kickstart -k` which requires the service to
+# already be bootstrapped in the user domain. If the plist exists but the
+# service isn't loaded (e.g. after a reboot or manual bootout), use `start`
+# to bootstrap it instead.
+if launchctl print "gui/$(id -u)/git.acsandmann.rift" &>/dev/null; then
+    rift service restart
+else
+    rift service start
+fi
 success "rift service started"
 
 # allows to move windows by dragging any part of the window using Ctrl + Cmd
