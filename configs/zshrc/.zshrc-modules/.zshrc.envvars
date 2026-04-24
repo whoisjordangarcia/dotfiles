@@ -29,3 +29,11 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 export HOMEBREW_BAT=1
 export HOMEBREW_AUTOREMOVE=1
 
+# ==============================================================================
+#  Telemetry / Privacy opt-out
+# ==============================================================================
+
+# Cross-tool standard honored by gh, bat, direnv, and many others.
+# See https://consoledonottrack.com
+export DO_NOT_TRACK=true
+
