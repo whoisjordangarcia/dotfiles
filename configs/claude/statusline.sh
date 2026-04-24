@@ -333,6 +333,16 @@ if [ -n "$cwd" ] && [ -d "$cwd" ] && { [ -d "$cwd/.git" ] || [ -f "$cwd/.git" ];
   fi
 fi
 
+# ─── Path-based worktree detection (runs even when git detection fails) ─
+wt_main_repo=""
+if [ "$is_worktree" = false ] && [ -n "$cwd" ]; then
+  if [[ "$cwd" =~ ^(.*)(/\.claude/worktrees/|/\.worktrees/|/\.worktree/)([^/]+) ]]; then
+    is_worktree=true
+    wt_main_repo="${BASH_REMATCH[1]}"
+    wt_name="${BASH_REMATCH[3]}"
+  fi
+fi
+
 # ─── PR detection + CI status (cached) ───────────────────────────────
 pr_display=""
 ci_display=""
@@ -436,8 +446,16 @@ if [ -n "$session_name" ]; then
 elif [ "$is_worktree" = true ] && [ -n "$git_common" ]; then
   main_repo=$(cd "$cwd" 2>/dev/null && cd "$git_common/.." 2>/dev/null && pwd)
   [ -n "$main_repo" ] && project_name="${main_repo##*/}"
+elif [ "$is_worktree" = true ] && [ -n "$wt_main_repo" ]; then
+  project_name="${wt_main_repo##*/}"
 elif [ -n "$cwd" ]; then
   project_name="${cwd##*/}"
+fi
+
+# Truncate overlong project names (worktree folders can run 60+ chars)
+project_max=30
+if [ -n "$project_name" ] && [ "${#project_name}" -gt "$project_max" ]; then
+  project_name="${project_name:0:$project_max}…"
 fi
 
 # Worktree/PR indicator (built here so it can appear on line 1)
@@ -555,9 +573,19 @@ if [ -n "$branch" ]; then
   fi
 fi
 
-if [ -z "$line2" ] && [ -n "$cwd" ] && [ "$is_worktree" != true ]; then
+if [ -z "$line2" ] && [ "$is_worktree" = true ] && [ -n "$wt_name" ]; then
+  # Worktree detected but no branch (git read failed) — show ⎇ NAME instead of the raw path
+  wt_label="$wt_name"
+  wt_max=30
+  [ "${#wt_label}" -gt "$wt_max" ] && wt_label="${wt_label:0:$wt_max}…"
+  line2="${COLOR_WORKTREE}⎇ ${wt_label}${COLOR_RESET}"
+elif [ -z "$line2" ] && [ -n "$cwd" ] && [ "$is_worktree" != true ]; then
   # No git (and not a worktree) — show full path with ~ shorthand
   display_path="${cwd/#$HOME/~}"
+  path_max=50
+  if [ "${#display_path}" -gt "$path_max" ]; then
+    display_path="${display_path:0:$path_max}…"
+  fi
   line2="${COLOR_WHITE}${display_path}${COLOR_RESET}"
 fi
 

@@ -277,5 +277,24 @@ header "24. Reasoning effort (sourced from statusline JSON)"
 expect "L1: ... · ◯ xhigh"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.25,"total_duration_ms":60000},"session_id":"demo-24","cwd":"/tmp","context_window":{"used_percentage":12},"effortLevel":"xhigh"}'
 
+# ─── 25. Long project name + cwd path truncation ────────────────
+clear_caches
+LONG_NAME_DEMO="jordan-nes-3984-workflows-add-genetic-testing-decision-to-patient-list-and"
+LONG_DIR_DEMO="$DEMO_DIR/$LONG_NAME_DEMO"
+mkdir -p "$LONG_DIR_DEMO"
+header "25. Long project name (30-char cap) + non-worktree cwd path (50-char trailing …)"
+expect "L1: jordan-nes-3984-workflows-add-… · \$0.00 · 0s · [░░░░░░░░░░] 0%"
+expect "L2: <prefix>/jordan-nes-3984-workflows-add-genetic-testing-…"
+run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},"session_id":"demo-25","cwd":"'"$LONG_DIR_DEMO"'","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
+
+# ─── 26. Worktree path (git detection failed) — ⎇ icon ──────────
+clear_caches
+WT_PATH_DEMO="$DEMO_DIR/nest/.worktrees/$LONG_NAME_DEMO"
+mkdir -p "$WT_PATH_DEMO"
+header "26. cwd is inside .worktrees/<name> (no git) — line 2 becomes ⎇ NAME (30-char cap)"
+expect "L1: nest · \$0.00 · ..."
+expect "L2: ⎇ jordan-nes-3984-workflows-add-…"
+run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},"session_id":"demo-26","cwd":"'"$WT_PATH_DEMO"'","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
+
 printf '\033[38;5;141m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
-printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 24
+printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 26
