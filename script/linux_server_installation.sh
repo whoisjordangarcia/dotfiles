@@ -11,6 +11,7 @@ component_installation=(
 	starship
 	fastfetch
 	claude
+	agents
 )
 
 for component in "${component_installation[@]}"; do

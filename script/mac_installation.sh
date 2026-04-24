@@ -30,6 +30,7 @@ component_installation=(
   #bun/mac
   claude
   claude-mem
+  agents
   codex
   fastfetch
   opencode

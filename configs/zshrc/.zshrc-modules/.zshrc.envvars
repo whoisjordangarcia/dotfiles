@@ -37,3 +37,5 @@ export HOMEBREW_AUTOREMOVE=1
 # See https://consoledonottrack.com
 export DO_NOT_TRACK=true
 
+# export AGENT_BROWSER_PROVIDER=ios
+# export AGENT_BROWSER_IOS_DEVICE="iPhone 16 Pro"
