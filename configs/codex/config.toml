@@ -1,6 +1,6 @@
 model = "gpt-5.5"
 personality = "pragmatic"
-model_reasoning_effort = "xhigh"
+model_reasoning_effort = "medium"
 plan_mode_reasoning_effort = "xhigh"
 service_tier = "fast"
 
@@ -16,6 +16,18 @@ enabled = true
 [plugins."superpowers@openai-curated"]
 enabled = true
 
+[plugins."browser-use@openai-bundled"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
 [notice.model_migrations]
 gpt-5-codex = "gpt-5.3-codex"
 
@@ -24,6 +36,28 @@ theme = "coldark-dark"
 status_line = ["model-with-reasoning", "current-dir", "project-name", "git-branch", "context-remaining", "five-hour-limit", "weekly-limit", "context-window-size", "fast-mode", "thread-title"]
 terminal_title = ["spinner", "project", "app-name", "task-progress"]
 
+[tui.model_availability_nux]
+"gpt-5.5" = 1
+
 [mcp_servers.xcode]
 command = "xcrun"
 args = ["mcpbridge"]
+
+[projects."/Users/jordangarcia/dev/dotfiles"]
+trust_level = "trusted"
+
+[projects."/Users/jordangarcia/dev/HabitDots"]
+trust_level = "trusted"
+
+[projects."/Users/jordangarcia/dev"]
+trust_level = "trusted"
+
+[marketplaces.openai-bundled]
+last_updated = "2026-04-24T02:47:58Z"
+source_type = "local"
+source = "/Users/jordangarcia/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[marketplaces.openai-primary-runtime]
+last_updated = "2026-04-24T02:46:52Z"
+source_type = "local"
+source = "/Users/jordangarcia/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
