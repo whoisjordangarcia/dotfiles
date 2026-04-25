@@ -4,7 +4,7 @@
     "DISABLE_TELEMETRY": "1",
     "DISABLE_BUG_COMMAND": "1",
     "DISABLE_ERROR_REPORTING": "1",
-    "ENABLE_LSP_TOOL": "1"
+    "ENABLE_LSP_TOOL": "0"
   },
   "includeCoAuthoredBy": false,
   "permissions": {
@@ -35,7 +35,8 @@
       "Bash(task *)",
       "Bash(wt *)",
       "Skill(superpowers:brainstorming)",
-      "Skill(superpowers:writing-plans)"
+      "Skill(superpowers:writing-plans)",
+      "Bash(ssh -vT git@github.com)"
     ],
     "deny": [
       "Read(./**/*.htpasswd)",
@@ -70,11 +71,10 @@
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
-    "ask": [
-      "Bash(git push *)",
-      "Bash(curl *)"
-    ]
+    "ask": ["Bash(git push *)", "Bash(curl *)"],
+    "defaultMode": "auto"
   },
+  "model": "opus",
   "hooks": {},
   "statusLine": {
     "type": "command",
@@ -82,30 +82,30 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "claude-md-management@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": false,
     "claude-mem@thedotmack": true,
     "code-review@claude-plugins-official": false,
     "code-simplifier@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": false,
     "context7@claude-plugins-official": false,
     "explanatory-output-style@claude-plugins-official": true,
-    "impeccable@impeccable": true,
+    "impeccable@impeccable": false,
     "nest-ai-skill-audit@nest-genomics-skills": false,
     "nest-ehr-research@nest-genomics-skills": false,
-    "nest-linear@nest-genomics-skills": true,
-    "nest-portal-sign-in@nest-genomics-skills": true,
-    "nest-posthog@nest-genomics-skills": true,
-    "nest-pr@nest-genomics-skills": true,
-    "nest-ralph-prd@nest-genomics-skills": true,
+    "nest-linear@nest-genomics-skills": false,
+    "nest-portal-sign-in@nest-genomics-skills": false,
+    "nest-posthog@nest-genomics-skills": false,
+    "nest-pr@nest-genomics-skills": false,
+    "nest-ralph-prd@nest-genomics-skills": false,
     "nest-release-stg@nest-genomics-skills": false,
-    "nest-release-summary@nest-genomics-skills": true,
-    "nest-sentry@nest-genomics-skills": true,
-    "nest-slite@nest-genomics-skills": true,
-    "nest-ticket-writer@nest-genomics-skills": true,
+    "nest-release-summary@nest-genomics-skills": false,
+    "nest-sentry@nest-genomics-skills": false,
+    "nest-slite@nest-genomics-skills": false,
+    "nest-ticket-writer@nest-genomics-skills": false,
     "superpowers@superpowers-marketplace": true,
-    "swift-lsp@claude-plugins-official": false,
-    "typescript-lsp@claude-plugins-official": true,
-    "nest-test-planning@nest-genomics-skills": true
+    "swift-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": false,
+    "nest-test-planning@nest-genomics-skills": false
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -141,40 +141,31 @@
     "network": {
       "allowLocalBinding": true
     },
-    "excludedCommands": [
-      "git"
-    ]
+    "excludedCommands": ["git"]
   },
   "spinnerTipsEnabled": true,
   "spinnerVerbs": {
     "mode": "append",
-    "verbs": [
-      "Nesting",
-      "sahh good",
-      "ralphing"
-    ]
+    "verbs": ["Nesting", "sahh good", "ralphing"]
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "xhigh",
+  "effortLevel": "medium",
   "autoUpdatesChannel": "latest",
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
+  "verbose": false,
+  "preferredNotifChannel": "ghostty",
+  "autoCompactEnabled": false,
   "skipAutoPermissionPrompt": true,
   "useAutoModeDuringPlan": true,
   "voiceEnabled": true,
   "mcpServers": {
     "tavily": {
       "command": "npx",
-      "args": [
-        "-y",
-        "tavily-mcp@latest"
-      ],
+      "args": ["-y", "tavily-mcp@latest"],
       "env": {
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
       }
     }
-  },
-  "verbose": true,
-  "preferredNotifChannel": "ghostty",
-  "autoCompactEnabled": false
+  }
 }
