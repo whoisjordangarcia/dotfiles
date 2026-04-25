@@ -42,6 +42,6 @@ export GPG_TTY=$TTY
 export PATH="$HOME/.local/bin:$PATH"
 
 # bun completions
-[ -s "/home/jordan/.bun/_bun" ] && source "/home/jordan/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
-alias claude-mem='bun "/Users/nest/.claude/plugins/cache/thedotmack/claude-mem/12.1.3/scripts/worker-service.cjs"'
+alias claude-mem='bun "$HOME/.claude/plugins/cache/thedotmack/claude-mem/12.1.3/scripts/worker-service.cjs"'
