@@ -27,6 +27,10 @@ _should_log() {
     [ "$message_level_num" -ge "$current_level_num" ]
 }
 
+error() {
+    printf "\r\033[2K${RED}ERROR${RESET} $1\n" >&2
+}
+
 debug() {
     if _should_log "debug"; then
         printf "\r${BLUE}DEBUG${RESET} $1\n" >&2
