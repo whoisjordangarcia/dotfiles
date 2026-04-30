@@ -229,6 +229,40 @@ assert_contains "shows branch alongside ⎇ label" "$out" "feature/big-refactor"
 
 rm -rf "$WT_REPO" "$WT_REPO2"
 
+printf "\n\033[38;5;141m━━━ Long Name Truncation ━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+
+# Non-worktree long cwd: line 2 shows the path (trailing-truncated at 50 chars).
+LONG_NAME="jordan-nes-3984-workflows-add-genetic-testing-decision-to-patient-list-and"
+LONG_DIR=$(mktemp -d -t "statusline-longXXXXXX")
+mkdir -p "$LONG_DIR/$LONG_NAME"
+LONG_CWD="$LONG_DIR/$LONG_NAME"
+INPUT_LONG_NAME='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"session_id":"test-long","cwd":"'"$LONG_CWD"'","context_window":{"used_percentage":0}}'
+out=$(run_statusline_plain "$INPUT_LONG_NAME")
+line1=$(echo "$out" | head -1)
+line2=$(echo "$out" | sed -n '2p')
+assert_contains "truncates long project name at 30 chars" "$line1" "jordan-nes-3984-workflows-add-…"
+assert_not_contains "full long name not present on line 1" "$line1" "$LONG_NAME"
+assert_contains "truncates long cwd path fallback with trailing ellipsis" "$line2" "…"
+assert_not_contains "full long path not present on line 2" "$line2" "$LONG_NAME"
+assert_not_contains "cwd path keeps prefix (no leading ellipsis)" "$line2" "…-add-genetic"
+rm -rf "$LONG_DIR"
+
+# Worktree cwd WITHOUT git detection: path contains .worktrees/<name>, so line 2
+# should collapse to ⎇ NAME (icon + name, no path prefix or .worktrees/ segment).
+LONG_WT_ROOT=$(mktemp -d -t "statusline-wtpath.XXXXXX")
+mkdir -p "$LONG_WT_ROOT/nest/.worktrees/$LONG_NAME"
+LONG_WT_CWD="$LONG_WT_ROOT/nest/.worktrees/$LONG_NAME"
+INPUT_LONG_WT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"session_id":"test-longwt","cwd":"'"$LONG_WT_CWD"'","context_window":{"used_percentage":0}}'
+out=$(run_statusline_plain "$INPUT_LONG_WT")
+line1=$(echo "$out" | head -1)
+line2=$(echo "$out" | sed -n '2p')
+assert_contains "line 1 shows inferred main repo name (nest)" "$line1" "nest"
+assert_contains "line 2 shows worktree icon" "$line2" "⎇"
+assert_not_contains "line 2 drops .worktrees/ path segment" "$line2" ".worktrees"
+assert_not_contains "line 2 drops path prefix on the left" "$line2" "$LONG_WT_ROOT"
+assert_contains "line 2 truncates long worktree name" "$line2" "…"
+rm -rf "$LONG_WT_ROOT"
+
 printf "\n\033[38;5;141m━━━ Output Structure ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 line_count=$(run_statusline_plain "$INPUT_FULL" | wc -l | tr -d ' ')
