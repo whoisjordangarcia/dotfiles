@@ -64,8 +64,7 @@ vim.opt.scrolloff = 8
 -- Enable true color support
 vim.opt.termguicolors = true
 
--- views can only be fully collapsed with the global statusline
--- used for avante.nvim plugin
+-- Use a global statusline.
 vim.opt.laststatus = 3
 
 -- Enable spell checking

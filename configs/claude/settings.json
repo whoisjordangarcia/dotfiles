@@ -36,7 +36,8 @@
       "Bash(wt *)",
       "Skill(superpowers:brainstorming)",
       "Skill(superpowers:writing-plans)",
-      "Bash(ssh -vT git@github.com)"
+      "Bash(ssh -vT git@github.com)",
+      "Bash(uvx *)"
     ],
     "deny": [
       "Read(./**/*.htpasswd)",
@@ -165,6 +166,14 @@
       "args": ["-y", "tavily-mcp@latest"],
       "env": {
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
+      }
+    },
+    "home-assistant": {
+      "command": "uvx",
+      "args": ["ha-mcp@latest"],
+      "env": {
+        "HOMEASSISTANT_URL": "${HOMEASSISTANT_URL}",
+        "HOMEASSISTANT_TOKEN": "${HOMEASSISTANT_TOKEN}"
       }
     }
   }

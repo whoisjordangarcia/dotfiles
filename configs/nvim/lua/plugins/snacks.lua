@@ -98,11 +98,11 @@ return {
           sources = {
             files = {
               hidden = true,
-              args = { "--exclude", ".git", "--exclude", "node_modules", "--exclude", ".nx", "--exclude", ".next" },
+              args = { "--exclude", ".git", "--exclude", "node_modules", "--exclude", ".next" },
             },
             grep = {
               hidden = true,
-              args = { "--hidden", "-g", "!.git", "-g", "!node_modules", "-g", "!.nx", "-g", "!.next" },
+              args = { "--hidden", "-g", "!.git", "-g", "!node_modules", "-g", "!.next" },
             },
           },
         },

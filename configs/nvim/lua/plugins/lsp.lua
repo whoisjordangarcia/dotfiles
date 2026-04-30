@@ -59,7 +59,6 @@ return {
           .. " -o -path '*/__generated__' -prune"
           .. " -o -path '*/@generated' -prune"
           .. " -o -path '*/.worktrees' -prune"
-          .. " -o -path '*/.nx' -prune"
           .. " -o -name '*.schema.json' -print"
           .. " 2>/dev/null"
       )
