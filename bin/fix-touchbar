@@ -22,14 +22,22 @@ if [[ ! -d /sys/module/apple_bce ]]; then
     exit 1
 fi
 
-# Check if Touch Bar is already working
-if systemctl is-active --quiet tiny-dfr 2>/dev/null && [[ "$FORCE" == false ]]; then
-    info "tiny-dfr is already running. Touch Bar should be working."
+# Quick sanity check — only short-circuit if the device node also exists.
+# tiny-dfr can stay 'active' while bound to a stale device after suspend/resume.
+if [[ "$FORCE" == false ]] \
+    && systemctl is-active --quiet tiny-dfr 2>/dev/null \
+    && ls /dev/dri/card* &>/dev/null \
+    && [[ -e /sys/bus/hid/drivers/hid-appletb-kbd ]]; then
+    info "tiny-dfr is running and Touch Bar device is present."
     echo "    Run with -f to force reload."
     exit 0
 fi
 
 echo "Fixing Touch Bar..."
+
+# Stop tiny-dfr first so udev can cleanly re-activate it when the device reappears.
+info "Stopping tiny-dfr..."
+sudo systemctl stop tiny-dfr 2>/dev/null || true
 
 # Stop audio (holds a reference to apple_bce)
 info "Stopping audio services..."
@@ -49,12 +57,12 @@ sudo modprobe apple_bce
 info "Restarting audio services..."
 systemctl --user start pipewire pipewire-pulse wireplumber 2>/dev/null || true
 
-# Wait for tiny-dfr to start via device activation
+# Give udev a moment to (re)activate tiny-dfr via device rules
 sleep 2
 
 if systemctl is-active --quiet tiny-dfr 2>/dev/null; then
     info "Touch Bar is back!"
 else
     warn "tiny-dfr didn't auto-start. Starting manually..."
-    sudo systemctl start tiny-dfr 2>/dev/null && info "Touch Bar is back!" || err "Failed to start tiny-dfr."
+    sudo systemctl restart tiny-dfr 2>/dev/null && info "Touch Bar is back!" || err "Failed to start tiny-dfr."
 fi
