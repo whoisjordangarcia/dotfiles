@@ -30,6 +30,7 @@ PACKAGES=(
 
 	# Desktop/Games
 	mangohud
+	moonlight-qt
 
 	# Apps (official repos)
 	darktable
