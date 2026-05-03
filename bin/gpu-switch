@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# gpu-switch - Switch between integrated and dedicated GPUs on MacBook Pro
+# Based on https://github.com/0xbb/gpu-switch (Copyright (c) 2014-2015 Bruno Bierbaumer, Andreas Heider)
+# Requires reboot to take effect.
+
+set -euo pipefail
+
+readonly sysfs_efi_vars='/sys/firmware/efi/efivars'
+readonly efi_gpu='gpu-power-prefs-fa4ce28d-b62f-4c99-9cc3-6815686e30f9'
+
+usage(){
+  cat <<EOF
+Usage:
+  $(basename "$0") -i, --integrated   Switch to the integrated GPU
+  $(basename "$0") -d, --dedicated    Switch to the dedicated GPU
+  $(basename "$0") -s, --status       Show current GPU setting
+  $(basename "$0") -h, --help         Show this message
+
+Switches between the integrated and dedicated graphics cards of a dual-GPU
+MacBook Pro for the next reboot.
+EOF
+}
+
+check_efi(){
+  if ! [ -d /sys/firmware/efi ]; then
+    printf "Fatal: %s has to be run in EFI mode.\n" "$(basename "$0")" 1>&2
+    exit 1
+  fi
+
+  if ! mount | grep -q "$sysfs_efi_vars"; then
+    if ! mount -t efivarfs none "$sysfs_efi_vars"; then
+      printf "Fatal: Couldn't mount '%s'.\n" "$sysfs_efi_vars" 1>&2
+      exit 1
+    fi
+  fi
+}
+
+switch_gpu(){
+  check_efi
+  chattr -i "${sysfs_efi_vars}/${efi_gpu}" 2> /dev/null
+  printf "\x07\x00\x00\x00\x${1}\x00\x00\x00" > "${sysfs_efi_vars}/${efi_gpu}"
+}
+
+show_status(){
+  check_efi
+  local val
+  val=$(od -A n -t x1 -j 4 -N 1 "${sysfs_efi_vars}/${efi_gpu}" 2>/dev/null | tr -d ' ')
+  case "$val" in
+    01) printf "integrated\n" ;;
+    00) printf "dedicated\n" ;;
+    *)  printf "unknown (0x%s)\n" "$val" ;;
+  esac
+}
+
+if [ $# -ne 1 ]; then
+  usage 1>&2
+  exit 1
+fi
+
+case "$1" in
+  -i|--integrated)
+    switch_gpu 1
+    printf "Switched to integrated GPU. Reboot to apply.\n"
+  ;;
+  -d|--dedicated)
+    switch_gpu 0
+    printf "Switched to dedicated GPU. Reboot to apply.\n"
+  ;;
+  -s|--status)
+    show_status
+  ;;
+  -h|--help)
+    usage
+  ;;
+  *)
+    usage 1>&2
+    exit 1
+  ;;
+esac

@@ -32,6 +32,7 @@ component_installation=(
 	dolphin/linux
 	vpn/linux
 	ufw/linux
+	gpu-switch/linux
 )
 
 for component in "${component_installation[@]}"; do
