@@ -36,7 +36,10 @@
       "Bash(wt *)",
       "Skill(superpowers:brainstorming)",
       "Skill(superpowers:writing-plans)",
-      "Bash(ssh -vT git@github.com)"
+      "Bash(ssh -vT git@github.com)",
+      "Bash(bun run:*)",
+      "Bash(bunx npm-check-updates:*)",
+      "mcp__pencil"
     ],
     "deny": [
       "Read(./**/*.htpasswd)",
@@ -51,22 +54,10 @@
       "Read(./**/*.pgpass)",
       "Read(./**/*.pypirc)",
       "Read(./**/*credentials*)",
-      "Read(./**/*id_ed25519*)",
-      "Read(./**/*id_rsa*)",
-      "Read(./**/*password*)",
-      "Read(./**/*secret*)",
-      "Read(./**/kubeconfig)",
-      "Read(./**/serviceAccountKey*)",
       "Read(./.env)",
       "Read(./.env.*)",
-      "Read(./.envrc)",
       "Read(./secrets/**)",
       "Read(~/.aws/**)",
-      "Read(~/.config/gh/hosts.yml)",
-      "Read(~/.config/nest-skills/*)",
-      "Read(~/.docker/config.json)",
-      "Read(~/.gnupg/**)",
-      "Read(~/.kube/config)",
       "Read(~/.ssh/**)",
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
@@ -143,7 +134,7 @@
     },
     "excludedCommands": ["git"]
   },
-  "spinnerTipsEnabled": true,
+  "spinnerTipsEnabled": false,
   "spinnerVerbs": {
     "mode": "append",
     "verbs": ["Nesting", "sahh good", "ralphing"]
@@ -153,7 +144,7 @@
   "autoUpdatesChannel": "latest",
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
-  "verbose": false,
+  "verbose": true,
   "preferredNotifChannel": "ghostty",
   "autoCompactEnabled": false,
   "skipAutoPermissionPrompt": true,
