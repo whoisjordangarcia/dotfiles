@@ -37,8 +37,7 @@ COLOR_COMMIT_FRESH="$COLOR_ADD"
 COLOR_COMMIT_STALE="$COLOR_WARN"
 COLOR_COMMIT_OLD="$COLOR_DEL"
 COLOR_BASE="$COLOR_DIM"
-COLOR_DOCKER="$COLOR_ADD"
-COLOR_DOCKER_OFF="$COLOR_DIM"
+COLOR_NODE="$COLOR_ADD"
 
 # ─── Cache config ────────────────────────────────────────────────────
 GIT_CACHE_DIR="/tmp/claude-statusline-git-cache"
@@ -81,6 +80,31 @@ osc_link() {
   printf '\e]8;;%s\a%s\e]8;;\a' "$url" "$text"
 }
 
+# ─── Helper: render CI status glyph from cached gh pr checks JSON ────
+ci_glyph() {
+  local cwd="$1" branch="$2" cache_file="$3" ttl="$4"
+  if cache_fresh "$cache_file" "$ttl"; then
+    cat "$cache_file"
+    return
+  fi
+  local out="" json failed pending passed
+  json=$(cd "$cwd" 2>/dev/null && gh pr checks "$branch" --json name,state,conclusion 2>/dev/null || echo "")
+  if [ -n "$json" ] && [ "$json" != "[]" ] && [ "$json" != "null" ]; then
+    failed=$(echo "$json" | jq '[.[] | select(.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT")] | length')
+    pending=$(echo "$json" | jq '[.[] | select(.state == "PENDING" or .state == "QUEUED" or .state == "IN_PROGRESS")] | length')
+    passed=$(echo "$json" | jq '[.[] | select(.conclusion == "SUCCESS" or .conclusion == "NEUTRAL" or .conclusion == "SKIPPED")] | length')
+    if [ "$failed" -gt 0 ] 2>/dev/null; then
+      out="${COLOR_CI_FAIL}✗${COLOR_RESET}"
+    elif [ "$pending" -gt 0 ] 2>/dev/null; then
+      out="${COLOR_CI_PENDING}⏳${COLOR_RESET}"
+    elif [ "$passed" -gt 0 ] 2>/dev/null; then
+      out="${COLOR_CI_PASS}✓${COLOR_RESET}"
+    fi
+  fi
+  echo "$out" >"$cache_file"
+  printf '%s' "$out"
+}
+
 # ─── Helper: format seconds as human-readable age with color ─────────
 format_commit_age() {
   local secs="$1" color label
@@ -120,13 +144,11 @@ read_data=$(echo "$input" | jq -r '[
 	(.rate_limits.seven_day.used_percentage // -1 | tostring),
 	(.rate_limits.five_hour.resets_at // "" | tostring),
 	(.rate_limits.seven_day.resets_at // "" | tostring),
-	(.session_name // "__NONE__"),
 	(.cost.total_duration_ms // 0 | tostring),
 	(.effortLevel // .reasoning_effort // .model.reasoning_effort // .output_style.effortLevel // "")
-] | map(tostring) | join("\u001f")')
+] | join("\u001f")')
 
-IFS=$'\x1f' read -r model_full cost lines_added lines_removed session_id cwd ctx_pct ctx_current ctx_cache_read rate_5h rate_7d rate_5h_resets rate_7d_resets session_name duration_ms effort_level <<<"$read_data"
-[ "$session_name" = "__NONE__" ] && session_name=""
+IFS=$'\x1f' read -r model_full cost lines_added lines_removed session_id cwd ctx_pct ctx_current ctx_cache_read rate_5h rate_7d rate_5h_resets rate_7d_resets duration_ms effort_level <<<"$read_data"
 
 # ─── Model name (shorten "Claude Opus 4.6" → "Opus 4.6") ────────────
 if [[ "$model_full" =~ Claude\ ([0-9.]+\ )?(.+) ]]; then
@@ -212,12 +234,10 @@ sync_display=""
 dirty_display=""
 commit_age_display=""
 base_branch_display=""
-
-# Use Claude's worktree data if available
-if [ -n "$ws_worktree" ]; then
-  is_worktree=true
-  wt_name="$ws_worktree"
-fi
+pr_number=""
+pr_url=""
+pr_state=""
+pr_draft=""
 
 if [ -n "$cwd" ] && [ -d "$cwd" ] && { [ -d "$cwd/.git" ] || [ -f "$cwd/.git" ]; }; then
   mkdir -p "$GIT_CACHE_DIR"
@@ -228,7 +248,7 @@ if [ -n "$cwd" ] && [ -d "$cwd" ] && { [ -d "$cwd/.git" ] || [ -f "$cwd/.git" ];
 
   # Git dirs (needed for project name resolution + worktree fallback)
   git_dir=$(cd "$cwd" 2>/dev/null && git rev-parse --git-dir 2>/dev/null)
-  git_common=$(cd "$cwd" 2>/dev/null && git rev-parse --git-common-dir 2>/dev/null)
+  git_common=$(cd "$cwd" 2>/dev/null && git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
 
   # Worktree detection fallback (if Claude didn't provide it)
   if [ "$is_worktree" = false ]; then
@@ -373,54 +393,10 @@ if [ -n "$branch" ] && [ -n "$cwd" ]; then
       pr_display="${COLOR_PR_MERGED} ${pr_link} merged${COLOR_RESET}"
     elif [ "$pr_state" = "OPEN" ] && [ "$pr_draft" = "true" ]; then
       pr_display="${COLOR_PR_DRAFT} ${pr_link} draft${COLOR_RESET}"
-
-      # CI status for draft PRs too
-      ci_cache_file="$PR_CACHE_DIR/${pr_cache_key}_ci"
-      if cache_fresh "$ci_cache_file" "$CI_CACHE_TTL"; then
-        ci_display=$(cat "$ci_cache_file")
-      else
-        ci_display=""
-        ci_json=$(cd "$cwd" 2>/dev/null && gh pr checks "$branch" --json name,state,conclusion 2>/dev/null || echo "")
-        if [ -n "$ci_json" ] && [ "$ci_json" != "[]" ] && [ "$ci_json" != "null" ]; then
-          failed=$(echo "$ci_json" | jq '[.[] | select(.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT")] | length')
-          pending=$(echo "$ci_json" | jq '[.[] | select(.state == "PENDING" or .state == "QUEUED" or .state == "IN_PROGRESS")] | length')
-          passed=$(echo "$ci_json" | jq '[.[] | select(.conclusion == "SUCCESS" or .conclusion == "NEUTRAL" or .conclusion == "SKIPPED")] | length')
-
-          if [ "$failed" -gt 0 ] 2>/dev/null; then
-            ci_display="${COLOR_CI_FAIL}✗${COLOR_RESET}"
-          elif [ "$pending" -gt 0 ] 2>/dev/null; then
-            ci_display="${COLOR_CI_PENDING}⏳${COLOR_RESET}"
-          elif [ "$passed" -gt 0 ] 2>/dev/null; then
-            ci_display="${COLOR_CI_PASS}✓${COLOR_RESET}"
-          fi
-        fi
-        echo "$ci_display" >"$ci_cache_file"
-      fi
+      ci_display=$(ci_glyph "$cwd" "$branch" "$PR_CACHE_DIR/${pr_cache_key}_ci" "$CI_CACHE_TTL")
     elif [ "$pr_state" = "OPEN" ]; then
       pr_display="${COLOR_PR_OPEN} ${pr_link}${COLOR_RESET}"
-
-      # CI status only for open PRs
-      ci_cache_file="$PR_CACHE_DIR/${pr_cache_key}_ci"
-      if cache_fresh "$ci_cache_file" "$CI_CACHE_TTL"; then
-        ci_display=$(cat "$ci_cache_file")
-      else
-        ci_display=""
-        ci_json=$(cd "$cwd" 2>/dev/null && gh pr checks "$branch" --json name,state,conclusion 2>/dev/null || echo "")
-        if [ -n "$ci_json" ] && [ "$ci_json" != "[]" ] && [ "$ci_json" != "null" ]; then
-          failed=$(echo "$ci_json" | jq '[.[] | select(.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT")] | length')
-          pending=$(echo "$ci_json" | jq '[.[] | select(.state == "PENDING" or .state == "QUEUED" or .state == "IN_PROGRESS")] | length')
-          passed=$(echo "$ci_json" | jq '[.[] | select(.conclusion == "SUCCESS" or .conclusion == "NEUTRAL" or .conclusion == "SKIPPED")] | length')
-
-          if [ "$failed" -gt 0 ] 2>/dev/null; then
-            ci_display="${COLOR_CI_FAIL}✗${COLOR_RESET}"
-          elif [ "$pending" -gt 0 ] 2>/dev/null; then
-            ci_display="${COLOR_CI_PENDING}⏳${COLOR_RESET}"
-          elif [ "$passed" -gt 0 ] 2>/dev/null; then
-            ci_display="${COLOR_CI_PASS}✓${COLOR_RESET}"
-          fi
-        fi
-        echo "$ci_display" >"$ci_cache_file"
-      fi
+      ci_display=$(ci_glyph "$cwd" "$branch" "$PR_CACHE_DIR/${pr_cache_key}_ci" "$CI_CACHE_TTL")
     elif [ "$pr_state" = "CLOSED" ]; then
       pr_display="${COLOR_DIM} ${pr_link} closed${COLOR_RESET}"
     fi
@@ -439,12 +415,10 @@ fi
 # ─── Assemble output ─────────────────────────────────────────────────
 sep=" ${COLOR_DIM}·${COLOR_RESET} "
 
-# Project name: session name if set, else main repo name for worktrees, else cwd basename
+# Project name: main repo name for worktrees, else cwd basename
 project_name=""
-if [ -n "$session_name" ]; then
-  project_name="$session_name"
-elif [ "$is_worktree" = true ] && [ -n "$git_common" ]; then
-  main_repo=$(cd "$cwd" 2>/dev/null && cd "$git_common/.." 2>/dev/null && pwd)
+if [ "$is_worktree" = true ] && [ -n "$git_common" ]; then
+  main_repo="${git_common%/.git}"
   [ -n "$main_repo" ] && project_name="${main_repo##*/}"
 elif [ "$is_worktree" = true ] && [ -n "$wt_main_repo" ]; then
   project_name="${wt_main_repo##*/}"
@@ -458,7 +432,7 @@ if [ -n "$project_name" ] && [ "${#project_name}" -gt "$project_max" ]; then
   project_name="${project_name:0:$project_max}…"
 fi
 
-# Worktree/PR indicator (built here so it can appear on line 1)
+# Worktree/PR indicator (rendered on line 2)
 wt_pr_display=""
 if [ -n "$branch" ]; then
   if [ "$is_worktree" = true ] && [ -n "$wt_name" ]; then
@@ -532,7 +506,6 @@ if [ "$rate_7d_int" -ge 80 ] 2>/dev/null; then
   [ -n "$rate_display" ] && rate_display+=" "
   rate_display+="${COLOR_DEL}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
 fi
-[ -n "$rate_display" ] && line1+="${sep}${rate_display}"
 [ -n "$effort_display" ] && line1+="${sep}${effort_display}"
 
 # Line 2: worktree · branch · sync · dirty · lines · commit age
@@ -604,11 +577,7 @@ fi
 # ─── Node app detection (line 3) ───────────────────────────────────
 node_display=""
 mkdir -p "$NODE_CACHE_DIR"
-if [ "$is_worktree" = true ] && [ -n "$wt_name" ]; then
-  node_cache_key=$(printf '%s' "$wt_name" | md5 -q 2>/dev/null || printf '%s' "$wt_name" | md5sum | cut -d' ' -f1)
-else
-  node_cache_key="global"
-fi
+node_cache_key=$(printf '%s' "${cwd:-global}" | md5 -q 2>/dev/null || printf '%s' "${cwd:-global}" | md5sum | cut -d' ' -f1)
 node_cache_file="$NODE_CACHE_DIR/${node_cache_key}_node"
 
 if cache_fresh "$node_cache_file" "$NODE_CACHE_TTL"; then
@@ -646,26 +615,14 @@ else
   fi
   if [ -n "$app_entries" ]; then
     parts=$(printf '%b' "$app_entries" | sort -u -t: -k1,1 | tr '\n' ' ' | sed 's/ $//')
-    node_display="${COLOR_DOCKER}${parts}${COLOR_RESET}"
+    node_display="${COLOR_NODE}${parts}${COLOR_RESET}"
   fi
   echo "$node_display" >"$node_cache_file"
 fi
 
-# Rate limit display for line 3 (only when >= 70%)
-rate_line3=""
-if [ "$rate_5h_int" -ge 70 ] 2>/dev/null || [ "$rate_7d_int" -ge 70 ] 2>/dev/null; then
-  rate_line3="$rate_display"
-fi
-
-# Build line 3: rate warnings · running apps
+# Build line 3: rate warnings (already threshold-filtered) · running apps
 line3=""
-
-# Rate limit warning (only when >= 70%)
-if [ -n "$rate_line3" ]; then
-  line3+="${rate_line3}"
-fi
-
-# Running apps
+[ -n "$rate_display" ] && line3+="${rate_display}"
 if [ -n "$node_display" ]; then
   [ -n "$line3" ] && line3+="${sep}"
   line3+="${node_display}"

@@ -178,14 +178,14 @@ assert_not_contains "hides 7d when absent" "$out" "7d:"
 
 printf "\n\033[38;5;141m━━━ Session Name ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
+# Session name should be ignored — line 1 always shows project/repo/cwd basename
 out=$(run_statusline_plain "$INPUT_SESSION_NAME")
-assert_contains "shows session name as project" "$out" "refactor-auth"
+assert_not_contains "session name does not appear in output" "$out" "refactor-auth"
 
-# Session name in a git repo should not show cwd basename on line 1
 INPUT_SESSION_NAME_GIT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.75,"total_duration_ms":180000},"session_id":"test-named-git","session_name":"refactor-auth","cwd":"'"$(pwd)"'","context_window":{"context_window_size":200000,"used_percentage":20}}'
 out_line1=$(run_statusline_plain "$INPUT_SESSION_NAME_GIT" | head -1)
-assert_contains "session name replaces project on line 1" "$out_line1" "refactor-auth"
-assert_not_contains "cwd basename hidden when session name set" "$out_line1" "dotfiles"
+assert_not_contains "session name does not replace project on line 1" "$out_line1" "refactor-auth"
+assert_contains "cwd basename shown on line 1 even when session name set" "$out_line1" "dotfiles"
 
 printf "\n\033[38;5;141m━━━ Reasoning Effort ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
