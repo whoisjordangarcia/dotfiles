@@ -71,8 +71,9 @@ if [[ -f "$GITCONFIG_TEMPLATE" ]]; then
 		"${SED_INLINE[@]}" "s|__DOT_YUBIKEY__|${DOT_YUBIKEY}|g" "$GITCONFIG_TARGET"
 		success "Applied YubiKey: $DOT_YUBIKEY"
 	else
-		# Remove signing key lines if no YubiKey provided
+		# Remove signing key + gpgsign sections if no YubiKey provided
 		"${SED_INLINE[@]}" '/signingkey = __DOT_YUBIKEY__/d' "$GITCONFIG_TARGET"
+		"${SED_INLINE[@]}" '/^\[commit\]$/,/^$/d;/^\[tag\]$/,/^$/d;/^\[gpg\]$/,/^$/d' "$GITCONFIG_TARGET"
 		info "No YubiKey provided - removed signing configuration"
 	fi
 

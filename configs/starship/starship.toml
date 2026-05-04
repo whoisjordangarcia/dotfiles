@@ -1,6 +1,6 @@
 add_newline = true
 command_timeout = 1500
-format = "${custom.prompt_info}$git_status$character"
+format = "${custom.prompt_info}$terraform$git_status$character"
 
 [custom.prompt_info]
 when = true
@@ -9,6 +9,13 @@ shell = ["bash", "--noprofile", "--norc"]
 format = "[$output ]($style)"
 style = "bold cyan"
 description = "Shows repo/worktree name and conditional branch"
+
+[terraform]
+format = '[$symbol$workspace ]($style)'
+symbol = "🌎 "
+style = "bold magenta"
+detect_extensions = ["tf", "tfvars", "tfplan"]
+detect_folders = [".terraform"]
 
 [character]
 error_symbol = " [✗](bold cyan)"

@@ -138,6 +138,10 @@ comb1 = "Option + Shift"
 "comb1 + 9" = { exec = ["rift-cli", "execute", "workspace", "move-window", "8"] }
 "comb1 + 0" = { exec = ["rift-cli", "execute", "workspace", "move-window", "9"] }
 
+# Move window to display by index (Ctrl + Cmd + N)
+"Ctrl + Meta + 1" = { exec = ["rift-cli", "execute", "display", "move-window", "--index", "0"] }
+"Ctrl + Meta + 2" = { exec = ["rift-cli", "execute", "display", "move-window", "--index", "1"] }
+
 # Workspace back and forth
 "Option + Tab" = "switch_to_last_workspace"
 

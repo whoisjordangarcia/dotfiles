@@ -12,7 +12,7 @@ alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 alias c="CLAUDE_CODE_NO_FLICKER=1 claude"
 alias cr="=CLAUDE_CODE_NO_FLICKER=1 claude --resume"
 alias claude-yolo="CLAUDE_CODE_DISABLE_1M_CONTEXT=1 CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1 CLAUDE_CODE_NO_FLICKER=1 claude --dangerously-skip-permissions"
-#alias cy="CLAUDE_CODE_NO_FLICKER=1 claude --dangerously-skip-permissions"
+alias cy="CLAUDE_CODE_NO_FLICKER=1 claude --dangerously-skip-permissions"
 alias ca="CLAUDE_CODE_NO_FLICKER=1 claude --enable-auto-mode"
 alias claude-otel="CLAUDE_CODE_NO_FLICKER=1 CLAUDE_CODE_ENABLE_TELEMETRY=1 OTEL_LOGS_EXPORTER=console OTEL_LOG_RAW_API_BODIES=file:$HOME/claude-otel-logs claude"
 alias update-claude="curl -fsSL https://claude.ai/install.sh | bash"
@@ -44,6 +44,10 @@ alias :x="exit"
 alias zshrc="nvim ~/.zshrc-modules"
 alias dotfiles="cd ~/dev/dotfiles && nvim ."
 alias sketchybar-theme="~/.config/sketchybar/switch-theme.sh"
+
+#markdown
+alias gn='glow -t -l -w 100 -s tokyo-night'
+alias gnw='watchexec --restart --clear --filter "*.md" -- glow -w 100 -s tokyo-night'
 
 #git
 alias gs="git status"
