@@ -71,7 +71,10 @@
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
-    "ask": ["Bash(git push *)", "Bash(curl *)"],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(curl *)"
+    ],
     "defaultMode": "auto"
   },
   "model": "opus",
@@ -141,12 +144,18 @@
     "network": {
       "allowLocalBinding": true
     },
-    "excludedCommands": ["git"]
+    "excludedCommands": [
+      "git"
+    ]
   },
   "spinnerTipsEnabled": true,
   "spinnerVerbs": {
     "mode": "append",
-    "verbs": ["Nesting", "sahh good", "ralphing"]
+    "verbs": [
+      "Nesting",
+      "sahh good",
+      "ralphing"
+    ]
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "medium",
@@ -162,7 +171,10 @@
   "mcpServers": {
     "tavily": {
       "command": "npx",
-      "args": ["-y", "tavily-mcp@latest"],
+      "args": [
+        "-y",
+        "tavily-mcp@latest"
+      ],
       "env": {
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
       }
