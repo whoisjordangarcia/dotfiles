@@ -24,6 +24,12 @@ theme = "coldark-dark"
 status_line = ["model-with-reasoning", "current-dir", "project-name", "git-branch", "context-remaining", "five-hour-limit", "weekly-limit", "context-window-size", "fast-mode", "thread-title"]
 terminal_title = ["spinner", "project", "app-name", "task-progress"]
 
+[tui.model_availability_nux]
+"gpt-5.5" = 1
+
 [mcp_servers.xcode]
 command = "xcrun"
 args = ["mcpbridge"]
+
+[projects."/Users/nest/projects/devops"]
+trust_level = "trusted"
