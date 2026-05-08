@@ -75,7 +75,6 @@
       "Bash(curl *)"
     ]
   },
-  "hooks": {},
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
@@ -104,8 +103,13 @@
     "nest-ticket-writer@nest-genomics-skills": true,
     "superpowers@superpowers-marketplace": true,
     "swift-lsp@claude-plugins-official": false,
-    "typescript-lsp@claude-plugins-official": true,
-    "nest-test-planning@nest-genomics-skills": true
+    "typescript-lsp@claude-plugins-official": false,
+    "nest-test-planning@nest-genomics-skills": true,
+    "nest-summary-html@nest-genomics-skills": true,
+    "nest-brainstorming@nest-genomics-skills": true,
+    "nest-writing-plans@nest-genomics-skills": true,
+    "nest-factory@nest-genomics-skills": true,
+    "nest-implementation@nest-genomics-skills": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -155,10 +159,13 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "xhigh",
+  "effortLevel": "medium",
   "autoUpdatesChannel": "latest",
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
+  "verbose": true,
+  "preferredNotifChannel": "ghostty",
+  "autoCompactEnabled": false,
   "skipAutoPermissionPrompt": true,
   "useAutoModeDuringPlan": true,
   "voiceEnabled": true,
@@ -173,8 +180,5 @@
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
       }
     }
-  },
-  "verbose": true,
-  "preferredNotifChannel": "ghostty",
-  "autoCompactEnabled": false
+  }
 }
