@@ -43,6 +43,9 @@ terminal_title = ["spinner", "project", "app-name", "task-progress"]
 command = "xcrun"
 args = ["mcpbridge"]
 
+[projects."/Users/nest/projects/devops"]
+trust_level = "trusted"
+
 [projects."/Users/jordangarcia/dev/dotfiles"]
 trust_level = "trusted"
 

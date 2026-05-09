@@ -20,6 +20,8 @@ brew 'yq' # tmux statusbar
 brew 'cmatrix'
 brew 'gh'
 brew 'yazi'
+brew 'glow'
+brew 'watchexec'
 
 # Development
 cask '1password-cli'

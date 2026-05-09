@@ -3,6 +3,15 @@
   email = __DOT_EMAIL__
 	signingkey = __DOT_YUBIKEY__
 
+[commit]
+  gpgsign = true
+
+[tag]
+  gpgsign = true
+
+[gpg]
+  program = gpg
+
 [init]
   defaultBranch = main
 

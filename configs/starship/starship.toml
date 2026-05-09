@@ -1,6 +1,6 @@
 add_newline = true
 command_timeout = 1500
-format = "$directory$git_branch$git_status$character"
+format = "${custom.prompt_info}$directory$git_branch$terraform$git_status$character"
 
 [directory]
 truncation_length = 1
@@ -11,6 +11,13 @@ style = "bold cyan"
 [git_branch]
 format = " [$branch]($style)"
 style = "bold cyan"
+
+[terraform]
+format = '[$symbol$workspace ]($style)'
+symbol = "🌎 "
+style = "bold magenta"
+detect_extensions = ["tf", "tfvars", "tfplan"]
+detect_folders = [".terraform"]
 
 [character]
 error_symbol = " [✗](bold cyan)"
