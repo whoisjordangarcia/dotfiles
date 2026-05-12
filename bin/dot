@@ -28,12 +28,10 @@ detect_system() {
 		os_name="mac"
 	elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 		os_name="linux"
-		# Detect Linux distribution
+		# Detect supported Linux distribution
 		if [ -f /etc/os-release ]; then
 			. /etc/os-release
 			case "$ID" in
-			ubuntu) distro="ubuntu" ;;
-			fedora) distro="fedora" ;;
 			arch) distro="arch" ;;
 			*) distro="unknown" ;;
 			esac
@@ -423,7 +421,7 @@ displayUsageAndExit() {
 	echo "  dot -i                    # Interactive setup"
 	echo "  dot -m                    # Select specific modules to install"
 	echo "  dot --system mac --work   # Direct Mac work installation"
-	echo "  dot --system linux_ubuntu # Direct Ubuntu installation"
+	echo "  dot --system linux_arch   # Direct Arch installation"
 	exit
 }
 

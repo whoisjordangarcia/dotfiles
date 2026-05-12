@@ -141,7 +141,6 @@ export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 
 # Application-specific
 export DOCKER_CONFIG="$XDG_CONFIG_HOME/docker"
-export CARGO_HOME="$XDG_DATA_HOME/cargo"
 ```
 
 ### 2. Tool Initialization Module

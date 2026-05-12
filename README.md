@@ -2,12 +2,12 @@
 
 **Opinionated, curated dotfiles for the discerning developer**
 
-A comprehensive cross-platform dotfiles repository that makes strong choices about your development environment. Supporting macOS, Linux (Ubuntu, Fedora, Arch), and WSL with both personal and work configurations, it's designed for developers who want a thoughtfully curated setup without the decision fatigue.
+A comprehensive dotfiles repository that makes strong choices about your development environment. Supporting macOS, Arch Linux, and lightweight Linux server setups with both personal and work configurations, it's designed for developers who want a thoughtfully curated setup without the decision fatigue.
 
 ## Features
 
 - **Opinionated tool selection** - Carefully curated applications and configurations that work well together
-- **Cross-platform compatibility** - Consistent experience across macOS, Ubuntu, Fedora, Arch Linux, and WSL
+- **Focused platform support** - Consistent experience across macOS, Arch Linux, and lightweight Linux servers
 - **Environment-aware setup** - Thoughtfully separated configurations for personal and work environments
 - **Zero-decision installation** - Smart system detection with guided setup—no overwhelming choices
 - **Modular architecture** - Component-based system with sensible defaults
@@ -39,7 +39,7 @@ cd dotfiles
 
 ```bash
 ./bin/dot --system mac --work         # Direct installation
-./bin/dot --system linux_ubuntu --personal
+./bin/dot --system linux_arch --personal
 ```
 
 ---
@@ -266,7 +266,6 @@ Context rules for AI coding assistants:
 | `configs/opencode/` | OpenCode settings |
 | `configs/fastfetch/` | System info display |
 | `configs/pyright/` | Python type checking |
-| `configs/i3/` | i3 window manager (Fedora) |
 | `configs/sway/` | Sway compositor |
 | `configs/glazeWM/` | GlazeWM (Windows) |
 | `configs/man/` | Custom man pages for dotfiles |
@@ -281,9 +280,9 @@ Context rules for AI coding assistants:
 ./bin/dot --system mac
 ```
 
-**Installs:** Git, Zsh, Neovim nightly, Node, Tmux+TPM, Fonts, Starship, Ghostty, LazyGit, Claude/Codex/OpenCode, Fastfetch, Brave
+**Installs:** Homebrew apps, 1Password CLI, Git, SSH/GitHub CLI, notes checkout, Zsh, Vim, Node, Neovim nightly, Tmux+TPM, Fonts, Starship, Rift, Ghostty, LazyGit, Claude, Claude Mem, agent skills, Codex, Fastfetch, OpenCode, Brave, Sunshine, and appearance watcher
 
-**Work variant** (`mac_work`): Adds Homebrew apps + Rift + enterprise tools
+**Work variant** (`mac_work`): Work-focused macOS profile with Homebrew apps, Git, Zsh, Vim, Tmux, Node, Brave, Fonts, Rift, LazyGit, Starship, work config, Claude, Claude Mem, agent skills, Codex, and Fastfetch
 
 ### Arch Linux (`linux_arch`)
 
@@ -291,25 +290,9 @@ Context rules for AI coding assistants:
 ./bin/dot --system linux_arch
 ```
 
-**Installs:** Pacman packages, Git, Node, LazyGit, Zsh, Vim, Tmux, Bat, Ghostty, Fonts, Starship, Fastfetch, Brave, Docker, Claude/Codex, Dolphin, HyDE
+**Installs:** Pacman/AUR packages, Git, notes checkout, Node, LazyGit, Zsh, Vim, Tmux, Bat, Ghostty, Fonts, Starship, Hyprland/HyDE overrides, desktop theming, Rofi, Btop, GitHub CLI, Brave, Fastfetch, SSH, Codex, Claude, agent skills, Dolphin, VPN split tunnel, UFW, and GPU switching
 
-**Pacman packages:** zsh, starship, tmux, ripgrep, eza, zoxide, wl-clipboard, fzf, jq, bat, dysk, htop, btop, ttf-jetbrains-mono-nerd, mangohud, darktable, podman, yubikey-manager, github-cli
-
-### Ubuntu (`linux_ubuntu`)
-
-```bash
-./bin/dot --system linux_ubuntu
-```
-
-**Installs:** Core dev tools via apt, Node, LazyGit, Starship, Fastfetch, Wezterm (Windows-compatible)
-
-### Fedora (`linux_fedora`)
-
-```bash
-./bin/dot --system linux_fedora
-```
-
-**Installs:** i3wm, Polybar, LazyGit, Fonts, Starship, Fastfetch
+**Pacman packages:** zsh, starship, tmux, ripgrep, eza, zoxide, wl-clipboard, fzf, jq, bat, github-cli, dysk, htop, btop, Nerd Fonts, mangohud, moonlight-qt, darktable, Podman, WireGuard/dnsmasq/UFW, and YubiKey/GPG tooling. AUR packages are installed with `yay` when available.
 
 ---
 
@@ -372,6 +355,12 @@ DOT_YUBIKEY="ABC123..."  # Optional GPG key for git signing
 ./bin/dot --reconfigure   # Re-run interactive setup
 ```
 
+### Health Check
+
+```bash
+./script/dev/check.sh      # syntax, profile module paths, and retired-surface checks
+```
+
 ---
 
 ## Post-Installation
@@ -403,7 +392,7 @@ gpg --list-secret-keys --keyid-format=long  # Find key ID
 
 1. Create setup script: `script/{component}/{platform}/setup.sh`
 2. Add to installation array in `script/{platform}_installation.sh`
-3. Use logging from `script/common/log.sh`
+3. Use logging from `script/common/log.sh`; source it with the correct relative path for the script depth
 4. Place configs in `configs/{component}/`
 5. New components are automatically picked up from the installation arrays
 
@@ -412,7 +401,7 @@ gpg --list-secret-keys --keyid-format=long  # Find key ID
 1. Add detection to `bin/dot` `detect_system()`
 2. Create `script/{platform}_installation.sh`
 3. Implement component scripts
-4. Choose package manager (brew/apt/dnf/pacman)
+4. Choose package manager or base profile (brew for macOS, pacman/AUR for Arch, apt for the server profile)
 
 ---
 
@@ -427,4 +416,4 @@ gpg --list-secret-keys --keyid-format=long  # Find key ID
 
 ---
 
-_Tested across macOS, Arch Linux, Ubuntu, Fedora, and WSL. Fork and adapt for your needs._
+_Tested across macOS, Arch Linux, and lightweight Linux server environments. Fork and adapt for your needs._

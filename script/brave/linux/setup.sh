@@ -13,8 +13,6 @@ BRAVE_POLICY_DIR="$HOME/.config/BraveSoftware/Brave-Browser/policies/managed"
 if ! command -v brave-browser &>/dev/null && ! command -v brave &>/dev/null; then
     info "Brave Browser not found."
     info "Install instructions:"
-    info "  Ubuntu/Debian: https://brave.com/linux/#debian-ubuntu-mint"
-    info "  Fedora: https://brave.com/linux/#fedora-centos-streamrhel"
     info "  Arch: pacman -S brave-bin (AUR)"
     info "Skipping Brave policy setup..."
     exit 0

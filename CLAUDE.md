@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-Opinionated, cross-platform dotfiles supporting macOS, Linux (Fedora, Ubuntu, Arch), and WSL with personal/work environment configurations. Uses a modular, script-based architecture with symlink-based configuration management.
+Opinionated dotfiles supporting macOS, Arch Linux, and lightweight Linux server environments with personal/work configurations. Uses a modular, script-based architecture with symlink-based configuration management.
 
 ### Target Systems
 
@@ -13,9 +13,9 @@ These dotfiles are actively used across four environments:
 | System | Platform | Profile | Use Case |
 |--------|----------|---------|----------|
 | **Main desktop** | Arch Linux | `linux_arch` / personal | Primary dev machine — full setup with Hyprland, VPN split tunnel, all tools |
-| **Work laptop** | macOS | `mac` / work | Work environment — Brewfile.work packages, work git email, Aerospace WM |
+| **Work laptop** | macOS | `mac_work` / work | Work environment — Brewfile.work packages, work git email, Rift/SketchyBar desktop setup |
 | **Personal laptop** | Arch Linux (omarchy) | `linux_arch` / personal | Omarchy base + dotfiles customizations layered on top |
-| **LXC containers** | Ubuntu/Debian (homelab) | `linux_server` | Lightweight — tmux, neovim, zsh, git only (no desktop/GUI components) |
+| **LXC containers** | Linux server (homelab) | `linux_server` | Lightweight CLI profile with server packages, git, zsh, vim-starter, tmux, starship, fastfetch, Claude, and agent skills |
 
 When adding new features, consider which systems they apply to. Desktop-specific configs (Hyprland, VPN, fonts) only belong in the full Arch/mac profiles. Core CLI tools (tmux, nvim, zsh, git) should work across all profiles including the server/LXC setup.
 
@@ -31,7 +31,7 @@ curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/boo
 
 # Direct installation with explicit configuration
 ./bin/dot --system mac --work          # Mac work environment
-./bin/dot --system linux_ubuntu --personal
+./bin/dot --system linux_arch --personal
 ```
 
 ### Management Commands
@@ -70,7 +70,7 @@ script/
   │   ├── symlink.sh             # Symlink creation with override/backup/skip prompts
   │   │                          # Supports DOT_SYMLINK_MODE for non-interactive use
   │   └── check_ssh.sh           # GitHub SSH preflight check
-  ├── {platform}_installation.sh # Platform installers (mac, linux_ubuntu, etc.)
+  ├── {platform}_installation.sh # Platform installers (mac, linux_arch, linux_server, etc.)
   └── {component}/{platform}/setup.sh  # Component-specific setup scripts
 configs/                          # Configuration files (symlinked to home)
   ├── nvim/                      # Neovim with LazyVim
@@ -81,13 +81,11 @@ configs/                          # Configuration files (symlinked to home)
   ├── ghostty/                   # Ghostty terminal (macOS)
   ├── starship/                  # Starship prompt
   ├── hypr/                      # Hyprland (Arch)
-  ├── i3/, sway/                 # i3/Sway window managers (Linux)
+  ├── sway/                      # Sway window manager config
   ├── claude/, codex/, opencode/ # AI tool configs
   ├── ai-rules/                  # AI assistant rules (Cursor, Aider, Avante)
   ├── vpn-split/                 # AirVPN WireGuard split tunnel (Arch)
   └── ...                        # ~40 total config dirs (lazygit, bat, btop, etc.)
-crates/
-  └── otobun/                    # Rust TUI — interactive dotfiles installer (WIP)
 functions/
   └── system-funcs.sh            # Shared shell functions
 .dotconfig                        # Generated config file (DOT_NAME, DOT_EMAIL, etc.)
@@ -100,7 +98,7 @@ functions/
 DOT_NAME="Jordan Garcia"           # User's full name
 DOT_EMAIL="user@example.com"       # Git email address
 DOT_ENVIRONMENT="work|personal"    # Environment type
-DOT_SYSTEM="mac|linux_ubuntu|..."  # Installation profile
+DOT_SYSTEM="mac|linux_arch|..."  # Installation profile
 DOT_YUBIKEY="ABC123..."            # GPG key ID for git signing (optional)
 ```
 
@@ -108,20 +106,21 @@ DOT_YUBIKEY="ABC123..."            # GPG key ID for git signing (optional)
 - `$WORK_ENV` - Set to "1" when `DOT_ENVIRONMENT="work"`
 - All `DOT_*` variables exported for component scripts
 
-**Environment Auto-Detection Logic**:
-1. Check git config email for `@nestgenomics.com` → work environment
-2. Check `WORK_ENV` or `--work` flag → work environment
-3. Default → personal environment
+**Environment Selection Logic**:
+1. Interactive setup suggests `work` when `git config user.email` contains `@nestgenomics.com`; otherwise it suggests `personal`
+2. `--work` and `--personal` set `DOT_ENVIRONMENT` directly for non-interactive runs
+3. During installation, `DOT_ENVIRONMENT="work"` exports `WORK_ENV=1` for component scripts
+4. `script/apps/mac/setup.sh` also treats an existing `WORK_ENV` or Nest git email as work mode when selecting Brewfiles
 
 ### Platform Detection
 
 **System Detection** (`detect_system()` in `bin/dot`):
 - macOS: `$OSTYPE == "darwin"*` → `mac`
-- Linux: Parse `/etc/os-release` → `linux_ubuntu`, `linux_fedora`, `linux_arch`
+- Linux: Parse `/etc/os-release` → `linux_arch` for Arch; unsupported distros return `linux_unknown`
 - Maps to installation scripts: `script/{detected}_installation.sh`
 
 **Auto-Selection Logic**:
-1. Exact match: `linux_ubuntu` → `script/linux_ubuntu_installation.sh`
+1. Exact match: `linux_arch` → `script/linux_arch_installation.sh`
 2. Partial match: `mac` → first `mac*` installation script
 3. Work variant: `mac` + work env → `script/mac_work_installation.sh` (if exists)
 
@@ -178,7 +177,8 @@ set -euo pipefail  # Strict error handling
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
-# Source utilities
+# Source utilities. Use ../common from script/{component}/setup.sh
+# and ../../common from script/{component}/{platform}/setup.sh.
 source "$SCRIPT_DIR/../common/log.sh"       # Logging functions
 source "$SCRIPT_DIR/../common/symlink.sh"   # Symlink utility (if needed)
 
@@ -196,7 +196,7 @@ link_file "$SOURCE" "$TARGET"
 
 **Platform-Specific Scripts**:
 - Location: `script/{component}/{platform}/setup.sh`
-- Platform: `mac/`, `linux/`, `fedora/`, `ubuntu/`, `arch/`
+- Platform: `mac/`, `linux/`, `arch/`
 - Example: `script/lazygit/mac/setup.sh`, `script/hypr/linux/setup.sh`
 
 **Installation Array Pattern** (`script/mac_installation.sh`):
@@ -207,17 +207,26 @@ component_installation=(
     git
     ssh
     gh/mac
+    notes
     zsh
     vim
-    neovim/mac    # Platform-specific path
+    node
+    neovim/mac
     tmux
     fonts/mac
     starship
+    rift/mac
     ghostty/mac
     lazygit/mac
     claude
+    claude-mem
+    agents
     codex
-    # ... more components
+    fastfetch
+    opencode
+    brave/mac
+    sunshine/mac
+    appearance-watcher/mac
 )
 
 for component in "${component_installation[@]}"; do
@@ -278,7 +287,7 @@ export LOG_LEVEL=error    # Only errors
 1. **Add detection** to `bin/dot` `detect_system()` function
 2. **Create installer**: `script/{platform}_installation.sh`
 3. **Implement component scripts**: `script/{component}/{platform}/setup.sh`
-4. **Choose package manager**: brew (macOS), apt (Ubuntu), dnf (Fedora), pacman (Arch)
+4. **Choose package manager or base profile**: brew (macOS), pacman/AUR (Arch), apt for the Linux server profile
 
 ### Script Guidelines
 
@@ -325,7 +334,7 @@ git config --global commit.gpgsign true
   - Restart if frozen: `brew services restart sketchybar`
 - **Brewfile**: Environment-aware (work/personal package lists)
 - **System Tweaks**: Disables press-and-hold, sets Screenshots folder
-- **Work variant**: `script/mac_work_installation.sh` extends the base mac install
+- **Work variant**: `script/mac_work_installation.sh` is a separate work-focused profile; it does not simply append to `script/mac_installation.sh`
 
 ### Arch Linux
 - **Window Manager**: Hyprland with HyDE theme
@@ -334,15 +343,8 @@ git config --global commit.gpgsign true
 - **T2 MacBook Support**: Requires manual `apple-bce` driver installation
 - **Kernel**: Use `linux-t2` for MacBook hardware compatibility
 
-### Fedora
-- **Window Manager**: i3wm
-- **Display**: Polybar panel
-
-### Ubuntu
-- **Desktop**: GNOME with extensions
-
 ### Linux Server (LXC)
-- Lightweight profile: tmux, neovim, zsh, git only
+- Lightweight profile: server packages, git, zsh, vim-starter, tmux, starship, fastfetch, Claude, and agent skills
 - Installation: `script/linux_server_installation.sh`
 
 ## VPN Split Tunneling (AirVPN + WireGuard)
@@ -400,7 +402,7 @@ script/vpn/linux/setup.sh            # Component setup (symlinks, dnsmasq/nftabl
 tmux source ~/.tmux.conf
 
 # Install plugins (inside tmux)
-<prefix> + I    # Default prefix is Ctrl+b, then press I
+<prefix> + I    # Prefix is Ctrl+a, then press I
 ```
 
 ### Tmux Continuum Caveat
