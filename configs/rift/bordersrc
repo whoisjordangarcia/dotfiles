@@ -15,7 +15,7 @@ fi
 options=(
 	style=round
 	width=4.0
-	hidpi=off
+	hidpi=on
 	active_color=$active_color
 	inactive_color=$inactive_color
 	background_color=$background_color

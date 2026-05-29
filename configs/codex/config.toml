@@ -16,9 +16,6 @@ enabled = true
 [plugins."superpowers@openai-curated"]
 enabled = true
 
-[plugins."browser-use@openai-bundled"]
-enabled = true
-
 [plugins."documents@openai-primary-runtime"]
 enabled = true
 
@@ -26,6 +23,12 @@ enabled = true
 enabled = true
 
 [plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."chrome@openai-bundled"]
 enabled = true
 
 [notice.model_migrations]
@@ -58,12 +61,18 @@ trust_level = "trusted"
 [projects."/Users/jordangarcia/dev/notes"]
 trust_level = "trusted"
 
+[projects."/Users/nest/dev/dotfiles"]
+trust_level = "trusted"
+
+[projects."/Users/nest/projects/nest"]
+trust_level = "trusted"
+
 [marketplaces.openai-bundled]
-last_updated = "2026-04-24T02:47:58Z"
+last_updated = "2026-05-19T19:42:08Z"
 source_type = "local"
-source = "/Users/jordangarcia/.codex/.tmp/bundled-marketplaces/openai-bundled"
+source = "/Users/nest/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-04-24T02:46:52Z"
+last_updated = "2026-05-19T20:08:04Z"
 source_type = "local"
-source = "/Users/jordangarcia/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+source = "/Users/nest/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"

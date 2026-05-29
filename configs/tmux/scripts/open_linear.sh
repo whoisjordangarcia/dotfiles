@@ -11,7 +11,9 @@ if [ -z "$branch" ]; then
     exit 1
 fi
 
-ticket=$(echo "$branch" | grep -oE '[A-Z]+-[0-9]+' | head -1)
+# Case-insensitive match (branches like jordan/nes-3983-... are lowercase),
+# normalized to uppercase since Linear issue IDs are uppercase (NES-3983).
+ticket=$(echo "$branch" | grep -oiE '[A-Z]+-[0-9]+' | head -1 | tr '[:lower:]' '[:upper:]')
 if [ -z "$ticket" ]; then
     msg="No ticket ID in branch: $branch"
     osascript -e "display notification \"$msg\" with title \"tmux: Open Linear\"" 2>/dev/null

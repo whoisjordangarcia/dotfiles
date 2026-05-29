@@ -47,4 +47,6 @@ for arg in $ssh_args; do
 done
 
 [ -z "$host" ] && exit 0
-[ -n "$user" ] && echo "${user}@${host}" || echo "$host"
+# printf '%s' (no trailing newline): a newline in a tmux #() status segment renders
+# as an extra status row on terminals that don't collapse it.
+[ -n "$user" ] && printf '%s' "${user}@${host}" || printf '%s' "$host"

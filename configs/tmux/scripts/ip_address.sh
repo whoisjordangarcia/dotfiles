@@ -97,4 +97,8 @@ get_ip_address() {
     esac
 }
 
-get_ip_address
+# Emit on a single line with no trailing newline: a trailing/embedded newline in a
+# tmux #() status segment is drawn as an extra status row (visible as a doubled
+# status line) on terminals that don't collapse it. $(...) strips trailing
+# newlines and printf '%s' adds none.
+printf '%s' "$(get_ip_address)"
