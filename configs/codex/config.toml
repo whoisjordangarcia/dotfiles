@@ -2,7 +2,6 @@ model = "gpt-5.5"
 personality = "pragmatic"
 model_reasoning_effort = "medium"
 plan_mode_reasoning_effort = "xhigh"
-service_tier = "fast"
 
 [plugins."computer-use@openai-bundled"]
 enabled = true
@@ -27,6 +26,9 @@ enabled = true
 
 [plugins."presentations@openai-primary-runtime"]
 enabled = true
+
+[notice]
+fast_default_opt_out = true
 
 [notice.model_migrations]
 gpt-5-codex = "gpt-5.3-codex"
@@ -58,8 +60,14 @@ trust_level = "trusted"
 [projects."/Users/jordangarcia/dev/notes"]
 trust_level = "trusted"
 
+[projects."/Users/jordangarcia"]
+trust_level = "trusted"
+
+[projects."/Users/jordangarcia/dev/ClockScreenSaver"]
+trust_level = "trusted"
+
 [marketplaces.openai-bundled]
-last_updated = "2026-04-24T02:47:58Z"
+last_updated = "2026-05-31T21:54:15Z"
 source_type = "local"
 source = "/Users/jordangarcia/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
