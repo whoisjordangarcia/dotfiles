@@ -25,6 +25,7 @@ component_installation=(
   starship
   rift/mac
   ghostty/mac
+  cmux
   # code
   lazygit/mac
   #bun/mac

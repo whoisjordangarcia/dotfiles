@@ -31,7 +31,9 @@ echo -e "  ───────────────────────
 echo ""
 
 found=0
-declare -A seen_ports
+# Space-delimited set of ports already printed. Avoids `declare -A`, which the
+# stock macOS /bin/bash (3.2) does not support — keeps this portable everywhere.
+seen_ports=""
 
 # Get all listening TCP ports
 while IFS= read -r line; do
@@ -43,13 +45,13 @@ while IFS= read -r line; do
     port=$(echo "$addr" | grep -oE '[0-9]+$')
 
     [ -z "$port" ] && continue
-    [ -n "${seen_ports[$port]}" ] && continue
+    case " $seen_ports " in *" $port "*) continue;; esac
 
     # Check if this process's working dir is under our worktree
     proc_cwd=$(lsof -p "$pid" -a -d cwd -Fn 2>/dev/null | grep '^n' | head -1 | sed 's/^n//')
 
     if [[ "$proc_cwd" == "$wt_path"* ]]; then
-        seen_ports[$port]=1
+        seen_ports="$seen_ports $port"
         echo -e "  ${GREEN}●${RESET}  ${BOLD}http://localhost:${port}${RESET}  ${DIM}(${proc}, pid ${pid})${RESET}"
         found=1
     fi

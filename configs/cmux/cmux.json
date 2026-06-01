@@ -1,0 +1,66 @@
+{
+  "$schema": "https://raw.githubusercontent.com/manaflow-ai/cmux/main/web/data/cmux.schema.json",
+  "schemaVersion": 1,
+
+  // --- Pane focus: vim home-row, ported from vim-tmux-navigator ---
+  // cmux can't do the plugin's "only-navigate-outside-vim" trick, and bare ctrl+h/j/k/l
+  // would clobber readline/vim inside the pane, so we use cmd+opt+<hjkl> (a safe namespace).
+  // This REPLACES the default opt+cmd+arrow focus bindings.
+  "shortcuts": {
+    "bindings": {
+      // Pane focus: vim home-row (⌥⌘ = Cmd-based, intercepted by the app — works inside TUIs).
+      "focusLeft": "cmd+opt+h",
+      "focusDown": "cmd+opt+j",
+      "focusUp": "cmd+opt+k",
+      "focusRight": "cmd+opt+l",
+
+      // tmux-style PREFIX CHORDS for splits only: press ctrl+a, release, then the key.
+      // (Non-shift second keys — shifted keys like % / ' did not register as chords.)
+      // Everything else is LEFT AT ITS cmux DEFAULT on purpose — overriding those broke
+      // native Cmd shortcuts: Cmd+T new tab (same path), Cmd+W close, Cmd+R rename,
+      // Ctrl+Cmd+[ / ] workspace nav, Cmd+Shift+Enter zoom.
+      "splitRight": ["ctrl+a", "\\"],
+      "splitDown":  ["ctrl+a", "-"]
+    }
+  },
+
+  // --- Native replacements for tmux statusline/resurrect machinery ---
+  "terminal": {
+    "autoResumeAgentSessions": true
+  },
+  "automation": {
+    "claudeCodeIntegration": true,
+    "suppressSubagentNotifications": true
+  },
+  "sidebar": {
+    "showPullRequests": true,
+    "showBranchDirectory": true,
+    "watchGitStatus": true,
+    "showPorts": true
+  },
+
+  // --- Custom commands, ported from tmux prefix-binds ---
+  // The open_linear / dev_dashboard scripts are reused verbatim from ~/.tmux/scripts
+  // (they already default to $PWD and shell out, so they're multiplexer-agnostic).
+  // Exposed as keyboard shortcuts: ⌃⌘I (Linear), ⌃⌘W (dev-server dashboard).
+  "actions": {
+    "jg.openLinear": {
+      "type": "command",
+      "title": "Open Linear ticket from branch",
+      "subtitle": "Parses NES-#### from branch name",
+      "command": "\"$HOME/.tmux/scripts/open_linear.sh\" \"$PWD\"",
+      "target": "newTabInCurrentPane",
+      "shortcut": "ctrl+cmd+i",
+      "icon": { "type": "emoji", "value": "📋" }
+    },
+    "jg.devDashboard": {
+      "type": "command",
+      "title": "Worktree dev-server dashboard",
+      "subtitle": "Listening ports for this worktree",
+      "command": "\"$HOME/.tmux/scripts/dev_dashboard.sh\" \"$PWD\"",
+      "target": "newTabInCurrentPane",
+      "shortcut": "ctrl+cmd+w",
+      "icon": { "type": "emoji", "value": "📊" }
+    }
+  }
+}

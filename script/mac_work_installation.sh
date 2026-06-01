@@ -15,6 +15,7 @@ component_installation=(
 	zsh
 	vim
 	tmux
+	cmux
 	node
 	brave/mac
 	fonts/mac

@@ -31,6 +31,8 @@ resize-overlay = never
 cursor-style = "block"
 cursor-style-blink = false
 
+macos-non-native-fullscreen = true
+
 # Cursor styling + SSH session terminfo
 # no-cursor: prevent shell integration from overriding cursor-style settings above
 # ssh-env: auto-send TERM/TERMINFO to remote hosts so ghostty terminfo works over SSH

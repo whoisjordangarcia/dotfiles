@@ -68,7 +68,6 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus",
   "hooks": {},
   "statusLine": {
     "type": "command",
@@ -91,20 +90,17 @@
     "nest-posthog@nest-genomics-skills": false,
     "nest-pr@nest-genomics-skills": false,
     "nest-ralph-prd@nest-genomics-skills": false,
-    "nest-release-stg@nest-genomics-skills": false,
-    "nest-release-summary@nest-genomics-skills": false,
     "nest-sentry@nest-genomics-skills": false,
     "nest-slite@nest-genomics-skills": false,
-    "nest-ticket-writer@nest-genomics-skills": false,
     "superpowers@superpowers-marketplace": true,
-    "swift-lsp@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": false,
     "typescript-lsp@claude-plugins-official": false,
-    "nest-test-planning@nest-genomics-skills": true,
     "nest-summary-html@nest-genomics-skills": true,
-    "nest-brainstorming@nest-genomics-skills": true,
-    "nest-writing-plans@nest-genomics-skills": true,
     "nest-factory@nest-genomics-skills": true,
-    "nest-implementation@nest-genomics-skills": true
+    "nest-snyk-code@nest-genomics-skills": true,
+    "nest-gpt-validate@nest-genomics-skills": true,
+    "infracost@infracost": true,
+    "nest-skills-report@nest-genomics-skills": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -130,6 +126,12 @@
         "source": "github",
         "repo": "thedotmack/claude-mem"
       }
+    },
+    "infracost": {
+      "source": {
+        "source": "github",
+        "repo": "infracost/claude-skills"
+      }
     }
   },
   "outputStyle": "Explanatory",
@@ -154,7 +156,7 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "medium",
+  "effortLevel": "high",
   "autoUpdatesChannel": "latest",
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,

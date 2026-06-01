@@ -36,7 +36,7 @@ stack_offset = 40.0
 default_orientation = "perpendicular"
 
 [settings.layout.gaps.outer]
-top = 44
+top = 40
 left = 10
 bottom = 10
 right = 10
@@ -70,9 +70,12 @@ drag_swap_fraction = 0.5
 [virtual_workspaces]
 enabled = true
 default_workspace_count = 10
-# auto-assign is enabled but display-change flicker is handled by
-# the debounced display-change script (configs/rift/display-change.sh)
-auto_assign_windows = true
+# Disabled temporarily to test cross-display window-move flicker.
+# When enabled, Rift re-evaluates workspace assignment on windows_changed,
+# which can trigger a brief re-tile during display moves. The
+# display-change.sh debouncer covers hotplug events but not the
+# `display move-window` keybind path.
+auto_assign_windows = false
 preserve_focus_per_workspace = true
 workspace_auto_back_and_forth = false
 reapply_app_rules_on_title_change = false

@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> [!IMPORTANT]
+> **NEVER commit secrets or sensitive information.** This is a public repository. Do not add private keys, API tokens, passwords, `.env` values, real IP addresses/hostnames, or any machine-specific credentials — not even temporarily. Before staging files, inspect any new/untracked file (especially anything with `600` permissions or in a config dir) for sensitive content. Use the template/`Include`/`source` patterns described in [Security — No Sensitive Data in This Repository](#security--no-sensitive-data-in-this-repository).
+
 ## Repository Overview
 
 Opinionated, cross-platform dotfiles supporting macOS, Linux (Fedora, Ubuntu, Arch), and WSL with personal/work environment configurations. Uses a modular, script-based architecture with symlink-based configuration management.
