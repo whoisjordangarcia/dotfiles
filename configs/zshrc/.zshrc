@@ -1,15 +1,9 @@
 if [[ -n "$SSH_CONNECTION" ]]; then export TERM=xterm-256color; fi
 
-source_files() {
-    for config_file in "$@"; do
-        if [[ -f "$config_file" ]]; then
-            echo "Loading $config_file"
-            source "$config_file"
-            return 0
-        fi
-    done
-    return 1
-}
+# Keep $PATH entries unique so re-sourcing this file (e.g. `reload`) is
+# idempotent — without this, every prepend in .zshrc.{envvars,paths} stacks
+# another duplicate copy onto PATH.
+typeset -U path PATH
 
 # defaults
 source ~/.zshrc-modules/.zshrc.history
@@ -41,7 +35,12 @@ fi
 export GPG_TTY=$TTY
 export PATH="$HOME/.local/bin:$PATH"
 
-# bun completions
-[ -s "/home/jordan/.bun/_bun" ] && source "/home/jordan/.bun/_bun"
+# bun completions (BUN_INSTALL is exported in .zshrc.envvars; defaults to ~/.bun)
+[ -s "${BUN_INSTALL:-$HOME/.bun}/_bun" ] && source "${BUN_INSTALL:-$HOME/.bun}/_bun"
 
-alias claude-mem='bun "/Users/nest/.claude/plugins/cache/thedotmack/claude-mem/12.1.3/scripts/worker-service.cjs"'
+# Resolve the highest installed claude-mem plugin version instead of hardcoding
+# one (the pinned path breaks on every plugin update).
+_claude_mem_base="$HOME/.claude/plugins/cache/thedotmack/claude-mem"
+_claude_mem_latest=("$_claude_mem_base"/*/scripts/worker-service.cjs(Nn))
+(( ${#_claude_mem_latest} )) && alias claude-mem="bun ${_claude_mem_latest[-1]}"
+unset _claude_mem_base _claude_mem_latest

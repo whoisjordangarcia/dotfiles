@@ -9,7 +9,9 @@ decode_url() {
     return 1
   fi
 
-  python -c "import sys, urllib.parse as ul; print(ul.unquote_plus('$1'))"
+  # Pass the URL as argv (sys.argv[1]) rather than interpolating it into the
+  # source — interpolation breaks on a literal ' and is an injection vector.
+  python3 -c 'import sys, urllib.parse as ul; print(ul.unquote_plus(sys.argv[1]))' "$1"
 }
 
 encode64() {
@@ -86,15 +88,28 @@ web2app-remove() {
 #  Git Worktree Helpers
 # ==============================================================================
 
-# Wrapper: auto-remove stale index.lock before mutating git commands
+# Wrapper: auto-remove a *stale* index.lock before mutating git commands.
+# A lock is only treated as stale when BOTH hold:
+#   - no git process matching a mutating subcommand is running, and
+#   - the lock file is older than _GIT_LOCK_STALE_SECS.
+# The age guard prevents clobbering a lock a live editor/tool (nvim fugitive,
+# lazygit, VS Code, the `wt` worktree helper) is legitimately holding — those
+# don't match the pgrep pattern, so the old version could corrupt the index.
+_GIT_LOCK_STALE_SECS=30
 git() {
   if [[ "$1" == "commit" || "$1" == "add" || "$1" == "merge" || "$1" == "rebase" || "$1" == "checkout" ]]; then
-    local git_dir
+    local git_dir lock_mtime now
     git_dir=$(command git rev-parse --git-dir 2>/dev/null)
     if [[ -n "$git_dir" && -f "$git_dir/index.lock" ]]; then
       if ! pgrep -f "git (commit|add|merge|rebase|checkout)" > /dev/null 2>&1; then
-        rm -f "$git_dir/index.lock"
-        echo "Removed stale index.lock"
+        zmodload zsh/stat 2>/dev/null
+        zmodload zsh/datetime 2>/dev/null   # provides $EPOCHSECONDS
+        zstat -A lock_mtime +mtime "$git_dir/index.lock" 2>/dev/null
+        now=$EPOCHSECONDS
+        if [[ -n "$lock_mtime" && -n "$now" && $(( now - lock_mtime )) -ge $_GIT_LOCK_STALE_SECS ]]; then
+          rm -f "$git_dir/index.lock"
+          echo "Removed stale index.lock (older than ${_GIT_LOCK_STALE_SECS}s)"
+        fi
       fi
     fi
   fi
