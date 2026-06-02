@@ -34,7 +34,6 @@ ZSH_HIGHLIGHT_MAXLENGTH=512           # cap syntax-highlighting work to avoid la
 
 # --- Plugins ---
 source "$_plugin_dir/zsh-autosuggestions/zsh-autosuggestions.zsh"
-source "$_plugin_dir/nx-completion/nx-completion.plugin.zsh"
 # syntax-highlighting must be sourced LAST (it wraps zle widgets)
 source "$_plugin_dir/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 

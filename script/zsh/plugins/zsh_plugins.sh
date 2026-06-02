@@ -33,4 +33,3 @@ install_or_update_plugin() {
 
 install_or_update_plugin zsh-autosuggestions     https://github.com/zsh-users/zsh-autosuggestions
 install_or_update_plugin zsh-syntax-highlighting https://github.com/zsh-users/zsh-syntax-highlighting.git
-install_or_update_plugin nx-completion           https://github.com/jscutlery/nx-completion.git
