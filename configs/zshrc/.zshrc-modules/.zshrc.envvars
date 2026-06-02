@@ -5,6 +5,8 @@ if [[ -n $SSH_CONNECTION ]]; then
 else
   export EDITOR='nvim'
 fi
+# Some tools (git, kubectl, crontab) prefer $VISUAL for full-screen editors.
+export VISUAL="$EDITOR"
 
 # NVM_DIR is set in .zshrc.init (lightweight node manager)
 # Full nvm is available via: source "$HOME/.nvm/nvm.sh"
