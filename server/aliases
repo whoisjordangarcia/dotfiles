@@ -27,7 +27,6 @@ alias jerr='journalctl -p err -b'
 alias logfollow='tail -f /var/log/syslog'
 
 # Proxmox (if available)
-[[ -f /etc/pve/proxmox-release ]] && alias pveversion='pveversion'
 [[ -f /etc/pve/proxmox-release ]] && alias vmlist='qm list && pct list'
 [[ -f /etc/pve/proxmox-release ]] && alias vmr='qm restart'
 [[ -f /etc/pve/proxmox-release ]] && alias vms='qm stop'

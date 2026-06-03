@@ -14,9 +14,9 @@ echo ""
 log "Installing Jordan's Dotfiles..."
 echo ""
 
-# Install deps
+# Install deps (neovim is the preferred editor; bashrc falls back to vim/nano)
 if command -v apt-get &>/dev/null; then
-    sudo apt-get update -qq && sudo apt-get install -y -qq git curl vim tmux htop
+    sudo apt-get update -qq && sudo apt-get install -y -qq git curl vim neovim tmux htop
 fi
 
 # Clone or update
@@ -30,8 +30,8 @@ fi
 
 # Run setup
 cd "$DIR"
-chmod +x setup.sh
-bash setup.sh
+chmod +x server/setup.sh
+bash server/setup.sh
 
 echo ""
 success "Installation complete!"

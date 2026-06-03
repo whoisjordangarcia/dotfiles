@@ -9,10 +9,9 @@
 [[ -f "$HOME/.ssh/id_rsa" ]] && ssh-add "$HOME/.ssh/id_rsa" 2>/dev/null || true
 [[ -f "$HOME/.ssh/id_ed25519" ]] && ssh-add "$HOME/.ssh/id_ed25519" 2>/dev/null || true
 
-# Paths
+# Paths (all guarded — only added if the dir actually exists)
 [[ -d /usr/local/go/bin ]] && export PATH="$PATH:/usr/local/go/bin"
 [[ -d "$HOME/.cargo/bin" ]] && export PATH="$PATH:$HOME/.cargo/bin"
-[[ -d "$HOME/.local/share/pnpm" ]] && export PATH="$PATH:$HOME/.local/share/pnpm"
 
 # Locale
 export LANG=en_US.UTF-8
