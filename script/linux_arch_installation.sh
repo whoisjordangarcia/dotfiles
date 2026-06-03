@@ -1,4 +1,4 @@
-##!/bin/bash
+#!/bin/bash
 
 source ./script/common/log.sh
 
@@ -32,7 +32,6 @@ component_installation=(
 	dolphin/linux
 	vpn/linux
 	ufw/linux
-	gpu-switch/linux
 )
 
 for component in "${component_installation[@]}"; do

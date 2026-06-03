@@ -1,6 +1,9 @@
 #!/bin/bash
+set -euo pipefail
 
-source "./script/common/log.sh"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+
+source "$SCRIPT_DIR/script/common/log.sh"
 
 # Check for --reconfigure flag
 if [[ "$1" == "--reconfigure" ]]; then
