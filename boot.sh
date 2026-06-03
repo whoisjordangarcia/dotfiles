@@ -1,12 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# Colors for output
-RED="\033[0;31m"
-GREEN="\033[00;32m"
-YELLOW="\033[0;33m"
-BLUE="\033[00;34m"
-RESET="\033[0m"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+
+source "$SCRIPT_DIR/script/common/log.sh"
 
 # Configuration
 DOTFILES_REPO="git@github.com:whoisjordangarcia/dotfiles.git"

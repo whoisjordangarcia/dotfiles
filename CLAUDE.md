@@ -89,8 +89,6 @@ configs/                          # Configuration files (symlinked to home)
   ├── ai-rules/                  # AI assistant rules (Cursor, Aider, Avante)
   ├── vpn-split/                 # AirVPN WireGuard split tunnel (Arch)
   └── ...                        # ~40 total config dirs (lazygit, bat, btop, etc.)
-crates/
-  └── otobun/                    # Rust TUI — interactive dotfiles installer (WIP)
 functions/
   └── system-funcs.sh            # Shared shell functions
 .dotconfig                        # Generated config file (DOT_NAME, DOT_EMAIL, etc.)
