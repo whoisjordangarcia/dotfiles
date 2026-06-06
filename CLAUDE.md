@@ -350,6 +350,23 @@ AI-initiated sensitive Bash commands require biometric approval via a Claude Cod
   ELASTIC_STG_API_KEY=$(opsec "$ELASTIC_STG_API_KEY_REF") some-command
   ```
 
+### Agent Skills
+
+Shared agent skills live in `configs/skills/` (one directory per skill, each with a `SKILL.md` plus optional `references/`, `templates/`). `script/skills/setup.sh` projects each skill into every agent CLI (`~/.claude/skills/`, `~/.cursor/skills/`, `~/.codex/skills/`) via per-skill symlinks, so **every skill committed here is version-controlled and syncs to all machines** — including the LXC server, which needs no `npx`/Node to use them. (`configs/claude/skills` is itself a symlink to `../skills` for backward compatibility.)
+
+**Adding a skill from the open ecosystem** (`npx skills`, browse at https://skills.sh):
+
+```bash
+# ALWAYS use --copy so real files land in the repo dir, not a symlink
+npx skills add <owner/repo@skill> --copy -a claude
+git add configs/skills/<skill> && git commit
+```
+
+> [!IMPORTANT]
+> **Never `npx skills add` without `--copy`.** A bare install symlinks the skill into `~/.claude/skills/<name>` pointing at the machine-local CLI store `~/.agents/skills/` (untracked). That commits a **broken symlink** that dangles on every other machine. `--copy` writes real files instead. (This is exactly how `prd/SKILL.md` ended up a dangling absolute symlink — `find -L configs/skills -type l` lists such breakage on both macOS and Linux.)
+
+Hand-authored skills are just a directory with a `SKILL.md`. Create one with `npx skills init <name>` inside `configs/skills/`, or by hand. Skills are public — never commit secrets, API keys, or real hostnames (see the Security section).
+
 ### YubiKey Git Signing Setup
 
 GPG signing configuration for commits (optional):

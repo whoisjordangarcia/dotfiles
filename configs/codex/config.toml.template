@@ -1,0 +1,106 @@
+# Codex config TEMPLATE — hand-authored, portable preferences only.
+#
+# This file is COPIED (not symlinked) to ~/.codex/config.toml on a fresh install
+# by script/codex/setup.sh, and only when that file does not already exist.
+#
+# Why a template instead of symlinking the live config:
+# Codex rewrites ~/.codex/config.toml at runtime with MACHINE-SPECIFIC and
+# sometimes WORK-SPECIFIC state — [projects.*] trust paths, [marketplaces.*]
+# absolute paths/timestamps, [mcp_servers.node_repl] absolute /Applications paths
+# + SHA256s + app version, and a `notify` binary path. Symlinking it back into
+# this PUBLIC repo would leak those and churn on every machine. Keep that state
+# local; keep only stable preferences here.
+
+model = "gpt-5.5"
+personality = "pragmatic"
+model_reasoning_effort = "medium"
+plan_mode_reasoning_effort = "xhigh"
+service_tier = "default"
+
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[plugins."github@openai-curated"]
+enabled = true
+
+[plugins."linear@openai-curated"]
+enabled = true
+
+[plugins."superpowers@openai-curated"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."chrome@openai-bundled"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[notice]
+fast_default_opt_out = true
+
+[notice.model_migrations]
+gpt-5-codex = "gpt-5.3-codex"
+
+[tui]
+theme = "coldark-dark"
+status_line = ["model-with-reasoning", "current-dir", "project-name", "git-branch", "context-remaining", "five-hour-limit", "weekly-limit", "context-window-size", "fast-mode", "thread-title"]
+terminal_title = ["spinner", "project", "app-name", "task-progress"]
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+
+# Portable: invokes `xcrun` from PATH, no absolute path. (macOS-only; harmless
+# elsewhere — Codex just skips an MCP server whose command isn't found.)
+[mcp_servers.xcode]
+command = "xcrun"
+args = ["mcpbridge"]
+
+[desktop]
+ambient-suggestions-enabled = false
+appearanceTheme = "system"
+appearanceLightCodeThemeId = "absolutely"
+appearanceDarkCodeThemeId = "absolutely"
+conversationDetailMode = "STEPS_COMMANDS"
+
+[desktop.appearanceLightChromeTheme]
+accent = "#cc7d5e"
+contrast = 45
+ink = "#2d2d2b"
+opaqueWindows = false
+surface = "#f9f9f7"
+
+[desktop.appearanceLightChromeTheme.fonts]
+
+[desktop.appearanceLightChromeTheme.semanticColors]
+diffAdded = "#00c853"
+diffRemoved = "#ff5f38"
+skill = "#cc7d5e"
+
+[desktop.appearanceDarkChromeTheme]
+accent = "#cc7d5e"
+contrast = 60
+ink = "#f9f9f7"
+opaqueWindows = false
+surface = "#2d2d2b"
+
+[desktop.appearanceDarkChromeTheme.fonts]
+
+[desktop.appearanceDarkChromeTheme.semanticColors]
+diffAdded = "#00c853"
+diffRemoved = "#ff5f38"
+skill = "#cc7d5e"
+
+[desktop.open-in-target-preferences]
+global = "fileManager"
+
+[features]
+js_repl = false

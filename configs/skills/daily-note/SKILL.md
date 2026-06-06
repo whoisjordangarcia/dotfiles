@@ -24,7 +24,7 @@ Create or append to today's daily note in the Obsidian vault.
 **Always** place daily notes in:
 
 ```
-/Users/nest/dev/notes/03 - Daily Notes/
+$HOME/dev/notes/03 - Daily Notes/
 ```
 
 ## Naming Convention
@@ -43,7 +43,7 @@ YYYY-MM-DD <topic-slug>.md
 Before creating a new file, **always check** if a note for today already exists:
 
 ```bash
-ls "/Users/nest/dev/notes/03 - Daily Notes/" | grep "^$(date +%Y-%m-%d)"
+ls "$HOME/dev/notes/03 - Daily Notes/" | grep "^$(date +%Y-%m-%d)"
 ```
 
 - If a matching file exists, **read it and append** new content to the relevant section
@@ -70,7 +70,7 @@ ls "/Users/nest/dev/notes/03 - Daily Notes/" | grep "^$(date +%Y-%m-%d)"
 
 When the user asks to see, read, show, or review today's daily note:
 
-1. Find today's file in `/Users/nest/dev/notes/03 - Daily Notes/` matching `YYYY-MM-DD*.md`
+1. Find today's file in `$HOME/dev/notes/03 - Daily Notes/` matching `YYYY-MM-DD*.md`
 2. If multiple files exist for today (different topic slugs), list them and ask which to show — or show all if the user said "everything for today"
 3. Read the file and present its contents to the user verbatim (preserve markdown formatting)
 4. Do NOT edit or append anything when the user is only asking to view

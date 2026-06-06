@@ -436,6 +436,10 @@ displayUsageAndExit() {
 	exit
 }
 
+# Flag defaults (declared before parsing so `set -u` never trips on them)
+FORCE_INTERACTIVE=0
+DIRECT_INSTALL=0
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
 	case "$1" in
@@ -522,7 +526,7 @@ if [[ "${DIRECT_INSTALL:-0}" == "1" && -n "${DOT_SYSTEM:-}" ]]; then
 	echo ""
 	save_config
 	run_installation
-elif [[ -z "$DOT_SYSTEM" ]] || [[ "$FORCE_INTERACTIVE" == "1" ]]; then
+elif [[ -z "${DOT_SYSTEM:-}" ]] || [[ "$FORCE_INTERACTIVE" == "1" ]]; then
 	if [[ "$FORCE_INTERACTIVE" == "1" ]]; then
 		info "Running interactive setup..."
 	else

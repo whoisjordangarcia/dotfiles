@@ -19,11 +19,12 @@ debug "Ensuring $HOME/.claude exists"
 mkdir -p "$HOME/.claude"
 
 # Ensure source config directories exist before symlinking
-mkdir -p "$SCRIPT_DIR/../../configs/claude/"{agents,commands,prompts}
+mkdir -p "$SCRIPT_DIR/../../configs/claude/"{agents,commands,prompts,skills}
 
 link_file "$SCRIPT_DIR/../../configs/claude/agents/" "$HOME/.claude/agents" "directory"
 link_file "$SCRIPT_DIR/../../configs/claude/commands/" "$HOME/.claude/commands" "directory"
 link_file "$SCRIPT_DIR/../../configs/claude/prompts/" "$HOME/.claude/prompts" "directory"
+link_file "$SCRIPT_DIR/../../configs/claude/skills/" "$HOME/.claude/skills" "directory"
 link_file "$SCRIPT_DIR/../../configs/claude/statusline.sh" "$HOME/.claude/statusline.sh"
 link_file "$SCRIPT_DIR/../../configs/claude/settings.json" "$HOME/.claude/settings.json"
 link_file "$SCRIPT_DIR/../../configs/claude/hooks/" "$HOME/.claude/hooks"

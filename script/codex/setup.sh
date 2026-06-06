@@ -24,7 +24,19 @@ fi
 npm i -g @openai/codex -f
 
 mkdir -p "$HOME/.codex"
-link_file "$SCRIPT_DIR/../../configs/codex/config.toml" "$HOME/.codex/config.toml"
+
+# Codex owns ~/.codex/config.toml at runtime (it rewrites trust paths, marketplace
+# state, desktop SHA256s, etc.), so we SEED it from a sanitized template instead of
+# symlinking — symlinking would push that machine/work-specific state back into this
+# public repo. Only seed when the file is absent so we never clobber a live config.
+CODEX_TEMPLATE="$SCRIPT_DIR/../../configs/codex/config.toml.template"
+CODEX_CONFIG="$HOME/.codex/config.toml"
+if [ ! -e "$CODEX_CONFIG" ]; then
+    step "Seeding $CODEX_CONFIG from template"
+    cp "$CODEX_TEMPLATE" "$CODEX_CONFIG"
+else
+    info "$CODEX_CONFIG already exists — leaving it untouched"
+fi
 
 # Skills live in configs/skills and are projected into each agent CLI.
 source "$SCRIPT_DIR/../skills/setup.sh"

@@ -1,1 +1,0 @@
-/Users/nest/projects/ralph-loop/skills/prd/SKILL.md

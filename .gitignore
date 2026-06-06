@@ -50,6 +50,11 @@ Brewfile.local
 # HyDE themes (large wallpaper assets)
 configs/hyde/themes/
 
+# Codex live config — app-managed runtime state (trust paths, marketplace
+# timestamps, machine-specific MCP/desktop blocks). Seeded from
+# configs/codex/config.toml.template; never tracked. See script/codex/setup.sh.
+configs/codex/config.toml
+
 # Compiled Go binaries
 bin/nxps
 nxps

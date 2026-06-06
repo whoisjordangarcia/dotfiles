@@ -130,10 +130,29 @@ format_reset() {
   fi
 }
 
+# ─── OSC 8 hyperlink support detection ───────────────────────────────
+# Terminus iOS and other mobile/non-Ghostty terminals don't support OSC 8;
+# sending those sequences causes raw escape text to render alongside the link text.
+_OSC8_OK=0
+if [ -n "$TMUX" ]; then
+  _ct=$(tmux display -p '#{client_termname}' 2>/dev/null || true)
+  case "$_ct" in
+    *ghostty*|*wezterm*|*iterm*|*kitty*) _OSC8_OK=1 ;;
+  esac
+else
+  case "${TERM_PROGRAM:-}" in
+    ghostty|iTerm.app|WezTerm|rio) _OSC8_OK=1 ;;
+  esac
+fi
+
 # ─── Helper: wrap text in an OSC 8 clickable link ───────────────────
 osc_link() {
   local url="$1" text="$2"
-  printf '\e]8;;%s\a%s\e]8;;\a' "$url" "$text"
+  if [ "$_OSC8_OK" = "1" ]; then
+    printf '\e]8;;%s\a%s\e]8;;\a' "$url" "$text"
+  else
+    printf '%s' "$text"
+  fi
 }
 
 # ─── Helper: fetch CI status into cache (network — runs under SWR) ───

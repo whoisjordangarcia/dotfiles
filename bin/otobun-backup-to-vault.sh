@@ -1,16 +1,16 @@
 #!/bin/bash
 
 # Configuration
-SOURCE="/home/jordan"
-DEST="/home/jordan/mounts/vault-single/backup"
+SOURCE="$HOME"
+DEST="$HOME/mounts/vault-single/backup"
 LOGFILE="$HOME/.vault-backup-logs/rsync-$(date +%Y%m%d-%H%M%S).log"
 
 # Create log directory
 mkdir -p "$(dirname "$LOGFILE")"
 
 # Check if destination is mounted
-if ! mountpoint -q "/home/jordan/mounts/vault-single"; then
-	echo "ERROR: Samba share not mounted at /home/jordan/mounts/vault-single"
+if ! mountpoint -q "$HOME/mounts/vault-single"; then
+	echo "ERROR: Samba share not mounted at $HOME/mounts/vault-single"
 	notify-send "Backup Failed" "Vault drive not mounted" 2>/dev/null
 	exit 1
 fi
