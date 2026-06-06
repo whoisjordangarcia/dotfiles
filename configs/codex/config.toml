@@ -39,6 +39,7 @@ fast_default_opt_out = true
 
 [notice.model_migrations]
 gpt-5-codex = "gpt-5.3-codex"
+"gpt-5.3-codex" = "gpt-5.4"
 
 [tui]
 theme = "coldark-dark"
@@ -51,6 +52,12 @@ terminal_title = ["spinner", "project", "app-name", "task-progress"]
 [mcp_servers.xcode]
 command = "xcrun"
 args = ["mcpbridge"]
+
+[projects."/home/jordan"]
+trust_level = "trusted"
+
+[projects."/home/jordan/dev"]
+trust_level = "trusted"
 
 [projects."/Users/nest/projects/devops"]
 trust_level = "trusted"

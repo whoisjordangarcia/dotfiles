@@ -39,8 +39,8 @@ _cached_init fzf --zsh
 # ==============================================================================
 #  Lightweight node version manager (replaces nvm for speed)
 # ==============================================================================
-# Uses nvm's installed versions at ~/.nvm/versions/node/ but skips the 0.9s nvm.sh load
-export NVM_DIR="$HOME/.nvm"
+# Uses nvm's installed versions but skips the full nvm.sh load on startup.
+export NVM_DIR="${NVM_DIR:-$HOME/.config/nvm}"
 
 _node_use() {
   local version_dir="$NVM_DIR/versions/node"
