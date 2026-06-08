@@ -50,6 +50,11 @@ pytest.local.ini
 docs/plans/
 superpowers/
 
+# Impeccable (design-review artifacts)
+.impeccable/
+PRODUCT.md
+DESIGN.md
+
 # Ralph
 .ralph
 .ralphrc
@@ -57,3 +62,4 @@ tasks/*
 
 settings.local.json
 CLAUDE.local.md
+AGENTS.local.md

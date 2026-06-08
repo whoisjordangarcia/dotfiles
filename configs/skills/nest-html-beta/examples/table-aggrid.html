@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive table — ag-Grid (Nest brand)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<!-- ag-Grid Community via CDN (pin the version) — no build, vanilla JS global `agGrid` -->
+<link href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-quartz.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script>
+  // FOUC guard: apply saved theme / mode before first paint. Same localStorage
+  // keys as template.html so a reader's preference follows them across docs.
+  (function () {
+    var root = document.documentElement;
+    var THEMES = ['nest','slate','forest','paper','dusk'];
+    var MODES  = ['light','dark','system'];
+    try {
+      var t = localStorage.getItem('nest-doc-theme');
+      if (THEMES.indexOf(t) === -1) t = 'nest';
+      root.setAttribute('data-theme', t);
+      var m = localStorage.getItem('nest-doc-mode');
+      if (MODES.indexOf(m) === -1) m = 'light';
+      root.setAttribute('data-mode', m);
+    } catch (e) {
+      root.setAttribute('data-theme', 'nest');
+      root.setAttribute('data-mode', 'light');
+    }
+  })();
+</script>
+<style>
+  /* ---- Brand token system: 5 themes × light/dark/system (mirrors template.html) ---- */
+  :root {
+    --bg-light: #ffffff;  --bg-dark: #0e0d0c;
+    --ink-light: #0a0a0a; --ink-dark: #f3ece4;
+    --accent: #e65732; --accent-2: #e78d32; --accent-3: #a367c8;
+    --bg:  var(--bg-light);
+    --ink: var(--ink-light);
+    --ink-soft:    color-mix(in oklch, var(--ink) 62%, transparent);
+    --border:      color-mix(in oklch, var(--accent) 22%, transparent);
+    --hover:       color-mix(in oklch, var(--accent) 8%, transparent);
+    --peach:       color-mix(in oklch, var(--accent) 12%, var(--bg));
+    --serif:"Instrument Serif",Georgia,serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,Menlo,monospace;
+  }
+  html[data-theme="slate"]  { --bg-light:#f7f8fa; --bg-dark:#0d1220; --ink-light:#1a1f2e; --ink-dark:#e6ecff; --accent:#2563eb; --accent-2:#4f7cf5; --accent-3:#7e8fff; }
+  html[data-theme="forest"] { --bg-light:#fafaf6; --bg-dark:#0d1612; --ink-light:#0f1c15; --ink-dark:#e8f3ec; --accent:#2d6a4f; --accent-2:#52b788; --accent-3:#74c69d; }
+  html[data-theme="paper"]  { --bg-light:#fbf5e9; --bg-dark:#1f1810; --ink-light:#2a1f12; --ink-dark:#f4ecdf; --accent:#b04b1d; --accent-2:#c97e3b; --accent-3:#8c5a3a; }
+  html[data-theme="dusk"]   { --bg-light:#faf5fb; --bg-dark:#14111d; --ink-light:#2a1245; --ink-dark:#ece6f6; --accent:#a367c8; --accent-2:#b884d6; --accent-3:#e65732; }
+  html[data-mode="dark"] { --bg: var(--bg-dark); --ink: var(--ink-dark); }
+  @media (prefers-color-scheme: dark) {
+    html[data-mode="system"] { --bg: var(--bg-dark); --ink: var(--ink-dark); }
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6}
+  main{max-width:860px;margin:0 auto;padding:7vh 28px 16vh}
+  .eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 14px}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(46px,7vw,80px);line-height:1.02;letter-spacing:-.01em;text-wrap:balance;padding-bottom:.2em;margin:0 0 10px;
+     background:linear-gradient(105deg,var(--accent),var(--accent-2) 45%,var(--accent-3));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{font-size:20px;color:var(--ink-soft);max-width:58ch;margin:0 0 6px}
+  .tag{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin:18px 0 14px}
+  p{text-wrap:pretty}
+  code{font-family:var(--mono);font-size:.9em}
+
+  /* ag-Grid brand theming — every --ag-* var derives from the brand tokens, so the
+     grid (rows, header, borders, filter menus, inputs) re-skins per theme AND flips
+     with light/dark/system automatically — no JS, no second stylesheet. */
+  .ag-theme-quartz{
+    --ag-font-family: var(--sans);
+    --ag-font-size: 14px;
+    /* base surfaces — these are what make dark mode work */
+    --ag-background-color: var(--bg);
+    --ag-foreground-color: var(--ink);
+    --ag-secondary-foreground-color: var(--ink-soft);
+    --ag-data-color: var(--ink);
+    --ag-disabled-foreground-color: color-mix(in oklch, var(--ink) 38%, transparent);
+    --ag-odd-row-background-color: color-mix(in oklch, var(--ink) 3%, var(--bg));
+    /* header */
+    --ag-header-background-color: var(--peach);
+    --ag-header-foreground-color: var(--ink);
+    --ag-header-column-resize-handle-color: color-mix(in oklch, var(--accent) 35%, transparent);
+    /* borders + rows */
+    --ag-border-color: var(--border);
+    --ag-row-border-color: color-mix(in oklch, var(--ink) 10%, transparent);
+    --ag-row-hover-color: var(--hover);
+    --ag-selected-row-background-color: color-mix(in oklch, var(--accent) 14%, transparent);
+    /* accents: checkboxes, sort/focus, range selection */
+    --ag-active-color: var(--accent);
+    --ag-input-focus-border-color: var(--accent);
+    --ag-range-selection-border-color: var(--accent);
+    --ag-range-selection-background-color: color-mix(in oklch, var(--accent) 12%, transparent);
+    /* popups: filter menu, dropdowns, control panel — keep them on-theme in dark */
+    --ag-control-panel-background-color: var(--bg);
+    --ag-menu-background-color: var(--bg);
+    --ag-popup-background-color: var(--bg);
+    --ag-input-background-color: var(--bg);
+    --ag-modal-overlay-background-color: color-mix(in oklch, var(--bg) 70%, transparent);
+    --ag-wrapper-border-radius: 10px;
+  }
+  /* a brand-accent on the "share" cells */
+  .cell-accent{ color: var(--accent); font-weight: 600; }
+
+  /* ---------- compact settings gear (theme + mode), same look as template.html ---------- */
+  .doc-settings{position:fixed;top:20px;right:20px;z-index:50;font-family:var(--sans)}
+  .doc-settings summary{list-style:none;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+    border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--ink-soft);transition:background .16s,color .16s}
+  .doc-settings summary::-webkit-details-marker{display:none}
+  .doc-settings summary:hover,.doc-settings[open] summary{background:var(--hover);color:var(--accent)}
+  .doc-settings .panel{position:absolute;top:44px;right:0;width:220px;background:var(--bg);border:1px solid var(--border);
+    border-radius:12px;padding:6px;box-shadow:0 12px 32px color-mix(in oklch, var(--ink) 12%, transparent)}
+  html[data-mode="dark"] .doc-settings .panel{box-shadow:none}
+  .doc-settings .panel-section{padding:10px 10px 12px}
+  .doc-settings .panel-section + .panel-section{border-top:1px solid var(--border);margin-top:2px}
+  .doc-settings .panel-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px}
+  .doc-settings .theme-options{display:flex;flex-wrap:wrap;gap:8px}
+  .doc-settings .theme-options button{appearance:none;width:26px;height:26px;border-radius:50%;cursor:pointer;padding:0;
+    border:2px solid transparent;background-clip:padding-box;transition:transform .14s}
+  .doc-settings .theme-options button:hover{transform:scale(1.1)}
+  .doc-settings .theme-options button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+  .doc-settings .theme-options [data-theme="nest"]  {background:linear-gradient(135deg,#e65732,#e78d32 50%,#a367c8)}
+  .doc-settings .theme-options [data-theme="slate"] {background:linear-gradient(135deg,#2563eb,#7e8fff)}
+  .doc-settings .theme-options [data-theme="forest"]{background:linear-gradient(135deg,#2d6a4f,#74c69d)}
+  .doc-settings .theme-options [data-theme="paper"] {background:linear-gradient(135deg,#b04b1d,#c97e3b)}
+  .doc-settings .theme-options [data-theme="dusk"]  {background:linear-gradient(135deg,#a367c8,#c45567)}
+  .doc-settings .mode-options{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .doc-settings .mode-options button{appearance:none;border:1px solid var(--border);background:var(--bg);border-radius:6px;
+    padding:8px 0;font-size:12px;color:var(--ink);cursor:pointer;font-family:inherit;transition:background .14s,border-color .14s}
+  .doc-settings .mode-options button:hover{background:var(--hover)}
+  .doc-settings .mode-options button[aria-pressed="true"]{background:var(--peach);border-color:var(--accent);color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+
+  <details class="doc-settings" aria-label="Document settings">
+    <summary title="Document settings" aria-label="Document settings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </summary>
+    <div class="panel" role="dialog" aria-label="Document settings">
+      <div class="panel-section">
+        <div class="panel-label">Theme</div>
+        <div class="theme-options" role="group" aria-label="Theme">
+          <button type="button" data-theme="nest"   aria-label="Nest"></button>
+          <button type="button" data-theme="slate"  aria-label="Slate"></button>
+          <button type="button" data-theme="forest" aria-label="Forest"></button>
+          <button type="button" data-theme="paper"  aria-label="Paper"></button>
+          <button type="button" data-theme="dusk"   aria-label="Dusk"></button>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">Mode</div>
+        <div class="mode-options" role="group" aria-label="Mode">
+          <button type="button" data-mode="light">Light</button>
+          <button type="button" data-mode="dark">Dark</button>
+          <button type="button" data-mode="system">System</button>
+        </div>
+      </div>
+    </div>
+  </details>
+
+<main>
+  <p class="eyebrow">nest-html-beta · interactive table · ag-Grid</p>
+  <h1>Locked literature, by publisher.</h1>
+  <p class="lede">An ag-Grid table dropped in from a CDN — no build, no React. Click a header to sort, hover a header for the column-filter menu, drag an edge to resize. Open the gear (top-right) and switch theme or mode — the grid re-skins live.</p>
+  <p class="tag">ag-Grid Community 31 · sortable · column filters · resizable · theme + light/dark aware · ~2.2 MB from CDN</p>
+
+  <div id="grid" class="ag-theme-quartz" style="height: 360px; width: 100%;" role="region" aria-label="Locked articles by publisher"></div>
+
+  <p style="margin-top:40px;color:var(--ink-soft);font-size:15px">Source: gene-research literature audit (full corpus, bronze + paywall = "locked"). ag-Grid is the same engine the Nest app's DataGrid wraps, so it matches what the team already uses — themed here to the brand by pointing the Quartz <code>--ag-*</code> variables at <code>--bg</code> / <code>--ink</code> / <code>--accent</code>, so it follows whatever theme + mode the reader picks.</p>
+</main>
+
+<script>
+  // ag-Grid v31 API: agGrid.createGrid(element, gridOptions)
+  agGrid.createGrid(document.getElementById('grid'), {
+    columnDefs: [
+      { field: 'publisher', headerName: 'Publisher', flex: 1.8, filter: 'agTextColumnFilter' },
+      { field: 'bronze',  headerName: 'Bronze',  flex: 1, filter: 'agNumberColumnFilter' },
+      { field: 'paywall', headerName: 'Paywall', flex: 1, filter: 'agNumberColumnFilter' },
+      { field: 'total',   headerName: 'Total locked', flex: 1, filter: 'agNumberColumnFilter', sort: 'desc' },
+      { field: 'share',   headerName: 'Share', flex: 0.9, cellClass: 'cell-accent',
+        valueFormatter: p => p.value + '%' },
+    ],
+    defaultColDef: { sortable: true, resizable: true, suppressMovable: false },
+    rowData: [
+      { publisher: 'Elsevier',                bronze: 552, paywall: 3424, total: 3976, share: 32 },
+      { publisher: 'Springer Nature',         bronze: 106, paywall: 1668, total: 1774, share: 14 },
+      { publisher: 'Wiley',                   bronze: 508, paywall: 930,  total: 1438, share: 12 },
+      { publisher: 'Wolters Kluwer',          bronze: 141, paywall: 1167, total: 1308, share: 11 },
+      { publisher: 'Taylor & Francis',        bronze: 36,  paywall: 519,  total: 555,  share: 5 },
+      { publisher: 'Oxford University Press',  bronze: 310, paywall: 169,  total: 479,  share: 4 },
+      { publisher: 'Thieme',                  bronze: 76,  paywall: 259,  total: 335,  share: 3 },
+    ],
+    domLayout: 'normal',
+  });
+
+  // --- Theme + Mode pickers (drive data-* on <html>; ag-Grid re-skins via its CSS vars) ---
+  (function () {
+    var root = document.documentElement;
+    function wire(attr, key, fallback) {
+      var btns = document.querySelectorAll('.doc-settings [data-' + attr + ']');
+      function apply(v) {
+        root.setAttribute('data-' + attr, v);
+        try { localStorage.setItem(key, v); } catch (e) {}
+        btns.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset[attr] === v ? 'true' : 'false'); });
+      }
+      apply(root.getAttribute('data-' + attr) || fallback);
+      btns.forEach(function (b) { b.addEventListener('click', function () { apply(b.dataset[attr]); }); });
+    }
+    wire('theme', 'nest-doc-theme', 'nest');
+    wire('mode', 'nest-doc-mode', 'light');
+  })();
+</script>
+</body>
+</html>

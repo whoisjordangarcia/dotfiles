@@ -64,8 +64,8 @@ assert_exit_code() {
 }
 
 # ─── Test fixtures ──────────────────────────────────────────────────
-# Minimal valid input (Opus 4.7 is the default hidden model)
-INPUT_MINIMAL='{"model":{"display_name":"Claude Opus 4.7"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"context_window":{"context_window_size":200000,"used_percentage":0}}'
+# Minimal valid input (Opus 4.8 1M context is the default hidden model)
+INPUT_MINIMAL='{"model":{"display_name":"Claude Opus 4.8 (1M context)"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"context_window":{"context_window_size":200000,"used_percentage":0}}'
 
 # Full input (non-git cwd so we skip git/PR paths)
 INPUT_FULL='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":120000,"total_lines_added":42,"total_lines_removed":7},"session_id":"test-sess","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
@@ -119,10 +119,20 @@ assert_contains "shows formatted cost" "$out" '$1.23'
 printf "\n\033[38;5;141m━━━ Model Name ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 out=$(run_statusline_plain "$INPUT_MINIMAL")
-assert_not_contains "hides Opus model name" "$out" "Opus"
+assert_not_contains "hides default Opus 4.8 1M model name" "$out" "Opus"
 
 out=$(run_statusline_plain "$INPUT_SONNET")
-assert_contains "shows non-Opus model name" "$out" "Sonnet"
+assert_contains "shows non-default model name" "$out" "Sonnet"
+
+# Non-default Opus variants now show (only Opus 4.8 1M is hidden)
+INPUT_OPUS_47='{"model":{"display_name":"Claude Opus 4.7"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"context_window":{"context_window_size":200000,"used_percentage":0}}'
+out=$(run_statusline_plain "$INPUT_OPUS_47")
+assert_contains "shows Opus 4.7 (not the hidden 1M default)" "$out" "Opus 4.7"
+
+# Effort rides to the right of a shown model name
+INPUT_MODEL_EFFORT='{"model":{"display_name":"Claude Opus 4.7"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"context_window":{"used_percentage":0},"effortLevel":"high"}'
+out_line1=$(run_statusline_plain "$INPUT_MODEL_EFFORT" | head -1)
+assert_contains "effort glyph sits to the right of the model name" "$out_line1" "Opus 4.7 ◯"
 
 printf "\n\033[38;5;141m━━━ Context Bar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
@@ -262,6 +272,20 @@ assert_not_contains "line 2 drops .worktrees/ path segment" "$line2" ".worktrees
 assert_not_contains "line 2 drops path prefix on the left" "$line2" "$LONG_WT_ROOT"
 assert_contains "line 2 truncates long worktree name" "$line2" "…"
 rm -rf "$LONG_WT_ROOT"
+
+printf "\n\033[38;5;141m━━━ Worktree False-Positive ━━━━━━━━━━━━━━━━\033[0m\n"
+
+# A plain (non-worktree) repo root must NOT be misflagged as a worktree.
+# Regression: --git-dir returns relative ".git", which never equals the
+# absolute --git-common-dir, so the repo was shown as "⎇ .git".
+PLAIN_REPO=$(mktemp -d -t statusline-plain.XXXXXX)
+(cd "$PLAIN_REPO" && git init -q -b main \
+  && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m init) >/dev/null
+rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
+out=$(run_statusline_plain '{"model":{"display_name":"x"},"cost":{"total_cost_usd":0},"cwd":"'"$PLAIN_REPO"'","context_window":{"used_percentage":5}}')
+assert_not_contains "plain repo is not misflagged as a worktree" "$out" "⎇"
+assert_contains "plain repo shows its branch" "$out" "main"
+rm -rf "$PLAIN_REPO"
 
 printf "\n\033[38;5;141m━━━ Output Structure ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 

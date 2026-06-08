@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interactive constellation — nest-html-beta reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+<!-- three + addons (Line2) on ONE pinned importmap. The addons path is what unlocks Line2/LineMaterial. -->
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+
+<style>
+  :root {
+    --bg:#ffffff; --ink:#0a0a0a;
+    --accent:#e65732; --accent-2:#e78d32; --accent-3:#a367c8; --rose:#c45567;
+    --ink-soft:color-mix(in oklch, var(--ink) 62%, transparent);
+    --border:color-mix(in oklch, var(--accent) 22%, transparent);
+    --hover:color-mix(in oklch, var(--accent) 8%, transparent);
+    --serif:"Instrument Serif", Georgia, serif;
+    --sans:-apple-system, BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:17px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+  main { max-width:900px; margin:0 auto; padding:64px 24px 120px; }
+  .eyebrow { font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); margin:0 0 18px; }
+  h1 { font-family:var(--serif); font-weight:400; font-size:clamp(40px,6vw,72px); line-height:1.02; margin:0 0 18px;
+       background:linear-gradient(105deg,var(--accent) 0%,var(--accent-2) 45%,var(--accent-3) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .lede { font-family:var(--serif); font-size:clamp(20px,2.2vw,26px); line-height:1.35; max-width:40ch; margin:0 0 14px; }
+  p { margin:0 0 16px; max-width:62ch; }
+  code { font-family:var(--mono); font-size:0.88em; background:var(--hover); padding:2px 6px; border-radius:4px; }
+  .note { font-family:var(--mono); font-size:13px; color:var(--ink-soft); border:1px solid var(--border); background:var(--hover); border-radius:8px; padding:10px 14px; margin:24px 0; max-width:64ch; }
+
+  /* ============================================================================
+     CONCEPT-GRAPH EMBED — copy this CSS block + the module's mountInteractiveGraph()
+     ============================================================================ */
+  figure.concept-graph { margin:34px 0 8px; padding:0; }
+  .concept-graph .stage {
+    position:relative; width:100%; height:460px;
+    border:1px solid var(--border); border-radius:14px; overflow:hidden;
+    background:radial-gradient(120% 120% at 50% 0%, color-mix(in oklch, var(--accent) 5%, transparent), transparent 62%);
+  }
+  .concept-graph canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .concept-graph .cg-legend {
+    position:absolute; right:14px; top:12px; z-index:2; display:flex; gap:14px; flex-wrap:wrap;
+    font-family:var(--sans); font-size:11px; color:var(--ink-soft);
+  }
+  .concept-graph .cg-legend span { display:inline-flex; align-items:center; gap:6px; }
+  .concept-graph .cg-legend i { width:9px; height:9px; border-radius:50%; display:inline-block; }
+  /* projected DOM labels — white text-halo so they read over edges */
+  .concept-graph .cg-labels { position:absolute; inset:0; z-index:2; pointer-events:none; overflow:hidden; }
+  .concept-graph .cg-label {
+    position:absolute; left:0; top:0; white-space:nowrap; will-change:transform, opacity;
+    font-family:var(--sans); font-size:12px; font-weight:600; color:var(--ink);
+    text-shadow:0 0 4px var(--bg), 0 0 4px var(--bg), 0 0 8px var(--bg);
+    transition:opacity 180ms ease, color 180ms ease;
+  }
+  .concept-graph .cg-label-active { color:var(--accent); font-weight:700; }
+  /* big context panel — opens on click, on the side opposite the node */
+  .concept-graph .cg-panel {
+    position:absolute; top:14px; width:240px; max-width:calc(100% - 28px); z-index:3;
+    background:color-mix(in oklch, var(--bg) 88%, transparent);
+    backdrop-filter:blur(11px); -webkit-backdrop-filter:blur(11px);
+    border:1px solid var(--border); border-radius:14px; padding:16px 18px 14px;
+    box-shadow:0 16px 44px rgba(10,10,10,0.18);
+    opacity:0; transform:translateY(6px); pointer-events:none;
+    transition:opacity 200ms ease, transform 200ms ease; font-family:var(--sans);
+  }
+  .concept-graph .cg-panel.open { opacity:1; transform:none; pointer-events:auto; }
+  .concept-graph .cg-panel-title { font-family:var(--serif); font-size:27px; line-height:1.04; margin:0 18px 2px 0; }
+  .concept-graph .cg-panel-sub { font-size:11px; letter-spacing:0.09em; text-transform:uppercase; color:var(--accent); margin-bottom:14px; }
+  .concept-graph .cg-panel-row { margin-bottom:12px; }
+  .concept-graph .cg-panel-label { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px; }
+  .concept-graph .cg-panel-chips { display:flex; flex-wrap:wrap; gap:5px; }
+  .concept-graph .cg-panel-chips span { font-size:12px; font-family:var(--mono); background:var(--hover); border:1px solid var(--border); padding:2px 8px; border-radius:999px; }
+  .concept-graph .cg-panel-hint { font-size:11px; color:var(--ink-soft); margin-top:4px; font-style:italic; }
+  .concept-graph .cg-panel-close { position:absolute; top:9px; right:10px; border:0; background:none; color:var(--ink-soft); font-size:19px; line-height:1; cursor:pointer; padding:1px 5px; border-radius:6px; }
+  .concept-graph .cg-panel-close:hover { color:var(--accent); background:var(--hover); }
+  figure.concept-graph figcaption { font-size:13px; color:var(--ink-soft); margin-top:10px; font-style:italic; line-height:1.5; }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">nest-html-beta · reference scene</p>
+  <h1>Interactive constellation</h1>
+  <p class="lede">A force-directed concept map you can hover, pin, and zoom into — built for a white page.</p>
+  <p>Copy the <code>&lt;figure class="concept-graph"&gt;</code> markup, the <code>.concept-graph</code> CSS block, and the <code>mountInteractiveGraph()</code> function from the module below. Feed it <code>{ nodes, edges }</code> — that's the only part you change. Everything else (screen-space picking, settle→recentre→build, <code>Line2</code> gradient edges, halos, projected labels, click-to-pin focus, centre-and-zoom, the dynamic context panel, parallax, the <code>IntersectionObserver</code> mount/dispose lifecycle, and the <code>prefers-reduced-motion</code> path) is load-bearing and already debugged.</p>
+
+  <p class="note">Interact: <strong>hover</strong> a node to preview it · <strong>click</strong> a node to pin it (it zooms to the middle and a context card opens on the opposite side) · <strong>click empty space</strong> to zoom back out.</p>
+
+  <!-- ============ COPY THIS MARKUP ============ -->
+  <figure class="concept-graph" aria-label="Interactive concept graph">
+    <div class="stage">
+      <canvas aria-hidden="true"></canvas>
+      <div class="cg-legend">
+        <span><i style="background:#e65732"></i>Hub</span>
+        <span><i style="background:#a367c8"></i>Connector</span>
+        <span><i style="background:#3a342f"></i>Node</span>
+      </div>
+    </div>
+    <figcaption>Hover to preview, click to pin and zoom. Node size = number of connections; colour = how central it is. 3D is used for the relationships, never for reading a number.</figcaption>
+  </figure>
+
+  <p>The real takeaway must also live in HTML (a list, a table, prose) above or below the canvas — WebGL can fail (GPU blocklisted, reduced motion, renderer errors), and the scene is an enhancement, never the only copy of a fact.</p>
+</main>
+
+<script type="module">
+import * as THREE from 'three';
+import { Line2 }        from 'three/addons/lines/Line2.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+
+/* ============================================================================
+   mountInteractiveGraph(figureEl, { nodes, edges }, opts?)
+   ----------------------------------------------------------------------------
+   nodes : [{ label, tier?, kind? }]   tier 1|2|3 sets colour/role; omit to derive from degree
+   edges : [[a, b], ...]               index pairs into nodes
+   opts  : { panel?(node, neighbourLabels, tierName) -> { sub, rows: [[label, items]] } }
+
+   The figure must contain  .stage > canvas  and a  .cg-legend  (see markup above).
+   Brand rule baked in: NormalBlending on a white page — never AdditiveBlending.
+   ============================================================================ */
+function mountInteractiveGraph(figure, data, opts = {}) {
+  const stage = figure.querySelector('.stage');
+  const canvas = figure.querySelector('canvas');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const TIER = {
+    1: { name: 'Hub',       col: new THREE.Color('#e65732') },   // orange
+    2: { name: 'Connector', col: new THREE.Color('#a367c8') },   // purple
+    3: { name: 'Node',      col: new THREE.Color('#3a342f') },   // dark ink (reads on white)
+  };
+  const HI = new THREE.Color('#e78d32');                          // hover/active tint (amber — accent only, never to carry meaning)
+  const EDGE = new THREE.Color('#0a0a0a');
+
+  // ---- prep data ----
+  const nodes = data.nodes.map((n, i) => ({ ...n, _i: i }));
+  const N = nodes.length;
+  const edges = data.edges.map(([a, b]) => [a, b]);
+  const adj = nodes.map(() => new Set());
+  edges.forEach(([a, b]) => { adj[a].add(b); adj[b].add(a); });
+  nodes.forEach((n, i) => { n.deg = adj[i].size; });
+  const tierOf = (i) => nodes[i].tier || (nodes[i].deg >= 5 ? 1 : nodes[i].deg >= 3 ? 2 : 3);
+  const baseCol = nodes.map((n, i) => TIER[tierOf(i)].col.clone());
+  const labelled = nodes.map((n, i) => tierOf(i) <= 2);          // hubs + connectors get always-on labels
+
+  const panelRenderer = opts.panel || ((node, neighbours, tierName) => ({
+    sub: node.kind || tierName + ' concept',
+    rows: [['Connected to ' + neighbours.length, neighbours]],
+  }));
+
+  // ---- force layout (compact: strong centre pull + short edges so it fits the frame) ----
+  const P = nodes.map(() => new THREE.Vector3((Math.random() - .5) * 6, (Math.random() - .5) * 6, (Math.random() - .5) * 6));
+  const Vv = nodes.map(() => new THREE.Vector3());
+  function step() {
+    for (let i = 0; i < N; i++) {
+      const f = new THREE.Vector3();
+      for (let j = 0; j < N; j++) if (i !== j) { const d = P[i].clone().sub(P[j]); const l = d.length() + 0.01; f.add(d.multiplyScalar(1.5 / (l * l))); }
+      f.add(P[i].clone().multiplyScalar(-0.06));                 // gravity to centre
+      Vv[i].add(f.multiplyScalar(0.016)).multiplyScalar(0.85);   // damping
+    }
+    edges.forEach(([i, j]) => { const d = P[j].clone().sub(P[i]); const s = d.multiplyScalar((d.length() - 2.9) * 0.02); Vv[i].add(s); Vv[j].sub(s); });
+    for (let i = 0; i < N; i++) P[i].add(Vv[i].clone().multiplyScalar(0.5));
+  }
+
+  // ---- scene state ----
+  let renderer, scene, camera, group, mesh, raf = 0, mounted = false, hovered = -1, selected = -1, panelOnRight = false;
+  const edgeLines = [], halos = [], labels = [];
+  const dummy = new THREE.Object3D();
+  const mouse = new THREE.Vector2(-9999, -9999);
+  const v = new THREE.Vector3(), rot = new THREE.Vector3(), ZERO = new THREE.Vector3();
+  let tiltX = 0, tiltY = 0; const BASE_X = 0.12, BASE_Y = 0.35;
+  const labelLayer = document.createElement('div'); labelLayer.className = 'cg-labels'; stage.appendChild(labelLayer);
+  const panel = document.createElement('div'); panel.className = 'cg-panel'; stage.appendChild(panel);
+
+  function haloTexture() {                                       // soft halo, NormalBlending — depth without additive glow
+    const s = 128, c = document.createElement('canvas'); c.width = c.height = s;
+    const g = c.getContext('2d'), grad = g.createRadialGradient(s/2, s/2, 0, s/2, s/2, s/2);
+    grad.addColorStop(0, 'rgba(255,255,255,1)'); grad.addColorStop(0.5, 'rgba(255,255,255,0.45)'); grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grad; g.fillRect(0, 0, s, s);
+    const t = new THREE.CanvasTexture(c); t.needsUpdate = true; return t;
+  }
+  const nodeScale = (i) => 0.42 + nodes[i].deg * 0.1;
+  const dimCol = (c) => c.clone().lerp(new THREE.Color(0xe9e2da), 0.72);
+
+  function sizeRenderer() {
+    const r = stage.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+    renderer.setPixelRatio(dpr); renderer.setSize(r.width, r.height, false);
+    camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix();
+    edgeLines.forEach((e) => e.mat.resolution.set(r.width * dpr, r.height * dpr));
+  }
+  function writeNodes() {
+    const active = selected >= 0 ? selected : hovered;
+    for (let i = 0; i < N; i++) {
+      dummy.position.copy(P[i]); dummy.scale.setScalar(nodeScale(i) * (i === active ? 1.22 : 1));
+      dummy.updateMatrix(); mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true; mesh.computeBoundingSphere();
+  }
+
+  function build() {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setClearColor(0x000000, 0);                        // transparent → white page shows through
+    scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0xffffff, 24, 48);                // gentle depth fade, pushed out so the overview stays crisp
+    camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200); camera.position.set(0, 0, 24);
+    scene.add(new THREE.HemisphereLight(0xfff3ea, 0xd7cec6, 0.9));
+    const key = new THREE.DirectionalLight(0xffffff, 1.0); key.position.set(4, 7, 9); scene.add(key);
+    const rim = new THREE.DirectionalLight(0xcdb4ff, 0.5); rim.position.set(-6, -2, -7); scene.add(rim);
+    group = new THREE.Group(); scene.add(group);
+
+    for (let s = 0; s < 260; s++) step();                       // SETTLE before building geometry, so edges/labels place once
+    { const c = new THREE.Vector3(); P.forEach((p) => c.add(p)); c.multiplyScalar(1 / N); P.forEach((p) => p.sub(c)); } // RECENTRE on centroid
+
+    mesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.46, 32, 22), new THREE.MeshStandardMaterial({ roughness: 0.33, metalness: 0.12 }), N);
+    for (let i = 0; i < N; i++) mesh.setColorAt(i, baseCol[i]);
+    group.add(mesh);
+
+    edges.forEach(([i, j]) => {                                 // Line2 gradient edges (tier-colour → tier-colour)
+      const ca = baseCol[i], cb = baseCol[j], g = new LineGeometry();
+      g.setPositions([P[i].x, P[i].y, P[i].z, P[j].x, P[j].y, P[j].z]);
+      g.setColors([ca.r, ca.g, ca.b, cb.r, cb.g, cb.b]);
+      const base = 0.4, mat = new LineMaterial({ vertexColors: true, linewidth: 1.6, transparent: true, opacity: base });
+      const line = new Line2(g, mat); line.renderOrder = -1; group.add(line); edgeLines.push({ mat, i, j, base });
+    });
+
+    const ht = haloTexture();                                   // halos behind the hubs only
+    nodes.forEach((n, i) => { if (tierOf(i) !== 1) return;
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: ht, color: baseCol[i], transparent: true, opacity: 0.22, depthWrite: false, fog: false }));
+      const sc = nodeScale(i) * 4.4; sp.scale.set(sc, sc, 1); sp.position.copy(P[i]); group.add(sp); halos.push({ sprite: sp, i, base: 0.22 });
+    });
+
+    writeNodes();
+    nodes.forEach((n, i) => { if (!labelled[i]) return;
+      const el = document.createElement('span'); el.className = 'cg-label'; el.textContent = n.label; labelLayer.appendChild(el); labels.push({ el, i });
+    });
+    sizeRenderer(); applyState();
+  }
+
+  // ---- focus state (hover preview / click pin) ----
+  function applyState() {
+    const active = selected >= 0 ? selected : hovered;
+    for (let i = 0; i < N; i++) {
+      let c; if (active < 0) c = baseCol[i]; else if (i === active) c = HI; else if (adj[active].has(i)) c = baseCol[i]; else c = dimCol(baseCol[i]);
+      mesh.setColorAt(i, c);
+    }
+    mesh.instanceColor.needsUpdate = true; writeNodes();
+    edgeLines.forEach((e) => { e.mat.opacity = active < 0 ? e.base : (e.i === active || e.j === active ? Math.min(0.95, e.base * 1.7) : e.base * 0.1); });
+    halos.forEach((h) => { h.sprite.material.opacity = (active < 0 || h.i === active || adj[active].has(h.i)) ? h.base : h.base * 0.2; });
+    labels.forEach((l) => { l.el.style.opacity = (active < 0 || l.i === active || adj[active].has(l.i)) ? '1' : '0.3'; l.el.classList.toggle('cg-label-active', l.i === active); });
+    if (selected >= 0) openPanel(selected); else closePanel();
+  }
+
+  function openPanel(i) {
+    const neighbours = [...adj[i]].map((j) => nodes[j].label);
+    const ctx = panelRenderer(nodes[i], neighbours, TIER[tierOf(i)].name);
+    let html = '<button class="cg-panel-close" aria-label="Release">×</button><div class="cg-panel-title">' + nodes[i].label + '</div><div class="cg-panel-sub">' + ctx.sub + '</div>';
+    ctx.rows.forEach(([label, items]) => { if (items && items.length) html += '<div class="cg-panel-row"><div class="cg-panel-label">' + label + '</div><div class="cg-panel-chips">' + items.map((t) => '<span>' + t + '</span>').join('') + '</div></div>'; });
+    html += '<div class="cg-panel-hint">Click the node again to release.</div>';
+    panel.innerHTML = html;
+    panel.querySelector('.cg-panel-close').addEventListener('click', (e) => { e.stopPropagation(); selected = -1; applyState(); if (reduce) renderStatic(); });
+    // dynamic side: node on the left → panel on the right, so the card never covers the node
+    const r = canvas.getBoundingClientRect(); v.copy(P[i]).applyMatrix4(group.matrixWorld).project(camera);
+    panelOnRight = (v.x * 0.5 + 0.5) * r.width < r.width * 0.5;
+    panel.style.left = panelOnRight ? 'auto' : '14px'; panel.style.right = panelOnRight ? '14px' : 'auto';
+    panel.classList.add('open'); updatePanelTop();
+  }
+  function closePanel() { panel.classList.remove('open'); }
+  function updatePanelTop() {
+    if (selected < 0) return;
+    const r = canvas.getBoundingClientRect(); v.copy(P[selected]).applyMatrix4(group.matrixWorld).project(camera);
+    const py = (1 - (v.y * 0.5 + 0.5)) * r.height, ph = panel.offsetHeight || 170;
+    panel.style.top = Math.max(12, Math.min(r.height - ph - 12, py - ph / 2)) + 'px';
+  }
+
+  function projectLabels() {
+    const r = canvas.getBoundingClientRect();
+    labels.forEach((l) => {
+      v.copy(P[l.i]).applyMatrix4(group.matrixWorld).project(camera);
+      const px = (v.x * 0.5 + 0.5) * r.width, py = (1 - (v.y * 0.5 + 0.5)) * r.height, off = nodeScale(l.i) * 13 + 9;
+      l.el.style.transform = `translate(${px.toFixed(1)}px, ${(py - off).toFixed(1)}px) translate(-50%, -50%)`;
+      if (v.z > 1) l.el.style.opacity = '0';
+    });
+  }
+  function nearest(px, py) {                                    // screen-space pick — robust where raycasting tiny instances fails
+    const r = canvas.getBoundingClientRect(); let id = -1, best = Infinity;
+    for (let i = 0; i < N; i++) { v.copy(P[i]).applyMatrix4(group.matrixWorld).project(camera);
+      const x = (v.x * 0.5 + 0.5) * r.width, y = (1 - (v.y * 0.5 + 0.5)) * r.height, d = Math.hypot(x - px, y - py); if (d < best) { best = d; id = i; } }
+    return best < 24 ? id : -1;
+  }
+  function hoverScan() {
+    const id = mouse.x > -9000 ? nearest(mouse.x, mouse.y) : -1;
+    stage.style.cursor = id >= 0 ? 'pointer' : 'default';
+    if (id !== hovered) { hovered = id; if (selected < 0) applyState(); }
+  }
+
+  function updateTransform(ease) {
+    const tx = selected >= 0 ? 0 : tiltX, ty = selected >= 0 ? 0 : tiltY, kr = ease ? 0.07 : 1;
+    group.rotation.x += ((BASE_X + ty) - group.rotation.x) * kr;
+    group.rotation.y += ((BASE_Y + tx) - group.rotation.y) * kr;
+    const targetZ = selected >= 0 ? 9.6 : 24;                   // dolly: zoom in on pin, whole graph + margin on release
+    camera.position.z += (targetZ - camera.position.z) * (ease ? 0.1 : 1);
+    if (selected >= 0) { rot.copy(P[selected]).applyEuler(group.rotation);
+      const offX = (panelOnRight ? -1 : 1) * 0.07 * camera.position.z * (camera.aspect || 1.3);
+      v.set(-rot.x + offX, -rot.y, 0); group.position.lerp(v, ease ? 0.14 : 1);   // bring target to the middle, beside the panel
+    } else group.position.lerp(ZERO, ease ? 0.14 : 1);
+    group.updateMatrixWorld(true);
+  }
+  function renderFrame() { hoverScan(); renderer.render(scene, camera); projectLabels(); updatePanelTop(); }
+  function frame() { updateTransform(true); renderFrame(); raf = requestAnimationFrame(frame); }
+  function renderStatic() { updateTransform(false); renderFrame(); }
+
+  function mount() {
+    if (mounted) return; mounted = true;
+    build(); group.rotation.set(BASE_X, BASE_Y, 0);
+    if (reduce) renderStatic(); else raf = requestAnimationFrame(frame);   // reduced-motion → one static frame, no loop
+  }
+  function unmount() {
+    if (!mounted) return; mounted = false; cancelAnimationFrame(raf);
+    labels.forEach((l) => l.el.remove()); labels.length = 0; halos.length = 0; edgeLines.length = 0; selected = hovered = -1;
+    scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
+    renderer.dispose();                                         // free GL context + render targets
+  }
+
+  stage.addEventListener('pointermove', (e) => {
+    const r = canvas.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+    mouse.set(px, py);
+    tiltX = (px / r.width - 0.5) * 0.13; tiltY = (py / r.height - 0.5) * 0.10;   // subtle parallax — small so targets stay steady for clicking
+    if (mounted && reduce) renderStatic();
+  });
+  stage.addEventListener('pointerleave', () => { mouse.set(-9999, -9999); tiltX = tiltY = 0; if (mounted && reduce) renderStatic(); });
+  stage.addEventListener('click', (e) => {
+    if (!mounted || e.target.closest('.cg-panel')) return;      // clicks inside the panel don't deselect
+    const r = canvas.getBoundingClientRect(), id = nearest(e.clientX - r.left, e.clientY - r.top);
+    selected = (id >= 0 && id === selected) ? -1 : id;          // toggle pin; click empty space clears + zooms out
+    applyState(); if (reduce) renderStatic();
+  });
+  new ResizeObserver(() => { if (mounted) { sizeRenderer(); if (reduce) renderStatic(); } }).observe(stage);
+  // Long-form lifecycle: mount when the figure scrolls into view, dispose when it leaves.
+  new IntersectionObserver((ents) => ents.forEach((en) => en.isIntersecting ? mount() : unmount()), { threshold: 0.05 }).observe(stage);
+}
+
+/* ============================================================================
+   SAMPLE DATA — replace this block with your own { nodes, edges }.
+   (Edges are authored as label pairs here for readability, then resolved to
+    index pairs. Your data can pass index pairs directly.)
+   ============================================================================ */
+const LABELS = ['Agent','Model','Harness','Tool','Context window','Turn','Session','Skill',
+  'Subagent','Sandbox','System prompt','Memory','Handoff','AGENTS.md','Tool result','Workflow',
+  'Prompt','Hook','Permission','MCP','Plan','Verifier'];
+const EDGE_PAIRS = [
+  ['Agent','Model'],['Agent','Harness'],['Agent','Context window'],['Agent','Memory'],
+  ['Agent','Session'],['Agent','Skill'],['Agent','Subagent'],['Agent','Plan'],
+  ['Harness','Tool'],['Harness','Sandbox'],['Harness','System prompt'],['Harness','Hook'],
+  ['Harness','Permission'],['Harness','MCP'],
+  ['Context window','Turn'],['Context window','Prompt'],['Context window','Tool result'],
+  ['Session','Handoff'],['Session','AGENTS.md'],['Workflow','Subagent'],['Workflow','Verifier'],
+  ['Tool','Tool result'],['Plan','Verifier'],['Subagent','Sandbox'],['Skill','Tool'],
+];
+const idx = Object.fromEntries(LABELS.map((l, i) => [l, i]));
+const DATA = {
+  nodes: LABELS.map((label) => ({ label })),                   // tiers auto-derived from degree
+  edges: EDGE_PAIRS.map(([a, b]) => [idx[a], idx[b]]),
+};
+
+mountInteractiveGraph(document.querySelector('.concept-graph'), DATA);
+</script>
+</body>
+</html>

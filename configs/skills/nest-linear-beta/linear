@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+
+# Linear CLI wrapper script
+# Runs the JavaScript CLI using node
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# --- Setup subcommand (API key configuration) ---
+if [[ "$1" == "setup" ]]; then
+    echo "Setting up Linear CLI..."
+    echo ""
+
+    # 1. Create config directory
+    mkdir -p "$HOME/.config/nest-skills"
+
+    # 2. Get API key (from argument, or fall back to existing config)
+    API_KEY="${2:-}"
+    EXISTING_CONFIG="$HOME/.config/nest-skills/linear.env"
+
+    if [[ -z "$API_KEY" ]]; then
+        # No key provided — check if one already exists
+        if [[ -f "$EXISTING_CONFIG" ]]; then
+            echo "API key already configured in $EXISTING_CONFIG (unchanged)."
+            echo ""
+            echo "Setup complete!"
+            exit 0
+        fi
+        echo ""
+        echo "Enter your Linear API key:"
+        read -r API_KEY
+    fi
+
+    if [[ -z "$API_KEY" ]]; then
+        echo "Error: API key cannot be empty"
+        exit 1
+    fi
+
+    # 3. Validate key via the node script
+    echo ""
+    echo "Validating API key..."
+    if ! [ -d "$SCRIPT_DIR/node_modules" ]; then
+        echo "Dependencies not installed. Installing..."
+        cd "$SCRIPT_DIR" && npm install --silent
+    fi
+    export LINEAR_API_KEY="$API_KEY"
+    VALIDATE_OUTPUT=$(node "$SCRIPT_DIR/scripts/linear-cli.js" user list 2>&1)
+    if [[ $? -ne 0 ]]; then
+        echo "Error: API key validation failed"
+        echo "$VALIDATE_OUTPUT"
+        exit 1
+    fi
+
+    echo "API key is valid."
+
+    # 4. Write config file
+    echo "LINEAR_API_KEY=$API_KEY" > "$EXISTING_CONFIG"
+    chmod 600 "$EXISTING_CONFIG"
+    echo "API key saved to $EXISTING_CONFIG"
+
+    echo ""
+    echo "Setup complete!"
+    exit 0
+fi
+
+# Load config: env var takes priority, then central config file
+if [[ -z "$LINEAR_API_KEY" ]]; then
+    CONFIG_FILE="$HOME/.config/nest-skills/linear.env"
+    [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
+    export LINEAR_API_KEY
+fi
+
+# Check if node_modules exists, if not install automatically
+if [ ! -d "$SCRIPT_DIR/node_modules" ]; then
+  echo "Dependencies not installed. Installing..."
+  echo ""
+  cd "$SCRIPT_DIR" && npm install
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "Error: Failed to install dependencies"
+    exit 1
+  fi
+  echo ""
+fi
+
+# Run the CLI with node
+exec node "$SCRIPT_DIR/scripts/linear-cli.js" "$@"

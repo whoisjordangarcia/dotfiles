@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gallery — stylized three.js renders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+<style>
+  :root{--bg:#fff;--ink:#0a0a0a;--ink-soft:rgba(10,10,10,.62);--accent:#e65732;--accent-3:#a367c8;
+    --border:rgba(230,87,50,.18);--serif:"Instrument Serif",Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:ui-monospace,Menlo,monospace;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6}
+  main{max-width:900px;margin:0 auto;padding:7vh 24px 16vh}
+  .eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 14px}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(48px,7vw,82px);line-height:1.02;letter-spacing:-.01em;text-wrap:balance;padding-bottom:.2em;margin:0 0 8px;
+     background:linear-gradient(105deg,var(--accent),#e78d32 45%,var(--accent-3));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{font-size:20px;color:var(--ink-soft);max-width:60ch;margin:0 0 8px}
+  h2{font-family:var(--serif);font-weight:400;font-size:clamp(26px,3.4vw,38px);line-height:1.1;text-wrap:balance;margin:54px 0 0}
+  .tag{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin:2px 0 12px}
+  .gl-figure{position:relative;height:clamp(320px,46vh,460px);border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff}
+  .gl-figure canvas.gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .badge{position:absolute;left:16px;top:14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600;z-index:1}
+  .cost{position:absolute;right:16px;top:14px;font-size:11px;color:var(--ink-soft);font-family:var(--mono);z-index:1}
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">nest-html-beta · stylized renders</p>
+  <h1>Plain geometry, editorial finish.</h1>
+  <p class="lede">Five non-photoreal looks that read as print illustration, all legible on white. Cheapest first (no composer), then the postprocessing passes. Each mounts on scroll and disposes when it leaves.</p>
+
+  <h2>1 · Cel / toon + ink outline</h2>
+  <p class="tag">no composer · MeshToonMaterial + inverted-hull outline · cost: low</p>
+  <div class="gl-figure" data-scene="toon"><span class="badge">toon</span><span class="cost">no composer</span><canvas class="gl" aria-hidden="true"></canvas></div>
+
+  <h2>2 · Mesh gradient backdrop</h2>
+  <p class="tag">shader · fbm value-noise, brand stops on near-white · cost: shader</p>
+  <div class="gl-figure" data-scene="meshGradient"><span class="badge">mesh gradient</span><span class="cost">shader</span><canvas class="gl" aria-hidden="true"></canvas></div>
+
+  <h2>3 · Halftone / newsprint</h2>
+  <p class="tag">composer · HalftonePass, dots on white · cost: composer</p>
+  <div class="gl-figure" data-scene="halftone"><span class="badge">halftone</span><span class="cost">composer</span><canvas class="gl" aria-hidden="true"></canvas></div>
+
+  <h2>4 · Pixelate + edges</h2>
+  <p class="tag">composer · RenderPixelatedPass · cost: composer</p>
+  <div class="gl-figure" data-scene="pixelate"><span class="badge">pixelate</span><span class="cost">composer</span><canvas class="gl" aria-hidden="true"></canvas></div>
+
+  <h2>5 · Riso dither</h2>
+  <p class="tag">composer · custom ordered-Bayer ShaderPass, white + brand ink · cost: composer</p>
+  <div class="gl-figure" data-scene="riso"><span class="badge">riso</span><span class="cost">composer</span><canvas class="gl" aria-hidden="true"></canvas></div>
+</main>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { HalftonePass } from 'three/addons/postprocessing/HalftonePass.js';
+import { RenderPixelatedPass } from 'three/addons/postprocessing/RenderPixelatedPass.js';
+
+const BRAND = { ink:new THREE.Color('#0a0a0a'), orange:new THREE.Color('#e65732'), amber:new THREE.Color('#e78d32'), purple:new THREE.Color('#a367c8'), rose:new THREE.Color('#c45567') };
+const addons = { EffectComposer, RenderPass, OutputPass, ShaderPass, HalftonePass, RenderPixelatedPass };
+
+function mountFigure(fig, build){
+  const canvas = fig.querySelector('canvas.gl'); if(!canvas) return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let renderer, scene, camera, api={}, raf=0, mounted=false;
+  function size(){
+    const r=canvas.getBoundingClientRect(), dpr=Math.min(devicePixelRatio||1,2);
+    renderer.setPixelRatio(dpr); renderer.setSize(r.width,r.height,false);
+    camera.aspect=(r.width||1)/(r.height||1); camera.updateProjectionMatrix();
+    if(api.composer) api.composer.setSize(r.width,r.height);
+  }
+  function mount(){
+    if(mounted) return; mounted=true;
+    renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    scene=new THREE.Scene(); camera=new THREE.PerspectiveCamera(50,1,0.1,200); camera.position.set(0,0,5);
+    api=build(scene,camera,{THREE,renderer,addons,BRAND})||{};
+    size(); ro.observe(canvas);
+    const t0=performance.now();
+    const loop=(t)=>{const e=(t-t0)/1000; if(api.update)api.update(e); (api.composer?api.composer.render():renderer.render(scene,camera)); raf=requestAnimationFrame(loop);};
+    if(reduce){ if(api.update)api.update(0); (api.composer?api.composer.render():renderer.render(scene,camera)); }
+    else raf=requestAnimationFrame(loop);
+  }
+  function unmount(){
+    if(!mounted) return; mounted=false; cancelAnimationFrame(raf); ro.unobserve(canvas);
+    if(api.dispose) api.dispose();
+    if(api.composer && api.composer.dispose) api.composer.dispose();
+    renderer.dispose();
+  }
+  const ro=new ResizeObserver(()=>{ if(mounted) size(); });
+  new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting?mount():unmount()),{threshold:0.15}).observe(fig);
+}
+
+function lights(scene){ scene.add(new THREE.AmbientLight(0xffffff,0.55)); const d=new THREE.DirectionalLight(0xffffff,1.4); d.position.set(2,3,4); scene.add(d); return d; }
+
+// 1 · TOON + OUTLINE (no composer)
+function toon(scene, camera, {THREE, BRAND}){
+  lights(scene);
+  const ramp = new Uint8Array([70,140,235]);                 // 3 hard bands
+  const gmap = new THREE.DataTexture(ramp, ramp.length, 1, THREE.RedFormat);
+  gmap.minFilter = gmap.magFilter = THREE.NearestFilter; gmap.needsUpdate = true;
+  const geo = new THREE.IcosahedronGeometry(1.7, 1);
+  const mesh = new THREE.Mesh(geo, new THREE.MeshToonMaterial({ color: BRAND.orange, gradientMap: gmap }));
+  const outline = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: BRAND.ink, side: THREE.BackSide }));
+  outline.scale.setScalar(1.05);
+  scene.add(mesh); scene.add(outline);
+  return { update:(t)=>{ mesh.rotation.y = outline.rotation.y = t*0.5; mesh.rotation.x = outline.rotation.x = t*0.22; } };
+}
+
+// 2 · MESH GRADIENT (fullscreen shader, clip-space quad)
+function meshGradient(scene, camera, {THREE, BRAND}){
+  const uni = { uTime:{value:0}, uBase:{value:new THREE.Color('#fbf7f4')}, uA:{value:BRAND.orange}, uB:{value:BRAND.purple} };
+  const mat = new THREE.ShaderMaterial({ uniforms:uni, depthTest:false,
+    vertexShader:`varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }`,
+    fragmentShader:`varying vec2 vUv; uniform float uTime; uniform vec3 uBase,uA,uB;
+      float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);
+        return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+      float fbm(vec2 p){float v=0.0,a=0.5;for(int i=0;i<5;i++){v+=a*n(p);p*=2.0;a*=0.5;}return v;}
+      void main(){ float f=fbm(vUv*3.0+uTime*0.05);
+        vec3 c=mix(uBase,uA,smoothstep(0.25,0.75,f));
+        c=mix(c,uB,smoothstep(0.55,0.95,fbm(vUv*2.2-uTime*0.04)));
+        gl_FragColor=vec4(c,1.0); }` });
+  scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2), mat));
+  return { update:(t)=>{ uni.uTime.value = t; } };
+}
+
+// 3 · HALFTONE (composer)
+function halftone(scene, camera, {THREE, renderer, addons, BRAND}){
+  scene.background = new THREE.Color('#ffffff'); lights(scene);
+  const mesh = new THREE.Mesh(new THREE.TorusKnotGeometry(1, 0.34, 160, 28), new THREE.MeshStandardMaterial({ color: BRAND.orange, roughness:0.55, metalness:0.0 }));
+  scene.add(mesh);
+  const composer = new addons.EffectComposer(renderer);
+  composer.addPass(new addons.RenderPass(scene, camera));
+  composer.addPass(new addons.HalftonePass(1, 1, { shape:1, radius:11, scatter:0, blending:1, blendingMode:1, greyscale:false }));
+  composer.addPass(new addons.OutputPass());
+  return { composer, update:(t)=>{ mesh.rotation.y = t*0.45; mesh.rotation.x = t*0.2; } };
+}
+
+// 4 · PIXELATE (composer)
+function pixelate(scene, camera, {THREE, renderer, addons, BRAND}){
+  scene.background = new THREE.Color('#ffffff'); lights(scene);
+  const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(1.8, 0), new THREE.MeshStandardMaterial({ color: BRAND.purple, roughness:0.5, flatShading:true }));
+  scene.add(mesh);
+  const composer = new addons.EffectComposer(renderer);
+  composer.addPass(new addons.RenderPixelatedPass(6, scene, camera));
+  composer.addPass(new addons.OutputPass());
+  return { composer, update:(t)=>{ mesh.rotation.y = t*0.5; mesh.rotation.x = t*0.3; } };
+}
+
+// 5 · RISO DITHER (composer + custom Bayer ShaderPass)
+function riso(scene, camera, {THREE, renderer, addons, BRAND}){
+  scene.background = new THREE.Color('#ffffff'); lights(scene);
+  const mesh = new THREE.Mesh(new THREE.TorusKnotGeometry(1, 0.32, 140, 22), new THREE.MeshStandardMaterial({ color: new THREE.Color('#8a8a8a'), roughness:0.7 }));
+  scene.add(mesh);
+  const composer = new addons.EffectComposer(renderer);
+  composer.addPass(new addons.RenderPass(scene, camera));
+  composer.addPass(new addons.ShaderPass({
+    uniforms: { tDiffuse:{value:null}, uInk:{value:new THREE.Color(BRAND.orange)} },
+    vertexShader:`varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+    fragmentShader:`uniform sampler2D tDiffuse; uniform vec3 uInk; varying vec2 vUv;
+      float bayer(vec2 p){ int x=int(mod(p.x,4.0)); int y=int(mod(p.y,4.0)); int idx=x+y*4;
+        float t=0.0; for(int i=0;i<16;i++){ if(i==idx){
+          t = (i==0)?0.0:(i==1)?8.0:(i==2)?2.0:(i==3)?10.0:(i==4)?12.0:(i==5)?4.0:(i==6)?14.0:(i==7)?6.0:
+              (i==8)?3.0:(i==9)?11.0:(i==10)?1.0:(i==11)?9.0:(i==12)?15.0:(i==13)?7.0:(i==14)?13.0:5.0; } }
+        return (t+0.5)/16.0; }
+      void main(){ vec4 c=texture2D(tDiffuse,vUv); float l=dot(c.rgb,vec3(0.299,0.587,0.114));
+        l = clamp((l - 0.5) * 1.6 + 0.5, 0.0, 1.0);            // boost contrast so the dither spans the surface
+        float v = l < bayer(floor(gl_FragCoord.xy / 3.0)) ? 0.0 : 1.0;   // ~3px cells so the pattern reads
+        gl_FragColor = vec4(mix(uInk, vec3(1.0), v), 1.0); }`
+  }));
+  composer.addPass(new addons.OutputPass());
+  return { composer, update:(t)=>{ mesh.rotation.y = t*0.4; mesh.rotation.x = t*0.15; } };
+}
+
+const B = { toon, meshGradient, halftone, pixelate, riso };
+document.querySelectorAll('.gl-figure[data-scene]').forEach(f=>{ const b=B[f.dataset.scene]; if(b) mountFigure(f,b); });
+</script>
+</body>
+</html>

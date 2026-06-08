@@ -247,7 +247,10 @@ if [ -n "$cwd" ] && [ -d "$cwd" ] && { [ -d "$cwd/.git" ] || [ -f "$cwd/.git" ];
   branch=$(cd "$cwd" 2>/dev/null && git -c core.useBuiltinFSMonitor=false branch --show-current 2>/dev/null)
 
   # Git dirs (needed for project name resolution + worktree fallback)
-  git_dir=$(cd "$cwd" 2>/dev/null && git rev-parse --git-dir 2>/dev/null)
+  # Both must be absolute: --git-dir alone returns a relative ".git" at a repo
+  # root, which never equals the absolute --git-common-dir and would misflag
+  # every normal repo as a worktree named ".git".
+  git_dir=$(cd "$cwd" 2>/dev/null && git rev-parse --path-format=absolute --git-dir 2>/dev/null)
   git_common=$(cd "$cwd" 2>/dev/null && git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
 
   # Worktree detection fallback (if Claude didn't provide it)
@@ -452,7 +455,7 @@ if [ -n "$branch" ]; then
       norm_wt=$(printf '%s' "$wt_name" | tr -d '/-' | tr '[:upper:]' '[:lower:]')
       if [ "$norm_branch" != "$norm_wt" ]; then
         wt_label="$wt_name"
-        wt_max=25
+        wt_max=45
         if [ "${#wt_label}" -gt "$wt_max" ]; then
           wt_label="${wt_label:0:$wt_max}…"
         fi
@@ -477,9 +480,18 @@ line1=""
 [ -n "$project_name" ] && line1+="${COLOR_WHITE}${project_name}${COLOR_RESET}"
 [ -n "$line1" ] && line1+="${sep}"
 line1+="${COLOR_COST}${cost_display}${COLOR_RESET}"
-if [[ "$model_short" != "Opus 4.7" ]]; then
-  line1="${COLOR_MODEL}${model_short}${COLOR_RESET}${sep}${line1}"
+# Model + reasoning effort segment (far left of line 1).
+# Hide the default model (Opus 4.8 1M context); show any other model name.
+# Reasoning effort rides to the right of the model — or stands alone when the model is hidden.
+model_segment=""
+if [[ "$model_short" != *"Opus 4.8"*"1M"* ]]; then
+  model_segment="${COLOR_MODEL}${model_short}${COLOR_RESET}"
 fi
+if [ -n "$effort_display" ]; then
+  [ -n "$model_segment" ] && model_segment+=" "
+  model_segment+="${effort_display}"
+fi
+[ -n "$model_segment" ] && line1="${model_segment}${sep}${line1}"
 [ -n "$cost_rate_display" ] && line1+="${cost_rate_display}"
 [ -n "$duration_display" ] && line1+="${sep}${COLOR_DUR}${duration_display}${COLOR_RESET}"
 line1+="${sep}${context_bar}${cache_display}"
@@ -506,7 +518,6 @@ if [ "$rate_7d_int" -ge 80 ] 2>/dev/null; then
   [ -n "$rate_display" ] && rate_display+=" "
   rate_display+="${COLOR_DEL}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
 fi
-[ -n "$effort_display" ] && line1+="${sep}${effort_display}"
 
 # Line 2: worktree · branch · sync · dirty · lines · commit age
 line2=""
@@ -517,7 +528,7 @@ if [ -n "$branch" ]; then
     [ -n "$wt_pr_display" ] && line2+="${wt_pr_display}"
     if [ -n "$branch" ]; then
       br_label="$branch"
-      [ "${#br_label}" -gt 25 ] && br_label="${br_label:0:25}…"
+      [ "${#br_label}" -gt 45 ] && br_label="${br_label:0:45}…"
       [ -n "$line2" ] && line2+=" "
       line2+="${COLOR_GIT}${br_label}${COLOR_RESET}"
     fi
@@ -532,7 +543,7 @@ if [ -n "$branch" ]; then
     }
   else
     # Truncate long branch names with ellipsis
-    branch_max=25
+    branch_max=45
     if [ "${#branch}" -gt "$branch_max" ]; then
       branch_display="${branch:0:$branch_max}…"
     else
@@ -549,7 +560,7 @@ fi
 if [ -z "$line2" ] && [ "$is_worktree" = true ] && [ -n "$wt_name" ]; then
   # Worktree detected but no branch (git read failed) — show ⎇ NAME instead of the raw path
   wt_label="$wt_name"
-  wt_max=30
+  wt_max=45
   [ "${#wt_label}" -gt "$wt_max" ] && wt_label="${wt_label:0:$wt_max}…"
   line2="${COLOR_WORKTREE}⎇ ${wt_label}${COLOR_RESET}"
 elif [ -z "$line2" ] && [ -n "$cwd" ] && [ "$is_worktree" != true ]; then

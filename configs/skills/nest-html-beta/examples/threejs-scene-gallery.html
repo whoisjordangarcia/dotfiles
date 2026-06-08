@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gallery — every three.js scene</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
+<style>
+  :root{--bg:#fff;--ink:#0a0a0a;--ink-soft:rgba(10,10,10,.62);--accent:#e65732;--accent-2:#e78d32;--accent-3:#a367c8;
+    --border:rgba(230,87,50,.18);--serif:"Instrument Serif",Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:ui-monospace,Menlo,monospace;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6}
+  main{max-width:1000px;margin:0 auto;padding:7vh 24px 16vh}
+  .eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 14px}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(48px,7vw,84px);line-height:1.02;letter-spacing:-.01em;text-wrap:balance;padding-bottom:.2em;margin:0 0 8px;
+     background:linear-gradient(105deg,var(--accent),var(--accent-2) 45%,var(--accent-3));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{font-size:20px;color:var(--ink-soft);max-width:60ch;margin:0 0 8px}
+  h2{font-family:var(--serif);font-weight:400;font-size:clamp(26px,3.4vw,38px);line-height:1.1;text-wrap:balance;margin:54px 0 2px}
+  .tag{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin:0 0 12px}
+  .gl-figure{position:relative;height:clamp(340px,52vh,520px);border:1px solid var(--border);border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#fff,rgba(230,87,50,.02))}
+  .gl-figure canvas.gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .gl-cap{position:absolute;left:16px;right:16px;bottom:14px;font-size:14px;color:var(--ink-soft);background:rgba(255,255,255,.8);backdrop-filter:blur(4px);border:1px solid var(--border);border-radius:8px;padding:7px 11px;pointer-events:none}
+  .badge{position:absolute;left:16px;top:14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .auto{position:absolute;right:16px;top:14px;font-size:11px;color:var(--ink-soft);font-family:var(--mono)}
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">nest-html-beta · gallery</p>
+  <h1>Every three.js scene, live.</h1>
+  <p class="lede">All seven WebGL scene types the skill ships. Each figure spins up when you scroll it into view and releases its GPU context when you leave, so several scenes never run at once. Stepped scenes auto-advance.</p>
+
+  <h2>1 · Ambient particle backdrop</h2>
+  <p class="tag">continuous · title-slide atmosphere, no data</p>
+  <div class="gl-figure" data-scene="ambient"><span class="badge">ambient</span><canvas class="gl" aria-hidden="true"></canvas><div class="gl-cap">Brand-gradient particles drifting behind a title.</div></div>
+
+  <h2>2 · 3D point cloud / scatter</h2>
+  <p class="tag">continuous · clusters, embeddings, 3-axis data</p>
+  <div class="gl-figure" data-scene="pointCloud"><span class="badge">pointCloud</span><canvas class="gl" aria-hidden="true"></canvas><div class="gl-cap">Four clusters; the shape carries the message.</div></div>
+
+  <h2>3 · Arc network</h2>
+  <p class="tag">continuous · topology / flows with direction</p>
+  <div class="gl-figure" data-scene="arcNetwork"><span class="badge">arcNetwork</span><canvas class="gl" aria-hidden="true"></canvas><div class="gl-cap">Pulses travel each arc to show flow direction.</div></div>
+
+  <h2>4 · Request trace / pipeline</h2>
+  <p class="tag">stepped · hop-by-hop flow with latency</p>
+  <div class="gl-figure" data-scene="requestTrace" data-autosteps="4"><span class="badge">requestTrace</span><span class="auto">auto-walk</span><canvas class="gl" aria-hidden="true"></canvas><div class="gl-cap" id="trace-detail">A packet walks Portal → GraphQL → EHR → Postgres…</div></div>
+
+  <h2>5 · Globe with arcs</h2>
+  <p class="tag">continuous · sites / vendors on a rotating globe</p>
+  <div class="gl-figure" data-scene="globe"><span class="badge">globe</span><canvas class="gl" aria-hidden="true"></canvas><div class="gl-cap">Integration arcs bow over a wireframe globe.</div></div>
+
+  <h2>6 · Morphing point cloud</h2>
+  <p class="tag">stepped · before → after, raw → clustered</p>
+  <div class="gl-figure" data-scene="morph" data-autosteps="2"><span class="badge">morph</span><span class="auto">auto-morph</span><canvas class="gl" aria-hidden="true"></canvas><div class="gl-cap" id="morph-detail">Raw embeddings — unclustered</div></div>
+
+  <h2>7 · Timeline ribbon</h2>
+  <p class="tag">stepped · fly down a z-axis through milestones</p>
+  <div class="gl-figure" data-scene="ribbon" data-autosteps="6"><span class="badge">ribbon</span><span class="auto">auto-fly</span><canvas class="gl" aria-hidden="true"></canvas><div class="gl-cap" id="ribbon-detail">Flying the release ribbon…</div></div>
+</main>
+
+<script type="module">
+import * as THREE from 'three';
+const BRAND={ink:new THREE.Color('#0a0a0a'),orange:new THREE.Color('#e65732'),amber:new THREE.Color('#e78d32'),purple:new THREE.Color('#a367c8'),rose:new THREE.Color('#c45567')};
+function disc(){const s=64,c=document.createElement('canvas');c.width=c.height=s;const g=c.getContext('2d'),gr=g.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.beginPath();g.arc(s/2,s/2,s/2,0,Math.PI*2);g.fill();const t=new THREE.CanvasTexture(c);t.needsUpdate=true;return t;}
+
+function mountFigure(fig,build){
+  const canvas=fig.querySelector('canvas.gl');if(!canvas)return;
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;const autoSteps=+(fig.dataset.autosteps||0);fig.dataset.step='0';
+  let renderer,scene,camera,update=()=>{},raf=0,timer=0,mounted=false;
+  function size(){const r=canvas.getBoundingClientRect();renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(r.width,r.height,false);camera.aspect=(r.width||1)/(r.height||1);camera.updateProjectionMatrix();}
+  function mount(){if(mounted)return;mounted=true;renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(50,1,0.1,200);camera.position.set(0,0,18);
+    update=build(scene,camera,{THREE,BRAND,disc,canvas,fig})||(()=>{});size();ro.observe(canvas);
+    if(autoSteps>1&&!reduce){let k=0;timer=setInterval(()=>{k=(k+1)%autoSteps;fig.dataset.step=String(k);},2600);}
+    const t0=performance.now();const loop=(t)=>{update((t-t0)/1000);renderer.render(scene,camera);raf=requestAnimationFrame(loop);};
+    if(reduce){update(0);renderer.render(scene,camera);}else raf=requestAnimationFrame(loop);}
+  function unmount(){if(!mounted)return;mounted=false;cancelAnimationFrame(raf);clearInterval(timer);ro.unobserve(canvas);renderer.dispose();}
+  const ro=new ResizeObserver(()=>{if(mounted)size();});
+  new IntersectionObserver((es)=>es.forEach(e=>e.isIntersecting?mount():unmount()),{threshold:0.12}).observe(fig);
+}
+
+function ambient(scene,camera,{THREE,BRAND}){const N=2500,p=new Float32Array(N*3),c=new Float32Array(N*3);for(let i=0;i<N;i++){p.set([(Math.random()-.5)*40,(Math.random()-.5)*24,(Math.random()-.5)*20],i*3);const k=BRAND.orange.clone().lerp(BRAND.purple,Math.random());c.set([k.r,k.g,k.b],i*3);}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));g.setAttribute('color',new THREE.BufferAttribute(c,3));const pts=new THREE.Points(g,new THREE.PointsMaterial({size:0.08,vertexColors:true,transparent:true,opacity:0.5,depthWrite:false}));scene.add(pts);camera.position.z=22;return(t)=>{pts.rotation.y=t*0.03;pts.rotation.z=t*0.01;};}
+
+function pointCloud(scene,camera,{THREE,BRAND,disc}){const N=1200,cl=[BRAND.orange,BRAND.purple,BRAND.rose,BRAND.amber];const p=new Float32Array(N*3),c=new Float32Array(N*3);
+  for(let i=0;i<N;i++){const k=i%cl.length;const cx=Math.cos(k/cl.length*Math.PI*2)*5,cz=Math.sin(k/cl.length*Math.PI*2)*5;p.set([cx+(Math.random()-.5)*4,(Math.random()-.5)*6,cz+(Math.random()-.5)*4],i*3);c.set([cl[k].r,cl[k].g,cl[k].b],i*3);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));g.setAttribute('color',new THREE.BufferAttribute(c,3));
+  const pts=new THREE.Points(g,new THREE.PointsMaterial({size:0.35,map:disc(),vertexColors:true,transparent:true,depthWrite:false}));scene.add(pts);return(t)=>{pts.rotation.y=t*0.12;pts.rotation.x=Math.sin(t*0.2)*0.1;};}
+
+function arcNetwork(scene,camera,{THREE,BRAND}){const N=9,R=7,hubs=[];for(let i=0;i<N;i++)hubs.push(new THREE.Vector3(Math.cos(i/N*Math.PI*2)*R,Math.sin(i/N*Math.PI*2)*R,0));
+  scene.add(new THREE.Points(new THREE.BufferGeometry().setFromPoints(hubs),new THREE.PointsMaterial({color:BRAND.ink,size:0.5})));const arcs=[];
+  for(let i=0;i<N;i++)[1,3].forEach(step=>{const a=hubs[i],b=hubs[(i+step)%N];const mid=a.clone().add(b).multiplyScalar(0.5).multiplyScalar(0.55);const curve=new THREE.QuadraticBezierCurve3(a,mid,b);
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(50)),new THREE.LineBasicMaterial({color:BRAND.orange,transparent:true,opacity:0.25})));
+    const pulse=new THREE.Mesh(new THREE.SphereGeometry(0.16,12,12),new THREE.MeshBasicMaterial({color:BRAND.amber}));scene.add(pulse);arcs.push({curve,pulse,off:Math.random()});});
+  return(t)=>arcs.forEach(a=>a.pulse.position.copy(a.curve.getPoint((t*0.25+a.off)%1)));}
+
+function requestTrace(scene,camera,ctx){const{THREE,BRAND,disc,fig}=ctx;
+  const stages=[{label:'Portal',color:BRAND.purple},{label:'GraphQL API',color:BRAND.ink},{label:'EHR vendor',color:BRAND.rose},{label:'Postgres',color:BRAND.ink}];
+  const HOPS=[{from:'Portal',to:'GraphQL API',ms:70},{from:'GraphQL API',to:'EHR vendor',ms:240},{from:'EHR vendor',to:'Postgres',ms:95}];
+  const N=stages.length,spanX=22,xs=stages.map((_,i)=>-spanX/2+spanX*i/(N-1)),yB=0;const group=new THREE.Group();scene.add(group);const sp=disc();
+  function lbl(text,hex){const c=document.createElement('canvas'),w=512,h=200;c.width=w;c.height=h;const g=c.getContext('2d');g.clearRect(0,0,w,h);g.fillStyle='#'+new THREE.Color(hex).getHexString();g.font='600 58px ui-sans-serif,system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(text,w/2,h/2);const tx=new THREE.CanvasTexture(c);tx.anisotropy=4;const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true,depthWrite:false}));s.scale.set(5,2,1);return s;}
+  const bg=new THREE.BoxGeometry(3,2,2),eg=new THREE.EdgesGeometry(bg);
+  stages.forEach((st,i)=>{const fl=new THREE.Mesh(bg,new THREE.MeshBasicMaterial({color:st.color,transparent:true,opacity:0.06}));fl.position.set(xs[i],yB,0);group.add(fl);const wi=new THREE.LineSegments(eg,new THREE.LineBasicMaterial({color:st.color,transparent:true,opacity:0.85}));wi.position.set(xs[i],yB,0);group.add(wi);st._w=wi;const l=lbl(st.label,st.color.getHex());l.position.set(xs[i],yB+2.4,0);group.add(l);});
+  for(let i=0;i<N-1;i++){const a=new THREE.Vector3(xs[i]+1.5,yB,0),b=new THREE.Vector3(xs[i+1]-1.5,yB,0);group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a,b]),new THREE.LineBasicMaterial({color:BRAND.ink,transparent:true,opacity:0.35})));}
+  const pk=new THREE.Mesh(new THREE.SphereGeometry(0.42,24,24),new THREE.MeshBasicMaterial({color:BRAND.amber}));pk.position.set(xs[0],yB,0);group.add(pk);
+  const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:sp,color:BRAND.orange,transparent:true,opacity:0.9,depthWrite:false,blending:THREE.AdditiveBlending}));gl.scale.set(2.6,2.6,1);pk.add(gl);
+  const hl=HOPS.map((hop,i)=>{const mid=(xs[i]+xs[i+1])/2;const l=lbl(hop.ms+' ms',BRAND.orange.getHex());l.scale.set(3.4,1.4,1);l.position.set(mid,yB-1.9,0);l.material.opacity=0;group.add(l);return l;});
+  const cum=[0];for(let i=0;i<HOPS.length;i++)cum.push(cum[i]+HOPS[i].ms);const detail=document.getElementById('trace-detail');let lr=-1;
+  function rep(step){if(!detail||step===lr)return;lr=step;if(step<=0)detail.textContent='Request originates at the Portal. · total 0 ms';else{const h=HOPS[step-1];detail.textContent=h.from+' → '+h.to+' · '+h.ms+' ms · total '+cum[step]+' ms';}}
+  let cur=0,cx=0;return function(t){const step=Math.max(0,Math.min(N-1,+((fig&&fig.dataset.step)||0)));cur+=(step-cur)*0.08;const seg=Math.min(Math.floor(cur),N-2);const fs=Math.max(0,Math.min(1,cur-seg));pk.position.x=xs[seg]+(xs[seg+1]-xs[seg])*fs;pk.position.y=yB+Math.sin(t*2)*0.06;gl.material.opacity=0.75+Math.sin(t*4)*0.2;pk.scale.setScalar(1+Math.sin(t*4)*0.06);
+    stages.forEach((st,i)=>{const a=cur>=i-0.5;st._w.material.opacity+=((a?1:0.35)-st._w.material.opacity)*0.1;});hl.forEach((l,i)=>{l.material.opacity+=((cur>=i+1-0.5?1:0)-l.material.opacity)*0.1;});rep(step);
+    cx+=(pk.position.x*0.15-cx)*0.04;camera.position.x=cx+Math.sin(t*0.3)*0.3;camera.position.y=Math.sin(t*0.4)*0.25;camera.position.z=18;camera.lookAt(cx,0,0);};
+}
+
+function globe(scene,camera,{THREE,BRAND,disc}){const R=5,sp=disc();const group=new THREE.Group();scene.add(group);
+  group.add(new THREE.LineSegments(new THREE.WireframeGeometry(new THREE.SphereGeometry(R,28,20)),new THREE.LineBasicMaterial({color:BRAND.ink,transparent:true,opacity:0.08})));
+  const pal=[BRAND.orange,BRAND.purple,BRAND.amber,BRAND.rose];const SC=14,sites=[];
+  for(let i=0;i<SC;i++){const y=1-(i+0.5)/SC*2;const r=Math.sqrt(Math.max(0,1-y*y));const th=i*2.39996323;const pos=new THREE.Vector3(Math.cos(th)*r*R,y*R,Math.sin(th)*r*R);sites.push(pos);
+    const dot=new THREE.Sprite(new THREE.SpriteMaterial({map:sp,color:pal[i%pal.length],transparent:true,opacity:0.95,depthWrite:false}));dot.position.copy(pos);dot.scale.setScalar(0.45);group.add(dot);}
+  const arcs=[],used=new Set();let made=0,guard=0;while(made<10&&guard++<200){const a=Math.floor(Math.random()*SC);let b=Math.floor(Math.random()*SC);if(b===a)continue;const key=a<b?a+'-'+b:b+'-'+a;if(used.has(key))continue;used.add(key);
+    const start=sites[a],end=sites[b],mid=start.clone().add(end).multiplyScalar(0.5);const lift=R+start.distanceTo(end)*0.55+0.6;mid.normalize().multiplyScalar(lift);const curve=new THREE.QuadraticBezierCurve3(start,mid,end);
+    const col=made%2===0?BRAND.orange:BRAND.purple;group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(60)),new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.32})));
+    const pulse=new THREE.Sprite(new THREE.SpriteMaterial({map:sp,color:col,transparent:true,opacity:1,depthWrite:false,blending:THREE.AdditiveBlending}));pulse.scale.setScalar(0.35);group.add(pulse);arcs.push({curve,pulse,speed:0.12+Math.random()*0.1,offset:Math.random()});made++;}
+  camera.position.set(0,1.5,18);camera.lookAt(0,0,0);return(t)=>{group.rotation.y=t*0.18;group.rotation.x=Math.sin(t*0.12)*0.12;for(const arc of arcs){const p=(t*arc.speed+arc.offset)%1;arc.curve.getPoint(p,arc.pulse.position);const e=Math.sin(p*Math.PI);arc.pulse.material.opacity=0.25+e*0.75;arc.pulse.scale.setScalar(0.28+e*0.18);}};}
+
+function morph(scene,camera,{THREE,BRAND,disc,fig}){const N=1500;const pA=new Float32Array(N*3),cA=new Float32Array(N*3);const grey=new THREE.Color(BRAND.ink).lerp(new THREE.Color(0xffffff),0.45);
+  for(let i=0;i<N;i++){const gx=(Math.random()+Math.random()+Math.random()-1.5),gy=(Math.random()+Math.random()+Math.random()-1.5),gz=(Math.random()+Math.random()+Math.random()-1.5);pA[i*3]=gx*6.5;pA[i*3+1]=gy*6.5;pA[i*3+2]=gz*6.5;cA[i*3]=grey.r;cA[i*3+1]=grey.g;cA[i*3+2]=grey.b;}
+  const pB=new Float32Array(N*3),cB=new Float32Array(N*3);const cc=[BRAND.orange,BRAND.amber,BRAND.purple,BRAND.rose].map(c=>new THREE.Color(c));const rr=6.5;
+  for(let i=0;i<N;i++){const k=i%4,ang=k/4*Math.PI*2,cx=Math.cos(ang)*rr,cy=Math.sin(ang)*rr,sp=1.15;pB[i*3]=cx+(Math.random()-.5)*2*sp;pB[i*3+1]=cy+(Math.random()-.5)*2*sp;pB[i*3+2]=(Math.random()-.5)*2*sp;const c=cc[k];cB[i*3]=c.r;cB[i*3+1]=c.g;cB[i*3+2]=c.b;}
+  const cfgs=[{pos:pA,col:cA,label:'Raw embeddings — unclustered'},{pos:pB,col:cB,label:'After clustering — 4 groups'}];
+  const cur=new Float32Array(pA),curC=new Float32Array(cA);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(cur,3));g.setAttribute('color',new THREE.BufferAttribute(curC,3));
+  const pts=new THREE.Points(g,new THREE.PointsMaterial({size:0.34,map:disc(),vertexColors:true,transparent:true,alphaTest:0.02,depthWrite:false}));scene.add(pts);const pa=g.getAttribute('position'),ca=g.getAttribute('color');let last=null;
+  return(t)=>{const step=Math.max(0,Math.min(cfgs.length-1,+((fig&&fig.dataset.step)||0)));const cf=cfgs[step];for(let i=0;i<N*3;i++){cur[i]+=(cf.pos[i]-cur[i])*0.06;curC[i]+=(cf.col[i]-curC[i])*0.05;}pa.needsUpdate=true;ca.needsUpdate=true;pts.rotation.y=t*0.18;if(cf.label!==last){const el=document.getElementById('morph-detail');if(el)el.textContent=cf.label;last=cf.label;}};}
+
+function ribbon(scene,camera,{THREE,BRAND,fig}){
+  const ms=[{date:'Q1 2024',title:'Portal GA'},{date:'Q2 2024',title:'EHR ingestion v1'},{date:'Q3 2024',title:'FHIR validation'},{date:'Q4 2024',title:'Release gates'},{date:'Q1 2025',title:'Ralph loop'},{date:'Q2 2025',title:'Skills factory'}];
+  const GAP=8,acc=[BRAND.orange,BRAND.amber,BRAND.purple,BRAND.rose];
+  function tex(date,title,a){const W=512,H=300,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');const r=36;g.fillStyle='rgba(255,255,255,0.97)';g.strokeStyle='rgba(20,20,30,0.12)';g.lineWidth=3;g.beginPath();g.moveTo(r,0);g.arcTo(W,0,W,H,r);g.arcTo(W,H,0,H,r);g.arcTo(0,H,0,0,r);g.arcTo(0,0,W,0,r);g.closePath();g.fill();g.stroke();g.fillStyle='#'+a.getHexString();g.fillRect(0,0,W,14);g.font='600 38px system-ui,sans-serif';g.textBaseline='top';g.fillText(date.toUpperCase(),44,52);g.fillStyle='#15151e';g.font='700 46px system-ui,sans-serif';g.fillText(title,44,120);const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;}
+  const cards=[],pos=[];ms.forEach((m,i)=>{const a=acc[i%acc.length];const mesh=new THREE.Mesh(new THREE.PlaneGeometry(7,4.1),new THREE.MeshBasicMaterial({map:tex(m.date,m.title,a),transparent:true,depthWrite:false}));const x=(i%2===0?-1:1)*3.2,y=(i%2===0?0.6:-0.6),z=-i*GAP;mesh.position.set(x,y,z);scene.add(mesh);cards.push({mesh,mat:mesh.material,base:new THREE.Vector3(x,y,z)});pos.push(new THREE.Vector3(x,y,z));});
+  const sp=[];for(let i=0;i<pos.length-1;i++){const a=pos[i],b=pos[i+1];for(let s=0;s<=18;s++){const tt=s/18;const p=new THREE.Vector3().lerpVectors(a,b,tt);p.x+=Math.sin(tt*Math.PI)*0.4*(i%2===0?1:-1);sp.push(p);}}
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(sp),new THREE.LineBasicMaterial({color:BRAND.orange,transparent:true,opacity:0.28})));
+  const OFF=6.5;let lastStep=-1;const look=new THREE.Vector3();const detail=document.getElementById('ribbon-detail');camera.position.set(0,0,OFF);
+  return function(t){const step=Math.max(0,Math.min(ms.length-1,+((fig&&fig.dataset.step)||0)));const tg=cards[step].base;camera.position.z+=(tg.z+OFF-camera.position.z)*0.06;camera.position.x+=(tg.x*0.35-camera.position.x)*0.06;camera.position.y+=(tg.y*0.35+0.2-camera.position.y)*0.06;look.set(tg.x*0.5,tg.y*0.5,camera.position.z-12);camera.lookAt(look);
+    cards.forEach((card,i)=>{const act=i===step;const dz=Math.abs(camera.position.z-card.base.z);const tsc=act?1.18:1.0;const cs=card.mesh.scale.x;const ns=cs+(tsc-cs)*0.1;card.mesh.scale.set(ns,ns,ns);card.mesh.position.y=card.base.y+Math.sin(t*0.8+i)*0.12;let op;if(card.base.z>camera.position.z+1)op=0;else{const fd=Math.max(0,1-dz/40);op=act?1:0.35+0.45*fd;}card.mat.opacity+=(op-card.mat.opacity)*0.12;card.mesh.lookAt(camera.position);});
+    if(step!==lastStep&&detail){detail.textContent=ms[step].date+' — '+ms[step].title;lastStep=step;}};
+}
+
+const B={ambient,pointCloud,arcNetwork,requestTrace,globe,morph,ribbon};
+document.querySelectorAll('.gl-figure[data-scene]').forEach(f=>{const b=B[f.dataset.scene];if(b)mountFigure(f,b);});
+</script>
+</body>
+</html>

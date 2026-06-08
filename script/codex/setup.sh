@@ -16,3 +16,6 @@ npm i -g @openai/codex -f
 
 mkdir -p "$HOME/.codex"
 link_file "$SCRIPT_DIR/../../configs/codex/config.toml" "$HOME/.codex/config.toml"
+
+# Skills live in configs/skills and are projected into each agent CLI.
+source "$SCRIPT_DIR/../skills/setup.sh"

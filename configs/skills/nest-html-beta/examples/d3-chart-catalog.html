@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gallery — D3 chart variations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script>
+  // FOUC guard: apply saved theme / mode before first paint (shared keys with template.html).
+  (function () {
+    var root = document.documentElement;
+    var THEMES = ['nest','slate','forest','paper','dusk'], MODES = ['light','dark','system'];
+    try {
+      var t = localStorage.getItem('nest-doc-theme'); if (THEMES.indexOf(t) === -1) t = 'nest';
+      root.setAttribute('data-theme', t);
+      var m = localStorage.getItem('nest-doc-mode'); if (MODES.indexOf(m) === -1) m = 'light';
+      root.setAttribute('data-mode', m);
+    } catch (e) { root.setAttribute('data-theme','nest'); root.setAttribute('data-mode','light'); }
+  })();
+</script>
+<style>
+  /* Brand token system: 5 themes × light/dark/system (mirrors template.html). */
+  :root{
+    --bg-light:#ffffff; --bg-dark:#0e0d0c; --ink-light:#0a0a0a; --ink-dark:#f3ece4;
+    --accent:#e65732; --accent-2:#e78d32; --accent-3:#a367c8; --rose:#c45567;
+    --bg:var(--bg-light); --ink:var(--ink-light);
+    --ink-soft:color-mix(in oklch, var(--ink) 62%, transparent);
+    --border:color-mix(in oklch, var(--accent) 22%, transparent);
+    --hover:color-mix(in oklch, var(--accent) 8%, transparent);
+    /* chart structure — derived from accent so grids/axes re-skin per theme */
+    --grid:color-mix(in oklch, var(--accent) 14%, transparent);
+    --axis:color-mix(in oklch, var(--accent) 26%, transparent);
+    --serif:"Instrument Serif",Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:ui-monospace,Menlo,monospace;}
+  html[data-theme="slate"]  { --bg-light:#f7f8fa; --bg-dark:#0d1220; --ink-light:#1a1f2e; --ink-dark:#e6ecff; --accent:#2563eb; --accent-2:#4f7cf5; --accent-3:#7e8fff; }
+  html[data-theme="forest"] { --bg-light:#fafaf6; --bg-dark:#0d1612; --ink-light:#0f1c15; --ink-dark:#e8f3ec; --accent:#2d6a4f; --accent-2:#52b788; --accent-3:#74c69d; }
+  html[data-theme="paper"]  { --bg-light:#fbf5e9; --bg-dark:#1f1810; --ink-light:#2a1f12; --ink-dark:#f4ecdf; --accent:#b04b1d; --accent-2:#c97e3b; --accent-3:#8c5a3a; }
+  html[data-theme="dusk"]   { --bg-light:#faf5fb; --bg-dark:#14111d; --ink-light:#2a1245; --ink-dark:#ece6f6; --accent:#a367c8; --accent-2:#b884d6; --accent-3:#e65732; }
+  html[data-mode="dark"] { --bg:var(--bg-dark); --ink:var(--ink-dark); }
+  @media (prefers-color-scheme: dark) { html[data-mode="system"] { --bg:var(--bg-dark); --ink:var(--ink-dark); } }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6}
+  main{max-width:900px;margin:0 auto;padding:7vh 24px 16vh}
+  .eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 14px}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(48px,7vw,82px);line-height:1.02;letter-spacing:-.01em;text-wrap:balance;padding-bottom:.2em;margin:0 0 8px;
+     background:linear-gradient(105deg,var(--accent),var(--accent-2) 45%,var(--accent-3));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{font-size:20px;color:var(--ink-soft);max-width:62ch;margin:0 0 8px}
+  .toc{font-size:14px;color:var(--ink-soft);margin:14px 0 0;line-height:1.9}
+  .toc a{color:var(--accent);text-decoration:none}
+  h2{font-family:var(--serif);font-weight:400;font-size:clamp(24px,3.2vw,34px);line-height:1.1;text-wrap:balance;margin:52px 0 0}
+  .tag{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin:2px 0 12px}
+  figure{margin:0}
+  figcaption{font-size:13px;color:var(--ink-soft);text-align:center;margin-top:10px;font-style:italic}
+  /* neutral floating card (theme/mode aware) — not a peach box */
+  .box{position:relative;padding:18px;background:color-mix(in oklch, var(--ink) 3%, var(--bg));border:1px solid color-mix(in oklch, var(--ink) 10%, transparent);border-radius:14px}
+  .box svg{display:block;width:100%;height:auto}
+  /* axis/grid styling overrides d3's inline stroke attrs (CSS beats presentation attributes) */
+  .axis text{fill:var(--ink-soft);font-size:11px}
+  .axis line{stroke:var(--grid)}
+  .axis .domain{stroke:var(--axis)}
+  /* tooltip inverts with mode: dark chip in light, light chip in dark */
+  .tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;line-height:1.5;padding:7px 10px;border-radius:8px;
+    border:1px solid color-mix(in oklch, var(--bg) 18%, transparent);transform:translate(-50%,-130%);opacity:0;transition:opacity .1s;white-space:nowrap;z-index:50}
+  .tip .k{color:color-mix(in oklch, var(--bg) 55%, transparent)}
+  .legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:13px;color:var(--ink-soft);margin-top:12px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .anim-toggle{position:fixed;top:18px;right:20px;z-index:60;background:var(--bg);border:1px solid var(--border);border-radius:999px;
+    padding:8px 15px;font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:9px;cursor:pointer;box-shadow:0 3px 12px color-mix(in oklch, var(--ink) 8%, transparent)}
+  html[data-mode="dark"] .anim-toggle{box-shadow:none}
+  .anim-toggle input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+
+  /* ---------- compact settings gear (theme + mode) ---------- */
+  .doc-settings{position:fixed;top:14px;left:20px;z-index:60;font-family:var(--sans)}
+  .doc-settings summary{list-style:none;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+    border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--ink-soft);transition:background .16s,color .16s}
+  .doc-settings summary::-webkit-details-marker{display:none}
+  .doc-settings summary:hover,.doc-settings[open] summary{background:var(--hover);color:var(--accent)}
+  .doc-settings .panel{position:absolute;top:44px;left:0;width:220px;background:var(--bg);border:1px solid var(--border);
+    border-radius:12px;padding:6px;box-shadow:0 12px 32px color-mix(in oklch, var(--ink) 12%, transparent)}
+  html[data-mode="dark"] .doc-settings .panel{box-shadow:none}
+  .doc-settings .panel-section{padding:10px 10px 12px}
+  .doc-settings .panel-section + .panel-section{border-top:1px solid var(--border);margin-top:2px}
+  .doc-settings .panel-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px}
+  .doc-settings .theme-options{display:flex;flex-wrap:wrap;gap:8px}
+  .doc-settings .theme-options button{appearance:none;width:26px;height:26px;border-radius:50%;cursor:pointer;padding:0;
+    border:2px solid transparent;background-clip:padding-box;transition:transform .14s}
+  .doc-settings .theme-options button:hover{transform:scale(1.1)}
+  .doc-settings .theme-options button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+  .doc-settings .theme-options [data-theme="nest"]  {background:linear-gradient(135deg,#e65732,#e78d32 50%,#a367c8)}
+  .doc-settings .theme-options [data-theme="slate"] {background:linear-gradient(135deg,#2563eb,#7e8fff)}
+  .doc-settings .theme-options [data-theme="forest"]{background:linear-gradient(135deg,#2d6a4f,#74c69d)}
+  .doc-settings .theme-options [data-theme="paper"] {background:linear-gradient(135deg,#b04b1d,#c97e3b)}
+  .doc-settings .theme-options [data-theme="dusk"]  {background:linear-gradient(135deg,#a367c8,#c45567)}
+  .doc-settings .mode-options{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .doc-settings .mode-options button{appearance:none;border:1px solid var(--border);background:var(--bg);border-radius:6px;
+    padding:8px 0;font-size:12px;color:var(--ink);cursor:pointer;font-family:inherit;transition:background .14s,border-color .14s}
+  .doc-settings .mode-options button:hover{background:var(--hover)}
+  .doc-settings .mode-options button[aria-pressed="true"]{background:color-mix(in oklch, var(--accent) 12%, var(--bg));border-color:var(--accent);color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+
+  <details class="doc-settings" aria-label="Document settings">
+    <summary title="Document settings" aria-label="Document settings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </summary>
+    <div class="panel" role="dialog" aria-label="Document settings">
+      <div class="panel-section">
+        <div class="panel-label">Theme</div>
+        <div class="theme-options" role="group" aria-label="Theme">
+          <button type="button" data-theme="nest"   aria-label="Nest"></button>
+          <button type="button" data-theme="slate"  aria-label="Slate"></button>
+          <button type="button" data-theme="forest" aria-label="Forest"></button>
+          <button type="button" data-theme="paper"  aria-label="Paper"></button>
+          <button type="button" data-theme="dusk"   aria-label="Dusk"></button>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">Mode</div>
+        <div class="mode-options" role="group" aria-label="Mode">
+          <button type="button" data-mode="light">Light</button>
+          <button type="button" data-mode="dark">Dark</button>
+          <button type="button" data-mode="system">System</button>
+        </div>
+      </div>
+    </div>
+  </details>
+
+<main>
+  <p class="eyebrow">nest-html-beta · D3 chart catalog</p>
+  <h1>Every D3 chart, to pick from.</h1>
+  <p class="lede">Twenty interactive D3 chart types, brand-themed and self-contained. Pick by the shape of the data: trends, comparisons, distributions, correlations, parts of a whole, hierarchies, matrices, flows, or networks. Hover any chart to read values.</p>
+  <nav class="toc">
+    <a href="#line">Line</a> · <a href="#area">Area</a> · <a href="#gbar">Grouped bar</a> · <a href="#sbar">Stacked bar</a> ·
+    <a href="#hbar">Ranking bar</a> · <a href="#scatter">Scatter / bubble</a> · <a href="#donut">Donut</a> ·
+    <a href="#heat">Heatmap</a> · <a href="#force">Force network</a> · <a href="#pie">Pie</a> · <a href="#gauge">Gauge</a> ·
+    <a href="#hist">Histogram</a> · <a href="#lolli">Lollipop</a> · <a href="#tree">Treemap</a> · <a href="#pack">Circle pack</a> ·
+    <a href="#sun">Sunburst</a> · <a href="#chord">Chord</a> · <a href="#radar">Radar</a> · <a href="#slope">Slope</a> · <a href="#stream">Streamgraph</a>
+  </nav>
+
+  <h2 id="line">1 · Multi-series line</h2>
+  <p class="tag">trends over time · shared crosshair reads all series</p>
+  <figure><div class="box"><svg id="c-line" viewBox="0 0 720 320" role="img" aria-label="Multi-series line chart of three cohorts over six weeks"></svg></div><div class="legend" id="lg-line"></div><figcaption>Median KB per story, by cohort.</figcaption></figure>
+
+  <h2 id="area">2 · Area (gradient fill)</h2>
+  <p class="tag">cumulative shape over time</p>
+  <figure><div class="box"><svg id="c-area" viewBox="0 0 720 300" role="img" aria-label="Area chart of cumulative docs shared over eight weeks"></svg></div><figcaption>Cumulative docs shared, by week.</figcaption></figure>
+
+  <h2 id="gbar">3 · Grouped bar</h2>
+  <p class="tag">compare categories across groups</p>
+  <figure><div class="box"><svg id="c-gbar" viewBox="0 0 720 320" role="img" aria-label="Grouped bar chart of PR outcomes across four teams"></svg></div><div class="legend" id="lg-gbar"></div><figcaption>PR outcomes by team.</figcaption></figure>
+
+  <h2 id="sbar">4 · Stacked bar</h2>
+  <p class="tag">part-to-whole across categories</p>
+  <figure><div class="box"><svg id="c-sbar" viewBox="0 0 720 320" role="img" aria-label="Stacked bar chart of access tiers across publication types"></svg></div><div class="legend" id="lg-sbar"></div><figcaption>Access tiers by publication type.</figcaption></figure>
+
+  <h2 id="hbar">5 · Ranking bar (horizontal)</h2>
+  <p class="tag">ranked list, many short categories</p>
+  <figure><div class="box"><svg id="c-hbar" viewBox="0 0 720 300" role="img" aria-label="Horizontal bar chart ranking locked articles by publisher"></svg></div><figcaption>Locked articles by publisher.</figcaption></figure>
+
+  <h2 id="scatter">6 · Scatter / bubble</h2>
+  <p class="tag">correlation of two (or three) variables</p>
+  <figure><div class="box"><svg id="c-scatter" viewBox="0 0 720 340" role="img" aria-label="Bubble chart of stories by bytes versus requests, sized by pages"></svg></div><figcaption>Stories: bytes vs requests, sized by page count.</figcaption></figure>
+
+  <h2 id="donut">7 · Donut</h2>
+  <p class="tag">parts of a whole, hover a slice</p>
+  <figure><div class="box"><svg id="c-donut" viewBox="0 0 720 300" role="img" aria-label="Donut chart of article access tiers"></svg></div><figcaption>Articles by access tier.</figcaption></figure>
+
+  <h2 id="heat">8 · Heatmap</h2>
+  <p class="tag">a matrix: value across two dimensions</p>
+  <figure><div class="box"><svg id="c-heat" viewBox="0 0 720 300" role="img" aria-label="Heatmap of activity by weekday and hour"></svg></div><figcaption>Doc uploads by weekday and time of day.</figcaption></figure>
+
+  <h2 id="force">9 · Force-directed network</h2>
+  <p class="tag">relationships · drag a node</p>
+  <figure><div class="box"><svg id="c-force" viewBox="0 0 720 380" role="img" aria-label="Force-directed network of shared module chapters linking stories"></svg></div><figcaption>Shared module chapters (orange) linking stories. Drag a node.</figcaption></figure>
+
+  <h2 id="pie">10 · Pie</h2>
+  <p class="tag">parts of a whole, labelled slices</p>
+  <figure><div class="box"><svg id="c-pie" viewBox="0 0 720 300" role="img" aria-label="Pie chart of output types: docs, decks, charts, 3D"></svg></div><figcaption>Outputs by kind.</figcaption></figure>
+
+  <h2 id="gauge">11 · Radial gauge</h2>
+  <p class="tag">a single value against a target</p>
+  <figure><div class="box"><svg id="c-gauge" viewBox="0 0 720 300" role="img" aria-label="Radial gauge showing 72 percent coverage"></svg></div><figcaption>One KPI, at a glance.</figcaption></figure>
+
+  <h2 id="hist">12 · Histogram</h2>
+  <p class="tag">the distribution of one variable</p>
+  <figure><div class="box"><svg id="c-hist" viewBox="0 0 720 300" role="img" aria-label="Histogram of story media size distribution"></svg></div><figcaption>Story media size distribution (KB).</figcaption></figure>
+
+  <h2 id="lolli">13 · Lollipop</h2>
+  <p class="tag">ranking, lighter than bars</p>
+  <figure><div class="box"><svg id="c-lolli" viewBox="0 0 720 300" role="img" aria-label="Lollipop chart ranking scenes by usefulness"></svg></div><figcaption>Scenes by versatility score.</figcaption></figure>
+
+  <h2 id="tree">14 · Treemap</h2>
+  <p class="tag">hierarchical part-to-whole by area</p>
+  <figure><div class="box"><svg id="c-tree" viewBox="0 0 720 320" role="img" aria-label="Treemap of vault files by type"></svg></div><figcaption>Vault files by type (count = area).</figcaption></figure>
+
+  <h2 id="pack">15 · Circle pack</h2>
+  <p class="tag">magnitudes as nested circles</p>
+  <figure><div class="box"><svg id="c-pack" viewBox="0 0 720 380" role="img" aria-label="Circle packing of stories by payload"></svg></div><figcaption>Stories sized by payload.</figcaption></figure>
+
+  <h2 id="sun">16 · Sunburst</h2>
+  <p class="tag">a hierarchy, radially</p>
+  <figure><div class="box"><svg id="c-sun" viewBox="0 0 720 340" role="img" aria-label="Sunburst of the agent concept hierarchy"></svg></div><figcaption>The agent concept, nested.</figcaption></figure>
+
+  <h2 id="chord">17 · Chord</h2>
+  <p class="tag">flows between a small set of nodes</p>
+  <figure><div class="box"><svg id="c-chord" viewBox="0 0 720 360" role="img" aria-label="Chord diagram of request flow between Portal, GraphQL, EHR, and DB"></svg></div><figcaption>Calls between services.</figcaption></figure>
+
+  <h2 id="radar">18 · Radar</h2>
+  <p class="tag">multi-attribute comparison</p>
+  <figure><div class="box"><svg id="c-radar" viewBox="0 0 720 340" role="img" aria-label="Radar chart comparing SVG charts versus Chart.js on five attributes"></svg></div><div class="legend" id="lg-radar"></div><figcaption>SVG vs Chart.js across five attributes.</figcaption></figure>
+
+  <h2 id="slope">19 · Slope chart</h2>
+  <p class="tag">before → after for a few items</p>
+  <figure><div class="box"><svg id="c-slope" viewBox="0 0 720 320" role="img" aria-label="Slope chart of story payload before and after optimization"></svg></div><figcaption>Payload: today → optimized (KB).</figcaption></figure>
+
+  <h2 id="stream">20 · Streamgraph</h2>
+  <p class="tag">how composition shifts over time</p>
+  <figure><div class="box"><svg id="c-stream" viewBox="0 0 720 300" role="img" aria-label="Streamgraph of four series over twelve periods"></svg></div><figcaption>Category mix over time.</figcaption></figure>
+</main>
+
+<script>
+(function(){
+  if (!window.d3) return;
+  var O='#e65732', P='#a367c8', R='#c45567', A='#e78d32';   // categorical series palette (intentionally fixed-brand; structure/ink track CSS tokens)
+  var BR=[O,P,R,A];
+  var tip = d3.select('body').append('div').attr('class','tip');
+  function show(html,e){ tip.html(html).style('left',e.clientX+'px').style('top',e.clientY+'px').style('opacity',1); }
+  function hide(){ tip.style('opacity',0); }
+  function gridStyle(s){ s.select('.domain').remove(); s.selectAll('line').attr('stroke','rgba(230,87,50,.10)'); s.attr('class','axis'); }
+  function axisStyle(s){ s.select('.domain').attr('stroke','rgba(230,87,50,.18)'); s.selectAll('line').remove(); s.attr('class','axis'); }
+
+  // 1 · LINE -----------------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-line'),W=720,H=320,m={t:14,r:16,b:28,l:42},iw=W-m.l-m.r,ih=H-m.t-m.b;
+    var L=['W1','W2','W3','W4','W5','W6'];
+    var S=[{n:'Cardio',c:O,v:[210,236,258,286,312,340]},{n:'Cancer',c:P,v:[180,198,214,232,250,268]},{n:'Carrier',c:R,v:[118,121,119,120,122,124]}];
+    var x=d3.scalePoint().domain(L).range([0,iw]);
+    var y=d3.scaleLinear().domain([0,d3.max(S,function(s){return d3.max(s.v);})*1.1]).nice().range([ih,0]);
+    var g=svg.append('g').attr('transform','translate('+m.l+','+m.t+')');
+    g.append('g').call(d3.axisLeft(y).ticks(4).tickSize(-iw)).call(gridStyle);
+    g.append('g').attr('transform','translate(0,'+ih+')').call(d3.axisBottom(x)).call(axisStyle);
+    var ln=d3.line().x(function(d,i){return x(L[i]);}).y(function(d){return y(d);}).curve(d3.curveMonotoneX);
+    S.forEach(function(s){ g.append('path').datum(s.v).attr('fill','none').attr('stroke',s.c).attr('stroke-width',2.5).attr('d',ln);
+      g.selectAll('.d'+s.n).data(s.v).join('circle').attr('cx',function(d,i){return x(L[i]);}).attr('cy',function(d){return y(d);}).attr('r',3).attr('fill',s.c); });
+    var focus=g.append('g').style('display','none'); focus.append('line').attr('y1',0).attr('y2',ih).style('stroke','var(--ink-soft)').attr('stroke-dasharray','3 3');
+    var dots=S.map(function(s){return focus.append('circle').attr('r',5).attr('fill','#fff').attr('stroke',s.c).attr('stroke-width',2.5);});
+    var xs=L.map(function(l){return x(l);});
+    g.append('rect').attr('width',iw).attr('height',ih).attr('fill','transparent')
+      .on('pointerenter',function(){focus.style('display',null);}).on('pointerleave',function(){focus.style('display','none');hide();})
+      .on('pointermove',function(e){var mx=d3.pointer(e)[0],i=0,b=Infinity;xs.forEach(function(v,k){var d=Math.abs(v-mx);if(d<b){b=d;i=k;}});
+        focus.select('line').attr('x1',xs[i]).attr('x2',xs[i]); S.forEach(function(s,si){dots[si].attr('cx',xs[i]).attr('cy',y(s.v[i]));});
+        show('<b>'+L[i]+'</b>'+S.map(function(s){return '<br><span class="k">'+s.n+'</span> '+s.v[i];}).join(''),e);});
+    d3.select('#lg-line').html(S.map(function(s){return '<span><i style="background:'+s.c+'"></i>'+s.n+'</span>';}).join(''));
+  })();
+
+  // 2 · AREA -----------------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-area'),W=720,H=300,m={t:14,r:16,b:28,l:42},iw=W-m.l-m.r,ih=H-m.t-m.b;
+    var L=['W1','W2','W3','W4','W5','W6','W7','W8'],V=[4,9,15,22,28,35,41,47];
+    var x=d3.scalePoint().domain(L).range([0,iw]);
+    var y=d3.scaleLinear().domain([0,d3.max(V)*1.1]).nice().range([ih,0]);
+    var g=svg.append('g').attr('transform','translate('+m.l+','+m.t+')');
+    var grad=svg.append('defs').append('linearGradient').attr('id','ag').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',1);
+    grad.append('stop').attr('offset','0%').attr('stop-color',O).attr('stop-opacity',.3);
+    grad.append('stop').attr('offset','100%').attr('stop-color',O).attr('stop-opacity',0);
+    g.append('g').call(d3.axisLeft(y).ticks(4).tickSize(-iw)).call(gridStyle);
+    g.append('g').attr('transform','translate(0,'+ih+')').call(d3.axisBottom(x)).call(axisStyle);
+    var ar=d3.area().x(function(d,i){return x(L[i]);}).y0(ih).y1(function(d){return y(d);}).curve(d3.curveMonotoneX);
+    var ln=d3.line().x(function(d,i){return x(L[i]);}).y(function(d){return y(d);}).curve(d3.curveMonotoneX);
+    g.append('path').datum(V).attr('fill','url(#ag)').attr('d',ar);
+    g.append('path').datum(V).attr('fill','none').attr('stroke',O).attr('stroke-width',2.5).attr('d',ln);
+    g.selectAll('.ad').data(V).join('circle').attr('cx',function(d,i){return x(L[i]);}).attr('cy',function(d){return y(d);}).attr('r',3).attr('fill',O)
+      .on('pointermove',function(e,d){show('<b>'+L[V.indexOf(d)]+'</b><br><span class="k">Docs</span> '+d,e);}).on('pointerleave',hide);
+  })();
+
+  // 3 · GROUPED BAR ----------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-gbar'),W=720,H=320,m={t:14,r:16,b:30,l:42},iw=W-m.l-m.r,ih=H-m.t-m.b;
+    var groups=['Platform','Genomics','Portal','Data'],keys=['Merged','Fixed','Closed'],cols=[O,P,R];
+    var data={Platform:[42,12,4],Genomics:[31,18,6],Portal:[55,9,3],Data:[28,14,7]};
+    var x0=d3.scaleBand().domain(groups).range([0,iw]).padding(.22);
+    var x1=d3.scaleBand().domain(keys).range([0,x0.bandwidth()]).padding(.12);
+    var y=d3.scaleLinear().domain([0,60]).nice().range([ih,0]);
+    var g=svg.append('g').attr('transform','translate('+m.l+','+m.t+')');
+    g.append('g').call(d3.axisLeft(y).ticks(4).tickSize(-iw)).call(gridStyle);
+    g.append('g').attr('transform','translate(0,'+ih+')').call(d3.axisBottom(x0)).call(axisStyle);
+    groups.forEach(function(gr){ var gg=g.append('g').attr('transform','translate('+x0(gr)+',0)');
+      keys.forEach(function(k,ki){ gg.append('rect').attr('x',x1(k)).attr('y',y(data[gr][ki])).attr('width',x1.bandwidth()).attr('height',ih-y(data[gr][ki])).attr('rx',3).attr('fill',cols[ki])
+        .on('pointermove',function(e){show('<b>'+gr+'</b><br><span class="k">'+k+'</span> '+data[gr][ki],e);}).on('pointerleave',hide); }); });
+    d3.select('#lg-gbar').html(keys.map(function(k,i){return '<span><i style="background:'+cols[i]+'"></i>'+k+'</span>';}).join(''));
+  })();
+
+  // 4 · STACKED BAR ----------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-sbar'),W=720,H=320,m={t:14,r:16,b:30,l:42},iw=W-m.l-m.r,ih=H-m.t-m.b;
+    var cats=['Guideline','Practice','Review','Systematic'],keys=['Open','Bronze','Paywall'],cols=[O,A,P];
+    var rows=[{c:'Guideline',Open:12,Bronze:11,Paywall:40},{c:'Practice',Open:33,Bronze:16,Paywall:37},{c:'Review',Open:36,Bronze:7,Paywall:42},{c:'Systematic',Open:47,Bronze:10,Paywall:41}];
+    var x=d3.scaleBand().domain(cats).range([0,iw]).padding(.3);
+    var y=d3.scaleLinear().domain([0,100]).range([ih,0]);
+    var stack=d3.stack().keys(keys)(rows);
+    var g=svg.append('g').attr('transform','translate('+m.l+','+m.t+')');
+    g.append('g').call(d3.axisLeft(y).ticks(4).tickSize(-iw)).call(gridStyle);
+    g.append('g').attr('transform','translate(0,'+ih+')').call(d3.axisBottom(x)).call(axisStyle);
+    stack.forEach(function(layer,li){ g.selectAll('.s'+li).data(layer).join('rect')
+      .attr('x',function(d){return x(d.data.c);}).attr('y',function(d){return y(d[1]);}).attr('width',x.bandwidth())
+      .attr('height',function(d){return y(d[0])-y(d[1]);}).attr('fill',cols[li])
+      .on('pointermove',function(e,d){show('<b>'+d.data.c+'</b><br><span class="k">'+keys[li]+'</span> '+(d[1]-d[0])+'%',e);}).on('pointerleave',hide); });
+    d3.select('#lg-sbar').html(keys.map(function(k,i){return '<span><i style="background:'+cols[i]+'"></i>'+k+'</span>';}).join(''));
+  })();
+
+  // 5 · RANKING BAR (horizontal) --------------------------------------------
+  (function(){
+    var svg=d3.select('#c-hbar'),W=720,H=300,m={t:10,r:48,b:20,l:110},iw=W-m.l-m.r,ih=H-m.t-m.b;
+    var D=[{n:'Elsevier',v:3976},{n:'Springer',v:1774},{n:'Wiley',v:1438},{n:'Wolters',v:1308},{n:'Taylor & F.',v:555},{n:'Oxford',v:479}];
+    var y=d3.scaleBand().domain(D.map(function(d){return d.n;})).range([0,ih]).padding(.28);
+    var x=d3.scaleLinear().domain([0,d3.max(D,function(d){return d.v;})]).range([0,iw]);
+    var g=svg.append('g').attr('transform','translate('+m.l+','+m.t+')');
+    g.append('g').call(d3.axisLeft(y)).call(axisStyle);
+    var grad=svg.append('defs').append('linearGradient').attr('id','hg').attr('x1',0).attr('x2',1).attr('y1',0).attr('y2',0);
+    grad.append('stop').attr('offset','0%').attr('stop-color',O); grad.append('stop').attr('offset','100%').attr('stop-color',A);
+    g.selectAll('.hb').data(D).join('rect').attr('y',function(d){return y(d.n);}).attr('height',y.bandwidth()).attr('rx',4).attr('fill','url(#hg)')
+      .attr('width',function(d){return x(d.v);})
+      .on('pointermove',function(e,d){show('<b>'+d.n+'</b> '+d.v.toLocaleString(),e);}).on('pointerleave',hide);
+    g.selectAll('.hv').data(D).join('text').attr('x',function(d){return x(d.v)+6;}).attr('y',function(d){return y(d.n)+y.bandwidth()/2+4;})
+      .attr('font-size',12).style('fill','var(--ink-soft)').text(function(d){return d.v.toLocaleString();});
+  })();
+
+  // 6 · SCATTER / BUBBLE -----------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-scatter'),W=720,H=340,m={t:14,r:18,b:32,l:46},iw=W-m.l-m.r,ih=H-m.t-m.b;
+    var N=60,D=d3.range(N).map(function(i){var raster=Math.random()<.25;return {b:(raster?1:.3)*Math.random()*1000+40,r:Math.random()*100+5,p:Math.random()*40+2,raster:raster};});
+    var x=d3.scaleLinear().domain([0,1050]).range([0,iw]); var y=d3.scaleLinear().domain([0,115]).range([ih,0]); var rad=d3.scaleSqrt().domain([0,42]).range([2,16]);
+    var g=svg.append('g').attr('transform','translate('+m.l+','+m.t+')');
+    g.append('g').call(d3.axisLeft(y).ticks(4).tickSize(-iw)).call(gridStyle);
+    g.append('g').attr('transform','translate(0,'+ih+')').call(d3.axisBottom(x).ticks(5).tickSize(-ih)).call(gridStyle).select('.domain').remove();
+    g.selectAll('.bb').data(D).join('circle').attr('cx',function(d){return x(d.b);}).attr('cy',function(d){return y(d.r);}).attr('r',function(d){return rad(d.p);})
+      .attr('fill',function(d){return d.raster?O:P;}).attr('fill-opacity',.55).attr('stroke',function(d){return d.raster?O:P;})
+      .on('pointermove',function(e,d){show('<span class="k">bytes</span> '+Math.round(d.b)+'KB<br><span class="k">requests</span> '+Math.round(d.r)+' · <span class="k">pages</span> '+Math.round(d.p),e);}).on('pointerleave',hide);
+    d3.select('#c-scatter').append('text').attr('x',W-20).attr('y',H-8).attr('text-anchor','end').attr('font-size',11).style('fill','var(--ink-soft)').text('x: bytes  ·  y: requests  ·  size: pages  ·  orange = raster-heavy');
+  })();
+
+  // 7 · DONUT ----------------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-donut'),W=720,H=300,cx=W/2,cy=H/2,rad=Math.min(W,H)/2-20;
+    var D=[{n:'PMC free',v:32122,c:O},{n:'DOI only',v:37672,c:P},{n:'No DOI/PMC',v:9989,c:R}];
+    var total=d3.sum(D,function(d){return d.v;});
+    var pie=d3.pie().sort(null).value(function(d){return d.v;});
+    var arc=d3.arc().innerRadius(rad*0.62).outerRadius(rad);
+    var g=svg.append('g').attr('transform','translate('+cx+','+cy+')');
+    g.selectAll('path').data(pie(D)).join('path').attr('d',arc).attr('fill',function(d){return d.data.c;})
+      .on('pointermove',function(e,d){show('<b>'+d.data.n+'</b><br>'+d.data.v.toLocaleString()+' ('+Math.round(d.data.v/total*100)+'%)',e);}).on('pointerleave',hide);
+    g.append('text').attr('text-anchor','middle').attr('dy',-2).attr('font-family','Instrument Serif,serif').attr('font-size',34).style('fill','var(--ink)').text((total/1000).toFixed(0)+'k');
+    g.append('text').attr('text-anchor','middle').attr('dy',18).attr('font-size',11).style('fill','var(--ink-soft)').text('articles');
+  })();
+
+  // 8 · HEATMAP --------------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-heat'),W=720,H=300,m={t:14,r:16,b:30,l:50},iw=W-m.l-m.r,ih=H-m.t-m.b;
+    var days=['Mon','Tue','Wed','Thu','Fri'],hours=['8','10','12','14','16','18'];
+    var x=d3.scaleBand().domain(hours).range([0,iw]).padding(.06); var y=d3.scaleBand().domain(days).range([0,ih]).padding(.06);
+    var data=[];days.forEach(function(d){hours.forEach(function(h){data.push({d:d,h:h,v:Math.round(Math.random()*Math.random()*20)});});});
+    var color=d3.scaleLinear().domain([0,20]).range(['rgba(230,87,50,0.06)',O]);
+    var g=svg.append('g').attr('transform','translate('+m.l+','+m.t+')');
+    g.selectAll('rect').data(data).join('rect').attr('x',function(d){return x(d.h);}).attr('y',function(d){return y(d.d);})
+      .attr('width',x.bandwidth()).attr('height',y.bandwidth()).attr('rx',3).attr('fill',function(d){return color(d.v);})
+      .on('pointermove',function(e,d){show('<b>'+d.d+' '+d.h+':00</b><br>'+d.v+' uploads',e);}).on('pointerleave',hide);
+    g.append('g').attr('transform','translate(0,'+ih+')').call(d3.axisBottom(x)).call(axisStyle);
+    g.append('g').call(d3.axisLeft(y)).call(axisStyle);
+  })();
+
+  // 9 · FORCE-DIRECTED NETWORK ----------------------------------------------
+  (function(){
+    var svg=d3.select('#c-force'),W=720,H=380;
+    var chapters=['intro.riv','pancreatic','results-overview','lifestyle'];
+    var nodes=[],links=[];
+    chapters.forEach(function(c,i){nodes.push({id:c,hub:true});});
+    for(var s=0;s<14;s++){var id='story-'+s;nodes.push({id:id,hub:false});var c=chapters[Math.floor(Math.random()*chapters.length)];links.push({source:id,target:c});if(Math.random()<.4)links.push({source:id,target:chapters[Math.floor(Math.random()*chapters.length)]});}
+    var link=svg.append('g').style('stroke','color-mix(in oklch, var(--ink) 18%, transparent)').selectAll('line').data(links).join('line');
+    var node=svg.append('g').selectAll('circle').data(nodes).join('circle')
+      .attr('r',function(d){return d.hub?11:5;}).style('fill',function(d){return d.hub?O:'var(--ink)';}).style('stroke','var(--bg)').attr('stroke-width',1.5)
+      .on('pointermove',function(e,d){show((d.hub?'<b>chapter</b> ':'<b>story</b> ')+d.id,e);}).on('pointerleave',hide)
+      .call(d3.drag().on('start',function(e,d){if(!e.active)sim.alphaTarget(.3).restart();d.fx=d.x;d.fy=d.y;})
+        .on('drag',function(e,d){d.fx=e.x;d.fy=e.y;}).on('end',function(e,d){if(!e.active)sim.alphaTarget(0);d.fx=null;d.fy=null;}));
+    var sim=d3.forceSimulation(nodes).force('link',d3.forceLink(links).id(function(d){return d.id;}).distance(60))
+      .force('charge',d3.forceManyBody().strength(-130)).force('center',d3.forceCenter(W/2,H/2)).force('collide',d3.forceCollide(14))
+      .on('tick',function(){ link.attr('x1',function(d){return d.source.x;}).attr('y1',function(d){return d.source.y;}).attr('x2',function(d){return d.target.x;}).attr('y2',function(d){return d.target.y;});
+        node.attr('cx',function(d){return Math.max(12,Math.min(W-12,d.x));}).attr('cy',function(d){return Math.max(12,Math.min(H-12,d.y));}); });
+  })();
+
+  // 10 · PIE -----------------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-pie'),W=720,H=300,cx=W/2,cy=H/2,rad=Math.min(W,H)/2-22;
+    var D=[{n:'Docs',v:46,c:O},{n:'Decks',v:28,c:P},{n:'Charts',v:18,c:R},{n:'3D',v:8,c:A}],tot=d3.sum(D,function(d){return d.v;});
+    var pie=d3.pie().sort(null).value(function(d){return d.v;}),arc=d3.arc().innerRadius(0).outerRadius(rad);
+    var g=svg.append('g').attr('transform','translate('+cx+','+cy+')');
+    g.selectAll('path').data(pie(D)).join('path').attr('d',arc).attr('fill',function(d){return d.data.c;}).style('stroke','var(--bg)').attr('stroke-width',2)
+      .on('pointermove',function(e,d){show('<b>'+d.data.n+'</b> '+Math.round(d.data.v/tot*100)+'%',e);}).on('pointerleave',hide);
+    g.selectAll('text').data(pie(D)).join('text').attr('transform',function(d){return 'translate('+arc.centroid(d)+')';}).attr('text-anchor','middle').attr('font-size',12).attr('font-weight',600).attr('fill','#fff').text(function(d){return d.data.n;});
+  })();
+
+  // 11 · RADIAL GAUGE --------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-gauge'),W=720,H=300,cx=W/2,cy=H*0.6,rad=108,val=.72,a0=-Math.PI*0.75,a1=Math.PI*0.75;
+    var g=svg.append('g').attr('transform','translate('+cx+','+cy+')');
+    var grad=svg.append('defs').append('linearGradient').attr('id','gg').attr('x1',0).attr('x2',1);grad.append('stop').attr('offset','0%').attr('stop-color',O);grad.append('stop').attr('offset','100%').attr('stop-color',P);
+    g.append('path').attr('d',d3.arc().innerRadius(rad-18).outerRadius(rad).startAngle(a0).endAngle(a1).cornerRadius(9)()).style('fill','color-mix(in oklch, var(--accent) 12%, transparent)');
+    g.append('path').attr('d',d3.arc().innerRadius(rad-18).outerRadius(rad).startAngle(a0).endAngle(a0+(a1-a0)*val).cornerRadius(9)()).attr('fill','url(#gg)');
+    g.append('text').attr('text-anchor','middle').attr('dy',-2).attr('font-family','Instrument Serif,serif').attr('font-size',46).style('fill','var(--ink)').text(Math.round(val*100)+'%');
+    g.append('text').attr('text-anchor','middle').attr('dy',22).attr('font-size',12).style('fill','var(--ink-soft)').text('coverage');
+  })();
+
+  // 12 · HISTOGRAM -----------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-hist'),W=720,H=300,m={t:14,r:16,b:28,l:42},iw=W-m.l-m.r,ih=H-m.t-m.b;
+    var rnd=d3.randomNormal(120,40),data=d3.range(400).map(function(){return rnd();});
+    var x=d3.scaleLinear().domain([0,260]).range([0,iw]);
+    var bins=d3.bin().domain(x.domain()).thresholds(24)(data);
+    var y=d3.scaleLinear().domain([0,d3.max(bins,function(d){return d.length;})]).nice().range([ih,0]);
+    var g=svg.append('g').attr('transform','translate('+m.l+','+m.t+')');
+    g.append('g').call(d3.axisLeft(y).ticks(4).tickSize(-iw)).call(gridStyle);
+    g.append('g').attr('transform','translate(0,'+ih+')').call(d3.axisBottom(x).ticks(6)).call(axisStyle);
+    g.selectAll('rect').data(bins).join('rect').attr('x',function(d){return x(d.x0)+1;}).attr('y',function(d){return y(d.length);}).attr('width',function(d){return Math.max(0,x(d.x1)-x(d.x0)-2);}).attr('height',function(d){return ih-y(d.length);}).attr('rx',2).attr('fill',O).attr('fill-opacity',.85)
+      .on('pointermove',function(e,d){show('<b>'+Math.round(d.x0)+'–'+Math.round(d.x1)+'KB</b><br>'+d.length+' stories',e);}).on('pointerleave',hide);
+  })();
+
+  // 13 · LOLLIPOP ------------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-lolli'),W=720,H=300,m={t:10,r:30,b:20,l:120},iw=W-m.l-m.r,ih=H-m.t-m.b;
+    var D=[{n:'flythrough',v:9},{n:'constellation',v:8},{n:'globe',v:7},{n:'morph',v:6},{n:'ribbon',v:5},{n:'ambient',v:3}];
+    var y=d3.scaleBand().domain(D.map(function(d){return d.n;})).range([0,ih]).padding(.4),x=d3.scaleLinear().domain([0,10]).range([0,iw]);
+    var g=svg.append('g').attr('transform','translate('+m.l+','+m.t+')');g.append('g').call(d3.axisLeft(y)).call(axisStyle);
+    g.selectAll('line.l').data(D).join('line').attr('x1',0).attr('x2',function(d){return x(d.v);}).attr('y1',function(d){return y(d.n)+y.bandwidth()/2;}).attr('y2',function(d){return y(d.n)+y.bandwidth()/2;}).style('stroke','color-mix(in oklch, var(--accent) 42%, transparent)').attr('stroke-width',2);
+    g.selectAll('circle').data(D).join('circle').attr('cx',function(d){return x(d.v);}).attr('cy',function(d){return y(d.n)+y.bandwidth()/2;}).attr('r',7).attr('fill',O)
+      .on('pointermove',function(e,d){show('<b>'+d.n+'</b> '+d.v,e);}).on('pointerleave',hide);
+  })();
+
+  // 14 · TREEMAP -------------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-tree'),W=720,H=320;
+    var root=d3.hierarchy({name:'root',children:[{name:'SVG',value:427},{name:'PNG',value:46},{name:'Rive',value:18},{name:'JPG',value:8},{name:'MP4',value:5},{name:'GIF',value:2}]}).sum(function(d){return d.value;}).sort(function(a,b){return b.value-a.value;});
+    d3.treemap().size([W,H]).padding(3)(root);
+    var cols=[O,P,R,A,'#b04b1d','#2d6a4f'];
+    var leaf=svg.selectAll('g').data(root.leaves()).join('g').attr('transform',function(d){return 'translate('+d.x0+','+d.y0+')';});
+    leaf.append('rect').attr('width',function(d){return d.x1-d.x0;}).attr('height',function(d){return d.y1-d.y0;}).attr('rx',5).attr('fill',function(d,i){return cols[i%cols.length];}).attr('fill-opacity',.85)
+      .on('pointermove',function(e,d){show('<b>'+d.data.name+'</b> '+d.value,e);}).on('pointerleave',hide);
+    leaf.append('text').attr('x',9).attr('y',21).attr('fill','#fff').attr('font-size',13).attr('font-weight',600).text(function(d){return d.data.name;});
+  })();
+
+  // 15 · CIRCLE PACK ---------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-pack'),W=720,H=380;
+    var root=d3.hierarchy({name:'root',children:d3.range(24).map(function(i){return {name:'s'+i,value:Math.random()*Math.random()*100+5};})}).sum(function(d){return d.value;});
+    d3.pack().size([W,H]).padding(4)(root);var cols=[O,P,R,A];
+    svg.selectAll('circle').data(root.leaves()).join('circle').attr('cx',function(d){return d.x;}).attr('cy',function(d){return d.y;}).attr('r',function(d){return d.r;}).attr('fill',function(d,i){return cols[i%cols.length];}).attr('fill-opacity',.55).attr('stroke',function(d,i){return cols[i%cols.length];})
+      .on('pointermove',function(e,d){show('<b>'+d.data.name+'</b> '+Math.round(d.value),e);}).on('pointerleave',hide);
+  })();
+
+  // 16 · SUNBURST ------------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-sun'),W=720,H=340,rad=Math.min(W,H)/2-12;
+    var root=d3.hierarchy({name:'Agent',children:[{name:'Harness',children:[{name:'Tools',value:3},{name:'Prompt',value:2}]},{name:'Context',children:[{name:'Turns',value:2}]},{name:'Skills',value:3},{name:'Memory',value:2}]}).sum(function(d){return d.value||0;});
+    d3.partition().size([2*Math.PI,rad])(root);
+    var arc=d3.arc().startAngle(function(d){return d.x0;}).endAngle(function(d){return d.x1;}).innerRadius(function(d){return d.y0;}).outerRadius(function(d){return d.y1;}).padAngle(.006);
+    var cols=[O,P,R,A,'#b04b1d'];
+    svg.append('g').attr('transform','translate('+W/2+','+H/2+')').selectAll('path').data(root.descendants().filter(function(d){return d.depth;})).join('path').attr('d',arc).attr('fill',function(d,i){return cols[(d.depth+i)%cols.length];}).attr('fill-opacity',function(d){return 1-d.depth*0.16;}).style('stroke','var(--bg)')
+      .on('pointermove',function(e,d){show('<b>'+d.data.name+'</b>',e);}).on('pointerleave',hide);
+  })();
+
+  // 17 · CHORD ---------------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-chord'),W=720,H=360,rad=Math.min(W,H)/2-34;
+    var names=['Portal','GraphQL','EHR','DB'],matrix=[[0,12,3,1],[8,0,9,7],[2,5,0,6],[1,3,4,0]],cols=[O,P,R,A];
+    var chord=d3.chord().padAngle(.06).sortSubgroups(d3.descending)(matrix);
+    var arc=d3.arc().innerRadius(rad).outerRadius(rad+12),ribbon=d3.ribbon().radius(rad);
+    var g=svg.append('g').attr('transform','translate('+W/2+','+H/2+')');
+    g.append('g').selectAll('path').data(chord.groups).join('path').attr('d',arc).attr('fill',function(d){return cols[d.index];}).style('stroke','var(--bg)');
+    g.append('g').attr('fill-opacity',.62).selectAll('path').data(chord).join('path').attr('d',ribbon).attr('fill',function(d){return cols[d.source.index];}).style('stroke','color-mix(in oklch, var(--ink) 8%, transparent)')
+      .on('pointermove',function(e,d){show('<b>'+names[d.source.index]+' → '+names[d.target.index]+'</b> '+d.source.value,e);}).on('pointerleave',hide);
+    g.append('g').selectAll('text').data(chord.groups).join('text').attr('transform',function(d){var a=(d.startAngle+d.endAngle)/2;return 'rotate('+(a*180/Math.PI-90)+') translate('+(rad+18)+')'+(a>Math.PI?' rotate(180)':'');}).attr('text-anchor',function(d){var a=(d.startAngle+d.endAngle)/2;return a>Math.PI?'end':'start';}).attr('font-size',12).attr('alignment-baseline','middle').style('fill','var(--ink)').text(function(d){return names[d.index];});
+  })();
+
+  // 18 · RADAR ---------------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-radar'),W=720,H=340,cx=W/2,cy=H/2,rad=Math.min(W,H)/2-44;
+    var axes=['Speed','Brand','A11y','Interactive','Offline'],S=[{n:'SVG',c:O,v:[5,5,4,1,5]},{n:'Chart.js',c:P,v:[4,3,3,5,2]}];
+    var ang=function(i){return Math.PI*2*i/axes.length-Math.PI/2;},rs=d3.scaleLinear().domain([0,5]).range([0,rad]);
+    var g=svg.append('g').attr('transform','translate('+cx+','+cy+')');
+    [1,2,3,4,5].forEach(function(r){g.append('circle').attr('r',rs(r)).attr('fill','none').style('stroke','var(--grid)');});
+    axes.forEach(function(a,i){g.append('line').attr('x2',Math.cos(ang(i))*rad).attr('y2',Math.sin(ang(i))*rad).style('stroke','var(--grid)');
+      g.append('text').attr('x',Math.cos(ang(i))*(rad+16)).attr('y',Math.sin(ang(i))*(rad+16)).attr('text-anchor','middle').attr('font-size',11).style('fill','var(--ink-soft)').text(a);});
+    S.forEach(function(s){var pts=s.v.map(function(d,i){return [Math.cos(ang(i))*rs(d),Math.sin(ang(i))*rs(d)];});g.append('polygon').attr('points',pts.map(function(p){return p.join(',');}).join(' ')).attr('fill',s.c).attr('fill-opacity',.18).attr('stroke',s.c).attr('stroke-width',2);});
+    d3.select('#lg-radar').html(S.map(function(s){return '<span><i style="background:'+s.c+'"></i>'+s.n+'</span>';}).join(''));
+  })();
+
+  // 19 · SLOPE ---------------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-slope'),W=720,H=320,m={t:24,r:120,b:16,l:120},iw=W-m.l-m.r,ih=H-m.t-m.b;
+    var D=[{n:'open-dna',a:992,b:344,c:O},{n:'galleri',a:943,b:324,c:P},{n:'brca1',a:534,b:257,c:R},{n:'myh7',a:696,b:425,c:A}];
+    var y=d3.scaleLinear().domain([0,1050]).range([ih,0]),g=svg.append('g').attr('transform','translate('+m.l+','+m.t+')');
+    g.append('text').attr('y',-8).attr('font-size',12).style('fill','var(--ink-soft)').text('Today');
+    g.append('text').attr('x',iw).attr('y',-8).attr('text-anchor','end').attr('font-size',12).style('fill','var(--ink-soft)').text('Optimized');
+    D.forEach(function(d){g.append('line').attr('x1',0).attr('y1',y(d.a)).attr('x2',iw).attr('y2',y(d.b)).attr('stroke',d.c).attr('stroke-width',2.5)
+        .on('pointermove',function(e){show('<b>'+d.n+'</b> '+d.a+' → '+d.b+'KB',e);}).on('pointerleave',hide);
+      g.append('circle').attr('cx',0).attr('cy',y(d.a)).attr('r',4).attr('fill',d.c);g.append('circle').attr('cx',iw).attr('cy',y(d.b)).attr('r',4).attr('fill',d.c);
+      g.append('text').attr('x',-8).attr('y',y(d.a)+4).attr('text-anchor','end').attr('font-size',11).style('fill','var(--ink)').text(d.n);
+      g.append('text').attr('x',iw+8).attr('y',y(d.b)+4).attr('font-size',11).style('fill','var(--ink-soft)').text(d.b);});
+  })();
+
+  // 20 · STREAMGRAPH ---------------------------------------------------------
+  (function(){
+    var svg=d3.select('#c-stream'),W=720,H=300,m={t:10,r:10,b:24,l:30},iw=W-m.l-m.r,ih=H-m.t-m.b;
+    var keys=['A','B','C','D'],cols=[O,P,R,A],L=d3.range(12);
+    var rows=L.map(function(i){var o={i:i};keys.forEach(function(k){o[k]=Math.max(2,20+15*Math.sin(i/2+keys.indexOf(k))+Math.random()*6);});return o;});
+    var x=d3.scaleLinear().domain([0,11]).range([0,iw]);
+    var stack=d3.stack().keys(keys).offset(d3.stackOffsetWiggle)(rows);
+    var y=d3.scaleLinear().domain([d3.min(stack,function(l){return d3.min(l,function(d){return d[0];});}),d3.max(stack,function(l){return d3.max(l,function(d){return d[1];});})]).range([ih,0]);
+    var area=d3.area().x(function(d,i){return x(i);}).y0(function(d){return y(d[0]);}).y1(function(d){return y(d[1]);}).curve(d3.curveBasis);
+    svg.append('g').attr('transform','translate('+m.l+','+m.t+')').selectAll('path').data(stack).join('path').attr('d',area).attr('fill',function(d,i){return cols[i];}).attr('fill-opacity',.85)
+      .on('pointermove',function(e,d){show('<b>series '+d.key+'</b>',e);}).on('pointerleave',hide);
+  })();
+
+})();
+</script>
+
+<label class="anim-toggle"><input type="checkbox" id="animSwitch"> Animate</label>
+<script>
+(function(){
+  if (!window.d3) return;
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var sw = document.getElementById('animSwitch');
+  var on = !reduce;                 // default on, unless the viewer prefers reduced motion
+  sw.checked = on;
+
+  function animateIn(svg){
+    var node = svg.node();
+    if (node.__animating) return;          // guard: don't restart mid-animation (a cancelled pending transition strands opacity at 0)
+    node.__animating = true;
+    var marks = svg.selectAll('rect,circle,path,polygon,line').filter(function(){ return this.parentNode && this.parentNode.tagName !== 'defs'; });
+    marks.interrupt().style('opacity', 0);
+    // stroke-only line paths draw themselves
+    svg.selectAll('path').filter(function(){ return d3.select(this).attr('fill') === 'none'; }).each(function(){
+      var L = this.getTotalLength ? this.getTotalLength() : 0;
+      if (L) d3.select(this).attr('stroke-dasharray', L+' '+L).attr('stroke-dashoffset', L)
+        .interrupt('draw').transition('draw').duration(850).ease(d3.easeQuadOut).attr('stroke-dashoffset', 0)
+        .on('end interrupt', function(){ d3.select(this).attr('stroke-dasharray', null).attr('stroke-dashoffset', null); });
+    });
+    // on end OR interrupt, clear the inline opacity so a chart can never be stranded invisible
+    marks.transition().delay(function(d,i){ return i*6; }).duration(480).ease(d3.easeCubicOut).style('opacity', 1)
+      .on('end interrupt', function(){ d3.select(this).style('opacity', null); });
+    setTimeout(function(){ node.__animating = false; }, marks.size()*6 + 560);   // release guard after the last mark settles
+  }
+  function staticAll(){
+    svgs.forEach(function(s){ s.__animating = false;
+      d3.select(s).selectAll('rect,circle,path,polygon,line').interrupt().interrupt('draw').style('opacity', null).attr('stroke-dasharray', null).attr('stroke-dashoffset', null); });
+  }
+  var svgs = [].slice.call(document.querySelectorAll('main svg[id^="c-"]'));
+  // play each chart as it scrolls into view, when the switch is on
+  var io = new IntersectionObserver(function(es){ es.forEach(function(e){ if (e.isIntersecting && on) animateIn(d3.select(e.target)); }); }, { threshold: 0.35 });
+  svgs.forEach(function(s){ io.observe(s); });
+  // toggling on replays whatever is currently visible; toggling off snaps everything static
+  sw.addEventListener('change', function(){
+    on = sw.checked;
+    if (on) svgs.forEach(function(s){ var r=s.getBoundingClientRect(); if (r.top<innerHeight && r.bottom>0) animateIn(d3.select(s)); });
+    else staticAll();
+  });
+})();
+</script>
+
+<script>
+  // Theme + Mode pickers — drive data-* on <html>; charts re-skin live because
+  // their ink/axis/separator colors are CSS var() refs (style props), not static attrs.
+  (function () {
+    var root = document.documentElement;
+    function wire(attr, key, fallback) {
+      var btns = document.querySelectorAll('.doc-settings [data-' + attr + ']');
+      function apply(v) {
+        root.setAttribute('data-' + attr, v);
+        try { localStorage.setItem(key, v); } catch (e) {}
+        btns.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset[attr] === v ? 'true' : 'false'); });
+      }
+      apply(root.getAttribute('data-' + attr) || fallback);
+      btns.forEach(function (b) { b.addEventListener('click', function () { apply(b.dataset[attr]); }); });
+    }
+    wire('theme', 'nest-doc-theme', 'nest');
+    wire('mode', 'nest-doc-mode', 'light');
+  })();
+</script>
+</body>
+</html>

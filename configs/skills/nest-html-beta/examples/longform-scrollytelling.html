@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visualizing the last five docs — long form</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --ink:#0a0a0a; --ink-soft:rgba(10,10,10,.62); --bg:#fff;
+    --accent:#e65732; --accent-2:#e78d32; --accent-3:#a367c8;
+    --border:rgba(230,87,50,.18); --hover:rgba(230,87,50,.06);
+    --serif:"Instrument Serif",Georgia,serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --content:760px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.62}
+  main{max-width:var(--content);margin:0 auto;padding:7vh 24px 18vh}
+  header{margin-bottom:48px}
+  .eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 16px}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(48px,7vw,88px);line-height:1.04;margin:0 0 20px;
+     background:linear-gradient(100deg,#e65732,#e78d32,#a367c8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{font-size:21px;line-height:1.5;color:var(--ink-soft);margin:0 0 18px;max-width:36ch}
+  .byline{font-size:14px;color:var(--ink-soft)}
+  h2{font-family:var(--serif);font-weight:400;font-size:clamp(30px,4vw,42px);line-height:1.1;margin:64px 0 8px;scroll-margin-top:24px}
+  h2 .num{color:var(--accent);font-size:.7em;margin-right:.4em}
+  h3{font-size:18px;margin:32px 0 6px}
+  p{margin:0 0 18px}
+  a{color:var(--accent)}
+  strong{font-weight:600}
+  .accent{color:var(--accent);font-weight:600}
+  blockquote{margin:22px 0;padding:14px 20px;border:1px solid var(--border);background:var(--hover);border-radius:10px;color:var(--ink-soft)}
+  /* figures break out wider than the prose column */
+  figure{margin:34px 0}
+  figure.wide{width:min(1100px,92vw);margin-left:calc((var(--content) - min(1100px,92vw))/2);margin-right:auto}
+  figcaption{font-size:13px;color:var(--ink-soft);text-align:center;margin-top:10px;font-style:italic}
+  .gl-figure{position:relative;height:clamp(360px,56vh,560px);border:1px solid var(--border);border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#fff,rgba(230,87,50,.02))}
+  .gl-figure canvas.gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .gl-figure .gl-caption{position:absolute;left:18px;right:18px;bottom:14px;font-size:14px;color:var(--ink-soft);
+    background:rgba(255,255,255,.78);backdrop-filter:blur(4px);border:1px solid var(--border);border-radius:8px;padding:8px 12px;pointer-events:none}
+  .gl-figure .gl-eyebrow{position:absolute;left:18px;top:14px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  /* mermaid */
+  .mermaid{background:var(--hover);border:1px solid var(--border);border-radius:12px;padding:22px;text-align:center}
+  .mermaid svg{max-width:100%;height:auto}
+  /* charts */
+  .chart-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:40px;align-items:center}
+  @media(max-width:680px){.chart-grid{grid-template-columns:1fr}}
+  .chart svg{width:100%;height:auto;display:block}
+  .chart-caption{font-family:var(--serif);font-size:1.15rem;margin-bottom:10px}
+  .bar-value{font-family:var(--serif);fill:var(--ink);font-size:19px}
+  .bar-label{fill:var(--ink-soft);font-size:12px}
+  .bar-baseline{stroke:rgba(10,10,10,.12);stroke-width:1}
+  .donut-total{font-family:var(--serif);fill:var(--ink);font-size:28px}
+  .donut-total-label{fill:var(--ink-soft);font-size:9px}
+  .donut-legend{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+  .donut-legend li{display:flex;align-items:center;gap:10px;font-size:14px}
+  .donut-legend .swatch{width:12px;height:12px;border-radius:3px;flex:0 0 12px}
+  .donut-legend .legend-label{flex:1;color:var(--ink-soft)}
+  .donut-legend .legend-value{font-variant-numeric:tabular-nums;font-weight:600}
+  /* scrollytelling */
+  .scrolly{width:min(1100px,92vw);margin:48px auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(1.5rem,5vw,4rem);align-items:start}
+  .scrolly-visual{position:sticky;top:8vh;height:84vh;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#fff,rgba(163,103,200,.03))}
+  #scrolly-gl{display:block;width:100%;height:100%}
+  .scrolly-cap{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-3);opacity:.75}
+  .scrolly-steps{display:flex;flex-direction:column}
+  .scrolly-step{min-height:78vh;display:flex;flex-direction:column;justify-content:center;opacity:.32;transition:opacity .5s ease}
+  .scrolly-step.is-active{opacity:1}
+  .scrolly-step .kick{font-size:.74rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem}
+  .scrolly-step h3{font-size:clamp(1.3rem,2.6vw,1.8rem);margin:0 0 .7rem}
+  @media(max-width:760px){.scrolly{grid-template-columns:1fr;gap:0}.scrolly-visual{height:52vh;top:0}}
+  @media(prefers-reduced-motion:reduce){.scrolly-step{opacity:1;transition:none}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow">Visualization patterns · applied to recent docs</p>
+  <h1>The last five docs, in long form.</h1>
+  <p class="lede">The same three.js scenes and mermaid variants from the deck — now embedded in a scrolling article, where figures animate as you reach them and one section advances on scroll.</p>
+  <p class="byline">2026-06-04 · nest-html-beta demo</p>
+</header>
+
+<p>The deck version proved the pieces work. This is the other delivery mode the skill supports: a long-form document. Nothing is hidden behind slide navigation, so every figure lives in the normal flow — three.js scenes spin up when you scroll them into view and release their GPU context when you scroll away, and mermaid renders on load. The point of this page is to show that <em>matching the visual to the content's shape</em> reads just as well as prose-plus-figure as it does as slides.</p>
+
+<h2><span class="num">1</span>ClinVar link mismatch</h2>
+<p>The investigation's core is an algorithm: match a patient variant against ClinVar by searching the most precise notation first, grouping by genomic coordinate, and <strong>failing safe</strong> when the result is genuinely ambiguous. That's a flowchart, not a paragraph — so here it is as one.</p>
+<figure>
+  <div class="mermaid">
+flowchart TD
+  P["Parse HGVS: c., p., and NM_ transcript"] --> S{"Pick search term"}
+  S -->|transcript present| EX["Exact quoted HGVS"]
+  S -->|else| IN["Intersect c. AND p."]
+  S -->|fallback| SI["Single notation"]
+  EX --> G["Group esummary by canonical_spdi"]
+  IN --> G
+  SI --> G
+  G --> D{"Distinct variants?"}
+  D -->|one| M["MATCHED · best by submissions"]
+  D -->|many| A["AMBIGUOUS · no link · Search ClinVar"]
+  D -->|none| NF["NOT_FOUND"]
+  classDef ok fill:#e8f3ec,stroke:#2d6a4f,color:#0f1c15;
+  classDef warn fill:#fadfd8,stroke:#e65732,color:#7a2615;
+  class M ok
+  class A warn
+  </div>
+  <figcaption>The matching algorithm — replaces the prose "algorithm, concretely" list.</figcaption>
+</figure>
+<p>The build is test-first and phased, each step gated on the last. The implementation-plan table reads more clearly as a dependency timeline:</p>
+<figure>
+  <div class="mermaid">
+gantt
+  title NES-4549 — test-first build
+  dateFormat YYYY-MM-DD
+  axisFormat %m-%d
+  section Build
+  RED tests (reproduce PALLD + BRCA1) :done, a1, 2026-06-03, 1d
+  Parse + search term                 :active, a2, after a1, 1d
+  Resolve + fail-safe (spdi grouping) :a3, after a2, 1d
+  GraphQL + ambiguous UI              :a4, after a3, 1d
+  Verify (turbo test, lint, manual)   :a5, after a4, 1d
+  </div>
+  <figcaption>The five-phase plan as a gantt — the dependency chain the table only implied.</figcaption>
+</figure>
+
+<h2><span class="num">2</span>Image substitution review</h2>
+<p>The asset review lists twelve "flat" pages, but their names hide a branching patient narrative: results intro, an explanation, a fork on cancer history, then management and one of four scheduling paths. Drawing the real flow makes the substituted images legible in context.</p>
+<figure>
+  <div class="mermaid">
+flowchart TD
+  I["Intro: results available"] --> E["Explanation: no risk variants"]
+  E --> C{"Cancer history?"}
+  C -->|yes| WH["Does not explain your cancer"]
+  C -->|no| NH["No increased genetic risk"]
+  WH --> FR["Future risk with history"]
+  NH --> MG["Management by age / sex / risk"]
+  FR --> MG
+  MG --> SC{"Scheduling path"}
+  SC -->|GC required| G1["Schedule genetic counselor"]
+  SC -->|GC optional| G2["Optional counselor"]
+  SC -->|lab| G3["Call lab to schedule"]
+  SC -->|none| G4["Contact us if new family cancers"]
+  </div>
+  <figcaption>The patient-story graph the 12 pages actually form.</figcaption>
+</figure>
+
+<h2><span class="num">3</span>Story asset loading cost</h2>
+<p>This is the richest doc, and it says the magic words: <em>"a story is a directed graph — pages are nodes, <code>connectionRules</code> are edges, and modules splice in subgraphs."</em> When a doc describes its subject as a graph, three.js earns its place. The scene below tours the heavy end of the corpus — the 690KB GIF shared by two stories, the hidden 2.2MB SVG inherited through a module chapter, the shared Rive used by 149 stories. It auto-advances; the caption tracks the focused node.</p>
+<figure class="wide">
+  <div class="gl-figure" data-scene="storyGraph" data-autosteps="6">
+    <span class="gl-eyebrow">Story graph · auto-tour</span>
+    <canvas class="gl" aria-hidden="true"></canvas>
+    <div class="gl-caption" id="fly-detail">Touring the assets and shared chapters driving the heavy end…</div>
+  </div>
+  <figcaption>The story dependency graph — the heaviest assets and the chapters that splice them in.</figcaption>
+</figure>
+<p>The audit also has 417 stories with three numbers each — bytes, requests, pages. A 3D scatter shows the distribution's shape: a dense, SVG-clean majority and a sparse raster-heavy long tail that pulls away from the pack.</p>
+<figure class="wide">
+  <div class="gl-figure" data-scene="storyScatter">
+    <span class="gl-eyebrow">417 stories · bytes × requests × pages</span>
+    <canvas class="gl" aria-hidden="true"></canvas>
+    <div class="gl-caption">Each point is a story; clusters stand in for raster-heavy vs SVG-clean profiles.</div>
+  </div>
+  <figcaption>The corpus as a point cloud — the long tail separates from the SVG-clean core.</figcaption>
+</figure>
+<p>The recommendations are already ranked by impact-per-effort and tagged BUG / PERF / ROADMAP, which is exactly a quadrant:</p>
+<figure>
+  <div class="mermaid">
+quadrantChart
+  title Asset fixes
+  x-axis Low effort --> High effort
+  y-axis Low impact --> High impact
+  quadrant-1 Big bets
+  quadrant-2 Quick wins
+  quadrant-3 Fill-ins
+  quadrant-4 Time sinks
+  Ungate content + onError: [0.15, 0.92]
+  Fix 404 to 200 trap: [0.2, 0.55]
+  Raster to WebP / GIF to MP4: [0.45, 0.82]
+  Longer CDN cache TTL: [0.18, 0.7]
+  Enable HTTP/3: [0.15, 0.4]
+  Next-page prefetch: [0.5, 0.85]
+  SVG sprites to CDN: [0.55, 0.45]
+  Story JSON lazy endpoint: [0.82, 0.5]
+  </div>
+  <figcaption>Recommendations on impact × effort — quick wins, top-left.</figcaption>
+</figure>
+<p>And the felt-slowness bug — text content gated behind the image's <code>onLoad</code>, with no <code>onError</code> — is a sequence:</p>
+<figure>
+  <div class="mermaid">
+sequenceDiagram
+  actor U as Patient
+  participant P as PageImage.tsx
+  participant CDN
+  U->>P: Land on page
+  P->>CDN: GET image
+  Note over P: text content gated on imageLoaded
+  CDN-->>P: image bytes (690KB GIF)
+  P->>P: onLoad -> imageLoaded = true -> show text
+  Note over P: no onError: broken ref -> text never shows -> blank page
+  </div>
+  <figcaption>Why a broken image leaves a permanently blank page.</figcaption>
+</figure>
+
+<h2><span class="num">4</span>Story load simulator</h2>
+<p>The companion simulator replays a story page-by-page, each page gated on its image fetch. As a latency trace, a packet walks the pages and stalls hard on the 690KB GIF page — the caption shows the running total climbing past 4 seconds.</p>
+<figure class="wide">
+  <div class="gl-figure" data-scene="pageWalk" data-autosteps="4">
+    <span class="gl-eyebrow">open-dna-cardio-prs @ Fast 3G · auto-walk</span>
+    <canvas class="gl" aria-hidden="true"></canvas>
+    <div class="gl-caption" id="trace-detail">Walking the pages — watch the GIF page stall…</div>
+  </div>
+  <figcaption>The page walk as a latency trace; the GIF page is the 3.7-second hop.</figcaption>
+</figure>
+<p>The headline result — 8.3 seconds of blank screen without prefetch, 0.3 with it — is two timeline bars:</p>
+<figure>
+  <div class="mermaid">
+gantt
+  title Full story-walk @ Fast 3G (15 pages)
+  dateFormat X
+  axisFormat %Ss
+  section Today (no prefetch)
+  8.3s of blank-screen waits :crit, a1, 0, 8
+  section Prefetch on (proposed)
+  0.3s — warmed during dwell :active, a2, 0, 1
+  </div>
+  <figcaption>Prefetch vs not — a 96% reduction in blank-screen time.</figcaption>
+</figure>
+
+<h2><span class="num">5</span>Gene research literature — open access</h2>
+<p>This doc is the counter-example, and it's worth stating: it is almost entirely <strong>proportions and concentration</strong>. There's no graph to fly through and no flow to trace — so the honest choice is charts and a mermaid pie, <em>not</em> 3D. Forcing a point cloud here would look impressive and read worse.</p>
+<figure>
+  <div class="mermaid">
+pie showData
+  title 79,783 articles by access tier
+  "PMC free full-text" : 32122
+  "DOI only — OA unknown" : 37672
+  "No DOI / PMC — unresolvable" : 9989
+  </div>
+  <figcaption>Corpus access tiers — a pure parts-of-a-whole.</figcaption>
+</figure>
+<p>The clinically-valuable formal guidelines are the least machine-accessible, and the locked content is heavily concentrated in a few publishers. Both are built from JSON data blocks, so updating the numbers never means editing SVG paths.</p>
+<figure class="wide">
+  <script type="application/json" id="guide-data">
+  { "title": "Panel formal guidelines (784) by access",
+    "slices": [
+      { "label": "Cleanly fetchable", "value": 215 },
+      { "label": "Bronze / fragile",  "value": 106 },
+      { "label": "Paywalled",         "value": 291 },
+      { "label": "No resolvable ID",  "value": 167 } ] }
+  </script>
+  <script type="application/json" id="pub-data">
+  { "title": "Locked articles by publisher (full corpus)",
+    "categories": [
+      { "label": "Elsevier", "value": 3976 },
+      { "label": "Springer", "value": 1774 },
+      { "label": "Wiley",    "value": 1438 },
+      { "label": "Wolters",  "value": 1308 },
+      { "label": "T&F",      "value": 555 },
+      { "label": "Oxford",   "value": 479 } ] }
+  </script>
+  <div class="chart-grid">
+    <div class="chart" data-chart="donut" data-src="guide-data"></div>
+    <div class="chart" data-chart="bar" data-src="pub-data"></div>
+  </div>
+  <figcaption>Where the locked content lives — formal-guideline access (left) and publisher concentration (right).</figcaption>
+</figure>
+
+<h2><span class="num">+</span>Bonus: scrollytelling</h2>
+<p>One pattern only long-form can do: a pinned visual that advances as you scroll past the prose. The point cloud on the left re-forms at each step — raw noise, normalized onto a sphere, clustered, then settled into an ordered lattice — driven entirely by which paragraph is centered.</p>
+</main>
+
+<section class="scrolly" aria-label="How sample data resolves through the pipeline">
+  <div class="scrolly-visual"><canvas id="scrolly-gl"></canvas><span class="scrolly-cap" aria-hidden="true">scroll to advance</span></div>
+  <div class="scrolly-steps">
+    <div class="scrolly-step" data-step="0"><span class="kick">Stage 01 — Ingest</span><h3>Raw samples arrive as scattered noise</h3><p>Every run lands as a loose cloud of unlabeled observations — no structure, no shared coordinate system. A variant call and a QC artifact look identical here.</p></div>
+    <div class="scrolly-step" data-step="1"><span class="kick">Stage 02 — Normalize</span><h3>Normalization pulls them onto a sphere</h3><p>Genome build, units, and terminology are reconciled, so distance starts to mean something. The cloud contracts onto one normalized surface — every point now comparable.</p></div>
+    <div class="scrolly-step" data-step="2"><span class="kick">Stage 03 — Cluster</span><h3>Clustering separates the signal</h3><p>With a common geometry, similar samples fall together. The surface resolves into colored lobes — cohorts and batches pull apart; the outliers are what a reviewer should see first.</p></div>
+    <div class="scrolly-step" data-step="3"><span class="kick">Stage 04 — Deliver</span><h3>Results settle into a clean lattice</h3><p>Finally the clusters collapse into a deterministic, reproducible layout that maps one-to-one to the report a clinician reads. Same input, same arrangement, every time.</p></div>
+  </div>
+</section>
+
+<main>
+<h2>The takeaway</h2>
+<p><span class="accent">Graphs get 3D; quantities get charts.</span> Story graphs and request flows earned three.js; the access-tier and publisher splits stayed mermaid pies and bars. Same one-file, on-brand output either way — the only thing that changed between the deck and this article was how the figures mount. Match the visual to the shape of the content, and both formats read.</p>
+</main>
+
+<!-- mermaid: long-form can render on load (nothing is display:none) -->
+<script>
+  if(window.mermaid)window.mermaid.initialize({startOnLoad:true,theme:'default',
+    themeVariables:{primaryColor:'#fadfd8',primaryBorderColor:'#e65732',primaryTextColor:'#7a2615',
+      lineColor:'#b04b1d',pie1:'#e65732',pie2:'#a367c8',pie3:'#c45567',pie4:'#e78d32',
+      fontFamily:'-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif'}});
+</script>
+
+<!-- live-from-JSON charts (render once on load) -->
+<script>
+(function(){
+  var DC=['#e65732','#a367c8','#c45567','#e78d32'];
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function readJSON(id){var n=document.getElementById(id);if(!n)return null;try{return JSON.parse(n.textContent);}catch(e){return null;}}
+  function bar(el,data,gid){var cats=(data&&data.categories)||[];var X0=40,X1=600,TOP=40,BASE=200;var max=Math.max(1,Math.max.apply(null,cats.map(function(c){return +c.value||0;})));var slot=cats.length?(X1-X0)/cats.length:0;var bw=Math.min(70,slot*0.55);
+    var bars=cats.map(function(c,i){var v=+c.value||0;var h=v/max*(BASE-TOP);var cx=X0+slot*i+slot/2;var x=cx-bw/2;var y=BASE-h;return '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="4" fill="url(#'+gid+')"></rect><text class="bar-value" x="'+cx.toFixed(1)+'" y="'+(y-8).toFixed(1)+'" text-anchor="middle">'+esc(c.value)+'</text><text class="bar-label" x="'+cx.toFixed(1)+'" y="'+(BASE+22)+'" text-anchor="middle">'+esc(c.label)+'</text>';}).join('');
+    el.innerHTML=(data.title?'<figcaption class="chart-caption">'+esc(data.title)+'</figcaption>':'')+'<svg viewBox="0 0 640 280" role="img" aria-label="'+esc(data.title||'bar')+'"><defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e65732"></stop><stop offset="1" stop-color="#e78d32"></stop></linearGradient></defs><line class="bar-baseline" x1="'+X0+'" y1="'+BASE+'" x2="'+X1+'" y2="'+BASE+'"></line>'+bars+'</svg>';}
+  function donut(el,data){var sl=(data&&data.slices)||[];var R=60,C=2*Math.PI*R,CX=80,CY=80,SW=22;var total=sl.reduce(function(a,s){return a+(+s.value||0);},0);var off=0;
+    var segs=sl.map(function(s,i){var v=+s.value||0;var len=(total?v/total:0)*C;var seg='<circle r="'+R+'" cx="'+CX+'" cy="'+CY+'" fill="none" stroke="'+DC[i%DC.length]+'" stroke-width="'+SW+'" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'"></circle>';off+=len;return seg;}).join('');
+    var leg=sl.map(function(s,i){return '<li><span class="swatch" style="background:'+DC[i%DC.length]+'"></span><span class="legend-label">'+esc(s.label)+'</span><span class="legend-value">'+esc(s.value)+'</span></li>';}).join('');
+    el.innerHTML=(data.title?'<figcaption class="chart-caption">'+esc(data.title)+'</figcaption>':'')+'<div style="display:flex;align-items:center;gap:24px"><svg viewBox="0 0 160 160" style="width:150px;flex:0 0 150px" role="img" aria-label="'+esc(data.title||'donut')+'"><g transform="rotate(-90 '+CX+' '+CY+')">'+segs+'</g><text class="donut-total" x="'+CX+'" y="'+(CY+4)+'" text-anchor="middle">'+total+'</text><text class="donut-total-label" x="'+CX+'" y="'+(CY+22)+'" text-anchor="middle">TOTAL</text></svg><ul class="donut-legend">'+leg+'</ul></div>';}
+  document.querySelectorAll('.chart[data-chart]').forEach(function(el,i){var d=readJSON(el.getAttribute('data-src'));if(!d)return;if(el.getAttribute('data-chart')==='bar')bar(el,d,'g'+i);else donut(el,d);});
+})();
+</script>
+
+<!-- three.js: IntersectionObserver-mounted figures + scrollytelling -->
+<script type="module">
+import * as THREE from 'three';
+const BRAND={ink:new THREE.Color('#0a0a0a'),orange:new THREE.Color('#e65732'),amber:new THREE.Color('#e78d32'),purple:new THREE.Color('#a367c8'),rose:new THREE.Color('#c45567')};
+function disc(){const s=64,c=document.createElement('canvas');c.width=c.height=s;const g=c.getContext('2d'),gr=g.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.beginPath();g.arc(s/2,s/2,s/2,0,Math.PI*2);g.fill();const t=new THREE.CanvasTexture(c);t.needsUpdate=true;return t;}
+
+// Long-form mount: run while the figure is on-screen, dispose when it leaves.
+function mountFigure(fig,build){
+  const canvas=fig.querySelector('canvas.gl');if(!canvas)return;
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const autoSteps=+(fig.dataset.autosteps||0);fig.dataset.step='0';
+  let renderer,scene,camera,update=()=>{},raf=0,timer=0,mounted=false;
+  function size(){const r=canvas.getBoundingClientRect();renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(r.width,r.height,false);camera.aspect=(r.width||1)/(r.height||1);camera.updateProjectionMatrix();}
+  function mount(){if(mounted)return;mounted=true;renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(50,1,0.1,200);camera.position.set(0,0,18);
+    update=build(scene,camera,{THREE,BRAND,disc,canvas,fig})||(()=>{});size();ro.observe(canvas);
+    if(autoSteps>1&&!reduce){let k=0;timer=setInterval(()=>{k=(k+1)%autoSteps;fig.dataset.step=String(k);},2600);}
+    const t0=performance.now();const loop=(t)=>{update((t-t0)/1000);renderer.render(scene,camera);raf=requestAnimationFrame(loop);};
+    if(reduce){update(0);renderer.render(scene,camera);}else raf=requestAnimationFrame(loop);}
+  function unmount(){if(!mounted)return;mounted=false;cancelAnimationFrame(raf);clearInterval(timer);ro.unobserve(canvas);renderer.dispose();}
+  const ro=new ResizeObserver(()=>{if(mounted)size();});
+  new IntersectionObserver((es)=>es.forEach(e=>e.isIntersecting?mount():unmount()),{threshold:0.12}).observe(fig);
+}
+
+function storyScatter(scene,camera,{THREE,BRAND,disc}){const COUNT=1400,cl=[BRAND.orange,BRAND.purple,BRAND.rose,BRAND.amber];const pos=new Float32Array(COUNT*3),col=new Float32Array(COUNT*3);
+  for(let i=0;i<COUNT;i++){const k=i%cl.length;const cx=Math.cos(k/cl.length*Math.PI*2)*5,cz=Math.sin(k/cl.length*Math.PI*2)*5;pos.set([cx+(Math.random()-.5)*4,(Math.random()-.5)*6,cz+(Math.random()-.5)*4],i*3);col.set([cl[k].r,cl[k].g,cl[k].b],i*3);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const pts=new THREE.Points(g,new THREE.PointsMaterial({size:0.34,map:disc(),vertexColors:true,transparent:true,depthWrite:false}));scene.add(pts);
+  return(t)=>{pts.rotation.y=t*0.12;pts.rotation.x=Math.sin(t*0.2)*0.1;};}
+
+function storyGraph(scene,camera,ctx){const {THREE,BRAND,disc,fig}=ctx;
+  const nodes=[{name:"acs questionnaire",desc:"53 distinct images across 110 page-requests — request-bound."},{name:"open-dna-cardio-prs",desc:"991.7KB total — 690KB is one GIF."},{name:"galleri-demo",desc:"943.3KB — same 690KB GIF."},{name:"adjust-your-risk.gif",desc:"690.4KB animated GIF · main-thread decode · 2 stories."},{name:"pancreatic-screening chapter",desc:"Splices the hidden 2.2MB SVG into any story that adds it."},{name:"alcohol-serving-sizes.svg",desc:"2.2MB 'SVG' with an embedded PNG · 0 direct refs."},{name:"story-book-intro.riv",desc:"Shared Rive used by 149 stories — the caching win."},{name:"moffitt-giftd",desc:"Flat 38.9KB but true footprint 2.3MB (60x) via chapter."},{name:"myh7-001",desc:"4 heavy PNGs, 696.2KB."},{name:"brca1-001",desc:"533.5KB raster PNGs → WebP."},{name:"hcma-coe-logo.svg",desc:"291.2KB SVG with embedded PNG · 5 stories."},{name:"family-sharing-relative",desc:"Gene-templated: 118KB flat → 389.8KB union (175 chapters)."}];
+  const N=nodes.length,pos=[],gold=Math.PI*(3-Math.sqrt(5)),R=9.5;
+  for(let i=0;i<N;i++){const y=1-(i/(N-1))*2;const r=Math.sqrt(Math.max(0,1-y*y));const th=gold*i;pos.push(new THREE.Vector3(Math.cos(th)*r*R,y*R*0.85,Math.sin(th)*r*R));}
+  for(let it=0;it<18;it++)for(let i=0;i<N;i++){const f=new THREE.Vector3();for(let j=0;j<N;j++){if(i===j)continue;const d=pos[i].clone().sub(pos[j]);const l=Math.max(d.length(),0.001);f.add(d.multiplyScalar(1/(l*l)));}pos[i].add(f.multiplyScalar(0.45));pos[i].clampLength(0,R*1.35);}
+  const graph=new THREE.Group();scene.add(graph);const ep=[],seen=new Set();
+  for(let i=0;i<N;i++){const ord=[];for(let j=0;j<N;j++)if(j!==i)ord.push([j,pos[i].distanceTo(pos[j])]);ord.sort((a,b)=>a[1]-b[1]);for(let k=0;k<2;k++){const j=ord[k][0];const key=i<j?i+'_'+j:j+'_'+i;if(seen.has(key))continue;seen.add(key);ep.push(pos[i].x,pos[i].y,pos[i].z,pos[j].x,pos[j].y,pos[j].z);}}
+  const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(ep,3));graph.add(new THREE.LineSegments(eg,new THREE.LineBasicMaterial({color:BRAND.ink,transparent:true,opacity:0.16})));
+  const pa=new Float32Array(N*3),ca=new Float32Array(N*3),sa=new Float32Array(N),base=BRAND.ink,hot=BRAND.orange;
+  for(let i=0;i<N;i++){pa[i*3]=pos[i].x;pa[i*3+1]=pos[i].y;pa[i*3+2]=pos[i].z;ca[i*3]=base.r;ca[i*3+1]=base.g;ca[i*3+2]=base.b;sa[i]=22;}
+  const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pa,3));pg.setAttribute('color',new THREE.BufferAttribute(ca,3));pg.setAttribute('psize',new THREE.BufferAttribute(sa,1));
+  const pm=new THREE.ShaderMaterial({uniforms:{uTex:{value:disc()}},vertexColors:true,transparent:true,depthWrite:false,vertexShader:`attribute float psize;varying vec3 vC;void main(){vC=color;vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=psize*(300.0/-mv.z);gl_Position=projectionMatrix*mv;}`,fragmentShader:`uniform sampler2D uTex;varying vec3 vC;void main(){vec4 t=texture2D(uTex,gl_PointCoord);if(t.a<0.02)discard;gl_FragColor=vec4(vC,t.a);}`});
+  graph.add(new THREE.Points(pg,pm));
+  const tour=[3,5,6,7,0,11];const detail=document.getElementById('fly-detail');let last='';
+  const ct=camera.position.clone(),lt=new THREE.Vector3(),lc=new THREE.Vector3(),_w=new THREE.Vector3(),_c=new THREE.Vector3();
+  return function(t){const step=+((fig&&fig.dataset.step)||0);graph.rotation.y=t*0.05;graph.rotation.x=Math.sin(t*0.13)*0.06;
+    const idx=tour[Math.min(Math.max(step,0),tour.length-1)];_w.copy(pos[idx]).applyMatrix4(graph.matrixWorld);_c.copy(_w).normalize();if(_c.lengthSq()<1e-6)_c.set(0,0,1);
+    ct.copy(_w).add(_c.multiplyScalar(6.5)).add(new THREE.Vector3(0,1.2,0));lt.copy(_w);camera.position.lerp(ct,0.06);lc.lerp(lt,0.08);camera.lookAt(lc);
+    let up=false;for(let i=0;i<N;i++){const fo=i===idx;const ts=fo?46:18;const cs=sa[i];const ns=cs+(ts-cs)*0.12;if(Math.abs(ns-cs)>0.01){sa[i]=ns;up=true;}const tc=fo?hot:base;const dim=fo?1:0.55;const r=ca[i*3],g2=ca[i*3+1],b=ca[i*3+2];const nr=r+(tc.r*dim-r)*0.12,ng=g2+(tc.g*dim-g2)*0.12,nb=b+(tc.b*dim-b)*0.12;if(Math.abs(nr-r)+Math.abs(ng-g2)+Math.abs(nb-b)>0.001){ca[i*3]=nr;ca[i*3+1]=ng;ca[i*3+2]=nb;up=true;}}
+    if(up){pg.attributes.psize.needsUpdate=true;pg.attributes.color.needsUpdate=true;}
+    if(detail){const txt=nodes[idx].name+" — "+nodes[idx].desc;if(txt!==last){detail.textContent=txt;last=txt;}}};
+}
+
+function pageWalk(scene,camera,ctx){const {THREE,BRAND,disc,fig}=ctx;
+  const stages=[{label:'Page 1',color:BRAND.ink},{label:'Page 2',color:BRAND.ink},{label:'GIF page',color:BRAND.rose},{label:'Page 4',color:BRAND.ink}];
+  const HOPS=[{from:'Page 1',to:'Page 2',ms:525},{from:'Page 2',to:'GIF page',ms:3720},{from:'GIF page',to:'Page 4',ms:420}];
+  const N=stages.length,spanX=22,xs=stages.map((_,i)=>-spanX/2+spanX*i/(N-1)),yB=0;const group=new THREE.Group();scene.add(group);const sp=disc();
+  function lbl(text,hex){const c=document.createElement('canvas'),w=512,h=200;c.width=w;c.height=h;const g=c.getContext('2d');g.clearRect(0,0,w,h);g.fillStyle='#'+new THREE.Color(hex).getHexString();g.font='600 60px ui-sans-serif,system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(text,w/2,h/2);const tx=new THREE.CanvasTexture(c);tx.anisotropy=4;const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true,depthWrite:false}));s.scale.set(5,2,1);return s;}
+  const bg=new THREE.BoxGeometry(3,2,2),eg=new THREE.EdgesGeometry(bg);
+  stages.forEach((st,i)=>{const fl=new THREE.Mesh(bg,new THREE.MeshBasicMaterial({color:st.color,transparent:true,opacity:0.06}));fl.position.set(xs[i],yB,0);group.add(fl);const wi=new THREE.LineSegments(eg,new THREE.LineBasicMaterial({color:st.color,transparent:true,opacity:0.85}));wi.position.set(xs[i],yB,0);group.add(wi);st._w=wi;const l=lbl(st.label,st.color.getHex());l.position.set(xs[i],yB+2.4,0);group.add(l);});
+  for(let i=0;i<N-1;i++){const a=new THREE.Vector3(xs[i]+1.5,yB,0),b=new THREE.Vector3(xs[i+1]-1.5,yB,0);group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a,b]),new THREE.LineBasicMaterial({color:BRAND.ink,transparent:true,opacity:0.35})));}
+  const pk=new THREE.Mesh(new THREE.SphereGeometry(0.42,24,24),new THREE.MeshBasicMaterial({color:BRAND.amber}));pk.position.set(xs[0],yB,0);group.add(pk);
+  const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:sp,color:BRAND.orange,transparent:true,opacity:0.9,depthWrite:false,blending:THREE.AdditiveBlending}));gl.scale.set(2.6,2.6,1);pk.add(gl);
+  const hl=HOPS.map((hop,i)=>{const mid=(xs[i]+xs[i+1])/2;const l=lbl(hop.ms+' ms',BRAND.orange.getHex());l.scale.set(3.4,1.4,1);l.position.set(mid,yB-1.9,0);l.material.opacity=0;group.add(l);return l;});
+  const cum=[0];for(let i=0;i<HOPS.length;i++)cum.push(cum[i]+HOPS[i].ms);
+  const detail=document.getElementById('trace-detail');let lr=-1;function rep(step){if(!detail||step===lr)return;lr=step;if(step<=0)detail.textContent='open-dna-cardio-prs @ Fast 3G — walking the pages… · total 0 ms';else{const h=HOPS[step-1];detail.textContent=h.from+' → '+h.to+' · '+h.ms+' ms · total '+(cum[step]/1000).toFixed(1)+' s';}}
+  let cur=0,cx=0;
+  return function(t){const step=Math.max(0,Math.min(N-1,+((fig&&fig.dataset.step)||0)));cur+=(step-cur)*0.08;const seg=Math.min(Math.floor(cur),N-2);const fs=Math.max(0,Math.min(1,cur-seg));pk.position.x=xs[seg]+(xs[seg+1]-xs[seg])*fs;pk.position.y=yB+Math.sin(t*2)*0.06;gl.material.opacity=0.75+Math.sin(t*4)*0.2;pk.scale.setScalar(1+Math.sin(t*4)*0.06);
+    stages.forEach((st,i)=>{const a=cur>=i-0.5;st._w.material.opacity+=((a?1:0.35)-st._w.material.opacity)*0.1;});hl.forEach((l,i)=>{l.material.opacity+=((cur>=i+1-0.5?1:0)-l.material.opacity)*0.1;});
+    rep(step);cx+=(pk.position.x*0.15-cx)*0.04;camera.position.x=cx+Math.sin(t*0.3)*0.3;camera.position.y=Math.sin(t*0.4)*0.25;camera.position.z=18;camera.lookAt(cx,0,0);};
+}
+
+const BUILDERS={storyGraph,storyScatter,pageWalk};
+document.querySelectorAll('.gl-figure[data-scene]').forEach(f=>{const b=BUILDERS[f.dataset.scene];if(b)mountFigure(f,b);});
+
+/* ---------- scrollytelling: point cloud morphs across 4 scroll steps ---------- */
+(function(){
+  const canvas=document.getElementById('scrolly-gl');if(!canvas)return;const section=document.querySelector('.scrolly');
+  const stepsEls=[].slice.call(document.querySelectorAll('.scrolly-step'));const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  const scene=new THREE.Scene();const camera=new THREE.PerspectiveCamera(48,1,0.1,100);camera.position.set(0,0,7);const root=new THREE.Group();scene.add(root);
+  const COUNT=1800,ACC=[BRAND.orange,BRAND.amber,BRAND.purple,BRAND.rose];const TP=[],TC=[];for(let s=0;s<4;s++){TP.push(new Float32Array(COUNT*3));TC.push(new Float32Array(COUNT*3));}
+  let seed=1337;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};const tmp=new THREE.Color();
+  const sx=[],sy=[],sz=[];for(let i=0;i<COUNT;i++){sx.push(rnd());sy.push(rnd());sz.push(rnd());}
+  for(let i=0;i<COUNT;i++){const i3=i*3,u=sx[i],v=sy[i],w=sz[i];
+    TP[0][i3]=(u-.5)*5;TP[0][i3+1]=(v-.5)*5;TP[0][i3+2]=(w-.5)*5;tmp.copy(BRAND.ink).lerp(BRAND.amber,.12*v).toArray(TC[0],i3);
+    const phi=Math.acos(2*v-1),th=2*Math.PI*u,Rr=2.1;TP[1][i3]=Rr*Math.sin(phi)*Math.cos(th);TP[1][i3+1]=Rr*Math.cos(phi);TP[1][i3+2]=Rr*Math.sin(phi)*Math.sin(th);tmp.copy(BRAND.ink).lerp(BRAND.purple,.3).toArray(TC[1],i3);
+    const k=i%4,ang=k/4*Math.PI*2,cx=Math.cos(ang)*2,cy=Math.sin(ang)*2,cz=(k%2?1:-1)*0.8;TP[2][i3]=cx+(u-.5)*1.4;TP[2][i3+1]=cy+(v-.5)*1.4;TP[2][i3+2]=cz+(w-.5)*1.4;tmp.copy(BRAND.ink).lerp(ACC[k],.85).toArray(TC[2],i3);
+    const cols=48,gx=i%cols,gy=Math.floor(i/cols);TP[3][i3]=(gx/(cols-1)-.5)*5;TP[3][i3+1]=-(gy/(Math.ceil(COUNT/cols)-1)-.5)*4.2;TP[3][i3+2]=0;tmp.copy(BRAND.ink).lerp(BRAND.orange,.18+.22*(gx/cols)).toArray(TC[3],i3);}
+  const pos=Float32Array.from(TP[0]),col=Float32Array.from(TC[0]);const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const pts=new THREE.Points(geo,new THREE.PointsMaterial({size:0.05,vertexColors:true,transparent:true,opacity:0.92,depthWrite:false}));root.add(pts);
+  let active=0,tp=TP[0],tc=TC[0],visible=false;
+  function setStep(i){active=i;tp=TP[i];tc=TC[i];stepsEls.forEach((e,k)=>e.classList.toggle('is-active',k===i));}
+  new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){const i=+e.target.dataset.step;if(!isNaN(i))setStep(i);}}),{rootMargin:'-45% 0px -45% 0px',threshold:0}).observe;
+  stepsEls.forEach(e=>new IntersectionObserver((en)=>en.forEach(x=>{if(x.isIntersecting){const i=+x.target.dataset.step;if(!isNaN(i))setStep(i);}}),{rootMargin:'-45% 0px -45% 0px',threshold:0}).observe(e));
+  setStep(0);
+  new IntersectionObserver((es)=>{visible=es[0].isIntersecting;if(visible&&!reduce)requestAnimationFrame(loop);if(visible&&reduce)draw(1);},{threshold:0}).observe(section);
+  function size(){const w=canvas.clientWidth||1,h=canvas.clientHeight||1;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+  new ResizeObserver(size).observe(canvas);size();
+  const pA=geo.getAttribute('position'),cA=geo.getAttribute('color');
+  function blend(b){const pp=pA.array,cc=cA.array;for(let i=0;i<pp.length;i++){pp[i]+=(tp[i]-pp[i])*b;cc[i]+=(tc[i]-cc[i])*b;}pA.needsUpdate=true;cA.needsUpdate=true;}
+  function draw(b){blend(b);renderer.render(scene,camera);}
+  let lt=performance.now();
+  function loop(now){if(!visible||reduce)return;const dt=Math.min((now-lt)/1000,0.05);lt=now;blend(1-Math.pow(0.0001,dt));root.rotation.y+=dt*0.12;root.rotation.x=Math.sin(now*0.0002)*0.12;renderer.render(scene,camera);requestAnimationFrame(loop);}
+  if(reduce)draw(1);else requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

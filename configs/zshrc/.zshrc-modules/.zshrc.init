@@ -26,15 +26,21 @@ _cached_init() {
   fi
 }
 
-# Load starship (cached)
-_cached_init starship init zsh
 export STARSHIP_CONFIG=~/.config/starship.toml
+
+# Load prompt/keybinding integrations only for real terminal sessions. This keeps
+# `zsh -i -c ...` fast and avoids ZLE/TERM=dumb errors in scripted invocations.
+if [[ -t 1 && "$TERM" != "dumb" ]]; then
+  _cached_init starship init zsh
+fi
 
 # Load zoxide (cached)
 _cached_init zoxide init zsh
 
-# Load fzf (cached)
-_cached_init fzf --zsh
+# Load fzf shell integration (cached)
+if [[ -t 0 && -t 1 && "$TERM" != "dumb" ]]; then
+  _cached_init fzf --zsh
+fi
 
 # ==============================================================================
 #  Lightweight node version manager (replaces nvm for speed)

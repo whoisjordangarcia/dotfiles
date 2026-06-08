@@ -37,5 +37,15 @@ export HOMEBREW_AUTOREMOVE=1
 # See https://consoledonottrack.com
 export DO_NOT_TRACK=true
 
+# ==============================================================================
+#  Terminal hyperlinks (OSC 8)
+# ==============================================================================
+
+# Ghostty fully supports OSC 8 clickable links, but tools like Claude Code only
+# emit them for an allowlist of auto-detected terminals (iTerm2, Kitty, WezTerm).
+# Ghostty isn't on that list, so force it on — makes statusline PR links etc.
+# Cmd+clickable. Harmless on terminals that already support hyperlinks.
+export FORCE_HYPERLINK=1
+
 # export AGENT_BROWSER_PROVIDER=ios
 # export AGENT_BROWSER_IOS_DEVICE="iPhone 16 Pro"

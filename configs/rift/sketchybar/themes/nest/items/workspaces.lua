@@ -3,7 +3,11 @@ local settings = require("settings")
 local app_icons = require("helpers.app_icons")
 
 local max_workspaces = 10
-local query_workspaces = "rift-cli query workspaces"
+-- `timeout` guards against a wedged rift daemon: an unresponsive socket would
+-- otherwise leave every event-driven query hanging forever, piling up hundreds
+-- of rift-cli processes. After 3s the query is killed instead of accumulating.
+local query_workspaces =
+	"if command -v timeout >/dev/null 2>&1; then timeout 3 rift-cli query workspaces; else gtimeout 3 rift-cli query workspaces; fi"
 
 local workspaces = {}
 local last_focused = nil

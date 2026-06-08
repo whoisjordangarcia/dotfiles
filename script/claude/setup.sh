@@ -27,6 +27,9 @@ link_file "$SCRIPT_DIR/../../configs/claude/prompts/" "$HOME/.claude/prompts" "d
 link_file "$SCRIPT_DIR/../../configs/claude/statusline.sh" "$HOME/.claude/statusline.sh"
 link_file "$SCRIPT_DIR/../../configs/claude/settings.json" "$HOME/.claude/settings.json"
 
+# Skills live in configs/skills and are projected into each agent CLI.
+source "$SCRIPT_DIR/../skills/setup.sh"
+
 # Install TypeScript language server for Claude Code's typescript-lsp plugin
 if ! command -v typescript-language-server &>/dev/null; then
 	if command -v npm &>/dev/null; then

@@ -1,4 +1,6 @@
 # Enable vi mode
+[[ -t 0 && -t 1 && "$TERM" != "dumb" ]] || return 0
+
 bindkey -v
 
 # Vi mode cursor styling

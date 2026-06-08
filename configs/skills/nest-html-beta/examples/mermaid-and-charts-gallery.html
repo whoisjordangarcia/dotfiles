@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gallery — every mermaid type + chart pattern</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  // FOUC guard: apply saved theme / mode before first paint (shared keys with template.html).
+  (function () {
+    var root = document.documentElement;
+    var THEMES = ['nest','slate','forest','paper','dusk'], MODES = ['light','dark','system'];
+    try {
+      var t = localStorage.getItem('nest-doc-theme'); if (THEMES.indexOf(t) === -1) t = 'nest';
+      root.setAttribute('data-theme', t);
+      var m = localStorage.getItem('nest-doc-mode'); if (MODES.indexOf(m) === -1) m = 'light';
+      root.setAttribute('data-mode', m);
+      var mo = localStorage.getItem('nest-doc-motion');
+      if (mo !== 'on' && mo !== 'off') mo = (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'off' : 'on';
+      root.setAttribute('data-motion', mo);
+    } catch (e) { root.setAttribute('data-theme','nest'); root.setAttribute('data-mode','light'); root.setAttribute('data-motion','on'); }
+  })();
+</script>
+<style>
+  :root{
+    --bg-light:#ffffff; --bg-dark:#0e0d0c; --ink-light:#0a0a0a; --ink-dark:#f3ece4;
+    --accent:#e65732; --accent-2:#e78d32; --accent-3:#a367c8; --rose:#c45567;
+    --bg:var(--bg-light); --ink:var(--ink-light);
+    --ink-soft:color-mix(in oklch, var(--ink) 62%, transparent);
+    --border:color-mix(in oklch, var(--accent) 22%, transparent);
+    --hover:color-mix(in oklch, var(--accent) 8%, transparent);
+    --peach:color-mix(in oklch, var(--accent) 12%, var(--bg));
+    --grid:color-mix(in oklch, var(--accent) 14%, transparent);
+    --axis:color-mix(in oklch, var(--accent) 26%, transparent);
+    --serif:"Instrument Serif",Georgia,serif; --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  html[data-theme="slate"]  { --bg-light:#f7f8fa; --bg-dark:#0d1220; --ink-light:#1a1f2e; --ink-dark:#e6ecff; --accent:#2563eb; --accent-2:#4f7cf5; --accent-3:#7e8fff; }
+  html[data-theme="forest"] { --bg-light:#fafaf6; --bg-dark:#0d1612; --ink-light:#0f1c15; --ink-dark:#e8f3ec; --accent:#2d6a4f; --accent-2:#52b788; --accent-3:#74c69d; }
+  html[data-theme="paper"]  { --bg-light:#fbf5e9; --bg-dark:#1f1810; --ink-light:#2a1f12; --ink-dark:#f4ecdf; --accent:#b04b1d; --accent-2:#c97e3b; --accent-3:#8c5a3a; }
+  html[data-theme="dusk"]   { --bg-light:#faf5fb; --bg-dark:#14111d; --ink-light:#2a1245; --ink-dark:#ece6f6; --accent:#a367c8; --accent-2:#b884d6; --accent-3:#e65732; }
+  html[data-mode="dark"] { --bg:var(--bg-dark); --ink:var(--ink-dark); }
+  @media (prefers-color-scheme: dark) { html[data-mode="system"] { --bg:var(--bg-dark); --ink:var(--ink-dark); } }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6}
+  main{max-width:880px;margin:0 auto;padding:7vh 24px 16vh}
+  .eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 14px}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(48px,7vw,84px);line-height:1.02;letter-spacing:-.01em;
+     text-wrap:balance;padding-bottom:.2em;margin:0 0 8px;
+     background:linear-gradient(105deg,var(--accent),var(--accent-2) 45%,var(--accent-3));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{font-size:20px;color:var(--ink-soft);max-width:60ch;margin:0 0 8px}
+  h2{font-family:var(--serif);font-weight:400;font-size:clamp(26px,3.4vw,38px);line-height:1.1;text-wrap:balance;margin:56px 0 4px}
+  .tag{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin:0 0 14px}
+  p{text-wrap:pretty}
+  figure{margin:18px 0 0}
+  figcaption{font-size:13px;color:var(--ink-soft);text-align:center;margin-top:8px;font-style:italic}
+  .mermaid{background:color-mix(in oklch, var(--ink) 3%, var(--bg));border:1px solid color-mix(in oklch, var(--ink) 10%, transparent);border-radius:12px;padding:22px;text-align:center}
+  html[data-mode="dark"] .mermaid{box-shadow:none}
+  .mermaid svg{max-width:100%;height:auto}
+  /* mindmap root node uses section index -1 (no cScale slot → renders black); pin it to the
+     brand via CSS, which — unlike mermaid's JS config — can read var() so it stays theme-aware. */
+  .mermaid g.section-root circle.node-bkg,
+  .mermaid g.section-root rect.node-bkg,
+  .mermaid g.section-root path.node-bkg{ fill:color-mix(in oklch, var(--accent) 16%, var(--bg)) !important; stroke:var(--accent) !important; }
+  .mermaid g.section-root .node-bkg + g foreignObject *,
+  .mermaid g.section-root text{ fill:var(--ink) !important; color:var(--ink) !important; }
+  /* charts */
+  .chart{margin:0;padding:24px;background:color-mix(in oklch, var(--ink) 3%, var(--bg));border:1px solid color-mix(in oklch, var(--ink) 10%, transparent);border-radius:12px}
+  .chart svg{display:block;width:100%;height:auto;overflow:visible}
+  .chart svg.donut{width:260px;height:260px;max-width:100%;margin:0 auto;overflow:hidden}
+  .hbar{display:flex;align-items:center;gap:12px;margin:8px 0;font-size:13px}
+  .hbar .lbl{width:84px;color:var(--ink-soft);font-family:var(--mono)}
+  .hbar .track{flex:1;height:14px;background:color-mix(in oklch, var(--accent) 8%, transparent);border-radius:999px;overflow:hidden}
+  .hbar .num{color:var(--ink)}
+  .hbar .fill{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:999px}
+  .hbar .num{width:28px;text-align:right;font-weight:600}
+  .donut-legend{list-style:none;margin:16px 0 0;padding:0;display:flex;gap:18px;justify-content:center;flex-wrap:wrap;font-size:13px}
+  .donut-legend li{display:flex;align-items:center;gap:7px;color:var(--ink-soft)}
+  .donut-legend .sw{width:11px;height:11px;border-radius:3px}
+  .toc{font-size:14px;color:var(--ink-soft);margin:14px 0 0;columns:2;gap:24px}
+  .toc a{color:var(--accent);text-decoration:none}
+  /* settings gear */
+  .doc-settings{position:fixed;top:18px;right:20px;z-index:60;font-family:var(--sans)}
+  .doc-settings summary{list-style:none;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--ink-soft);transition:background .16s,color .16s}
+  .doc-settings summary::-webkit-details-marker{display:none}
+  .doc-settings summary:hover,.doc-settings[open] summary{background:var(--hover);color:var(--accent)}
+  .doc-settings .panel{position:absolute;top:44px;right:0;width:220px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:6px;box-shadow:0 12px 32px color-mix(in oklch, var(--ink) 12%, transparent)}
+  html[data-mode="dark"] .doc-settings .panel{box-shadow:none}
+  .doc-settings .panel-section{padding:10px 10px 12px}
+  .doc-settings .panel-section + .panel-section{border-top:1px solid var(--border);margin-top:2px}
+  .doc-settings .panel-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px}
+  .doc-settings .theme-options{display:flex;flex-wrap:wrap;gap:8px}
+  .doc-settings .theme-options button{appearance:none;width:26px;height:26px;border-radius:50%;cursor:pointer;padding:0;border:2px solid transparent;background-clip:padding-box;transition:transform .14s}
+  .doc-settings .theme-options button:hover{transform:scale(1.1)}
+  .doc-settings .theme-options button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+  .doc-settings .theme-options [data-theme="nest"]{background:linear-gradient(135deg,#e65732,#e78d32 50%,#a367c8)}
+  .doc-settings .theme-options [data-theme="slate"]{background:linear-gradient(135deg,#2563eb,#7e8fff)}
+  .doc-settings .theme-options [data-theme="forest"]{background:linear-gradient(135deg,#2d6a4f,#74c69d)}
+  .doc-settings .theme-options [data-theme="paper"]{background:linear-gradient(135deg,#b04b1d,#c97e3b)}
+  .doc-settings .theme-options [data-theme="dusk"]{background:linear-gradient(135deg,#a367c8,#c45567)}
+  .doc-settings .mode-options{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .doc-settings .mode-options button{appearance:none;border:1px solid var(--border);background:var(--bg);border-radius:6px;padding:8px 0;font-size:12px;color:var(--ink);cursor:pointer;font-family:inherit}
+  .doc-settings .mode-options button:hover{background:var(--hover)}
+  .doc-settings .mode-options button[aria-pressed="true"]{background:var(--peach);border-color:var(--accent);color:var(--accent);font-weight:600}
+  /* ---- entry animations (one-shot, respect OS reduced-motion) ---- */
+  @media (prefers-reduced-motion:no-preference){
+    .chart svg rect.bar{transform-box:fill-box;transform-origin:bottom;animation:bar-rise 760ms cubic-bezier(.2,.7,.2,1) backwards}
+    @keyframes bar-rise{from{transform:scaleY(0)}}
+    .hbar .fill{transform-origin:left center;animation:hbar-grow 820ms cubic-bezier(.2,.7,.2,1) backwards}
+    .hbar:nth-child(1) .fill{animation-delay:.08s}.hbar:nth-child(2) .fill{animation-delay:.16s}
+    .hbar:nth-child(3) .fill{animation-delay:.24s}.hbar:nth-child(4) .fill{animation-delay:.32s}.hbar:nth-child(5) .fill{animation-delay:.40s}
+    @keyframes hbar-grow{from{transform:scaleX(0)}}
+    .donut .arc{animation:arc-draw 1100ms cubic-bezier(.2,.7,.2,1) backwards}
+    .donut .arc:nth-of-type(3){animation-delay:.16s}.donut .arc:nth-of-type(4){animation-delay:.32s}
+    @keyframes arc-draw{from{stroke-dasharray:0 999}}
+  }
+  /* ---- continuous flows: marching-ants along every mermaid edge + travelling pulses.
+         Gated by the Motion toggle (defaults off under prefers-reduced-motion). ---- */
+  html[data-motion="on"] .mermaid .edgePaths path,
+  html[data-motion="on"] .mermaid .flowchart-link,
+  html[data-motion="on"] .mermaid .transition,
+  html[data-motion="on"] .mermaid .relationshipLine,
+  html[data-motion="on"] .mermaid .messageLine0,
+  html[data-motion="on"] .mermaid .messageLine1{stroke-dasharray:6 5;animation:edge-flow 820ms linear infinite}
+  @keyframes edge-flow{to{stroke-dashoffset:-11}}
+  .edge-pulse{fill:var(--accent)}
+  html:not([data-motion="on"]) .edge-pulse{display:none}
+</style>
+</head>
+<body>
+  <details class="doc-settings" aria-label="Document settings">
+    <summary title="Document settings" aria-label="Document settings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </summary>
+    <div class="panel" role="dialog" aria-label="Document settings">
+      <div class="panel-section"><div class="panel-label">Theme</div>
+        <div class="theme-options" role="group" aria-label="Theme">
+          <button type="button" data-theme="nest" aria-label="Nest"></button>
+          <button type="button" data-theme="slate" aria-label="Slate"></button>
+          <button type="button" data-theme="forest" aria-label="Forest"></button>
+          <button type="button" data-theme="paper" aria-label="Paper"></button>
+          <button type="button" data-theme="dusk" aria-label="Dusk"></button>
+        </div></div>
+      <div class="panel-section"><div class="panel-label">Mode</div>
+        <div class="mode-options" role="group" aria-label="Mode">
+          <button type="button" data-mode="light">Light</button>
+          <button type="button" data-mode="dark">Dark</button>
+          <button type="button" data-mode="system">System</button>
+        </div></div>
+      <div class="panel-section"><div class="panel-label">Motion</div>
+        <div class="mode-options" role="group" aria-label="Motion">
+          <button type="button" data-motion="on">On</button>
+          <button type="button" data-motion="off">Off</button>
+        </div></div>
+    </div>
+  </details>
+<main>
+  <p class="eyebrow">nest-html-beta · gallery</p>
+  <h1>Every diagram type, rendering.</h1>
+  <p class="lede">All nine mermaid variants and the three hand-rolled SVG chart patterns the skill documents, each rendered on the Nest brand. Diagrams for relationships, charts for quantities.</p>
+  <nav class="toc">
+    <a href="#flowchart">Flowchart</a> · <a href="#sequence">Sequence</a> · <a href="#state">State</a> ·
+    <a href="#er">ER</a> · <a href="#gantt">Gantt</a> · <a href="#timeline">Timeline</a> ·
+    <a href="#mindmap">Mindmap</a> · <a href="#quadrant">Quadrant</a> · <a href="#pie">Pie</a> ·
+    <a href="#vbar">Bar chart</a> · <a href="#hbar">Horizontal bars</a> · <a href="#donut">Donut</a>
+  </nav>
+
+  <h2 id="flowchart">Flowchart</h2>
+  <p class="tag">mermaid · relationships &amp; decisions</p>
+  <figure>
+    <div class="mermaid" role="img" aria-label="Flowchart: a request flows from the provider portal through the GraphQL Lambda to Postgres and the EHR vendor API">
+flowchart LR
+  U[Provider portal] --> GQL["Lambda: nest_client_api_graphql"]
+  GQL --> DB[(Postgres)]
+  GQL --> EHR{{EHR vendor API}}
+  classDef infra fill:#f5d1ad,stroke:#b04b1d,color:#3a1d05;
+  class GQL infra
+    </div>
+    <figcaption>Request path through the stack.</figcaption>
+  </figure>
+
+  <h2 id="sequence">Sequence</h2>
+  <p class="tag">mermaid · ordering &amp; timing across services</p>
+  <figure>
+    <div class="mermaid" role="img" aria-label="Sequence diagram: a provider signs into the portal, which exchanges a session token with the GraphQL API, which fetches a FHIR patient bundle from the EHR and returns a normalized record">
+sequenceDiagram
+  actor P as Provider
+  participant Portal
+  participant API as GraphQL API
+  participant EHR
+  P->>Portal: Sign in
+  Portal->>API: Session token
+  API->>EHR: Fetch patient bundle
+  EHR-->>API: FHIR resources
+  API-->>Portal: Normalized record
+    </div>
+    <figcaption>Who calls whom, in what order.</figcaption>
+  </figure>
+
+  <h2 id="state">State</h2>
+  <p class="tag">mermaid · an entity moving through statuses</p>
+  <figure>
+    <div class="mermaid" role="img" aria-label="State diagram: a ticket flows from Triage to Ready, In Progress, In Review, and Merged, looping back for needs-info and requested changes">
+stateDiagram-v2
+  [*] --> Triage
+  Triage --> Ready: passes DoR
+  Triage --> Triage: needs info
+  Ready --> InProgress
+  InProgress --> InReview: PR opened
+  InReview --> InProgress: changes requested
+  InReview --> Merged: approved + CI green
+  Merged --> [*]
+    </div>
+    <figcaption>A ticket's lifecycle.</figcaption>
+  </figure>
+
+  <h2 id="er">ER diagram</h2>
+  <p class="tag">mermaid · tables and how they relate</p>
+  <figure>
+    <div class="mermaid" role="img" aria-label="Entity relationship diagram: a patient has many encounters and consents; each encounter records many observations">
+erDiagram
+  PATIENT ||--o{ ENCOUNTER : has
+  ENCOUNTER ||--|{ OBSERVATION : records
+  PATIENT ||--o{ CONSENT : grants
+    </div>
+    <figcaption>Schema relationships.</figcaption>
+  </figure>
+
+  <h2 id="gantt">Gantt</h2>
+  <p class="tag">mermaid · phases with start/finish dependencies</p>
+  <figure>
+    <div class="mermaid" role="img" aria-label="Gantt chart: a release rollout with staging deploy and AC validation, then a prod canary and full rollout, each dependent on the prior step">
+gantt
+  title Release rollout
+  dateFormat YYYY-MM-DD
+  axisFormat %m-%d
+  section Staging
+  Deploy to stg   :done,   s1, 2026-06-02, 1d
+  AC validation   :active, s2, after s1, 2d
+  section Prod
+  Canary          :        p1, after s2, 1d
+  Full rollout    :        p2, after p1, 1d
+    </div>
+    <figcaption>Sequenced rollout with dependencies.</figcaption>
+  </figure>
+
+  <h2 id="timeline">Timeline</h2>
+  <p class="tag">mermaid · milestones in time, no dependencies</p>
+  <figure>
+    <div class="mermaid" role="img" aria-label="Timeline: EHR integration milestones across Q1 vendor research, Q2 auth and sandbox, and Q3 patient bundle sync with a pilot site live">
+timeline
+  title EHR integration milestones
+  Q1 : Vendor API research
+  Q2 : Auth + sandbox access
+  Q3 : Patient bundle sync : Pilot site live
+    </div>
+    <figcaption>Chronology without dependency arrows.</figcaption>
+  </figure>
+
+  <h2 id="mindmap">Mindmap</h2>
+  <p class="tag">mermaid · a concept broken into parts</p>
+  <figure>
+    <div class="mermaid" role="img" aria-label="Mindmap: the Agent concept branches into Harness with Tools and System prompt, Context window with Turns, and Skills">
+mindmap
+  root((Agent))
+    Harness
+      Tools
+      System prompt
+    Context window
+      Turns
+    Skills
+    </div>
+    <figcaption>Concept decomposition.</figcaption>
+  </figure>
+
+  <h2 id="quadrant">Quadrant</h2>
+  <p class="tag">mermaid · items ranked on two axes</p>
+  <figure>
+    <div class="mermaid" role="img" aria-label="Quadrant chart: asset fixes plotted on effort versus impact, with ungate-content as a top-left quick win and a JSON lazy endpoint as a higher-effort item">
+quadrantChart
+  title Effort vs. impact
+  x-axis Low effort --> High effort
+  y-axis Low impact --> High impact
+  quadrant-1 Big bets
+  quadrant-2 Quick wins
+  quadrant-3 Fill-ins
+  quadrant-4 Time sinks
+  Ungate content: [0.18, 0.9]
+  Raster to WebP: [0.45, 0.82]
+  Next-page prefetch: [0.5, 0.85]
+  JSON lazy endpoint: [0.8, 0.5]
+    </div>
+    <figcaption>Prioritization at a glance.</figcaption>
+  </figure>
+
+  <h2 id="pie">Pie</h2>
+  <p class="tag">mermaid · proportions / parts of a whole</p>
+  <figure>
+    <div class="mermaid" role="img" aria-label="Pie chart: 79783 articles by access tier, 32122 PMC free full-text, 37672 DOI only with unknown access, 9989 with no resolvable identifier">
+pie showData
+  title Articles by access tier
+  "PMC free full-text" : 32122
+  "DOI only — OA unknown" : 37672
+  "No DOI / PMC" : 9989
+    </div>
+    <figcaption>Mermaid's one quantity chart.</figcaption>
+  </figure>
+
+  <h2 id="vbar">Vertical bar chart</h2>
+  <p class="tag">SVG (hand-rolled) · compare 2–5 values precisely</p>
+  <figure>
+    <div class="chart">
+      <svg viewBox="0 0 640 280" role="img" aria-label="Bar chart: average rating by category. Docs 4.3, Decks 4.0, Charts 3.0 out of 5.">
+        <defs>
+          <linearGradient id="g-orange" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#e65732"/><stop offset="100%" stop-color="#e78d32"/></linearGradient>
+          <linearGradient id="g-purple" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#a367c8"/><stop offset="100%" stop-color="#c08adb"/></linearGradient>
+          <linearGradient id="g-rose" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#c45567"/><stop offset="100%" stop-color="#e07a8a"/></linearGradient>
+        </defs>
+        <g font-family="-apple-system,sans-serif" font-size="11" style="fill:var(--ink-soft)">
+          <line x1="56" y1="40" x2="620" y2="40" style="stroke:var(--grid)"/>
+          <line x1="56" y1="200" x2="620" y2="200" style="stroke:var(--axis)"/>
+          <text x="48" y="44" text-anchor="end">5</text>
+          <text x="48" y="204" text-anchor="end">1</text>
+        </g>
+        <g><rect class="bar" style="animation-delay:.10s" x="110" y="68" width="110" height="132" rx="6" fill="url(#g-orange)"/>
+          <text x="165" y="56" font-family="Instrument Serif,serif" font-size="34" text-anchor="middle" style="fill:var(--ink)">4.3</text></g>
+        <g><rect class="bar" style="animation-delay:.22s" x="265" y="80" width="110" height="120" rx="6" fill="url(#g-purple)"/>
+          <text x="320" y="68" font-family="Instrument Serif,serif" font-size="34" text-anchor="middle" style="fill:var(--ink)">4.0</text></g>
+        <g><rect class="bar" style="animation-delay:.34s" x="420" y="120" width="110" height="80" rx="6" fill="url(#g-rose)"/>
+          <text x="475" y="108" font-family="Instrument Serif,serif" font-size="34" text-anchor="middle" style="fill:var(--ink)">3.0</text></g>
+        <g font-size="13" style="fill:var(--ink)">
+          <text x="165" y="226" text-anchor="middle">Docs</text>
+          <text x="320" y="226" text-anchor="middle">Decks</text>
+          <text x="475" y="226" text-anchor="middle">Charts</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>Three brand gradients = primary / secondary / tertiary, no ad-hoc hex.</figcaption>
+  </figure>
+
+  <h2 id="hbar">Horizontal bars</h2>
+  <p class="tag">pure CSS (no SVG) · many short categories</p>
+  <figure>
+    <div class="chart">
+      <div class="hbar"><span class="lbl">Flowchart</span><span class="track"><span class="fill" style="width:90%"></span></span><span class="num">9</span></div>
+      <div class="hbar"><span class="lbl">Sequence</span><span class="track"><span class="fill" style="width:70%"></span></span><span class="num">7</span></div>
+      <div class="hbar"><span class="lbl">State</span><span class="track"><span class="fill" style="width:60%"></span></span><span class="num">6</span></div>
+      <div class="hbar"><span class="lbl">Gantt</span><span class="track"><span class="fill" style="width:40%"></span></span><span class="num">4</span></div>
+      <div class="hbar"><span class="lbl">Pie</span><span class="track"><span class="fill" style="width:20%"></span></span><span class="num">2</span></div>
+    </div>
+    <figcaption>Zero JS, just flexbox + a brand-gradient fill.</figcaption>
+  </figure>
+
+  <h2 id="donut">Donut</h2>
+  <p class="tag">SVG (hand-rolled) · parts of a whole</p>
+  <figure>
+    <div class="chart">
+      <svg class="donut" viewBox="0 0 160 160" role="img" aria-label="Donut chart: 7 total. 4 relationships, 2 quantities, 1 spatial.">
+        <g transform="translate(80 80)">
+          <circle r="60" fill="none" style="stroke:color-mix(in oklch, var(--accent) 9%, transparent)" stroke-width="22"/>
+          <circle class="arc" r="60" fill="none" stroke="#e65732" stroke-width="22" stroke-dasharray="215.4 376.99" stroke-dashoffset="0" transform="rotate(-90)"/>
+          <circle class="arc" r="60" fill="none" stroke="#a367c8" stroke-width="22" stroke-dasharray="107.7 376.99" stroke-dashoffset="-215.4" transform="rotate(-90)"/>
+          <circle class="arc" r="60" fill="none" stroke="#c45567" stroke-width="22" stroke-dasharray="53.85 376.99" stroke-dashoffset="-323.1" transform="rotate(-90)"/>
+          <text text-anchor="middle" y="-1" font-family="Instrument Serif,serif" font-size="36" style="fill:var(--ink)">7</text>
+          <text text-anchor="middle" y="16" font-size="11" style="fill:var(--ink-soft)">diagram kinds</text>
+        </g>
+      </svg>
+      <ul class="donut-legend">
+        <li><span class="sw" style="background:#e65732"></span>Relationships · 4</li>
+        <li><span class="sw" style="background:#a367c8"></span>Quantities · 2</li>
+        <li><span class="sw" style="background:#c45567"></span>Spatial · 1</li>
+      </ul>
+    </div>
+    <figcaption>Arcs via stroke-dasharray; legend so no hover needed.</figcaption>
+  </figure>
+</main>
+
+<script>
+  var root = document.documentElement;
+  // Resolve a plain token (hex-backed) to rgb() via a throwaway probe. We deliberately
+  // resolve ONLY plain `var(--token)` values — Chrome serializes color-mix(in oklch,…)
+  // results AS "oklch(…)", which mermaid's color engine (khroma) rejects. So we read the
+  // hex tokens (which serialize as rgb) and do any tinting in JS via mix().
+  function resolveExpr(expr){
+    var p=document.createElement('span'); p.style.color=expr; p.style.position='absolute'; p.style.opacity='0';
+    document.body.appendChild(p); var c=getComputedStyle(p).color; p.remove(); return c||'rgb(136,136,136)';
+  }
+  function rgbOf(varname){ var m=resolveExpr('var('+varname+')').match(/[\d.]+/g); return m?m.slice(0,3).map(Number):[136,136,136]; }
+  function mix(a,b,t){ return 'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+Math.round(a[1]+(b[1]-a[1])*t)+','+Math.round(a[2]+(b[2]-a[2])*t)+')'; }
+  // Travelling pulse dots along flowchart edges. Re-injected after every render
+  // (mermaid rebuilds the SVG on theme change, wiping any DOM we add). Idempotent.
+  function decorateFlows(){
+    document.querySelectorAll('.mermaid .edge-pulse').forEach(function(n){ n.remove(); });
+    if(root.getAttribute('data-motion')!=='on') return;
+    var NS='http://www.w3.org/2000/svg', XL='http://www.w3.org/1999/xlink';
+    document.querySelectorAll('.mermaid .edgePaths > path').forEach(function(p,i){
+      if(!p.getAttribute('d')) return;
+      if(!p.id) p.id='flowedge-'+i+'-'+Math.floor(p.getTotalLength?p.getTotalLength():0);
+      var c=document.createElementNS(NS,'circle');
+      c.setAttribute('r','3'); c.setAttribute('class','edge-pulse');
+      var am=document.createElementNS(NS,'animateMotion');
+      am.setAttribute('dur',(1.6+(i%4)*0.35)+'s'); am.setAttribute('repeatCount','indefinite');
+      var mp=document.createElementNS(NS,'mpath'); mp.setAttributeNS(XL,'href','#'+p.id); mp.setAttribute('href','#'+p.id);
+      am.appendChild(mp); c.appendChild(am); p.parentNode.appendChild(c);
+    });
+  }
+  // Re-theme + re-render every mermaid diagram from the active tokens (mermaid bakes colors
+  // at render time and can't read var()). Wrapped in try/catch so a render error can never
+  // break the pickers below.
+  function renderMermaid(){
+    if(!window.mermaid) return;
+    try{
+      var ink=rgbOf('--ink'), bg=rgbOf('--bg'), accent=rgbOf('--accent'), a2=rgbOf('--accent-2'), a3=rgbOf('--accent-3'), rose=rgbOf('--rose');
+      var rgb=function(a){return 'rgb('+a[0]+','+a[1]+','+a[2]+')';};
+      var tv={
+        background: rgb(bg),
+        primaryColor: mix(bg,accent,0.14), primaryBorderColor: rgb(accent), primaryTextColor: rgb(ink),
+        secondaryColor: mix(bg,a3,0.16), secondaryBorderColor: rgb(a3), secondaryTextColor: rgb(ink),
+        tertiaryColor: mix(bg,a2,0.16), tertiaryBorderColor: rgb(a2), tertiaryTextColor: rgb(ink),
+        mainBkg: mix(bg,accent,0.14), nodeBorder: rgb(accent),
+        lineColor: mix(bg,ink,0.5), textColor: rgb(ink), titleColor: rgb(ink),
+        nodeTextColor: rgb(ink),
+        pie1: rgb(accent), pie2: rgb(a3), pie3: rgb(rose), pie4: rgb(a2),
+        pieTitleTextColor: rgb(ink), pieSectionTextColor: rgb(bg), pieStrokeColor: rgb(bg),
+        edgeLabelBackground: rgb(bg),
+        fontFamily:'-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif'
+      };
+      // Timeline sections + mindmap branch nodes color from the 12-slot cScale palette,
+      // which 'base' leaves black. Fill it from the brand, with --bg-colored labels so the
+      // on-block text contrasts in every theme + light/dark. cScaleInv = readable inverse.
+      var palette=[accent,a3,rose,a2];
+      for(var k=0;k<12;k++){
+        tv['cScale'+k]=rgb(palette[k%4]);
+        tv['cScaleLabel'+k]=rgb(bg);
+        tv['cScaleInv'+k]=rgb(ink);
+      }
+      window.mermaid.initialize({ startOnLoad:false, theme:'base', themeVariables:tv });
+      document.querySelectorAll('.mermaid').forEach(function(el){
+        if(!el.dataset.src) el.dataset.src = el.textContent.trim();   // stash original source once
+        el.removeAttribute('data-processed'); el.innerHTML = el.dataset.src;
+      });
+      var _rp = window.mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
+      if(_rp && _rp.then){ _rp.then(decorateFlows).catch(function(){}); } else { decorateFlows(); }
+    }catch(e){}
+  }
+  // theme + mode pickers — re-render mermaid on every change; SVG charts auto-flip via var()
+  function wire(attr,key,fb){
+    var b=document.querySelectorAll('.doc-settings [data-'+attr+']');
+    function apply(v){ root.setAttribute('data-'+attr,v); try{localStorage.setItem(key,v);}catch(e){}
+      b.forEach(function(x){x.setAttribute('aria-pressed', x.dataset[attr]===v?'true':'false');}); renderMermaid(); }
+    apply(root.getAttribute('data-'+attr)||fb);
+    b.forEach(function(x){ x.addEventListener('click', function(){ apply(x.dataset[attr]); }); });
+  }
+  wire('theme','nest-doc-theme','nest'); wire('mode','nest-doc-mode','light');
+  // Motion toggle — flips the continuous edge flows + pulses on/off.
+  (function(){
+    var b=document.querySelectorAll('.doc-settings [data-motion]');
+    function apply(v){ root.setAttribute('data-motion',v); try{localStorage.setItem('nest-doc-motion',v);}catch(e){}
+      b.forEach(function(x){x.setAttribute('aria-pressed', x.dataset.motion===v?'true':'false');}); decorateFlows(); }
+    apply(root.getAttribute('data-motion')||'on');
+    b.forEach(function(x){ x.addEventListener('click', function(){ apply(x.dataset.motion); }); });
+  })();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ if(root.getAttribute('data-mode')==='system') renderMermaid(); });
+</script>
+</body>
+</html>

@@ -1,9 +1,12 @@
 # ==============================================================================
 #  Shell greeting
 # ==============================================================================
-# First shell per tmux session (and every non-tmux shell) gets full fastfetch.
-# Subsequent panes in the same session — and shells where fastfetch isn't
-# installed — get _mini_greeting: a compact ASCII banner so they aren't blank.
+# First shell per tmux session gets minimal fastfetch; non-tmux terminals get
+# full fastfetch once per day. Subsequent shells get _mini_greeting so startup
+# stays responsive without making new panes feel blank.
+
+# No greeting for non-terminal interactive command shells, e.g. `zsh -i -c`.
+[[ -t 1 && "$TERM" != "dumb" ]] || return 0
 
 _mini_greeting() {
   local _suffix _date _host
@@ -46,7 +49,15 @@ if command -v fastfetch &>/dev/null; then
     fi
     unset _session_id
   else
-    fastfetch
+    _today=$(date '+%Y%m%d')
+    _sentinel="${TMPDIR:-/tmp}/.fastfetch-${USER}-${_today}"
+    if [[ ! -f "$_sentinel" ]]; then
+      fastfetch
+      : > "$_sentinel"
+    else
+      _mini_greeting
+    fi
+    unset _sentinel _today
   fi
 else
   _mini_greeting

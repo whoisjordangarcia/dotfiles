@@ -7,13 +7,32 @@ _plugin_dir="$HOME/.zsh/plugins"
 
 # --- Completion system (extracted from OMZ lib/completion.zsh) ---
 zmodload -i zsh/complist
+zmodload zsh/stat 2>/dev/null
+zmodload zsh/datetime 2>/dev/null
 autoload -U compinit
-# Regenerate comp dump at most once per day (-C skips security check for speed)
-if [[ -f "$HOME/.zcompdump" && $(date +'%j') == $(stat -f '%Sm' -t '%j' "$HOME/.zcompdump" 2>/dev/null) ]]; then
-  compinit -C
-else
-  compinit
+
+# Keep duplicate completion paths from making compinit do duplicate work.
+typeset -U fpath
+
+_zcompdump="$HOME/.zcompdump"
+_zcompdump_fresh=false
+if [[ -f "$_zcompdump" ]]; then
+  zstat -A _zcompdump_mtime +mtime "$_zcompdump" 2>/dev/null
+  if [[ -n "$_zcompdump_mtime" ]]; then
+    _today=$(strftime '%Y%j' "$EPOCHSECONDS")
+    _dump_day=$(strftime '%Y%j' "$_zcompdump_mtime")
+    [[ "$_today" == "$_dump_day" ]] && _zcompdump_fresh=true
+  fi
 fi
+
+# Regenerate comp dump at most once per day (-C skips security check for speed)
+if [[ "$_zcompdump_fresh" == true ]]; then
+  compinit -C -d "$_zcompdump"
+else
+  compinit -d "$_zcompdump"
+  [[ -f "$_zcompdump" ]] && zcompile -R "$_zcompdump" 2>/dev/null || true
+fi
+unset _zcompdump _zcompdump_fresh _zcompdump_mtime _today _dump_day
 
 WORDCHARS=''
 setopt auto_menu complete_in_word always_to_end
@@ -29,7 +48,6 @@ zstyle ':completion:*:cd:*' tag-order local-directories directory-stack path-dir
 
 # --- Plugins ---
 source "$_plugin_dir/zsh-autosuggestions/zsh-autosuggestions.zsh"
-source "$_plugin_dir/nx-completion/nx-completion.plugin.zsh"
 # syntax-highlighting must be sourced LAST (it wraps zle widgets)
 source "$_plugin_dir/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 

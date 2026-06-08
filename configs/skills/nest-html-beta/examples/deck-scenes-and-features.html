@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nest-html-beta · scenes + features demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --ink:#0a0a0a; --ink-soft:rgba(10,10,10,.6); --bg:#fff;
+    --accent:#e65732; --accent-2:#e78d32; --accent-3:#a367c8;
+    --border:rgba(230,87,50,.18); --hover:rgba(230,87,50,.06);
+    --serif:"Instrument Serif",Georgia,serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);overflow:hidden}
+  .slide{position:fixed;inset:0;display:none;padding:6vh 7vw;flex-direction:column;justify-content:center;overflow:hidden}
+  .slide.active{display:flex}
+  canvas.gl{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0}
+  .gl-content{position:relative;z-index:1;pointer-events:none;max-width:1120px;margin:0 auto;width:100%}
+  .gl-content a,.gl-content button{pointer-events:auto}
+  .eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 14px}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(48px,8vw,104px);line-height:1.02;margin:0;
+     background:linear-gradient(100deg,#e65732,#e78d32,#a367c8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  h2{font-family:var(--serif);font-weight:400;font-size:clamp(34px,5vw,58px);line-height:1.05;margin:0 0 10px}
+  .slide-title{font-family:var(--serif);font-weight:400;font-size:clamp(32px,4.5vw,52px);margin:0 0 26px;text-align:center}
+  .lead{font-size:20px;color:var(--ink-soft);max-width:46ch;line-height:1.5}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;height:100%}
+  .panel{align-self:center}
+  ul.big{list-style:none;padding:0;margin:18px 0 0;font-size:23px;line-height:1.5}
+  ul.big li{margin:0 0 14px;padding-left:28px;position:relative}
+  ul.big li::before{content:'';position:absolute;left:0;top:13px;width:12px;height:12px;border-radius:3px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-3))}
+  .callout{margin:48px auto 0;padding:0;max-width:56ch;font-family:var(--serif);
+    font-size:clamp(24px,3vw,34px);line-height:1.32;text-align:center;border:0;background:transparent}
+  .callout::before{content:\"\";display:block;width:56px;height:1.5px;margin:0 auto 28px;border-radius:2px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2),var(--accent-3))}
+  .callout strong{color:var(--accent);font-weight:400;font-style:italic}
+  /* build/reveal */
+  .reveal{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease}
+  .reveal.shown{opacity:1;transform:none}
+  /* mermaid */
+  .mermaid{background:var(--hover);border:1px solid var(--border);border-radius:10px;padding:22px;text-align:center;max-width:760px;margin:0 auto}
+  /* charts (from live-from-JSON feature) */
+  .chart-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:center}
+  .chart-block{margin:0}
+  .chart{width:100%}
+  .chart svg{width:100%;height:auto;display:block}
+  .chart-caption{font-family:var(--serif);font-size:1.15rem;color:var(--ink);margin-bottom:12px}
+  .chart .bar-value{font-family:var(--serif);fill:var(--ink);font-size:20px}
+  .chart .bar-label{fill:var(--ink-soft);font-size:13px}
+  .chart .bar-baseline{stroke:rgba(10,10,10,.12);stroke-width:1}
+  .donut-wrap .donut-svg{width:160px;flex:0 0 160px}
+  .donut-total{font-family:var(--serif);fill:var(--ink);font-size:30px}
+  .donut-total-label{fill:var(--ink-soft);font-size:9px}
+  .donut-legend{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  .donut-legend li{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink)}
+  .donut-legend .swatch{width:12px;height:12px;border-radius:3px;flex:0 0 12px}
+  .donut-legend .legend-label{flex:1;color:var(--ink-soft)}
+  .donut-legend .legend-value{font-variant-numeric:tabular-nums;font-weight:600}
+  /* fx overlay (confetti) */
+  #fx{position:fixed;inset:0;width:100%;height:100%;z-index:40;pointer-events:none;display:block}
+  /* chrome */
+  .nav{position:fixed;bottom:22px;right:26px;z-index:50;display:flex;gap:8px}
+  .nav button{font-family:var(--sans);font-size:16px;border:1px solid var(--border);background:#fff;color:var(--ink);
+    border-radius:999px;width:44px;height:44px;cursor:pointer}
+  .nav button:hover{background:var(--hover)}
+  .counter{position:fixed;top:22px;right:26px;z-index:50;font-size:13px;color:var(--ink-soft)}
+  .hint{position:fixed;bottom:26px;left:26px;z-index:50;font-size:12px;color:var(--ink-soft);max-width:48ch}
+  kbd{font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var(--border);border-radius:5px;padding:1px 5px}
+  /* presenter mode */
+  .presenter{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;gap:32px;
+    background:#0a0a0a;color:#fff;padding:18px 26px;font-size:14px;line-height:1.5}
+  body.presenting .presenter{display:flex}
+  body.presenting .hint{display:none}
+  .presenter .pcol{flex:1}
+  .presenter .plabel{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#e78d32;margin:0 0 4px}
+  .presenter .pnext{color:rgba(255,255,255,.7)}
+</style>
+</head>
+<body>
+
+<!-- 1 · Title (ambient) -->
+<section class="slide active" data-scene="ambient" data-notes="Welcome. This deck demos five new 3D scenes plus build/reveal, JSON charts, presenter mode, and a confetti finish.">
+  <canvas class="gl" aria-hidden="true"></canvas>
+  <div class="gl-content">
+    <p class="eyebrow">nest-html-beta · v0.3.0</p>
+    <h1>Decks that move.</h1>
+    <p class="lead">Five three.js scenes, build-on-click bullets, JSON-driven charts, presenter mode, and a tasteful finish. <kbd>→</kbd>/<kbd>←</kbd> to navigate · <kbd>P</kbd> for presenter mode.</p>
+  </div>
+</section>
+
+<!-- 2 · Flythrough constellation -->
+<section class="slide" data-scene="flythrough" data-steps="6" data-notes="Press right to fly node-to-node. Each stop reframes the camera and updates the panel. This is the AIHero.dev guided-tour feel.">
+  <canvas class="gl" aria-hidden="true"></canvas>
+  <div class="gl-content">
+    <p class="eyebrow">Agent architecture</p>
+    <h2>A guided tour of the agent stack</h2>
+    <p class="lead" id="fly-detail">Press → to fly through the concept map.</p>
+  </div>
+</section>
+
+<!-- 3 · Request trace -->
+<section class="slide" data-scene="requestTrace" data-steps="3" data-notes="The packet travels Portal → GraphQL → EHR → Postgres. Each right-press advances one hop and shows latency + running total.">
+  <canvas class="gl" aria-hidden="true"></canvas>
+  <div class="gl-content">
+    <p class="eyebrow">Provider portal sign-in</p>
+    <h2>Tracing a sign-in through the stack</h2>
+    <p class="lead" id="trace-detail">Request originates at the Portal — press → to follow it downstream.</p>
+  </div>
+</section>
+
+<!-- 4 · Globe with arcs -->
+<section class="slide" data-scene="globe" data-notes="Sites and EHR vendors as points on a rotating globe; arcs are live integrations with pulses showing data movement.">
+  <canvas class="gl" aria-hidden="true"></canvas>
+  <div class="gl-content two-col">
+    <div></div>
+    <div class="panel">
+      <p class="eyebrow">Network coverage</p>
+      <h2>One integration layer, every site</h2>
+      <p class="lead">Nest connects patient sites and EHR vendors into a single normalized graph — orders, results, and clinical context flowing across the network in real time.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · Morphing point cloud -->
+<section class="slide" data-scene="morph" data-steps="2" data-notes="Step 0 = raw embeddings (grey blob). Press right to morph into 4 brand-colored clusters. Great for before/after a migration.">
+  <canvas class="gl" aria-hidden="true"></canvas>
+  <div class="gl-content two-col">
+    <div></div>
+    <div class="panel">
+      <p class="eyebrow">Patient embeddings · migration</p>
+      <h2>From raw vectors to clean cohorts</h2>
+      <p class="lead" id="morph-detail">Raw embeddings — unclustered</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6 · Timeline ribbon -->
+<section class="slide" data-scene="ribbon" data-steps="6" data-notes="Fly down the z-axis through release milestones, one per right-press. Each card billboards to face you.">
+  <canvas class="gl" aria-hidden="true"></canvas>
+  <div class="gl-content">
+    <p class="eyebrow">Release history · roadmap</p>
+    <h2>Flying the Nest release ribbon</h2>
+    <p class="lead" id="ribbon-detail">Use → to fly down the timeline, milestone by milestone.</p>
+  </div>
+</section>
+
+<!-- 7 · Build/reveal bullets -->
+<section class="slide" data-steps="4" data-notes="Bullets reveal one per right-press — classic keynote pacing. Talk to each point before advancing.">
+  <div class="gl-content">
+    <p class="eyebrow">Why this matters</p>
+    <h2>Four reasons decks beat slideware here.</h2>
+    <ul class="big">
+      <li class="reveal">Self-contained — one HTML file, no runtime, shares as a URL.</li>
+      <li class="reveal">On-brand by default — the gradient, the serif, the palette are baked in.</li>
+      <li class="reveal">Interactive where it helps — 3D for relationships, charts for numbers.</li>
+      <li class="reveal">Presenter-ready — speaker notes and pacing built in.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 8 · Live-from-JSON charts -->
+<section class="slide" id="slide-metrics" data-notes="These charts are built from the JSON blocks below at slide-activation time. Edit the numbers, not SVG paths.">
+  <div class="gl-content">
+    <h2 class="slide-title">Q2 engineering pulse</h2>
+    <script type="application/json" id="bar-data">
+    {
+      "title": "PR cycle time by team (hours, median)",
+      "categories": [
+        { "label": "Platform", "value": 9 },
+        { "label": "Genomics", "value": 14 },
+        { "label": "Portal",   "value": 6 },
+        { "label": "Data",     "value": 11 },
+        { "label": "Infra",    "value": 4 }
+      ]
+    }
+    </script>
+    <script type="application/json" id="donut-data">
+    {
+      "title": "PR merge outcomes (last 30 days)",
+      "slices": [
+        { "label": "Merged clean",    "value": 142 },
+        { "label": "Merged w/ fixes", "value": 58 },
+        { "label": "Closed unmerged", "value": 17 },
+        { "label": "Still open",      "value": 23 }
+      ]
+    }
+    </script>
+    <div class="chart-grid">
+      <figure class="chart-block"><div class="chart" data-chart="bar" data-src="bar-data"></div></figure>
+      <figure class="chart-block"><div class="chart donut-wrap" data-chart="donut" data-src="donut-data"></div></figure>
+    </div>
+  </div>
+</section>
+
+<!-- 9 · Mermaid state diagram (render-on-activate) -->
+<section class="slide" data-notes="Mermaid renders lazily here — only when the slide is visible — so hidden-slide layout never throws.">
+  <div class="gl-content">
+    <p class="eyebrow" style="text-align:center">Mermaid · state diagram</p>
+    <h2 class="slide-title">A ticket's lifecycle.</h2>
+    <div class="mermaid">
+stateDiagram-v2
+  [*] --> Triage
+  Triage --> Ready: passes DoR
+  Triage --> Triage: needs info
+  Ready --> InProgress
+  InProgress --> InReview: PR opened
+  InReview --> InProgress: changes requested
+  InReview --> Merged: approved + CI green
+  Merged --> [*]
+    </div>
+  </div>
+</section>
+
+<!-- 10 · Recommendation + confetti/sweep finish -->
+<section class="slide reco" data-confetti="1" data-notes="The payoff slide. Confetti fires on entry. Keep it tasteful — one celebration, one clear ask.">
+  <div class="gl-content">
+    <p class="eyebrow">Recommendation</p>
+    <h2>Ship nest-html-beta to the team.</h2>
+    <div class="callout">
+      <strong>Adopt it.</strong> Same one-file, on-brand output — now with interactive 3D, JSON charts, and presenter mode. Zero new dependencies beyond two pinned CDNs.
+    </div>
+  </div>
+</section>
+
+<canvas id="fx"></canvas>
+<div class="counter"><span id="cur">1</span> / <span id="tot">10</span></div>
+<div class="nav">
+  <button data-nav="prev" aria-label="Previous">‹</button>
+  <button data-nav="next" aria-label="Next">›</button>
+</div>
+<div class="hint">→/← navigate · within a scene, → advances its steps first · <kbd>P</kbd> presenter mode</div>
+<div class="presenter" aria-hidden="true">
+  <div class="pcol"><p class="plabel">Speaker notes</p><div id="p-notes">—</div></div>
+  <div class="pcol"><p class="plabel">Next up</p><div class="pnext" id="p-next">—</div></div>
+</div>
+
+<!-- mermaid: render lazily on slide activation -->
+<script>
+  if (window.mermaid) window.mermaid.initialize({
+    startOnLoad: false, theme: 'default',
+    themeVariables: { primaryColor:'#fadfd8', primaryBorderColor:'#e65732', primaryTextColor:'#7a2615',
+      lineColor:'#b04b1d', fontFamily:'-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif' }
+  });
+  window.renderMermaidIn = function (slide) {
+    if (!window.mermaid) return;
+    var nodes = [].slice.call(slide.querySelectorAll('.mermaid:not([data-processed])'));
+    if (nodes.length) window.mermaid.run({ nodes: nodes });
+  };
+</script>
+
+<!-- live-from-JSON charts -->
+<script>
+window.renderChartsIn = (function () {
+  var DONUT_COLORS = ['#e65732', '#a367c8', '#c45567', '#e78d32'];
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function readJSON(slideEl,id){var node=slideEl.querySelector('script[type="application/json"]#'+(window.CSS&&CSS.escape?CSS.escape(id):id));if(!node)return null;try{return JSON.parse(node.textContent);}catch(e){return null;}}
+  function renderBar(el,data,gradId){
+    var cats=(data&&data.categories)||[];var X0=40,X1=600,TOP=40,BASE=200;
+    var max=Math.max(1,Math.max.apply(null,cats.map(function(c){return Number(c.value)||0;})));
+    var slot=cats.length?(X1-X0)/cats.length:0;var bw=Math.min(70,slot*0.55);
+    var bars=cats.map(function(c,i){var v=Number(c.value)||0;var h=(v/max)*(BASE-TOP);var cx=X0+slot*i+slot/2;var x=cx-bw/2;var y=BASE-h;
+      return '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="4" fill="url(#'+gradId+')"></rect>'+
+        '<text class="bar-value" x="'+cx.toFixed(1)+'" y="'+(y-8).toFixed(1)+'" text-anchor="middle">'+esc(c.value)+'</text>'+
+        '<text class="bar-label" x="'+cx.toFixed(1)+'" y="'+(BASE+22)+'" text-anchor="middle">'+esc(c.label)+'</text>';}).join('');
+    var caption=data&&data.title?'<figcaption class="chart-caption">'+esc(data.title)+'</figcaption>':'';
+    var aria=esc((data&&data.title)||'Bar chart')+'. '+cats.map(function(c){return esc(c.label)+': '+esc(c.value);}).join(', ')+'.';
+    el.innerHTML=caption+'<svg viewBox="0 0 640 280" role="img" aria-label="'+aria+'"><defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e65732"></stop><stop offset="1" stop-color="#e78d32"></stop></linearGradient></defs><line class="bar-baseline" x1="'+X0+'" y1="'+BASE+'" x2="'+X1+'" y2="'+BASE+'"></line>'+bars+'</svg>';
+  }
+  function renderDonut(el,data){
+    var slices=(data&&data.slices)||[];var R=60,C=2*Math.PI*R,CX=80,CY=80,SW=22;
+    var total=slices.reduce(function(a,s){return a+(Number(s.value)||0);},0);var offset=0;
+    var segs=slices.map(function(s,i){var v=Number(s.value)||0;var frac=total?v/total:0;var len=frac*C;
+      var seg='<circle r="'+R+'" cx="'+CX+'" cy="'+CY+'" fill="none" stroke="'+DONUT_COLORS[i%DONUT_COLORS.length]+'" stroke-width="'+SW+'" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-offset).toFixed(2)+'"></circle>';offset+=len;return seg;}).join('');
+    var legend=slices.map(function(s,i){return '<li><span class="swatch" style="background:'+DONUT_COLORS[i%DONUT_COLORS.length]+'"></span><span class="legend-label">'+esc(s.label)+'</span><span class="legend-value">'+esc(s.value)+'</span></li>';}).join('');
+    var caption=data&&data.title?'<figcaption class="chart-caption">'+esc(data.title)+'</figcaption>':'';
+    var aria=esc((data&&data.title)||'Donut chart')+'. Total '+total+'.';
+    el.innerHTML=caption+'<div style="display:flex;align-items:center;gap:28px"><svg class="donut-svg" viewBox="0 0 160 160" role="img" aria-label="'+aria+'"><g transform="rotate(-90 '+CX+' '+CY+')">'+segs+'</g><text class="donut-total" x="'+CX+'" y="'+(CY+4)+'" text-anchor="middle">'+total+'</text><text class="donut-total-label" x="'+CX+'" y="'+(CY+22)+'" text-anchor="middle">TOTAL</text></svg><ul class="donut-legend">'+legend+'</ul></div>';
+  }
+  return function renderChartsIn(slideEl){
+    if(!slideEl)return;var charts=slideEl.querySelectorAll('.chart[data-chart]');
+    for(var i=0;i<charts.length;i++){var el=charts[i];if(el.getAttribute('data-rendered')==='1')continue;
+      var data=readJSON(slideEl,el.getAttribute('data-src'));if(!data)continue;var kind=el.getAttribute('data-chart');
+      if(kind==='bar')renderBar(el,data,'barGrad'+i);else if(kind==='donut')renderDonut(el,data);else continue;
+      el.setAttribute('data-rendered','1');}
+  };
+})();
+</script>
+
+<!-- confetti -->
+<script>
+window.launchFx = function (slide) {
+  // confetti
+  var cv = document.getElementById('fx'); var g = cv.getContext('2d');
+  cv.width = innerWidth; cv.height = innerHeight;
+  var colors = ['#e65732','#e78d32','#a367c8','#c45567','#fadfd8'];
+  var P = [];
+  for (var i=0;i<170;i++) P.push({
+    x: innerWidth*(0.5+(Math.random()-.5)*0.5), y: innerHeight*0.32,
+    vx:(Math.random()-.5)*10, vy:Math.random()*-13-3, grav:0.32+Math.random()*0.18,
+    s:5+Math.random()*6, rot:Math.random()*6.28, vr:(Math.random()-.5)*0.5, c:colors[i%colors.length]
+  });
+  var start=null;
+  function frame(ts){
+    if(!start)start=ts; var el=ts-start; g.clearRect(0,0,cv.width,cv.height);
+    var alive=false, fade=Math.max(0,1-el/2800);
+    for(var k=0;k<P.length;k++){var p=P[k];p.vy+=p.grav;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;
+      if(p.y<cv.height+24)alive=true;
+      g.save();g.translate(p.x,p.y);g.rotate(p.rot);g.globalAlpha=fade;g.fillStyle=p.c;
+      g.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.45);g.restore();}
+    if(el<2800&&alive)requestAnimationFrame(frame); else g.clearRect(0,0,cv.width,cv.height);
+  }
+  requestAnimationFrame(frame);
+};
+</script>
+
+<!-- step-aware controller: nav, build/reveal, render hooks, presenter mode -->
+<script>
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var cur=0;
+  document.getElementById('tot').textContent=slides.length;
+  var pNotes=document.getElementById('p-notes'), pNext=document.getElementById('p-next');
+  function clamp(n,a,b){return Math.max(a,Math.min(b,n));}
+  function maxStep(s){return s.dataset.steps?(+s.dataset.steps-1):0;}
+  function stepOf(s){return +(s.dataset.step||0);}
+  function applyReveals(s){var step=stepOf(s);[].slice.call(s.querySelectorAll('.reveal')).forEach(function(el,i){el.classList.toggle('shown',i<=step);});}
+  function onActivate(s){
+    s.dataset.step='0';
+    applyReveals(s);
+    if(window.renderMermaidIn)window.renderMermaidIn(s);
+    if(window.renderChartsIn)window.renderChartsIn(s);
+    if(s.dataset.confetti&&window.launchFx)window.launchFx(s);
+    updatePresenter();
+  }
+  function activate(n){
+    n=clamp(n,0,slides.length-1); if(n===cur)return;
+    slides[cur].classList.remove('active');
+    cur=n; var s=slides[cur]; s.classList.add('active');
+    document.getElementById('cur').textContent=cur+1;
+    onActivate(s);
+  }
+  function next(){
+    var s=slides[cur];
+    if(stepOf(s)<maxStep(s)){s.dataset.step=String(stepOf(s)+1);applyReveals(s);
+      if(s.dataset.confetti&&stepOf(s)===maxStep(s)&&window.launchFx)window.launchFx(s);updatePresenter();}
+    else activate(cur+1);
+  }
+  function prev(){
+    var s=slides[cur];
+    if(stepOf(s)>0){s.dataset.step=String(stepOf(s)-1);applyReveals(s);updatePresenter();}
+    else activate(cur-1);
+  }
+  function updatePresenter(){
+    if(!document.body.classList.contains('presenting'))return;
+    pNotes.textContent=slides[cur].dataset.notes||'—';
+    var nx=slides[cur+1];
+    pNext.textContent=nx?((nx.querySelector('h1,h2,.slide-title')||{}).textContent||'(next slide)'):'End of deck';
+  }
+  addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();next();}
+    else if(e.key==='ArrowLeft'){e.preventDefault();prev();}
+    else if(e.key==='p'||e.key==='P'){document.body.classList.toggle('presenting');updatePresenter();}
+  });
+  document.querySelector('[data-nav="next"]').onclick=next;
+  document.querySelector('[data-nav="prev"]').onclick=prev;
+  if(/[?&]present/.test(location.search))document.body.classList.add('presenting');
+  // initialize the slide active at load
+  onActivate(slides[0]);
+</script>
+
+<!-- three.js: scaffold + scene builders -->
+<script type="module">
+import * as THREE from 'three';
+
+const BRAND = {
+  ink:    new THREE.Color('#0a0a0a'),
+  orange: new THREE.Color('#e65732'),
+  amber:  new THREE.Color('#e78d32'),
+  purple: new THREE.Color('#a367c8'),
+  rose:   new THREE.Color('#c45567'),
+};
+function discTexture(){
+  const s=64,c=document.createElement('canvas');c.width=c.height=s;
+  const g=c.getContext('2d'),grad=g.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+  grad.addColorStop(0,'rgba(255,255,255,1)');grad.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=grad;g.beginPath();g.arc(s/2,s/2,s/2,0,Math.PI*2);g.fill();
+  const t=new THREE.CanvasTexture(c);t.needsUpdate=true;return t;
+}
+function mountSlideScene(slideEl, build){
+  const canvas=slideEl.querySelector('canvas.gl'); if(!canvas)return;
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let renderer,scene,camera,update=()=>{},raf=0,mounted=false;
+  function size(){const r=canvas.getBoundingClientRect();renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+    renderer.setSize(r.width,r.height,false);camera.aspect=(r.width||1)/(r.height||1);camera.updateProjectionMatrix();}
+  function mount(){
+    if(mounted)return;mounted=true;
+    renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(50,1,0.1,200);camera.position.set(0,0,18);
+    update=build(scene,camera,{THREE,BRAND,disc:discTexture,canvas})||(()=>{});
+    size();ro.observe(canvas);
+    const t0=performance.now();
+    const loop=(t)=>{update((t-t0)/1000);renderer.render(scene,camera);raf=requestAnimationFrame(loop);};
+    if(reduce){update(0);renderer.render(scene,camera);}else raf=requestAnimationFrame(loop);
+  }
+  function unmount(){if(!mounted)return;mounted=false;cancelAnimationFrame(raf);ro.unobserve(canvas);renderer.dispose();}
+  const ro=new ResizeObserver(()=>{if(mounted)size();});
+  new MutationObserver(()=>slideEl.classList.contains('active')?mount():unmount())
+    .observe(slideEl,{attributes:true,attributeFilter:['class']});
+  if(slideEl.classList.contains('active'))mount();
+}
+
+/* ---------- ambient backdrop ---------- */
+function ambient(scene,camera,{THREE,BRAND}){
+  const COUNT=2500,pos=new Float32Array(COUNT*3),col=new Float32Array(COUNT*3);
+  for(let i=0;i<COUNT;i++){pos.set([(Math.random()-.5)*40,(Math.random()-.5)*24,(Math.random()-.5)*20],i*3);
+    const c=BRAND.orange.clone().lerp(BRAND.purple,Math.random());col.set([c.r,c.g,c.b],i*3);}
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const pts=new THREE.Points(g,new THREE.PointsMaterial({size:0.08,vertexColors:true,transparent:true,opacity:0.5,depthWrite:false}));
+  scene.add(pts);camera.position.z=22;
+  return(t)=>{pts.rotation.y=t*0.03;pts.rotation.z=t*0.01;};
+}
+
+/* ---------- flythrough constellation ---------- */
+function flythrough(scene, camera, ctx) {
+  const { THREE, BRAND, disc } = ctx;
+  const nodes = [
+    { name:"Agent", desc:"The loop that reasons, calls tools, and decides what to do next." },
+    { name:"Model", desc:"The LLM weights doing the token-by-token reasoning." },
+    { name:"Harness", desc:"The runtime wiring the model to tools, memory, and the world." },
+    { name:"Tool", desc:"A typed capability the agent can invoke to act or observe." },
+    { name:"Context window", desc:"The finite token budget the model can attend to at once." },
+    { name:"Session", desc:"One continuous run of state, history, and accumulated context." },
+    { name:"Skill", desc:"Packaged domain knowledge the agent loads on demand." },
+    { name:"Subagent", desc:"A fresh isolated agent spawned for a scoped sub-task." },
+    { name:"System prompt", desc:"The standing instructions that frame every turn." },
+    { name:"Memory", desc:"Durable state that survives beyond a single context window." },
+    { name:"Handoff", desc:"Passing work and context from one agent to another." },
+    { name:"Sandbox", desc:"The isolated environment where tool calls safely execute." },
+    { name:"Planner", desc:"Decomposes a goal into ordered, checkable steps." },
+    { name:"Verifier", desc:"Checks outputs against criteria before claiming done." }
+  ];
+  const N=nodes.length, pos=[]; const golden=Math.PI*(3-Math.sqrt(5)), R=9.5;
+  for(let i=0;i<N;i++){const y=1-(i/(N-1))*2;const r=Math.sqrt(Math.max(0,1-y*y));const th=golden*i;
+    pos.push(new THREE.Vector3(Math.cos(th)*r*R,y*R*0.85,Math.sin(th)*r*R));}
+  for(let iter=0;iter<18;iter++)for(let i=0;i<N;i++){const f=new THREE.Vector3();
+    for(let j=0;j<N;j++){if(i===j)continue;const d=pos[i].clone().sub(pos[j]);const len=Math.max(d.length(),0.001);f.add(d.multiplyScalar(1/(len*len)));}
+    pos[i].add(f.multiplyScalar(0.45));pos[i].clampLength(0,R*1.35);}
+  const graph=new THREE.Group();scene.add(graph);
+  const edgePts=[],seen=new Set();
+  for(let i=0;i<N;i++){const order=[];for(let j=0;j<N;j++)if(j!==i)order.push([j,pos[i].distanceTo(pos[j])]);
+    order.sort((a,b)=>a[1]-b[1]);for(let k=0;k<2;k++){const j=order[k][0];const key=i<j?i+"_"+j:j+"_"+i;if(seen.has(key))continue;seen.add(key);
+      edgePts.push(pos[i].x,pos[i].y,pos[i].z,pos[j].x,pos[j].y,pos[j].z);}}
+  const edgeGeo=new THREE.BufferGeometry();edgeGeo.setAttribute("position",new THREE.Float32BufferAttribute(edgePts,3));
+  graph.add(new THREE.LineSegments(edgeGeo,new THREE.LineBasicMaterial({color:BRAND.ink,transparent:true,opacity:0.16})));
+  const posArr=new Float32Array(N*3),colArr=new Float32Array(N*3),sizeArr=new Float32Array(N);
+  const baseCol=BRAND.ink,hotCol=BRAND.orange;
+  for(let i=0;i<N;i++){posArr[i*3]=pos[i].x;posArr[i*3+1]=pos[i].y;posArr[i*3+2]=pos[i].z;
+    colArr[i*3]=baseCol.r;colArr[i*3+1]=baseCol.g;colArr[i*3+2]=baseCol.b;sizeArr[i]=22;}
+  const ptGeo=new THREE.BufferGeometry();
+  ptGeo.setAttribute("position",new THREE.BufferAttribute(posArr,3));
+  ptGeo.setAttribute("color",new THREE.BufferAttribute(colArr,3));
+  ptGeo.setAttribute("psize",new THREE.BufferAttribute(sizeArr,1));
+  const ptMat=new THREE.ShaderMaterial({uniforms:{uTex:{value:disc()},uScale:{value:1}},vertexColors:true,transparent:true,depthWrite:false,
+    vertexShader:`attribute float psize;varying vec3 vColor;uniform float uScale;void main(){vColor=color;vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=psize*uScale*(300.0/-mv.z);gl_Position=projectionMatrix*mv;}`,
+    fragmentShader:`uniform sampler2D uTex;varying vec3 vColor;void main(){vec4 t=texture2D(uTex,gl_PointCoord);if(t.a<0.02)discard;gl_FragColor=vec4(vColor,t.a);}`});
+  graph.add(new THREE.Points(ptGeo,ptMat));
+  const tour=[0,2,3,4,7,9];
+  const detail=document.getElementById("fly-detail");let lastDetail="";
+  const camTarget=camera.position.clone(),lookTarget=new THREE.Vector3(),lookCurrent=new THREE.Vector3();
+  const _world=new THREE.Vector3(),_toCam=new THREE.Vector3();
+  return function update(t){
+    const slide=ctx.canvas.closest(".slide");const step=+((slide&&slide.dataset.step)||0);
+    graph.rotation.y=t*0.05;graph.rotation.x=Math.sin(t*0.13)*0.06;
+    const idx=tour[Math.min(Math.max(step,0),tour.length-1)];
+    _world.copy(pos[idx]).applyMatrix4(graph.matrixWorld);
+    _toCam.copy(_world).normalize();if(_toCam.lengthSq()<1e-6)_toCam.set(0,0,1);
+    camTarget.copy(_world).add(_toCam.multiplyScalar(6.5)).add(new THREE.Vector3(0,1.2,0));
+    lookTarget.copy(_world);
+    camera.position.lerp(camTarget,0.06);lookCurrent.lerp(lookTarget,0.08);camera.lookAt(lookCurrent);
+    let needUpload=false;
+    for(let i=0;i<N;i++){const focused=i===idx;const tgtSize=focused?46:18;const cur=sizeArr[i];const ns=cur+(tgtSize-cur)*0.12;
+      if(Math.abs(ns-cur)>0.01){sizeArr[i]=ns;needUpload=true;}
+      const tc=focused?hotCol:baseCol;const dim=focused?1:0.55;const tr=tc.r,tg=tc.g,tb=tc.b;
+      const r=colArr[i*3],g=colArr[i*3+1],b=colArr[i*3+2];const nr=r+(tr*dim-r)*0.12,ng=g+(tg*dim-g)*0.12,nb=b+(tb*dim-b)*0.12;
+      if(Math.abs(nr-r)+Math.abs(ng-g)+Math.abs(nb-b)>0.001){colArr[i*3]=nr;colArr[i*3+1]=ng;colArr[i*3+2]=nb;needUpload=true;}}
+    if(needUpload){ptGeo.attributes.psize.needsUpdate=true;ptGeo.attributes.color.needsUpdate=true;}
+    if(detail){const txt=nodes[idx].name+" — "+nodes[idx].desc;if(txt!==lastDetail){detail.textContent=txt;lastDetail=txt;}}
+  };
+}
+
+/* ---------- request trace ---------- */
+function requestTrace(scene, camera, ctx) {
+  const { THREE, BRAND, disc } = ctx;
+  const stages=[{label:'Portal',color:BRAND.purple},{label:'GraphQL API',color:BRAND.ink},{label:'EHR vendor',color:BRAND.rose},{label:'Postgres',color:BRAND.ink}];
+  const HOPS=[{from:'Portal',to:'GraphQL API',ms:70},{from:'GraphQL API',to:'EHR vendor',ms:240},{from:'EHR vendor',to:'Postgres',ms:95}];
+  const N=stages.length,spanX=22,xs=stages.map((_,i)=>-spanX/2+(spanX*i)/(N-1)),yBox=0;
+  const group=new THREE.Group();scene.add(group);const sprite=disc();
+  function makeLabel(text,hex,sub){const c=document.createElement('canvas'),w=512,h=256;c.width=w;c.height=h;const g=c.getContext('2d');
+    g.clearRect(0,0,w,h);g.fillStyle='#'+new THREE.Color(hex).getHexString();g.font='600 64px ui-sans-serif,system-ui,-apple-system,sans-serif';
+    g.textAlign='center';g.textBaseline='middle';g.fillText(text,w/2,sub?h/2-34:h/2);
+    if(sub){g.fillStyle='rgba(60,60,70,0.85)';g.font='500 40px ui-sans-serif,system-ui,sans-serif';g.fillText(sub,w/2,h/2+44);}
+    const tex=new THREE.CanvasTexture(c);tex.anisotropy=4;const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));s.scale.set(5,2.5,1);return s;}
+  const boxGeo=new THREE.BoxGeometry(3,2,2),edgeGeo=new THREE.EdgesGeometry(boxGeo);
+  stages.forEach((st,i)=>{const fill=new THREE.Mesh(boxGeo,new THREE.MeshBasicMaterial({color:st.color,transparent:true,opacity:0.06}));fill.position.set(xs[i],yBox,0);group.add(fill);
+    const wire=new THREE.LineSegments(edgeGeo,new THREE.LineBasicMaterial({color:st.color,transparent:true,opacity:0.85}));wire.position.set(xs[i],yBox,0);group.add(wire);st._wire=wire;
+    const lbl=makeLabel(st.label,st.color.getHex());lbl.position.set(xs[i],yBox+2.4,0);group.add(lbl);});
+  const halfBox=1.5;
+  for(let i=0;i<N-1;i++){const a=new THREE.Vector3(xs[i]+halfBox,yBox,0),b=new THREE.Vector3(xs[i+1]-halfBox,yBox,0);
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a,b]),new THREE.LineBasicMaterial({color:BRAND.ink,transparent:true,opacity:0.35})));}
+  const packet=new THREE.Mesh(new THREE.SphereGeometry(0.42,24,24),new THREE.MeshBasicMaterial({color:BRAND.amber}));packet.position.set(xs[0],yBox,0);group.add(packet);
+  const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:sprite,color:BRAND.orange,transparent:true,opacity:0.9,depthWrite:false,blending:THREE.AdditiveBlending}));glow.scale.set(2.6,2.6,1);packet.add(glow);
+  const hopLabels=HOPS.map((hop,i)=>{const mid=(xs[i]+xs[i+1])/2;const l=makeLabel(hop.ms+' ms',BRAND.orange.getHex());l.scale.set(3.2,1.6,1);l.position.set(mid,yBox-1.9,0);l.material.opacity=0;group.add(l);return l;});
+  const cumAt=[0];for(let i=0;i<HOPS.length;i++)cumAt.push(cumAt[i]+HOPS[i].ms);
+  const detail=document.getElementById('trace-detail');let lastReported=-1;
+  function report(step){if(!detail||step===lastReported)return;lastReported=step;
+    if(step<=0)detail.textContent='Request originates at the Portal — press → to follow it downstream. · total 0 ms';
+    else{const hop=HOPS[step-1];detail.textContent=`${hop.from} → ${hop.to} · ${hop.ms} ms · total ${cumAt[step]} ms`;}}
+  let cur=0,camX=0;
+  return function update(t){
+    const slide=ctx.canvas.closest('.slide');const step=Math.max(0,Math.min(N-1,+(slide&&slide.dataset.step||0)));
+    cur+=(step-cur)*0.08;const seg=Math.min(Math.floor(cur),N-2);const fseg=Math.max(0,Math.min(1,cur-seg));
+    packet.position.x=xs[seg]+(xs[seg+1]-xs[seg])*fseg;packet.position.y=yBox+Math.sin(t*2.0)*0.06;
+    glow.material.opacity=0.75+Math.sin(t*4)*0.2;packet.scale.setScalar(1+Math.sin(t*4)*0.06);
+    stages.forEach((st,i)=>{const active=cur>=i-0.5;const target=active?1.0:0.35;st._wire.material.opacity+=(target-st._wire.material.opacity)*0.1;});
+    hopLabels.forEach((l,i)=>{const target=cur>=i+1-0.5?1:0;l.material.opacity+=(target-l.material.opacity)*0.1;});
+    report(step);
+    camX+=(packet.position.x*0.15-camX)*0.04;camera.position.x=camX+Math.sin(t*0.3)*0.3;camera.position.y=Math.sin(t*0.4)*0.25;camera.position.z=18;camera.lookAt(camX,0,0);
+  };
+}
+
+/* ---------- globe with arcs ---------- */
+function globe(scene, camera, ctx) {
+  const { THREE, BRAND, disc } = ctx;const R=5,sprite=disc();const group=new THREE.Group();scene.add(group);
+  const wire=new THREE.WireframeGeometry(new THREE.SphereGeometry(R,28,20));
+  group.add(new THREE.LineSegments(wire,new THREE.LineBasicMaterial({color:BRAND.ink,transparent:true,opacity:0.08})));
+  const palette=[BRAND.orange,BRAND.purple,BRAND.amber,BRAND.rose];const SITE_COUNT=14,sites=[];
+  for(let i=0;i<SITE_COUNT;i++){const y=1-(i+0.5)/SITE_COUNT*2;const r=Math.sqrt(Math.max(0,1-y*y));const theta=i*2.39996323;
+    const pos=new THREE.Vector3(Math.cos(theta)*r*R,y*R,Math.sin(theta)*r*R);sites.push(pos);
+    const dot=new THREE.Sprite(new THREE.SpriteMaterial({map:sprite,color:palette[i%palette.length],transparent:true,opacity:0.95,depthWrite:false}));
+    dot.position.copy(pos);dot.scale.setScalar(0.45);group.add(dot);}
+  const ARC_COUNT=10,arcs=[],used=new Set();let made=0,guard=0;
+  while(made<ARC_COUNT&&guard++<200){const a=Math.floor(Math.random()*SITE_COUNT);let b=Math.floor(Math.random()*SITE_COUNT);if(b===a)continue;
+    const key=a<b?`${a}-${b}`:`${b}-${a}`;if(used.has(key))continue;used.add(key);
+    const start=sites[a],end=sites[b],mid=start.clone().add(end).multiplyScalar(0.5);const lift=R+start.distanceTo(end)*0.55+0.6;mid.normalize().multiplyScalar(lift);
+    const curve=new THREE.QuadraticBezierCurve3(start,mid,end);const geo=new THREE.BufferGeometry().setFromPoints(curve.getPoints(60));
+    const col=made%2===0?BRAND.orange:BRAND.purple;group.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.32})));
+    const pulse=new THREE.Sprite(new THREE.SpriteMaterial({map:sprite,color:col,transparent:true,opacity:1,depthWrite:false,blending:THREE.AdditiveBlending}));pulse.scale.setScalar(0.35);group.add(pulse);
+    arcs.push({curve,pulse,speed:0.12+Math.random()*0.1,offset:Math.random()});made++;}
+  camera.position.set(0,1.5,18);camera.lookAt(0,0,0);
+  return function update(t){group.rotation.y=t*0.18;group.rotation.x=Math.sin(t*0.12)*0.12;
+    for(const arc of arcs){const p=(t*arc.speed+arc.offset)%1;arc.curve.getPoint(p,arc.pulse.position);const edge=Math.sin(p*Math.PI);arc.pulse.material.opacity=0.25+edge*0.75;arc.pulse.scale.setScalar(0.28+edge*0.18);}};
+}
+
+/* ---------- morphing point cloud ---------- */
+function morph(scene, camera, ctx) {
+  const { THREE, BRAND, disc, canvas } = ctx;const N=1500;
+  const posA=new Float32Array(N*3),colA=new Float32Array(N*3);const grey=new THREE.Color(BRAND.ink).lerp(new THREE.Color(0xffffff),0.45);
+  for(let i=0;i<N;i++){const gx=(Math.random()+Math.random()+Math.random()-1.5),gy=(Math.random()+Math.random()+Math.random()-1.5),gz=(Math.random()+Math.random()+Math.random()-1.5);
+    posA[i*3]=gx*6.5;posA[i*3+1]=gy*6.5;posA[i*3+2]=gz*6.5;colA[i*3]=grey.r;colA[i*3+1]=grey.g;colA[i*3+2]=grey.b;}
+  const posB=new Float32Array(N*3),colB=new Float32Array(N*3);const clusterCols=[BRAND.orange,BRAND.amber,BRAND.purple,BRAND.rose].map(c=>new THREE.Color(c));const ringR=6.5;
+  for(let i=0;i<N;i++){const k=i%4,ang=(k/4)*Math.PI*2,cx=Math.cos(ang)*ringR,cy=Math.sin(ang)*ringR,spread=1.15;
+    posB[i*3]=cx+(Math.random()-0.5)*2*spread;posB[i*3+1]=cy+(Math.random()-0.5)*2*spread;posB[i*3+2]=(Math.random()-0.5)*2*spread;
+    const cc=clusterCols[k];colB[i*3]=cc.r;colB[i*3+1]=cc.g;colB[i*3+2]=cc.b;}
+  const configs=[{pos:posA,col:colA,label:'Raw embeddings — unclustered'},{pos:posB,col:colB,label:'After clustering — 4 groups'}];
+  const cur=new Float32Array(posA),curCol=new Float32Array(colA);const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(cur,3));geo.setAttribute('color',new THREE.BufferAttribute(curCol,3));
+  const mat=new THREE.PointsMaterial({size:0.34,map:disc(),vertexColors:true,transparent:true,alphaTest:0.02,depthWrite:false,sizeAttenuation:true});
+  const points=new THREE.Points(geo,mat);scene.add(points);
+  const posAttr=geo.getAttribute('position'),colAttr=geo.getAttribute('color');let lastLabel=null;
+  return function update(t){
+    const step=Math.max(0,Math.min(configs.length-1,+(canvas.closest('.slide').dataset.step||0)));const cfg=configs[step];const tp=cfg.pos,tc=cfg.col;
+    for(let i=0;i<N*3;i++){cur[i]+=(tp[i]-cur[i])*0.06;curCol[i]+=(tc[i]-curCol[i])*0.05;}
+    posAttr.needsUpdate=true;colAttr.needsUpdate=true;points.rotation.y=t*0.18;
+    if(cfg.label!==lastLabel){const el=document.getElementById('morph-detail');if(el)el.textContent=cfg.label;lastLabel=cfg.label;}};
+}
+
+/* ---------- timeline ribbon ---------- */
+function ribbon(scene, camera, ctx) {
+  const { THREE, BRAND } = ctx;
+  const milestones=[{date:"Q1 2024",title:"Portal GA — provider sign-in"},{date:"Q2 2024",title:"EHR ingestion pipeline v1"},{date:"Q3 2024",title:"FHIR terminology validation"},{date:"Q4 2024",title:"Sentry + Snyk release gates"},{date:"Q1 2025",title:"Ralph autonomous task loop"},{date:"Q2 2025",title:"AI skills factory workflow"}];
+  const GAP=8,accents=[BRAND.orange,BRAND.amber,BRAND.purple,BRAND.rose];
+  function makeCardTexture(date,title,accent){const W=512,H=320,c=document.createElement("canvas");c.width=W;c.height=H;const g=c.getContext("2d");
+    const r=36;g.fillStyle="rgba(255,255,255,0.97)";g.strokeStyle="rgba(20,20,30,0.12)";g.lineWidth=3;g.beginPath();g.moveTo(r,0);g.arcTo(W,0,W,H,r);g.arcTo(W,H,0,H,r);g.arcTo(0,H,0,0,r);g.arcTo(0,0,W,0,r);g.closePath();g.fill();g.stroke();
+    g.fillStyle=`#${accent.getHexString()}`;g.fillRect(0,0,W,14);
+    g.fillStyle=`#${accent.getHexString()}`;g.font="600 38px system-ui,-apple-system,sans-serif";g.textBaseline="top";g.fillText(date.toUpperCase(),44,56);
+    g.fillStyle="#15151e";g.font="700 46px system-ui,-apple-system,sans-serif";const words=title.split(" ");let line="",y=130;const maxW=W-88;
+    for(const w of words){const test=line?line+" "+w:w;if(g.measureText(test).width>maxW&&line){g.fillText(line,44,y);line=w;y+=58;}else line=test;}
+    if(line)g.fillText(line,44,y);const tex=new THREE.CanvasTexture(c);tex.anisotropy=4;tex.needsUpdate=true;return tex;}
+  const cards=[],positions=[],cardW=7,cardH=4.4;
+  milestones.forEach((m,i)=>{const accent=accents[i%accents.length];const tex=makeCardTexture(m.date,m.title,accent);
+    const mesh=new THREE.Mesh(new THREE.PlaneGeometry(cardW,cardH),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}));
+    const x=(i%2===0?-1:1)*3.2,y=(i%2===0?0.6:-0.6),z=-i*GAP;mesh.position.set(x,y,z);scene.add(mesh);
+    cards.push({mesh,mat:mesh.material,base:new THREE.Vector3(x,y,z)});positions.push(new THREE.Vector3(x,y,z));});
+  const spinePts=[];for(let i=0;i<positions.length-1;i++){const a=positions[i],b=positions[i+1],SEG=18;
+    for(let s=0;s<=SEG;s++){const tt=s/SEG;const p=new THREE.Vector3().lerpVectors(a,b,tt);p.x+=Math.sin(tt*Math.PI)*0.4*(i%2===0?1:-1);spinePts.push(p);}}
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(spinePts),new THREE.LineBasicMaterial({color:BRAND.orange,transparent:true,opacity:0.28})));
+  const CAM_OFFSET=6.5;let lastStep=-1;const lookTarget=new THREE.Vector3();const detailEl=document.getElementById("ribbon-detail");camera.position.set(0,0,CAM_OFFSET);
+  return function update(t){
+    const slideEl=ctx.canvas.closest(".slide");const step=Math.max(0,Math.min(milestones.length-1,+((slideEl&&slideEl.dataset.step)||0)));const target=cards[step].base;
+    camera.position.z+=(target.z+CAM_OFFSET-camera.position.z)*0.06;camera.position.x+=(target.x*0.35-camera.position.x)*0.06;camera.position.y+=(target.y*0.35+0.2-camera.position.y)*0.06;
+    lookTarget.set(target.x*0.5,target.y*0.5,camera.position.z-12);camera.lookAt(lookTarget);
+    cards.forEach((card,i)=>{const active=i===step;const distZ=Math.abs(camera.position.z-card.base.z);const targetScale=active?1.18:1.0;const cs=card.mesh.scale.x;const ns=cs+(targetScale-cs)*0.1;card.mesh.scale.set(ns,ns,ns);
+      card.mesh.position.y=card.base.y+Math.sin(t*0.8+i)*0.12;let op;if(card.base.z>camera.position.z+1)op=0.0;else{const fade=Math.max(0,1-distZ/40);op=active?1.0:0.35+0.45*fade;}
+      card.mat.opacity+=(op-card.mat.opacity)*0.12;card.mesh.lookAt(camera.position);});
+    if(step!==lastStep&&detailEl){const m=milestones[step];detailEl.textContent=`${m.date} — ${m.title}`;lastStep=step;}};
+}
+
+const BUILDERS={ambient,flythrough,requestTrace,globe,morph,ribbon};
+document.querySelectorAll('.slide[data-scene]').forEach(s=>{const b=BUILDERS[s.dataset.scene];if(b)mountSlideScene(s,b);});
+</script>
+</body>
+</html>

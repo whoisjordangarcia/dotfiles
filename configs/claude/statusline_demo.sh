@@ -44,8 +44,11 @@ clear_caches() {
 }
 
 run() {
+  # Older demo fixtures used Opus 4.6 as the implicit/default model. Keep those
+  # scenarios focused on their feature by normalizing them to today's hidden default.
+  local input="${1//Claude Opus 4.6/Claude Opus 4.8 (1M context)}"
   local output
-  output=$(echo "$1" | bash "$STATUSLINE" 2>/dev/null)
+  output=$(echo "$input" | bash "$STATUSLINE" 2>/dev/null)
   local first=true
   while IFS= read -r line; do
     if [ "$first" = true ]; then
@@ -57,7 +60,6 @@ run() {
   done <<<"$output"
   echo ""
 }
-
 # ═════════════════════════════════════════════════════════════════
 printf '\n\033[38;5;255;1m  Statusline Variation Demo\033[0m\n'
 # ═════════════════════════════════════════════════════════════════
@@ -224,7 +226,7 @@ REPO4="$DEMO_DIR/myapp"
 make_repo "$REPO4" "jordan/NES-12345-super-long-feature-branch-name-that-exceeds-the-limit"
 
 header "18. Long branch name (truncated at 45 chars)"
-expect "jordan/NES-12345-super-long-feature-branch-n…"
+expect "jordan/NES-12345-super-long-feature-branch-na…"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.15,"total_duration_ms":45000},"session_id":"demo-18","cwd":"'"$REPO4"'","context_window":{"context_window_size":200000,"used_percentage":5,"current_usage":{"input_tokens":8000,"cache_creation_input_tokens":500,"cache_read_input_tokens":2000}}}'
 
 # ─── 19. Rate limits — low usage (dim) ──────────────────────────
@@ -267,14 +269,15 @@ mkdir -p "$REPO5/.claude/worktrees"
 git worktree add -q "$REPO5/.claude/worktrees/jordan-nes-4331-bug-yoda-deep-links-ignore-url-account-and-redirect-to-first" jordan-nes-4331-bug-yoda-deep-links-ignore-url-account-and-redirect-to-first
 WT3="$REPO5/.claude/worktrees/jordan-nes-4331-bug-yoda-deep-links-ignore-url-account-and-redirect-to-first"
 
-header "19. Long worktree name (truncated at 25 chars)"
-expect "L1: nest3 · ⎇ jordan-nes-4331-bug-yoda-… · \$0.00 · 0s · [░░░░░░░░░░] 0%"
+header "19. Long worktree name (branch == dir → ⎇ deduped, branch truncated at 45 chars)"
+expect "L1: nest3 · \$0.00 · 0s · [░░░░░░░░░░] 0%"
+expect "L2: jordan-nes-4331-bug-yoda-deep-links-ignore-ur… · just now"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},"session_id":"demo-19","cwd":"'"$WT3"'","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
 
 # ─── 24. Reasoning effort indicator ─────────────────────────────
 clear_caches
 header "24. Reasoning effort (sourced from statusline JSON)"
-expect "L1: ... · ◯ xhigh"
+expect "L1: ◯ xhigh · tmp · \$0.25 · ..."
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.25,"total_duration_ms":60000},"session_id":"demo-24","cwd":"/tmp","context_window":{"used_percentage":12},"effortLevel":"xhigh"}'
 
 # ─── 25. Long project name + cwd path truncation ────────────────
@@ -291,10 +294,28 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},
 clear_caches
 WT_PATH_DEMO="$DEMO_DIR/nest/.worktrees/$LONG_NAME_DEMO"
 mkdir -p "$WT_PATH_DEMO"
-header "26. cwd is inside .worktrees/<name> (no git) — line 2 becomes ⎇ NAME (30-char cap)"
+header "26. cwd is inside .worktrees/<name> (no git) — line 2 becomes ⎇ NAME (45-char cap)"
 expect "L1: nest · \$0.00 · ..."
-expect "L2: ⎇ jordan-nes-3984-workflows-add-…"
+expect "L2: ⎇ jordan-nes-3984-workflows-add-genetic-testing…"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},"session_id":"demo-26","cwd":"'"$WT_PATH_DEMO"'","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
 
+# ─── 27. Default model hidden (Opus 4.8 1M context) ─────────────
+clear_caches
+header "27. Opus 4.8 1M context is the default — model name is hidden on line 1"
+expect "L1 starts with the project (tmp), NO \"Opus\" shown"
+run '{"model":{"display_name":"Claude Opus 4.8 (1M context)"},"cost":{"total_cost_usd":0.62,"total_duration_ms":240000},"session_id":"demo-27","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":6}}'
+
+# ─── 28. Non-default model + effort to its right ────────────────
+clear_caches
+header "28. Non-default model shows, with reasoning effort to the RIGHT of it"
+expect "L1: Opus 4.7 ◯ high · tmp · \$0.30 · ..."
+run '{"model":{"display_name":"Claude Opus 4.7"},"cost":{"total_cost_usd":0.30,"total_duration_ms":120000},"session_id":"demo-28","cwd":"/tmp","context_window":{"used_percentage":15},"effortLevel":"high"}'
+
+# ─── 29. Default model hidden but effort still shows alone ───────
+clear_caches
+header "29. Opus 4.8 1M hidden, but effort still rides at the far left when set"
+expect "L1: ◯ xhigh · tmp · \$0.20 · ... (no \"Opus\")"
+run '{"model":{"display_name":"Claude Opus 4.8 (1M context)"},"cost":{"total_cost_usd":0.20,"total_duration_ms":90000},"session_id":"demo-29","cwd":"/tmp","context_window":{"used_percentage":8},"effortLevel":"xhigh"}'
+
 printf '\033[38;5;141m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
-printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 26
+printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 29

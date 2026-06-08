@@ -20,8 +20,12 @@ require("items")
 
 sbar.end_config()
 
--- Trigger initial workspace update after config is applied
-sbar.exec("rift-cli query workspaces | jq -r '.[] | select(.is_active) | .name'", function(name)
+-- Trigger initial workspace update after config is applied.
+-- `timeout` guards against a wedged rift daemon (see workspaces.lua): a hung
+-- query is killed after 3s rather than lingering as an orphaned process.
+local query_workspaces =
+	"if command -v timeout >/dev/null 2>&1; then timeout 3 rift-cli query workspaces; else gtimeout 3 rift-cli query workspaces; fi"
+sbar.exec(query_workspaces .. " | jq -r '.[] | select(.is_active) | .name'", function(name)
 	if name then
 		name = name:match("^%s*(.-)%s*$") or ""
 		sbar.trigger("rift_workspace_changed", { RIFT_WORKSPACE_NAME = name })

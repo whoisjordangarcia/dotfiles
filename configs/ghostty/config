@@ -17,7 +17,8 @@ config-file = ?platform-macos
 macos-titlebar-style = hidden
 mouse-hide-while-typing = true
 
-theme = dark:Catppuccin Mocha,light:Catppuccin Frappe
+#theme = dark:Catppuccin Mocha,light:Catppuccin Frappe
+theme = dark:Rose Pine,light:Rose Pine Dawn
 unfocused-split-opacity = 0.9
 
 window-decoration = false

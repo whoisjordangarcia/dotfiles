@@ -45,3 +45,37 @@ export PATH="$HOME/.local/bin:$PATH"
 [ -s "/home/jordan/.bun/_bun" ] && source "/home/jordan/.bun/_bun"
 
 alias claude-mem='bun "/Users/nest/.claude/plugins/cache/thedotmack/claude-mem/12.1.3/scripts/worker-service.cjs"'
+
+# ── Turborepo (local dev) ──────────────────────────────────────────────
+export TURBO_TELEMETRY_DISABLED=1    # no turbo usage telemetry
+export DO_NOT_TRACK=1                # broader opt-out turbo (and other tools) honor
+export TURBO_NO_UPDATE_NOTIFIER=1    # no "update available" nag in output
+export TURBO_LOG_ORDER=grouped       # group each task's logs instead of interleaving
+
+# Test concurrency, paired with the --maxWorkers=50% in the app test scripts:
+# at most 2 test tasks overlap, each using ~half the cores → ~100% utilization,
+# no oversubscription. NOTE: this is GLOBAL — it also caps build/lint/check-types.
+# If full `turbo run build` feels slow, comment this out or override per-command
+# with `--concurrency=10`.
+export TURBO_CONCURRENCY=2
+
+# Interactive turbo TUI on demand. Uses the --ui flag (beats turbo.json's
+# "ui": "stream"; the TURBO_UI env var can be shadowed by that config).
+# Needs a real TTY; best seen on real work (build/dev), not cached runs.
+# Usage: turbo-tui run build
+turbo-tui() { pnpm exec turbo "$@" --ui=tui; }
+
+# Run turbo scoped to what changed since the release branch you forked from.
+# Auto-detects the base: the origin/release/* whose merge-base with HEAD is newest
+# (= the fork point). Falls back to origin/main. Usage: turbo-affected run test
+turbo-affected() {
+  local ref mb ts best=0 base=""
+  for ref in $(git for-each-ref --format='%(refname:short)' 'refs/remotes/origin/release/*' 2>/dev/null); do
+    mb=$(git merge-base HEAD "$ref" 2>/dev/null) || continue
+    ts=$(git show -s --format=%ct "$mb" 2>/dev/null) || continue
+    (( ts > best )) && { best=$ts; base=$mb }
+  done
+  : ${base:=origin/main}
+  print -u2 "▸ turbo --affected base: ${base:0:12}"
+  TURBO_SCM_BASE="$base" pnpm exec turbo run "$@" --affected
+}

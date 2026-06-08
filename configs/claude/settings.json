@@ -68,7 +68,118 @@
     ],
     "defaultMode": "auto"
   },
-  "hooks": {},
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // \"\"' | grep -qiF 'prd-account-administrator-role' && printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"ask\",\"permissionDecisionReason\":\"Production AWS profile (prd-account-administrator-role) detected - confirm before running against prod.\"}}' || true",
+            "statusMessage": "Checking for prod AWS profile"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
+            "timeout": 10,
+            "statusMessage": "Setting cmux workspace title"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-state.py\" --event working",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "CwdChanged": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-state.py\" --event working",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\" --event open",
+            "if": "Bash(gh pr create*)",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\" --event ci",
+            "if": "Bash(gh pr create*)",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\" --event ci",
+            "if": "Bash(git push*)",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
+            "timeout": 10,
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-state.py\" --event idle",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\" --event ci",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-state.py\" --event attention",
+            "async": true
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
@@ -82,7 +193,7 @@
     "commit-commands@claude-plugins-official": false,
     "context7@claude-plugins-official": false,
     "explanatory-output-style@claude-plugins-official": true,
-    "impeccable@impeccable": false,
+    "impeccable@impeccable": true,
     "nest-ai-skill-audit@nest-genomics-skills": false,
     "nest-ehr-research@nest-genomics-skills": false,
     "nest-linear@nest-genomics-skills": false,
@@ -100,7 +211,8 @@
     "nest-snyk-code@nest-genomics-skills": true,
     "nest-gpt-validate@nest-genomics-skills": true,
     "infracost@infracost": true,
-    "nest-skills-report@nest-genomics-skills": true
+    "nest-skills-report@nest-genomics-skills": true,
+    "nest-gpt-validate-plan@nest-genomics-skills": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
