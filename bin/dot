@@ -5,7 +5,7 @@
 # Handles installation, updates, and configuration for different platforms and environments
 # Supports auto-detection and interactive configuration
 
-set -e
+set -euo pipefail
 
 # Get script directories
 parentDirectory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
@@ -16,9 +16,9 @@ configFile="$dotfilesDirectory/.dotconfig"
 source "$dotfilesDirectory/script/common/log.sh"
 
 # Configuration defaults
-DEFAULT_NAME="Jordan Garcia"
-DEFAULT_EMAIL_PERSONAL="arickho@gmail.com"
-DEFAULT_EMAIL_WORK="jordan.arickhogarcia@nestgenomics.com"
+DEFAULT_NAME="${USER:-User}"
+DEFAULT_EMAIL_PERSONAL=""
+DEFAULT_EMAIL_WORK=""
 
 detect_system() {
 	local os_name=""
@@ -348,8 +348,11 @@ interactive_setup() {
 
 	# Auto-select installation with work variant
 	if [[ -n "$auto_installation" ]]; then
-		if [[ "$DOT_ENVIRONMENT" == "work" && -f "$dotfilesDirectory/script/${auto_installation%_*}_work_installation.sh" ]]; then
-			auto_installation="${auto_installation%_*}_work"
+		if [[ "$DOT_ENVIRONMENT" == "work" ]]; then
+			local os_only="${auto_installation%%_*}"
+			if [[ -f "$dotfilesDirectory/script/${os_only}_work_installation.sh" ]]; then
+				auto_installation="${os_only}_work"
+			fi
 		fi
 		DOT_SYSTEM="$auto_installation"
 	else
@@ -485,12 +488,15 @@ while [[ $# -gt 0 ]]; do
 	"--system")
 		shift
 		DOT_SYSTEM="$1"
+		DIRECT_INSTALL=1
 		;;
 	"--work")
 		DOT_ENVIRONMENT="work"
+		DIRECT_INSTALL=1
 		;;
 	"--personal")
 		DOT_ENVIRONMENT="personal"
+		DIRECT_INSTALL=1
 		;;
 	*)
 		echo "Invalid option: $1"
@@ -502,7 +508,15 @@ done
 
 # Default behavior - check if config exists, if not run interactive setup
 load_config
-if [[ -z "$DOT_SYSTEM" ]] || [[ "$FORCE_INTERACTIVE" == "1" ]]; then
+if [[ "${DIRECT_INSTALL:-0}" == "1" && -n "${DOT_SYSTEM:-}" ]]; then
+	show_logo
+	header "Direct Installation"
+	printf "  ${GREEN}System:${RESET}       %s\n" "$DOT_SYSTEM"
+	printf "  ${GREEN}Environment:${RESET}  %s\n" "${DOT_ENVIRONMENT:-personal}"
+	echo ""
+	save_config
+	run_installation
+elif [[ -z "$DOT_SYSTEM" ]] || [[ "$FORCE_INTERACTIVE" == "1" ]]; then
 	if [[ "$FORCE_INTERACTIVE" == "1" ]]; then
 		info "Running interactive setup..."
 	else

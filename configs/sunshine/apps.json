@@ -2,12 +2,106 @@
     "apps": [
         {
             "auto-detach": true,
-            "detached": [],
+            "cmd": [],
+            "elevated": false,
             "exclude-global-prep-cmd": false,
             "exit-timeout": 5,
-            "image-path": "desktop.png",
-            "name": "Desktop",
-            "prep-cmd": [],
+            "image-path": "/home/jordan/mounts/vault-single/Gaming/Sunshine Files/desktop.png",
+            "name": "Desktop (default)",
+            "output": "MOONLIGHT",
+            "prep-cmd": [
+                {
+                    "do": "/home/jordan/.config/sunshine/scripts/default_screenOFF.sh",
+                    "undo": "/home/jordan/.config/sunshine/scripts/default_screenON.sh"
+                }
+            ],
+            "wait-all": true
+        },
+        {
+            "auto-detach": true,
+            "cmd": [],
+            "elevated": false,
+            "exclude-global-prep-cmd": false,
+            "exit-timeout": 5,
+            "image-path": "/home/jordan/mounts/vault-single/Gaming/Sunshine Files/macbook.png",
+            "name": "Desktop Macbook Pro",
+            "output": "HDMI-A-1",
+            "prep-cmd": [
+                {
+                    "do": "/home/jordan/.config/sunshine/scripts/macbook_screenOFF.sh",
+                    "undo": "/home/jordan/.config/sunshine/scripts/macbook_screenON.sh"
+                }
+            ],
+            "wait-all": true
+        },
+        {
+            "auto-detach": true,
+            "exclude-global-prep-cmd": false,
+            "exit-timeout": 5,
+            "image-path": "/home/jordan/mounts/vault-single/Gaming/Sunshine Files/ipad-2.png",
+            "name": "Desktop iPad",
+            "output": "MOONLIGHT",
+            "prep-cmd": [
+                {
+                    "do": "/home/jordan/.config/sunshine/scripts/screenOFF.sh",
+                    "undo": "/home/jordan/.config/sunshine/scripts/screenON.sh"
+                }
+            ],
+            "wait-all": true
+        },
+        {
+            "auto-detach": true,
+            "cmd": [],
+            "elevated": false,
+            "exclude-global-prep-cmd": false,
+            "exit-timeout": 5,
+            "image-path": "/home/jordan/mounts/vault-single/Gaming/Sunshine Files/ipgone.png",
+            "name": "Desktop iPhone / Odin 2 Portal",
+            "output": "MOONLIGHT",
+            "prep-cmd": [
+                {
+                    "do": "/home/jordan/.config/sunshine/scripts/iphone_screenOFF.sh",
+                    "undo": "/home/jordan/.config/sunshine/scripts/iphone_screenON.sh"
+                }
+            ],
+            "wait-all": true
+        },
+        {
+            "auto-detach": true,
+            "detached": [
+                "setsid steam steam://open/bigpicture"
+            ],
+            "exclude-global-prep-cmd": false,
+            "exit-timeout": 5,
+            "image-path": "/home/jordan/mounts/vault-single/Gaming/Sunshine Files/ipad.png",
+            "name": "Steam Big Picture iPad",
+            "output": "MOONLIGHT",
+            "prep-cmd": [
+                {
+                    "do": "/home/jordan/.config/sunshine/scripts/screenOFF.sh",
+                    "undo": "/home/jordan/.config/sunshine/scripts/screenON.sh"
+                }
+            ],
+            "wait-all": true
+        },
+        {
+            "auto-detach": true,
+            "cmd": [],
+            "detached": [
+                "setsid steam steam://open/bigpicture"
+            ],
+            "elevated": false,
+            "exclude-global-prep-cmd": false,
+            "exit-timeout": 5,
+            "image-path": "/home/jordan/mounts/vault-single/Gaming/Sunshine Files/iphone-odin2.png",
+            "name": "Steam Big Picture iPhone / Odin2 Portal",
+            "output": "MOONLIGHT",
+            "prep-cmd": [
+                {
+                    "do": "/home/jordan/.config/sunshine/scripts/iphone_screenOFF.sh",
+                    "undo": "/home/jordan/.config/sunshine/scripts/iphone_screenON.sh"
+                }
+            ],
             "wait-all": true
         }
     ],

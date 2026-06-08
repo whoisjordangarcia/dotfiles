@@ -42,6 +42,16 @@ cd dotfiles
 ./bin/dot --system linux_ubuntu --personal
 ```
 
+### Headless Server / Proxmox / LXC
+
+For lightweight servers (no desktop, bash instead of zsh), use the standalone
+bootstrap — it installs `git curl vim neovim tmux htop` + Claude Code and symlinks
+the bash config. See [`server/README.md`](server/README.md).
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/server-init.sh)
+```
+
 ---
 
 ## Configuration Components
@@ -311,6 +321,16 @@ Context rules for AI coding assistants:
 
 **Installs:** i3wm, Polybar, LazyGit, Fonts, Starship, Fastfetch
 
+### Headless Server / Proxmox / LXC (`server/`)
+
+Standalone, bash-based — **not** part of the `bin/dot` flow. No desktop, no zsh.
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/server-init.sh)
+```
+
+**Installs:** git, curl, vim, neovim, tmux, htop (apt) + **Claude Code** (native installer). Symlinks `bashrc`, `bash_profile`, `aliases`, `tmux.conf`, plus the shared `functions/` and `gitconfig`. Details + how to extend: [`server/README.md`](server/README.md).
+
 ---
 
 ## Architecture
@@ -320,6 +340,8 @@ dotfiles/
 ├── bin/
 │   └── dot                    # Shell management CLI
 ├── boot.sh                    # Remote bootstrap script
+├── server-init.sh             # Headless server one-liner bootstrap
+├── server/                    # Bash config for servers/Proxmox/LXC (see server/README.md)
 ├── script/
 │   ├── common/
 │   │   ├── log.sh            # Logging utilities (section, step, info, success, fail)

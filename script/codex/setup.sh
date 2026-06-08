@@ -9,7 +9,6 @@ source "$SCRIPT_DIR/../common/symlink.sh"
 
 if ! command -v npm &>/dev/null; then
     fail "npm not found — skipping codex install. Run the node setup script first, then re-run this script."
-    return 0
 fi
 
 npm i -g @openai/codex -f

@@ -1,5 +1,6 @@
 {
     "include": [
+        "/home/jordan/.config/waybar/modules/custom-gpupower.jsonc",
         "/home/jordan/.local/share/waybar/modules/wlr-taskbar#windows.json",
         "/home/jordan/.local/share/waybar/modules/image#wallpaper.json",
         "/home/jordan/.local/share/waybar/modules/wlr-taskbar.json",
