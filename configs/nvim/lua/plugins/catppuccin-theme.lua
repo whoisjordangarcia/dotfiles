@@ -17,7 +17,6 @@ return {
         end,
       })
     end,
-    enable = false,
   },
   {
     "LazyVim/LazyVim",

@@ -8,5 +8,5 @@ return {
       },
     }
   end,
-  enable = false,
+  enabled = false,
 }
