@@ -135,6 +135,9 @@ defaults write com.apple.screencapture disable-shadow -bool true
 
 # --- Security ---
 
+# Enable the application firewall
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on >/dev/null
+
 # Require password immediately after sleep/screensaver
 defaults write com.apple.screensaver askForPassword -int 1
 defaults write com.apple.screensaver askForPasswordDelay -int 0
