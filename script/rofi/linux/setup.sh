@@ -8,4 +8,4 @@ source "$SCRIPT_DIR/../../common/symlink.sh"
 
 mkdir -p "$HOME/.config/rofi/"
 
-link_file "$SCRIPT_DIR/../../configs/rofi/theme.rasi" "$HOME/.config/rofi/theme.rasi"
+link_file "$SCRIPT_DIR/../../../configs/rofi/theme.rasi" "$HOME/.config/rofi/theme.rasi"

@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/../../common/symlink.sh"
 
 WINDOWS_PATH="/mnt/c/Users/jordan"
 
-WEZTERM_SOURCE="$SCRIPT_DIR/../../configs/wezterm/.wezterm-win.lua"
+WEZTERM_SOURCE="$SCRIPT_DIR/../../../configs/wezterm/.wezterm-win.lua"
 WEZTERM_TARGET="$WINDOWS_PATH/.wezterm.lua"
 
 rm -f "$WEZTERM_TARGET"

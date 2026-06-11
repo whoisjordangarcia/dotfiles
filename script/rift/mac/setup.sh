@@ -7,17 +7,34 @@ source "$SCRIPT_DIR/../../common/log.sh"
 source "$SCRIPT_DIR/../../common/symlink.sh"
 
 # Rift config
-RIFT_SOURCE="$SCRIPT_DIR/../../configs/rift/config.toml"
+RIFT_SOURCE="$SCRIPT_DIR/../../../configs/rift/config.toml"
 RIFT_TARGET="$HOME/.config/rift/config.toml"
 
 mkdir -p "$HOME/.config/rift"
 link_file "$RIFT_SOURCE" "$RIFT_TARGET"
 
 # Sketchybar config
-SKETCHYBAR_SOURCE="$SCRIPT_DIR/../../configs/rift/sketchybar"
+SKETCHYBAR_SOURCE="$SCRIPT_DIR/../../../configs/rift/sketchybar"
 SKETCHYBAR_TARGET="$HOME/.config/sketchybar"
 
 link_file "$SKETCHYBAR_SOURCE" "$SKETCHYBAR_TARGET"
+
+# Borders (JankyBorders) — active-window highlight
+# Bare `borders` sources ~/.config/borders/bordersrc, so the symlink must
+# point at the rift copy (the old aerospace one left a dangling link).
+BORDERS_SOURCE="$SCRIPT_DIR/../../../configs/rift/bordersrc"
+BORDERS_TARGET="$HOME/.config/borders/bordersrc"
+
+mkdir -p "$HOME/.config/borders"
+link_file "$BORDERS_SOURCE" "$BORDERS_TARGET"
+
+# Run under brew services: KeepAlive restarts borders if it dies, and the
+# appearance watcher relies on this — it only kills borders and lets
+# launchd relaunch it with the new appearance colors.
+if ! brew services list | grep -Eq '^borders\s+started'; then
+    step "Starting borders service..."
+    brew services start borders
+fi
 
 # SbarLua
 if [ ! -d "$HOME/.local/share/sketchybar_lua" ]; then
@@ -37,47 +54,28 @@ else
     debug "sketchybar-app-font already installed, skipping"
 fi
 
-# Install and start rift service
-RIFT_PLIST="$HOME/Library/LaunchAgents/git.acsandmann.rift.plist"
-if [ ! -f "$RIFT_PLIST" ]; then
-    step "Installing rift service..."
-    rift service install
-else
-    debug "rift service already installed, skipping"
+# Run rift under brew services (homebrew.mxcl.rift) — consistent with
+# sketchybar/borders supervision on this machine. Do NOT use the native
+# `rift service install` (git.acsandmann.rift): having both plists in
+# ~/Library/LaunchAgents risks duplicate instances at login.
+RIFT_NATIVE_PLIST="$HOME/Library/LaunchAgents/git.acsandmann.rift.plist"
+if [ -f "$RIFT_NATIVE_PLIST" ]; then
+    step "Removing stale native rift service plist..."
+    launchctl bootout "gui/$(id -u)/git.acsandmann.rift" 2>/dev/null || true
+    rm "$RIFT_NATIVE_PLIST"
 fi
 
-# `restart` uses `launchctl kickstart -k` which requires the service to
-# already be bootstrapped in the user domain. If the plist exists but the
-# service isn't loaded (e.g. after a reboot or manual bootout), use `start`
-# to bootstrap it instead.
-if launchctl print "gui/$(id -u)/git.acsandmann.rift" &>/dev/null; then
-    rift service restart
+if brew services list | grep -Eq '^rift\s+started'; then
+    brew services restart rift
 else
-    rift service start
+    brew services start rift
 fi
 success "rift service started"
 
-# allows to move windows by dragging any part of the window using Ctrl + Cmd
-defaults write -g NSWindowShouldDragOnGesture -bool true
-
-# disable windows opening animations
-defaults write -g NSAutomaticWindowAnimationsEnabled -bool false
-
-# autohide dock
-defaults write com.apple.dock autohide -bool true
-
-# autohide status bar
-defaults write NSGlobalDomain _HIHideMenuBar -bool true
-
-# hide desktop icons
-defaults write com.apple.finder CreateDesktop -bool false
-
-killall Dock
-killall SystemUIServer
-killall Finder
+# NOTE: WM-related global defaults (dock/menu bar autohide, window drag
+# gesture, desktop icons, killall) live in script/macos/setup.sh.
 
 # macOS bug: Accessibility permissions require dragging the real binary (not symlink)
-# Must run AFTER killall Finder so the window stays open
 RIFT_BIN=$(realpath "$(command -v rift)")
 info "Drag rift into the Accessibility pane opening now:"
 info "  $RIFT_BIN"

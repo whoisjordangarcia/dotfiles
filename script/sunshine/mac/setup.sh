@@ -3,8 +3,6 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
-# Resolve CONFIGS_DIR before sourcing symlink.sh — sourcing it overwrites SCRIPT_DIR
-# (symlink.sh sets SCRIPT_DIR=$(dirname ${BASH_SOURCE[0]}) which resolves to script/common)
 SUNSHINE_CONFIG_DIR="$HOME/.config/sunshine"
 CONFIGS_DIR="$SCRIPT_DIR/../../../configs/sunshine"
 

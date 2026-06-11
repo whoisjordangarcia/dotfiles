@@ -50,6 +50,10 @@ get_modules_from_script() {
 	if [[ ! -f "$script" ]]; then
 		return 1
 	fi
+	# mac installers share their component list via script/mac_components.sh
+	if [[ "$script" == *"/mac"*"_installation.sh" && -f "$dotfilesDirectory/script/mac_components.sh" ]]; then
+		script="$dotfilesDirectory/script/mac_components.sh"
+	fi
 	# Extract component_installation array entries
 	grep -A 100 'component_installation=(' "$script" |
 		grep -v '^#' |
@@ -173,7 +177,9 @@ interactive_module_selection() {
 		section "$module"
 		local script_path="./script/${module}/setup.sh"
 		if [[ -f "$script_path" ]]; then
-			source "$script_path"
+			# Run as a child process so a module's `set -e`/env changes
+			# stay contained (config is exported above)
+			bash "$script_path" || fail "Module '$module' failed"
 		else
 			info "Script for $module does not exist"
 		fi

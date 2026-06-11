@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+# Use a private var — this file is sourced by setup scripts, and reusing
+# SCRIPT_DIR here would clobber the caller's SCRIPT_DIR.
+_SYMLINK_LIB_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
-source "$SCRIPT_DIR/log.sh"
+source "$_SYMLINK_LIB_DIR/log.sh"
 
 # Resolve a path from a git worktree to the equivalent path in the main repo.
 # Prevents symlinks from pointing into worktrees that may be deleted later.

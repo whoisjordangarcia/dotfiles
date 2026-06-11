@@ -30,6 +30,16 @@ link_file "$SCRIPT_DIR/../../configs/claude/settings.json" "$HOME/.claude/settin
 # Skills live in configs/skills and are projected into each agent CLI.
 source "$SCRIPT_DIR/../skills/setup.sh"
 
+# Make nvm-installed node available — this script runs as its own process,
+# so it doesn't inherit nvm from the node component's shell.
+# (nvm.sh is incompatible with `set -eu`, so relax around the source)
+if ! command -v npm &>/dev/null && [ -s "$HOME/.nvm/nvm.sh" ]; then
+	set +eu
+	export NVM_DIR="$HOME/.nvm"
+	\. "$NVM_DIR/nvm.sh"
+	set -eu
+fi
+
 # Install TypeScript language server for Claude Code's typescript-lsp plugin
 if ! command -v typescript-language-server &>/dev/null; then
 	if command -v npm &>/dev/null; then

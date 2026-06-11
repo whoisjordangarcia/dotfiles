@@ -8,4 +8,4 @@ source "$SCRIPT_DIR/../../common/symlink.sh"
 
 mkdir -p "$HOME/.config/btop/"
 
-link_file "$SCRIPT_DIR/../../configs/btop/btop.conf" "$HOME/.config/btop/btop.conf"
+link_file "$SCRIPT_DIR/../../../configs/btop/btop.conf" "$HOME/.config/btop/btop.conf"

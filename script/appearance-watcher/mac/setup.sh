@@ -9,10 +9,11 @@ PLIST_NAME="com.nest.appearance-watcher"
 PLIST_SOURCE="$SCRIPT_DIR/../../../configs/rift/$PLIST_NAME.plist"
 PLIST_TARGET="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
 
-# Unload existing agent if loaded
-if launchctl list | grep -q "$PLIST_NAME"; then
+# Unload existing agent if loaded (modern bootout/bootstrap API —
+# launchctl load/unload are deprecated)
+if launchctl print "gui/$(id -u)/$PLIST_NAME" &>/dev/null; then
     step "Unloading existing appearance watcher..."
-    launchctl unload "$PLIST_TARGET" 2>/dev/null || true
+    launchctl bootout "gui/$(id -u)/$PLIST_NAME" 2>/dev/null || true
 fi
 
 # Install plist
@@ -20,5 +21,5 @@ step "Installing appearance watcher launchd agent..."
 cp "$PLIST_SOURCE" "$PLIST_TARGET"
 
 # Load agent
-launchctl load "$PLIST_TARGET"
+launchctl bootstrap "gui/$(id -u)" "$PLIST_TARGET"
 success "Appearance watcher installed and loaded"

@@ -7,7 +7,7 @@ source "$SCRIPT_DIR/../../common/log.sh"
 
 if ! command -v gh &>/dev/null; then
     info "gh CLI not found — install via Homebrew first"
-    return 0
+    exit 0
 fi
 
 if gh auth status &>/dev/null 2>&1; then

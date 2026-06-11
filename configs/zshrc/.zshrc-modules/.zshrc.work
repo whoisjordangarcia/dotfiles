@@ -6,6 +6,9 @@
 export NEST_REPO_ROOT="$HOME/projects/nest"
 export WT_BRANCH_PREFIX="jordan"
 
+# Rancher Desktop CLI tools (docker, kubectl, nerdctl, ...)
+[ -d "$HOME/.rd/bin" ] && export PATH="$HOME/.rd/bin:$PATH"
+
 # ------------------------------------------------------------------------------
 #  GitHub CLI Aliases & Functions
 # ------------------------------------------------------------------------------

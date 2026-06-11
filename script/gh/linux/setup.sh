@@ -8,4 +8,4 @@ source "$SCRIPT_DIR/../../common/symlink.sh"
 
 mkdir -p "$HOME/.config/gh/"
 
-link_file "$SCRIPT_DIR/../../configs/gh/config.yml" "$HOME/.config/gh/config.yml"
+link_file "$SCRIPT_DIR/../../../configs/gh/config.yml" "$HOME/.config/gh/config.yml"
