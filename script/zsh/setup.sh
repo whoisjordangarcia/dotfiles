@@ -29,8 +29,14 @@ if [ -d "$ZSHRC_MODULES_SOURCE/scripts" ]; then
 	link_file "$ZSHRC_MODULES_SOURCE/scripts" "$ZSHRC_MODULES_TARGET/scripts"
 fi
 
-# Inject secrets from 1Password template
-SECRETS_TPL="$ZSHRC_MODULES_SOURCE/.zshrc.sec.tpl"
+# Inject secrets from the environment-specific 1Password template
+# (work machines get .zshrc.sec.work.tpl, everything else personal)
+if [[ "${WORK_ENV:-}" == "1" || "${DOT_ENVIRONMENT:-}" == "work" ]]; then
+	SECRETS_ENV="work"
+else
+	SECRETS_ENV="personal"
+fi
+SECRETS_TPL="$ZSHRC_MODULES_SOURCE/.zshrc.sec.${SECRETS_ENV}.tpl"
 SECRETS_OUT="$ZSHRC_MODULES_TARGET/.zshrc.sec"
 if [ -f "$SECRETS_TPL" ]; then
 	if command -v op &>/dev/null && op whoami &>/dev/null 2>&1; then

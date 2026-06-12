@@ -26,6 +26,22 @@ link_file "$SCRIPT_DIR/../../configs/claude/commands/" "$HOME/.claude/commands" 
 link_file "$SCRIPT_DIR/../../configs/claude/prompts/" "$HOME/.claude/prompts" "directory"
 link_file "$SCRIPT_DIR/../../configs/claude/statusline.sh" "$HOME/.claude/statusline.sh"
 link_file "$SCRIPT_DIR/../../configs/claude/settings.json" "$HOME/.claude/settings.json"
+link_file "$SCRIPT_DIR/../../configs/claude/hooks/" "$HOME/.claude/hooks"
+
+# Touch ID command gate (macOS): compile the bioprompt helper used by the
+# touchid-gate.py PreToolUse hook to biometric-gate sensitive Bash commands.
+if [[ "$OSTYPE" == darwin* ]] && command -v swiftc &>/dev/null; then
+	BIOPROMPT_SRC="$SCRIPT_DIR/../../configs/claude/hooks/bioprompt.swift"
+	BIOPROMPT_BIN="$HOME/.local/bin/bioprompt"
+	if [[ ! -x "$BIOPROMPT_BIN" || "$BIOPROMPT_SRC" -nt "$BIOPROMPT_BIN" ]]; then
+		step "Compiling bioprompt (Touch ID helper)..."
+		mkdir -p "$(dirname "$BIOPROMPT_BIN")"
+		swiftc -O "$BIOPROMPT_SRC" -o "$BIOPROMPT_BIN"
+		success "bioprompt compiled to $BIOPROMPT_BIN"
+	else
+		debug "bioprompt already compiled and up to date. Skipping."
+	fi
+fi
 
 # Skills live in configs/skills and are projected into each agent CLI.
 source "$SCRIPT_DIR/../skills/setup.sh"

@@ -1,6 +1,6 @@
 #!/bin/zsh
-# Secrets template (PERSONAL) — rendered to .zshrc.sec by script/zsh/setup.sh
-# (work machines use .zshrc.sec.work.tpl instead; selected via WORK_ENV)
+# Secrets template (WORK) — rendered to .zshrc.sec by script/zsh/setup.sh
+# (personal machines use .zshrc.sec.personal.tpl instead; selection via WORK_ENV)
 #
 # Two patterns:
 #
@@ -11,12 +11,13 @@
 #  2. LAZY (recommended for anything sensitive) — keep only the op://
 #     reference; no secret material ever lands on disk. Fetch at use-time
 #     with the `opsec` helper (Touch ID prompts via the 1Password app):
-#       MY_KEY=$(opsec "$MY_KEY_REF") some-command
+#       ELASTIC_STG_API_KEY=$(opsec "$ELASTIC_STG_API_KEY_REF") some-command
 #
 # Find paths with: op vault list  /  op item list --vault <vault>
 
 # -- injected (plaintext at rest — use sparingly) --
-#export SOME_LOW_RISK_VALUE="{{ op://Personal/Item/field }}"
 
 # -- lazy references (safe to keep here; resolved per-use via opsec) --
-#export ANTHROPIC_API_KEY_REF="op://Personal/Anthropic/credential"
+# TODO: create the item first, then fix the op:// path:
+#   op item create --vault Work --category "API Credential" --title "Elastic stg" credential=<key>
+#export ELASTIC_STG_API_KEY_REF="op://Work/Elastic stg/credential"

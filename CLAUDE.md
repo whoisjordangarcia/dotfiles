@@ -303,6 +303,25 @@ bash configs/claude/statusline_demo.sh   # visually confirm each variation still
 
 If you add a new field, branch/PR/worktree case, or line-3 indicator, add a corresponding test in `statusline_test.sh` and a scenario in `statusline_demo.sh` before considering the change complete. The demo doubles as living documentation for every supported rendering.
 
+### Touch ID Command Gate (macOS)
+
+AI-initiated sensitive Bash commands require biometric approval via a Claude Code `PreToolUse` hook:
+
+- `configs/claude/hooks/touchid-gate.py` — pattern-matches sensitive commands (sudo, force push, prod AWS profiles, 1Password/keychain access, `curl | sh`, secrets-file reads) and pops an approval dialog. Approved → `allow`; denied → `deny`; biometrics unavailable → falls back to the normal permission prompt (`ask`).
+- `configs/claude/hooks/bioprompt.swift` — two-stage approval UI: an AppKit alert showing the full command in a monospaced box, then Touch ID (`.deviceOwnerAuthentication`, so password fallback works in clamshell mode). Compiled by `script/claude/setup.sh` to `~/.local/bin/bioprompt`.
+- Wired in `configs/claude/settings.json` under `hooks.PreToolUse`. **Bootstrap order matters**: the `~/.claude/hooks` symlink must exist before the hook entry is live, or every Bash call is blocked (claude/setup.sh links it).
+- This is a tripwire, not a sandbox — pattern matching can be evaded; Claude Code's permission system remains the enforcement layer.
+
+### Secrets: Lazy 1Password Fetch
+
+`.zshrc.sec` is rendered from an environment-specific template (`.zshrc.sec.work.tpl` / `.zshrc.sec.personal.tpl`, selected by `WORK_ENV` in `script/zsh/setup.sh`). Two patterns:
+
+- **Injected** (`{{ op://... }}`): resolved at setup by `op inject` — plaintext at rest; only for low-sensitivity values.
+- **Lazy** (recommended): templates export only `*_REF="op://..."` references; the `opsec` helper (`.zshrc.functions`) runs `op read` at use-time, so 1Password prompts Touch ID when the secret is actually used and nothing sensitive sits on disk:
+  ```bash
+  ELASTIC_STG_API_KEY=$(opsec "$ELASTIC_STG_API_KEY_REF") some-command
+  ```
+
 ### YubiKey Git Signing Setup
 
 GPG signing configuration for commits (optional):
@@ -442,7 +461,7 @@ This is a **public dotfiles repository**. Never commit secrets, credentials, or 
 - `.dotconfig` — generated at install time, gitignored; stores `DOT_NAME`, `DOT_EMAIL`, etc.
 - `configs/ssh/config` — uses `Include ~/.ssh/hosts.local` so real host aliases stay local
 - `configs/git/.gitconfig.template` — variable substitution (`DOT_EMAIL`, `DOT_YUBIKEY`) at install time
-- `.zshrc.sec` — gitignored file for secret shell exports (API keys, tokens)
+- `.zshrc.sec` — gitignored file for secret shell exports, rendered from `.zshrc.sec.{personal,work}.tpl`; prefer lazy `op://` references + `opsec` over injected plaintext (see [Secrets: Lazy 1Password Fetch](#secrets-lazy-1password-fetch))
 
 **When adding new configurations:**
 - Use templates with `DOT_*` variable substitution for user-specific values

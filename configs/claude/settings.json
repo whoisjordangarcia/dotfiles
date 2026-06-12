@@ -59,6 +59,7 @@
       "Read(./secrets/**)",
       "Read(~/.aws/**)",
       "Read(~/.ssh/**)",
+      "Read(./**/.zshrc.sec)",
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
@@ -77,6 +78,12 @@
             "type": "command",
             "command": "jq -r '.tool_input.command // \"\"' | grep -qiF 'prd-account-administrator-role' && printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"ask\",\"permissionDecisionReason\":\"Production AWS profile (prd-account-administrator-role) detected - confirm before running against prod.\"}}' || true",
             "statusMessage": "Checking for prod AWS profile"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/touchid-gate.py\"",
+            "timeout": 120,
+            "statusMessage": "Touch ID gate: checking for sensitive command"
           }
         ]
       }

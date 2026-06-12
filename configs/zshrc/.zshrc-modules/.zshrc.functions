@@ -192,3 +192,21 @@ syu() {
   echo "Running pacman -Syu..."
   sudo pacman -Syu
 }
+
+# opsec — fetch a 1Password secret at use-time (Touch ID via the 1Password app).
+# Keeps secrets out of disk/env at rest; pairs with the *_REF variables defined
+# in .zshrc.sec (see .zshrc.sec.{personal,work}.tpl).
+# Usage:
+#   opsec op://Vault/Item/field
+#   ELASTIC_STG_API_KEY=$(opsec "$ELASTIC_STG_API_KEY_REF") some-command
+opsec() {
+  if [[ -z "$1" ]]; then
+    echo "usage: opsec op://Vault/Item/field" >&2
+    return 1
+  fi
+  if ! command -v op &>/dev/null; then
+    echo "opsec: 1Password CLI (op) not installed" >&2
+    return 1
+  fi
+  op read "$1"
+}
