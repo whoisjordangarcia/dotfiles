@@ -2,6 +2,7 @@
 tap 'LizardByte/homebrew'
 tap 'FelixKratz/formulae'
 tap 'acsandmann/tap'
+tap 'homebrew/autoupdate'
 
 # CLI Tools
 brew 'zsh'
