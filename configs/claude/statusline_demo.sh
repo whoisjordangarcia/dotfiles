@@ -157,14 +157,16 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":2.00,"
 clear_caches
 mkdir -p /tmp/claude-statusline-node-cache
 node_key=$(printf '%s' "$WT1" | md5 -q 2>/dev/null || printf '%s' "$WT1" | md5sum | cut -d' ' -f1)
-# Cache holds plain entries; the statusline renders color + clickable
-# OSC 8 links (http://localhost:<port>) at display time.
+# Cache holds plain entries; the statusline renders color + clickable OSC 8
+# links at display time — Nest frontend apps map to their https dev hostnames
+# (yoda → dev.yoda…, patient-navigator → dev.app…, provider-portal →
+# dev.portal…), anything else links to http://localhost:<port>.
 printf 'client-api:3000 provider-portal:4200' >"/tmp/claude-statusline-node-cache/${node_key}_node"
 set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[38;5;114m✓\033[0m'
 
 header "11. Worktree with running Node apps (line 3)"
 expect "L2: ⎇ #4567 ✓ jordan/preview-pr"
-expect "L3: client-api:3000 provider-portal:4200  (each app:port is a clickable localhost link)"
+expect "L3: client-api:3000 provider-portal:4200  (clickable: localhost / dev.portal.nestgenomics.com)"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.95,"total_duration_ms":360000},"session_id":"demo-11","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":28,"current_usage":{"input_tokens":40000,"cache_creation_input_tokens":3000,"cache_read_input_tokens":12000}}}'
 
 # ─── 14. Dirty tree with sync status ────────────────────────────

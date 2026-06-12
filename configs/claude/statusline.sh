@@ -643,6 +643,18 @@ fi
 }
 
 # ─── Node app detection (line 3) ───────────────────────────────────
+# Nest frontend dev servers run https on custom hostnames (mkcert certs,
+# see each app's dev.server.js); everything else falls back to localhost.
+node_app_url() {
+  local name="$1" port="$2"
+  case "$name" in
+    yoda) printf 'https://dev.yoda.nestgenomics.com:%s' "$port" ;;
+    patient-navigator) printf 'https://dev.app.nestgenomics.com:%s' "$port" ;;
+    provider-portal) printf 'https://dev.portal.nestgenomics.com:%s' "$port" ;;
+    *) printf 'http://localhost:%s' "$port" ;;
+  esac
+}
+
 fetch_node_apps() {
   local cwd="$1" cache_file="$2"
   local listening app_entries="" parts=""
@@ -698,7 +710,7 @@ if [ -n "$cwd" ]; then
       for node_entry in $node_parts; do
         node_port="${node_entry##*:}"
         if [[ "$node_port" =~ ^[0-9]+$ ]]; then
-          node_linked+="${node_linked:+ }$(osc_link "http://localhost:${node_port}" "$node_entry")"
+          node_linked+="${node_linked:+ }$(osc_link "$(node_app_url "${node_entry%:*}" "$node_port")" "$node_entry")"
         else
           node_linked+="${node_linked:+ }${node_entry}"
         fi
