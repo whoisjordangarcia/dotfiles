@@ -26,6 +26,7 @@ brew 'glow'
 brew 'watchexec'
 
 # Development
+cask '1password'      # desktop app — required for CLI integration (op)
 cask '1password-cli'
 brew 'nvm'
 brew 'lazygit'

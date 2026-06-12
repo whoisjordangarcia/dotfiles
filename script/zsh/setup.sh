@@ -44,8 +44,9 @@ if [ -f "$SECRETS_TPL" ]; then
 		chmod 600 "$SECRETS_OUT"
 		success "Secrets injected from 1Password"
 	else
-		info "1Password CLI not available or not signed in. Skipping secrets injection."
-		info "Run 'op signin' then re-run bootstrap to inject secrets."
+		info "1Password CLI not available or not connected. Skipping secrets injection."
+		info "Enable: 1Password app → Settings → Developer → 'Integrate with 1Password CLI',"
+		info "then re-run: ./script/zsh/setup.sh"
 	fi
 fi
 
