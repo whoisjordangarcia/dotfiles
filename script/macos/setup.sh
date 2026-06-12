@@ -46,6 +46,14 @@ defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
 # Trackpad: disable "natural" scrolling (use traditional scroll direction)
 defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
 
+# Trackpad: tap to click (built-in + Bluetooth trackpads)
+defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+
+# Full keyboard access: Tab moves focus between all controls in dialogs
+defaults write NSGlobalDomain AppleKeyboardUIMode -int 2
+
 # --- General UI ---
 
 # Use 12-hour time format in menu bar clock
@@ -110,8 +118,10 @@ chflags nohidden ~/Library 2>/dev/null
 
 # --- Dock & Mission Control ---
 
-# Autohide dock
+# Autohide dock — no reveal delay, faster animation
 defaults write com.apple.dock autohide -bool true
+defaults write com.apple.dock autohide-delay -float 0
+defaults write com.apple.dock autohide-time-modifier -float 0.4
 
 # Speed up Mission Control animations
 defaults write com.apple.dock expose-animation-duration -float 0.1
@@ -164,6 +174,14 @@ defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true
 # Disable Spotlight (replaced by Raycast)
 defaults write com.apple.Spotlight "NSStatusItem Visible Item-0" -bool false
 sudo mdutil -a -i off 2>/dev/null || true
+
+# Free up Cmd+Space for Raycast: disable the Spotlight search hotkey (id 64)
+/usr/libexec/PlistBuddy -c "Set :AppleSymbolicHotKeys:64:enabled false" \
+  "$HOME/Library/Preferences/com.apple.symbolichotkeys.plist" 2>/dev/null ||
+  defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 \
+    '<dict><key>enabled</key><false/></dict>'
+# Flush the hotkey change without logging out (may still need a re-login on some versions)
+/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u 2>/dev/null || true
 
 # --- Suppress login message ---
 touch "$HOME/.hushlogin"
