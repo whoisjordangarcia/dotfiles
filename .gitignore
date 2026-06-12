@@ -53,3 +53,7 @@ configs/hyde/themes/
 # Compiled Go binaries
 bin/nxps
 nxps
+
+# Python bytecode cache (e.g. from configs/claude/scripts)
+__pycache__/
+*.pyc

@@ -303,6 +303,34 @@ bash configs/claude/statusline_demo.sh   # visually confirm each variation still
 
 If you add a new field, branch/PR/worktree case, or line-3 indicator, add a corresponding test in `statusline_test.sh` and a scenario in `statusline_demo.sh` before considering the change complete. The demo doubles as living documentation for every supported rendering.
 
+### cmux Sidebar Hooks (macOS)
+
+`configs/claude/scripts/` holds Claude Code hook scripts that drive the cmux
+sidebar (symlinked to `~/.claude/scripts` by `script/claude/setup.sh`; wired in
+`configs/claude/settings.json`). Shared identity/guard logic lives in
+`cmux_common.py` — `resolve_workspace()` maps this session to its workspace UUID,
+and `alive()` makes every script a cheap no-op when cmux isn't running (it
+short-circuits on socket existence, so a closed cmux or a non-macOS box spawns no
+subprocess).
+
+- `cmux-title.py` — workspace title (`NES-#### · <topic>`)
+- `cmux-pr.py` — `✓ Approved #<n>` status pill when the branch's PR is approved
+  (CI is left to cmux's native PR watcher); `SessionStart`/`Stop`/post-push
+- `cmux-progress.py` — sidebar progress bar from `TodoWrite` (`completed/total`);
+  `PostToolUse(TodoWrite)` sets it, `SessionStart` clears it
+
+Each pill/bar script exposes a pure mapping function plus a hidden `--emit` mode
+so the logic is unit-testable without cmux or the network. **When modifying
+`cmux-pr.py` or `cmux-progress.py`, run:**
+
+```bash
+bash configs/claude/scripts/cmux_pr_test.sh        # must end with "All N tests passed"
+bash configs/claude/scripts/cmux_progress_test.sh  # must end with "All N tests passed"
+bash configs/claude/scripts/cmux_status_demo.sh    # (inside cmux) visually confirm each pill/bar
+```
+
+Add a test case for any new state mapping before considering the change complete.
+
 ### Touch ID Command Gate (macOS)
 
 AI-initiated sensitive Bash commands require biometric approval via a Claude Code `PreToolUse` hook:
