@@ -80,7 +80,7 @@ H1 uses a **linear-gradient** from `#e65732 → #e78d32 → #a367c8` clipped to 
    - **Slide deck** → `slides-template.html` — fill `{{TITLE}}`, `{{EYEBROW}}`, `{{SUBTITLE}}`, `{{DATE}}`, `{{AUTHOR}}`, `{{SLIDES}}`, `{{FOOTER_LEFT}}`. Read `deck-format.md` for slide structure and wiring.
 4. Write the result to disk. Do not introduce new CSS files, build steps, or external assets beyond the Google Fonts `<link>` already in the template. The only sanctioned CDN exceptions are **mermaid** (diagrams), **D3** (interactive charts), **ag-Grid** (interactive tables), **three.js** (3D scenes), and **highlight.js** (code syntax highlighting) — each only when the doc actually uses that capability.
 5. Tell the user the absolute path and suggest `open <path>` to preview it.
-6. **Ask the user if they want to upload/update the file to S3** to share it within the Nest team. If yes, upload to the `yoda-app-origin-tst` bucket under `nest-docs/` using the `tst-account-administrator-role` AWS profile, then report the Tailscale-gated URL: `https://tst.yoda.nestgenomics.com/nest-docs/<filename>.html` (only reachable from the Nest Tailscale network). If both formats were generated, upload both — both URLs go in the report.
+6. **Ask the user if they want to upload/update the file to share it** within the Nest team. If yes, call the tst-only `uploadNestDoc` client-api GraphQL mutation using the Frontegg M2M credential (see `sharing-and-index.md` — no AWS profile, server-side index regen), then report the Tailscale-gated URL returned in the response: `https://tst.yoda.nestgenomics.com/nest-docs/<filename>.html` (only reachable from the Nest Tailscale network). If both formats were generated, upload both — both URLs go in the report.
 
 ## Example Loading Protocol
 

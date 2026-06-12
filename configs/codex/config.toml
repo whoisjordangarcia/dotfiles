@@ -86,6 +86,9 @@ trust_level = "trusted"
 [projects."/Users/nest/projects/nest"]
 trust_level = "trusted"
 
+[projects."/Users/nest/dev"]
+trust_level = "trusted"
+
 [marketplaces.openai-bundled]
 last_updated = "2026-05-31T21:54:15Z"
 source_type = "local"

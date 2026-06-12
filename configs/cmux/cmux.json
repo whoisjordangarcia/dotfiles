@@ -20,47 +20,28 @@
       // native Cmd shortcuts: Cmd+T new tab (same path), Cmd+W close, Cmd+R rename,
       // Ctrl+Cmd+[ / ] workspace nav, Cmd+Shift+Enter zoom.
       "splitRight": ["ctrl+a", "\\"],
-      "splitDown":  ["ctrl+a", "-"]
+      "splitDown": ["ctrl+a", "-"]
     }
+  },
+
+  // --- App behavior ---
+  // New workspaces inherit the parent's working directory. This is the cmux
+  // DEFAULT (true), set explicitly here to document intent: spawning a workspace
+  // from inside a worktree keeps you in that worktree's cwd instead of jumping to
+  // a default root. (Tab-level cwd inheritance via Cmd+T is native and needs no flag.)
+  "app": {
+    "workspaceInheritWorkingDirectory": true
   },
 
   // --- Native replacements for tmux statusline/resurrect machinery ---
   "terminal": {
-    "autoResumeAgentSessions": true
+    "autoResumeAgentSessions": true,
+    // Select-to-copy (tmux muscle memory). Replaces the commented-out tmux
+    // copy-pipe-and-cancel binding — selecting text copies it to the clipboard.
+    "copyOnSelect": true
   },
   "automation": {
     "claudeCodeIntegration": true,
     "suppressSubagentNotifications": true
-  },
-  "sidebar": {
-    "showPullRequests": true,
-    "showBranchDirectory": true,
-    "watchGitStatus": true,
-    "showPorts": true
-  },
-
-  // --- Custom commands, ported from tmux prefix-binds ---
-  // The open_linear / dev_dashboard scripts are reused verbatim from ~/.tmux/scripts
-  // (they already default to $PWD and shell out, so they're multiplexer-agnostic).
-  // Exposed as keyboard shortcuts: ⌃⌘I (Linear), ⌃⌘W (dev-server dashboard).
-  "actions": {
-    "jg.openLinear": {
-      "type": "command",
-      "title": "Open Linear ticket from branch",
-      "subtitle": "Parses NES-#### from branch name",
-      "command": "\"$HOME/.tmux/scripts/open_linear.sh\" \"$PWD\"",
-      "target": "newTabInCurrentPane",
-      "shortcut": "ctrl+cmd+i",
-      "icon": { "type": "emoji", "value": "📋" }
-    },
-    "jg.devDashboard": {
-      "type": "command",
-      "title": "Worktree dev-server dashboard",
-      "subtitle": "Listening ports for this worktree",
-      "command": "\"$HOME/.tmux/scripts/dev_dashboard.sh\" \"$PWD\"",
-      "target": "newTabInCurrentPane",
-      "shortcut": "ctrl+cmd+w",
-      "icon": { "type": "emoji", "value": "📊" }
-    }
   }
 }

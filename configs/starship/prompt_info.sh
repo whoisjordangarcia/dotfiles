@@ -71,11 +71,15 @@ if root=$(find_git_root); then
   if branch=$(read_branch "$gitdir"); then
     norm_name=${name//\//-}
     norm_br=${branch//\//-}
-    # Hide branch if equal to worktree name OR worktree name is a suffix
-    # (e.g. branch "chris/foo" + worktree "foo" -> hide branch)
+    # Worktree dirs are slugified branch names (slashes -> dashes, often
+    # lowercased), so compare case-insensitively. nocasematch (bash 3.1+)
+    # avoids ${var,,} which needs bash 4 (macOS ships 3.2).
+    shopt -s nocasematch
+    # Worktree name equal to branch OR a suffix of it (e.g. branch
+    # "chris/foo" + worktree "foo") -> redundant, show only the branch
     if [[ "$gitdir" == */worktrees/* ]] &&
-      { [ "$norm_name" = "$norm_br" ] || [[ "$norm_br" == *"$norm_name" ]]; }; then
-      printf '%s' "$dir_part"
+      { [[ "$norm_name" == "$norm_br" ]] || [[ "$norm_br" == *"$norm_name" ]]; }; then
+      printf '\xef\x81\xac  %s' "$branch"
     else
       printf '%s %s' "$dir_part" "$branch"
     fi
