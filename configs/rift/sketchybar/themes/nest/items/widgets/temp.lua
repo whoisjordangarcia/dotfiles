@@ -3,7 +3,7 @@ local settings = require("settings")
 
 -- Start the temp_sensor event provider
 sbar.exec(
-  "killall -f temp_sensor.sh >/dev/null 2>&1; "
+  "pkill -f temp_sensor.sh >/dev/null 2>&1; "
   .. "$CONFIG_DIR/helpers/event_providers/temp_sensor/temp_sensor.sh temp_update 5.0 &"
 )
 

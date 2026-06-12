@@ -1,6 +1,5 @@
 require("items.workspaces")
 require("items.front_app")
-require("items.media")
 require("items.calendar")
+-- require("items.media")
 require("items.widgets")
-require("items.docker")

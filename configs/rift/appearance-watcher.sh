@@ -20,10 +20,7 @@ echo "$NOW" > "$LOCK"
 # Reload SketchyBar (re-runs init.lua, which re-requires colors.lua)
 sketchybar --reload
 
-# Restart borders (bordersrc re-detects appearance on launch)
+# Restart borders to pick up new colors. borders runs under brew services
+# with KeepAlive, so launchd relaunches it automatically and the fresh
+# instance re-sources bordersrc, which re-detects the appearance.
 pkill -x borders
-sleep 0.5
-# Double-fork via perl so borders is reparented to PID 1 and survives
-# launchd cleaning up this job's process group
-perl -e 'use POSIX; fork and exit; POSIX::setsid(); exec @ARGV' -- \
-    bash -c "export PATH=/opt/homebrew/bin:\$PATH; $HOME/dev/dotfiles/configs/rift/bordersrc"

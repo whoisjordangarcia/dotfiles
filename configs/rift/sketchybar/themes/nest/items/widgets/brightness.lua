@@ -2,7 +2,7 @@ local colors = require("colors")
 local settings = require("settings")
 
 sbar.exec(
-  "killall -f brightness.sh >/dev/null 2>&1; "
+  "pkill -f brightness.sh >/dev/null 2>&1; "
   .. "$CONFIG_DIR/helpers/event_providers/brightness/brightness.sh brightness_update 5.0 &"
 )
 

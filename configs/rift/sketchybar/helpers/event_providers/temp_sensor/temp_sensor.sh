@@ -1,25 +1,45 @@
 #!/bin/bash
 # Temperature & Fan sensor event provider for SketchyBar
-# Uses a single smctemp -l call to read all sensor data at once
-# Emits a custom event with temp and fan data every N seconds
+# Emits a custom event with temp and fan data every N seconds.
+#
+# Cost model (M-series): `smctemp -c/-g` is a single cheap read (~10ms), but
+# fan RPMs are only exposed via `smctemp -l`, a full ~3000-key SMC dump that
+# takes ~2.7s — so fans are refreshed every FAN_EVERY cycles, not every cycle.
 
 EVENT_NAME="${1:-temp_update}"
 UPDATE_FREQ="${2:-5.0}"
+FAN_EVERY=6
 
-# Add the event
+# Leak guard: kill any other instances of this provider (older reloads).
+for pid in $(pgrep -f "temp_sensor/temp_sensor.sh"); do
+  if [ "$pid" != "$$" ] && [ "$pid" != "$PPID" ]; then
+    kill "$pid" 2>/dev/null
+  fi
+done
+
 sketchybar --add event "$EVENT_NAME"
 
+fan0=0
+fan1=0
+cycle=0
+
 while true; do
-  # Apple Silicon (M-series) needs retries with short intervals for reliable reads
-  cpu_temp=$(smctemp -c -n180 -i25 -f 2>/dev/null)
-  gpu_temp=$(smctemp -g -n180 -i25 -f 2>/dev/null)
+  # Orphan guard: don't outlive sketchybar.
+  pgrep -qx sketchybar || exit 0
 
-  # Fan speeds from raw SMC dump
-  smc_dump=$(smctemp -l 2>/dev/null)
-  fan0=$(echo "$smc_dump" | awk '/F0Ac/ {printf "%.0f", $3}')
-  fan1=$(echo "$smc_dump" | awk '/F1Ac/ {printf "%.0f", $3}')
+  # -f is fail-soft (returns last valid value if a read fails)
+  cpu_temp=$(smctemp -c -n3 -f 2>/dev/null)
+  gpu_temp=$(smctemp -g -n3 -f 2>/dev/null)
 
-  # Fallback if values are empty
+  if [ $((cycle % FAN_EVERY)) -eq 0 ]; then
+    # Dump line format: `F0Ac  [flt ]  2310.7 (bytes: ...)` — `[flt ]` splits
+    # into two fields, so the RPM value is $4 (not $3).
+    fans=$(smctemp -l 2>/dev/null | awk '/F0Ac/ {f0=$4} /F1Ac/ {f1=$4} END {printf "%.0f %.0f", f0, f1}')
+    fan0="${fans% *}"
+    fan1="${fans#* }"
+  fi
+  cycle=$((cycle + 1))
+
   cpu_temp="${cpu_temp:-0.0}"
   gpu_temp="${gpu_temp:-0.0}"
   fan0="${fan0:-0}"

@@ -142,6 +142,12 @@ comb1 = "Option + Shift"
 "Option + K" = { move_focus = "up" }
 "Option + L" = { move_focus = "right" }
 
+# Move the focused window within the layout (i3's $mod+Shift+hjkl)
+"comb1 + H" = { move_node = "left" }
+"comb1 + J" = { move_node = "down" }
+"comb1 + K" = { move_node = "up" }
+"comb1 + L" = { move_node = "right" }
+
 # Workspaces (Option + 1-9,0)
 "Option + 1" = { switch_to_workspace = 0 }
 "Option + 2" = { switch_to_workspace = 1 }

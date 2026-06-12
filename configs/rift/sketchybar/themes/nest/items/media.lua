@@ -16,7 +16,7 @@ local media = sbar.add("item", "media", {
 	background = { drawing = false },
 	drawing = false,
 	updates = true,
-	update_freq = 5,
+	update_freq = 15,
 	padding_left = 0,
 	padding_right = 4,
 })
