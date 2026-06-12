@@ -89,11 +89,6 @@
             "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
             "timeout": 10,
             "statusMessage": "Setting cmux workspace title"
-          },
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-state.py\" --event working",
-            "async": true
           }
         ]
       }
@@ -110,42 +105,6 @@
         ]
       }
     ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-state.py\" --event working",
-            "async": true
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\" --event open",
-            "if": "Bash(gh pr create*)",
-            "async": true
-          },
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\" --event ci",
-            "if": "Bash(gh pr create*)",
-            "async": true
-          },
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\" --event ci",
-            "if": "Bash(git push*)",
-            "async": true
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [
@@ -154,27 +113,6 @@
             "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
             "timeout": 10,
             "async": true
-          },
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-state.py\" --event idle",
-            "async": true
-          },
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\" --event ci",
-            "async": true
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-state.py\" --event attention",
-            "async": true
           }
         ]
       }
@@ -182,12 +120,12 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "~/.claude/statusline.sh",
+    "command": "STATUSLINE_ONE_LINE=1 ~/.claude/statusline.sh",
     "padding": 0
   },
   "enabledPlugins": {
     "claude-md-management@claude-plugins-official": false,
-    "claude-mem@thedotmack": true,
+    "claude-mem@thedotmack": false,
     "code-review@claude-plugins-official": false,
     "code-simplifier@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": false,
@@ -289,5 +227,6 @@
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
       }
     }
-  }
+  },
+  "model": "claude-fable-5[1m]"
 }

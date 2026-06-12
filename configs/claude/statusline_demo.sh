@@ -7,7 +7,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 STATUSLINE="$SCRIPT_DIR/statusline.sh"
 DEMO_DIR=$(mktemp -d "/tmp/statusline-demo-XXXXXX")
 
-cleanup() { rm -rf "$DEMO_DIR" /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache /tmp/claude-statusline-docker-cache; }
+cleanup() { rm -rf "$DEMO_DIR" /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache /tmp/claude-statusline-node-cache; }
 trap cleanup EXIT
 
 sep=" \033[38;5;245m·\033[0m "
@@ -28,11 +28,11 @@ make_repo() {
 # ─── Helper: pre-populate PR cache ──────────────────────────────
 set_pr_cache() {
   local cwd="$1" branch="$2" url="$3" state="$4" draft="$5"
-  local ci="${6:-}"
+  local ci="${6:-}" review="${7:-}"
   local dir="/tmp/claude-statusline-pr-cache"
   mkdir -p "$dir"
   local key=$(printf '%s:%s' "$cwd" "$branch" | md5 -q 2>/dev/null || printf '%s:%s' "$cwd" "$branch" | md5sum | cut -d' ' -f1)
-  printf '%s\t%s\t%s' "$url" "$state" "$draft" >"$dir/$key"
+  printf '%s\t%s\t%s\t%s' "$url" "$state" "$draft" "$review" >"$dir/$key"
   if [ -n "$ci" ]; then printf '%s' "$ci" >"$dir/${key}_ci"; fi
 }
 
@@ -40,7 +40,7 @@ set_pr_cache() {
 clear_caches() {
   rm -rf /tmp/claude-statusline-git-cache
   rm -rf /tmp/claude-statusline-pr-cache
-  rm -rf /tmp/claude-statusline-docker-cache
+  rm -rf /tmp/claude-statusline-node-cache
 }
 
 run() {
@@ -48,7 +48,9 @@ run() {
   # scenarios focused on their feature by normalizing them to today's hidden default.
   local input="${1//Claude Opus 4.6/Claude Opus 4.8 (1M context)}"
   local output
-  output=$(echo "$input" | bash "$STATUSLINE" 2>/dev/null)
+  # -u CLAUDE_EFFORT: keep scenarios deterministic when the demo itself runs
+  # inside a Claude Code session that exports the effort env var.
+  output=$(echo "$input" | env -u CLAUDE_EFFORT bash "$STATUSLINE" 2>/dev/null)
   local first=true
   while IFS= read -r line; do
     if [ "$first" = true ]; then
@@ -96,10 +98,10 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.45,"
 
 # ─── 4. Worktree with open PR ───────────────────────────────────
 clear_caches
-set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[38;5;114m✓\033[0m'
+set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[38;5;114m✓\033[0m' "APPROVED"
 
-header "4. Worktree with open PR #4567 + CI pass"
-expect "nest · ⎇ #4567 · 🌿 jordan/preview-pr"
+header "4. Worktree with open PR #4567, approved + CI pass"
+expect "L2: ⎇ #4567 approved ✓ jordan/preview-pr"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":2.31,"total_duration_ms":900000},"session_id":"demo-4","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":75,"current_usage":{"input_tokens":110000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":30000}}}'
 
 # ─── 5. Worktree with draft PR ──────────────────────────────────
@@ -107,7 +109,7 @@ clear_caches
 set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "true" $'\033[38;5;221m⏳\033[0m'
 
 header "5. Worktree with draft PR #4567 + CI pending"
-expect "nest · ⎇ #4567 · 🌿 jordan/preview-pr · #4567 draft ⏳"
+expect "L2: ⎇ #4567 draft ⏳ jordan/preview-pr"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.87,"total_duration_ms":240000},"session_id":"demo-5","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":34,"current_usage":{"input_tokens":50000,"cache_creation_input_tokens":3000,"cache_read_input_tokens":15000}}}'
 
 # ─── 6. Worktree with merged PR ─────────────────────────────────
@@ -115,7 +117,7 @@ clear_caches
 set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "MERGED" "false"
 
 header "6. Worktree with merged PR #4567 (purple)"
-expect "nest · ⎇ #4567 · 🌿 jordan/preview-pr"
+expect "L2: ⎇ #4567 merged jordan/preview-pr"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":3.10,"total_duration_ms":1200000},"session_id":"demo-6","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":62,"current_usage":{"input_tokens":90000,"cache_creation_input_tokens":8000,"cache_read_input_tokens":25000}}}'
 
 # ─── 7. Worktree with different name, no PR ──────────────────────
@@ -142,47 +144,26 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.10,"
 # ─── 9. Sonnet model + high context ─────────────────────────────
 clear_caches
 header "9. Sonnet model + high context (92%) + warning"
-expect "Sonnet 3.7 · \$5.00 · ... · [█████████░] 92% ⚠️"
+expect "Sonnet 3.7 · \$5.00 · ... · [█████████▏] 92% (185k) ⚠️"
 run '{"model":{"display_name":"Claude 3.7 Sonnet"},"cost":{"total_cost_usd":5.00,"total_duration_ms":1800000},"session_id":"demo-9","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":92,"current_usage":{"input_tokens":170000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":5000}}}'
 
 # ─── 10. Medium context (yellow zone) ────────────────────────────
 clear_caches
-header "10. Medium context (62%) — yellow bar"
-expect "[██████░░░░] 62%"
+header "10. Medium context (62%) — yellow bar, smooth eighth-block edge"
+expect "[██████▏░░░] 62% (125k)"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":2.00,"total_duration_ms":600000},"session_id":"demo-10","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":62,"current_usage":{"input_tokens":110000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":5000}}}'
 
-# ─── 11. Docker containers (worktree) ────────────────────────────
+# ─── 11. Node apps listening on ports (line 3) ───────────────────
 clear_caches
-mkdir -p /tmp/claude-statusline-docker-cache
-wt_docker_key=$(printf '%s' "wt-jordan-preview-pr" | md5 -q 2>/dev/null || printf '%s' "wt-jordan-preview-pr" | md5sum | cut -d' ' -f1)
-printf '\033[38;5;114m🐳 postgres:5432,redis:6379\033[0m' >"/tmp/claude-statusline-docker-cache/$wt_docker_key"
+mkdir -p /tmp/claude-statusline-node-cache
+node_key=$(printf '%s' "$WT1" | md5 -q 2>/dev/null || printf '%s' "$WT1" | md5sum | cut -d' ' -f1)
+printf '\033[38;5;114mclient-api:3000 provider-portal:4200\033[0m' >"/tmp/claude-statusline-node-cache/${node_key}_node"
 set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[38;5;114m✓\033[0m'
 
-header "11. Worktree with Docker containers"
-expect "line 3: 🐳 postgres:5432,redis:6379"
-run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.80,"total_duration_ms":720000},"session_id":"demo-11","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":43,"current_usage":{"input_tokens":60000,"cache_creation_input_tokens":5000,"cache_read_input_tokens":20000}}}'
-
-# ─── 12. Node apps listening on ports ────────────────────────────
-clear_caches
-mkdir -p /tmp/claude-statusline-docker-cache
-node_key=$(printf '%s' "jordan-preview-pr" | md5 -q 2>/dev/null || printf '%s' "jordan-preview-pr" | md5sum | cut -d' ' -f1)
-printf '\033[38;5;114m⬡ client-api:3000,provider-portal:4200\033[0m' >"/tmp/claude-statusline-docker-cache/${node_key}_node"
-set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[38;5;114m✓\033[0m'
-
-header "12. Worktree with Node apps"
-expect "line 3: ⬡ client-api:3000,provider-portal:4200"
-run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.95,"total_duration_ms":360000},"session_id":"demo-12","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":28,"current_usage":{"input_tokens":40000,"cache_creation_input_tokens":3000,"cache_read_input_tokens":12000}}}'
-
-# ─── 13. Docker + Node combined ──────────────────────────────────
-clear_caches
-mkdir -p /tmp/claude-statusline-docker-cache
-printf '\033[38;5;114m🐳 postgres:5432\033[0m' >"/tmp/claude-statusline-docker-cache/$wt_docker_key"
-printf '\033[38;5;114m⬡ client-api:3000\033[0m' >"/tmp/claude-statusline-docker-cache/${node_key}_node"
-set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[38;5;114m✓\033[0m'
-
-header "13. Docker + Node combined (full 3-line output)"
-expect "line 3: 🐳 postgres:5432 · ⬡ client-api:3000"
-run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":3.20,"total_duration_ms":1500000,"total_lines_added":156,"total_lines_removed":43},"session_id":"demo-13","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":72,"current_usage":{"input_tokens":100000,"cache_creation_input_tokens":8000,"cache_read_input_tokens":35000}}}'
+header "11. Worktree with running Node apps (line 3)"
+expect "L2: ⎇ #4567 ✓ jordan/preview-pr"
+expect "L3: client-api:3000 provider-portal:4200"
+run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.95,"total_duration_ms":360000},"session_id":"demo-11","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":28,"current_usage":{"input_tokens":40000,"cache_creation_input_tokens":3000,"cache_read_input_tokens":12000}}}'
 
 # ─── 14. Dirty tree with sync status ────────────────────────────
 clear_caches
@@ -202,7 +183,7 @@ clear_caches
 set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[38;5;203m✗\033[0m'
 
 header "15. Open PR with CI failure"
-expect "⎇ #4567 · 🌿 jordan/preview-pr · #4567 ✗"
+expect "L2: ⎇ #4567 ✗ jordan/preview-pr"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.10,"total_duration_ms":420000},"session_id":"demo-15","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":49,"current_usage":{"input_tokens":70000,"cache_creation_input_tokens":5000,"cache_read_input_tokens":22000}}}'
 
 # ─── 16. Closed PR ──────────────────────────────────────────────
@@ -210,7 +191,7 @@ clear_caches
 set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "CLOSED" "false"
 
 header "16. Closed PR"
-expect "⎇ #4567 · 🌿 jordan/preview-pr · #4567 closed"
+expect "L2: ⎇ #4567 closed jordan/preview-pr"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.30,"total_duration_ms":90000},"session_id":"demo-16","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":13,"current_usage":{"input_tokens":20000,"cache_creation_input_tokens":1000,"cache_read_input_tokens":5000}}}'
 
 # ─── 17. Cost rate (long session, >5min) ─────────────────────────
@@ -231,14 +212,14 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.15,"
 
 # ─── 19. Rate limits — low usage (dim) ──────────────────────────
 clear_caches
-header "19. Rate limits — low usage (dim gray)"
-expect "5h:12% 7d:5%"
+header "19. Rate limits — low usage (hidden below thresholds)"
+expect "no 5h/7d indicators (5h < 70%, 7d < 80%)"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.50,"total_duration_ms":600000},"session_id":"demo-19","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":10},"rate_limits":{"five_hour":{"used_percentage":12.0},"seven_day":{"used_percentage":5.4}}}'
 
 # ─── 20. Rate limits — high usage (yellow/red) ─────────────────
 clear_caches
-header "20. Rate limits — high usage (red 5h, yellow 7d)"
-expect "5h:85% (red) 7d:62% (yellow)"
+header "20. Rate limits — 5h critical, 7d below threshold"
+expect "5h:85% (red); 7d:62% hidden (< 80%)"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":8.00,"total_duration_ms":3600000},"session_id":"demo-20","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3},"seven_day":{"used_percentage":62.1}}}'
 
 # ─── 21. Rate limits — critical (both red) ─────────────────────
@@ -249,8 +230,8 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":12.00,
 
 # ─── 22. Session name ──────────────────────────────────────────
 clear_caches
-header "22. Session name (replaces project name)"
-expect "refactor-auth instead of tmp"
+header "22. Session name (ignored — cwd basename always wins)"
+expect "tmp on L1, no refactor-auth anywhere"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.75,"total_duration_ms":180000},"session_id":"demo-22","session_name":"refactor-auth","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":20}}'
 
 # ─── 23. No rate limits (API key user) ─────────────────────────
@@ -276,9 +257,9 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},
 
 # ─── 24. Reasoning effort indicator ─────────────────────────────
 clear_caches
-header "24. Reasoning effort (sourced from statusline JSON)"
+header "24. Reasoning effort (.effort.level from statusline JSON)"
 expect "L1: ◯ xhigh · tmp · \$0.25 · ..."
-run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.25,"total_duration_ms":60000},"session_id":"demo-24","cwd":"/tmp","context_window":{"used_percentage":12},"effortLevel":"xhigh"}'
+run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.25,"total_duration_ms":60000},"session_id":"demo-24","cwd":"/tmp","context_window":{"used_percentage":12},"effort":{"level":"xhigh"}}'
 
 # ─── 25. Long project name + cwd path truncation ────────────────
 clear_caches
@@ -317,5 +298,49 @@ header "29. Opus 4.8 1M hidden, but effort still rides at the far left when set"
 expect "L1: ◯ xhigh · tmp · \$0.20 · ... (no \"Opus\")"
 run '{"model":{"display_name":"Claude Opus 4.8 (1M context)"},"cost":{"total_cost_usd":0.20,"total_duration_ms":90000},"session_id":"demo-29","cwd":"/tmp","context_window":{"used_percentage":8},"effortLevel":"xhigh"}'
 
+# ─── 30. Rate limit reset countdown ──────────────────────────────
+clear_caches
+header "30. Rate limit reset countdown (5h critical, resets in ~1h15m)"
+expect "5h:85% 1h15m (red); 7d hidden below threshold"
+run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":6.00,"total_duration_ms":3600000},"session_id":"demo-30","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3,"resets_at":'$(($(date +%s) + 4530))'},"seven_day":{"used_percentage":50}}}'
+
+# ─── 31. Open PR — changes requested + CI failure ────────────────
+clear_caches
+set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[38;5;203m✗\033[0m' "CHANGES_REQUESTED"
+header "31. Open PR — changes requested (yellow) + CI failure"
+expect "L2: ⎇ #4567 changes ✗ jordan/preview-pr"
+run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.40,"total_duration_ms":540000},"session_id":"demo-31","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":38,"current_usage":{"input_tokens":60000,"cache_creation_input_tokens":4000,"cache_read_input_tokens":12000}}}'
+
+# ─── One-line mode (STATUSLINE_ONE_LINE=1) ───────────────────────
+# Same as run() but with one-line mode on and a forced terminal width.
+run_one_line() {
+  local cols="$1"
+  local input="${2//Claude Opus 4.6/Claude Opus 4.8 (1M context)}"
+  local output
+  output=$(echo "$input" | env -u CLAUDE_EFFORT STATUSLINE_ONE_LINE=1 STATUSLINE_COLS="$cols" bash "$STATUSLINE" 2>/dev/null)
+  local first=true
+  while IFS= read -r line; do
+    if [ "$first" = true ]; then
+      printf '\033[38;5;255m   actual │ \033[0m%b\n' "$line"
+      first=false
+    else
+      printf '          \033[38;5;245m│\033[0m %b\n' "$line"
+    fi
+  done <<<"$output"
+  echo ""
+}
+
+# ─── 32. One-line mode, wide terminal ────────────────────────────
+clear_caches
+header "32. One-line mode (codex style), wide terminal — everything joins with ·"
+expect "dotfiles · \$1.23 ... [bar] 70% (140k) · 🌿 main · +42 -7  — all on ONE line"
+run_one_line 300 '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000,"total_lines_added":42,"total_lines_removed":7},"session_id":"demo-32","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
+
+# ─── 33. One-line mode, narrow terminal → multi-line fallback ────
+clear_caches
+header "33. One-line mode but terminal too narrow (60 cols) — falls back to multi-line"
+expect "Same content as #32 but split across lines (no overflow)"
+run_one_line 60 '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000,"total_lines_added":42,"total_lines_removed":7},"session_id":"demo-33","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
+
 printf '\033[38;5;141m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
-printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 29
+printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 31

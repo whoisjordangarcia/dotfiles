@@ -11,10 +11,13 @@ failed=0
 errors=""
 
 # ─── Helpers ────────────────────────────────────────────────────────
-strip_ansi() { sed $'s/\033\[[0-9;]*m//g'; }
+# Strips SGR color codes AND OSC 8 hyperlink wrappers (\e]8;;url\a … \e]8;;\a)
+strip_ansi() { sed $'s/\033\[[0-9;]*m//g; s/\033]8;;[^\007]*\007//g'; }
 
 run_statusline() {
-  echo "$1" | bash "$STATUSLINE" 2>/dev/null
+  # -u CLAUDE_EFFORT: the suite itself may run inside a Claude Code session
+  # where that var is set; fixtures must control effort explicitly.
+  echo "$1" | env -u CLAUDE_EFFORT bash "$STATUSLINE" 2>/dev/null
 }
 
 run_statusline_plain() {
@@ -46,6 +49,16 @@ assert_not_contains() {
     printf "  \033[38;5;203m✗\033[0m %s\n" "$test_name"
     printf "    expected NOT to contain: %s\n" "$unexpected"
   fi
+}
+
+seed_pr_cache() {
+  local cwd="$1" branch="$2" url="$3" state="$4" draft="$5" ci="${6:-}" review="${7:-}"
+  local dir="/tmp/claude-statusline-pr-cache"
+  mkdir -p "$dir"
+  local key
+  key=$(printf '%s:%s' "$cwd" "$branch" | md5 -q 2>/dev/null || printf '%s:%s' "$cwd" "$branch" | md5sum | cut -d' ' -f1)
+  printf '%s\t%s\t%s\t%s' "$url" "$state" "$draft" "$review" >"$dir/$key"
+  if [ -n "$ci" ]; then printf '%s' "$ci" >"$dir/${key}_ci"; fi
 }
 
 assert_exit_code() {
@@ -129,10 +142,15 @@ INPUT_OPUS_47='{"model":{"display_name":"Claude Opus 4.7"},"cost":{"total_cost_u
 out=$(run_statusline_plain "$INPUT_OPUS_47")
 assert_contains "shows Opus 4.7 (not the hidden 1M default)" "$out" "Opus 4.7"
 
+# Fable 5 is NOT a hidden default — only Opus 4.8 1M is hidden
+INPUT_FABLE='{"model":{"display_name":"Claude Fable 5"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"context_window":{"context_window_size":200000,"used_percentage":0}}'
+out=$(run_statusline_plain "$INPUT_FABLE")
+assert_contains "shows Fable 5 (not a hidden default)" "$out" "Fable 5"
+
 # Effort rides to the right of a shown model name
 INPUT_MODEL_EFFORT='{"model":{"display_name":"Claude Opus 4.7"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"context_window":{"used_percentage":0},"effortLevel":"high"}'
 out_line1=$(run_statusline_plain "$INPUT_MODEL_EFFORT" | head -1)
-assert_contains "effort glyph sits to the right of the model name" "$out_line1" "Opus 4.7 ◯"
+assert_contains "effort glyph sits to the right of the model name" "$out_line1" "Opus 4.7 ◯ high"
 
 printf "\n\033[38;5;141m━━━ Context Bar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
@@ -147,6 +165,18 @@ assert_contains "shows warning emoji at >80%" "$out" "⚠️"
 out=$(run_statusline_plain "$INPUT_MED_CTX")
 assert_contains "shows medium context %" "$out" "62%"
 assert_not_contains "no warning emoji at 50-80%" "$out" "⚠️"
+
+# Smooth bar: eighth-blocks give sub-cell resolution (25% → 2 full + half block)
+INPUT_QTR_CTX='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.50,"total_duration_ms":60000},"session_id":"test-qtr","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":25}}'
+out=$(run_statusline_plain "$INPUT_QTR_CTX")
+assert_contains "smooth bar renders partial block at 25%" "$out" "[██▌░░░░░░░] 25%"
+
+# Absolute token count next to the % (from current_usage totals)
+out=$(run_statusline_plain "$INPUT_FULL")
+assert_contains "shows token count next to context pct" "$out" "70% (140k)"
+
+out=$(run_statusline_plain "$INPUT_MINIMAL")
+assert_not_contains "hides token count when usage is zero" "$out" "(0"
 
 printf "\n\033[38;5;141m━━━ Lines Changed ━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
@@ -186,24 +216,59 @@ out=$(run_statusline_plain "$INPUT_NO_RATE")
 assert_not_contains "hides rate limits when absent" "$out" "5h:"
 assert_not_contains "hides 7d when absent" "$out" "7d:"
 
+printf "\n\033[38;5;141m━━━ Rate Limit Reset Countdown ━━━━━━━━━━━━━\033[0m\n"
+
+# resets_at is documented as Unix epoch seconds; values are computed relative
+# to now with a ~30s margin so a few seconds of test runtime can't flip them.
+now_epoch=$(date +%s)
+INPUT_RATE_RESET_HM='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":6.00,"total_duration_ms":3600000},"session_id":"test-reset-hm","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3,"resets_at":'$((now_epoch + 4530))'},"seven_day":{"used_percentage":50}}}'
+out=$(run_statusline_plain "$INPUT_RATE_RESET_HM")
+assert_contains "shows reset countdown in h+m" "$out" "5h:85% 1h15m"
+
+INPUT_RATE_RESET_M='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":6.00,"total_duration_ms":3600000},"session_id":"test-reset-m","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3,"resets_at":'$((now_epoch + 1830))'},"seven_day":{"used_percentage":50}}}'
+out=$(run_statusline_plain "$INPUT_RATE_RESET_M")
+assert_contains "shows reset countdown in minutes" "$out" "5h:85% 30m"
+
+INPUT_RATE_RESET_NOW='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":6.00,"total_duration_ms":3600000},"session_id":"test-reset-now","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3,"resets_at":'$((now_epoch - 10))'},"seven_day":{"used_percentage":50}}}'
+out=$(run_statusline_plain "$INPUT_RATE_RESET_NOW")
+assert_contains "shows 'now' for past reset time" "$out" "5h:85% now"
+
+INPUT_RATE_RESET_BAD='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":6.00,"total_duration_ms":3600000},"session_id":"test-reset-bad","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3,"resets_at":"soon"},"seven_day":{"used_percentage":50}}}'
+assert_exit_code "exits 0 with non-numeric resets_at" "$INPUT_RATE_RESET_BAD" 0
+out=$(run_statusline_plain "$INPUT_RATE_RESET_BAD")
+assert_contains "still shows rate pct when resets_at is malformed" "$out" "5h:85%"
+
 printf "\n\033[38;5;141m━━━ Session Name ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 # Session name should be ignored — line 1 always shows project/repo/cwd basename
 out=$(run_statusline_plain "$INPUT_SESSION_NAME")
 assert_not_contains "session name does not appear in output" "$out" "refactor-auth"
 
-INPUT_SESSION_NAME_GIT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.75,"total_duration_ms":180000},"session_id":"test-named-git","session_name":"refactor-auth","cwd":"'"$(pwd)"'","context_window":{"context_window_size":200000,"used_percentage":20}}'
+# Pin cwd to the repo root (derived from this file's location, not $(pwd))
+# so the suite passes no matter which directory it's invoked from.
+REPO_ROOT=$(cd -- "$SCRIPT_DIR/../.." && pwd)
+REPO_BASE=$(basename "$REPO_ROOT")
+INPUT_SESSION_NAME_GIT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.75,"total_duration_ms":180000},"session_id":"test-named-git","session_name":"refactor-auth","cwd":"'"$REPO_ROOT"'","context_window":{"context_window_size":200000,"used_percentage":20}}'
 out_line1=$(run_statusline_plain "$INPUT_SESSION_NAME_GIT" | head -1)
 assert_not_contains "session name does not replace project on line 1" "$out_line1" "refactor-auth"
-assert_contains "cwd basename shown on line 1 even when session name set" "$out_line1" "dotfiles"
+assert_contains "cwd basename shown on line 1 even when session name set" "$out_line1" "$REPO_BASE"
 
 printf "\n\033[38;5;141m━━━ Reasoning Effort ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
-# Effort is pulled directly from the statusline JSON payload.
+# Primary source: .effort.level (real Claude Code payload field, ≥2.1.133)
+INPUT_EFFORT_REAL='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.00,"total_duration_ms":60000},"session_id":"test-eff-real","cwd":"/tmp","context_window":{"used_percentage":10},"effort":{"level":"high"}}'
+out=$(run_statusline_plain "$INPUT_EFFORT_REAL")
+assert_contains "shows effort.level (real payload field)" "$out" "◯ high"
+
+# Legacy fallback key still honored
 INPUT_EFFORT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.00,"total_duration_ms":60000},"session_id":"test-eff","cwd":"/tmp","context_window":{"used_percentage":10},"effortLevel":"xhigh"}'
 out=$(run_statusline_plain "$INPUT_EFFORT")
 assert_contains "shows effortLevel when set" "$out" "xhigh"
 assert_contains "shows effort indicator glyph" "$out" "◯"
+
+# $CLAUDE_EFFORT env var fallback when the JSON carries no effort field
+out=$(echo "$INPUT_FULL" | env CLAUDE_EFFORT=low bash "$STATUSLINE" 2>/dev/null | strip_ansi)
+assert_contains "falls back to CLAUDE_EFFORT env var" "$out" "◯ low"
 
 out=$(run_statusline_plain "$INPUT_FULL")
 assert_not_contains "hides effort when key absent" "$out" "◯"
@@ -286,6 +351,128 @@ out=$(run_statusline_plain '{"model":{"display_name":"x"},"cost":{"total_cost_us
 assert_not_contains "plain repo is not misflagged as a worktree" "$out" "⎇"
 assert_contains "plain repo shows its branch" "$out" "main"
 rm -rf "$PLAIN_REPO"
+
+printf "\n\033[38;5;141m━━━ Base Branch Detection ━━━━━━━━━━━━━━━━━━\033[0m\n"
+
+# Nearest-base heuristic: the base whose merge-base is fewest commits behind
+# HEAD wins. Remote-tracking refs are simulated with git update-ref.
+
+# Branch cut from main AFTER the release branch was cut → main is nearer.
+BASE_REPO=$(mktemp -d -t statusline-base.XXXXXX)
+(cd "$BASE_REPO" && git init -q -b main \
+  && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m A \
+  && git update-ref refs/remotes/origin/release/2.15.0 HEAD \
+  && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m B \
+  && git update-ref refs/remotes/origin/main HEAD \
+  && git checkout -q -b jordan/from-main \
+  && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m C) >/dev/null
+rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
+INPUT_BASE_MAIN='{"model":{"display_name":"x"},"cost":{"total_cost_usd":0},"session_id":"test-base-main","cwd":"'"$BASE_REPO"'","context_window":{"used_percentage":5}}'
+out=$(run_statusline_plain "$INPUT_BASE_MAIN")
+assert_contains "branch cut from main shows main as base" "$out" "← main"
+assert_not_contains "older release branch not picked as base" "$out" "release/2.15.0"
+rm -rf "$BASE_REPO"
+
+# Branch cut from the release tip (which is ahead of main) → release is nearer.
+BASE_REPO2=$(mktemp -d -t statusline-base.XXXXXX)
+(cd "$BASE_REPO2" && git init -q -b main \
+  && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m A \
+  && git update-ref refs/remotes/origin/main HEAD \
+  && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m B \
+  && git update-ref refs/remotes/origin/release/2.16.0 HEAD \
+  && git checkout -q -b jordan/from-release \
+  && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m C) >/dev/null
+rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
+INPUT_BASE_REL='{"model":{"display_name":"x"},"cost":{"total_cost_usd":0},"session_id":"test-base-rel","cwd":"'"$BASE_REPO2"'","context_window":{"used_percentage":5}}'
+out=$(run_statusline_plain "$INPUT_BASE_REL")
+assert_contains "branch cut from release shows release as base" "$out" "← release/2.16.0"
+rm -rf "$BASE_REPO2"
+
+printf "\n\033[38;5;141m━━━ PR Badge + CI Glyph ━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+
+PR_REPO=$(mktemp -d -t statusline-pr.XXXXXX)
+(cd "$PR_REPO" && git init -q -b jordan/pr-test \
+  && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m init) >/dev/null
+
+rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
+seed_pr_cache "$PR_REPO" "jordan/pr-test" "https://github.com/org/repo/pull/4567" "OPEN" "false" "✓"
+INPUT_PR='{"model":{"display_name":"x"},"cost":{"total_cost_usd":0},"session_id":"test-pr","cwd":"'"$PR_REPO"'","context_window":{"used_percentage":5}}'
+out=$(run_statusline_plain "$INPUT_PR")
+assert_contains "open PR shows #number badge" "$out" "#4567"
+assert_contains "open PR shows CI glyph next to badge" "$out" "#4567 ✓"
+
+seed_pr_cache "$PR_REPO" "jordan/pr-test" "https://github.com/org/repo/pull/4567" "OPEN" "true" "⏳"
+out=$(run_statusline_plain "$INPUT_PR")
+assert_contains "draft PR shows draft suffix + CI glyph" "$out" "#4567 draft ⏳"
+
+seed_pr_cache "$PR_REPO" "jordan/pr-test" "https://github.com/org/repo/pull/4567" "OPEN" "false" "✓" "APPROVED"
+out=$(run_statusline_plain "$INPUT_PR")
+assert_contains "approved PR shows approved suffix" "$out" "#4567 approved ✓"
+
+seed_pr_cache "$PR_REPO" "jordan/pr-test" "https://github.com/org/repo/pull/4567" "OPEN" "false" "✗" "CHANGES_REQUESTED"
+out=$(run_statusline_plain "$INPUT_PR")
+assert_contains "changes-requested PR shows changes suffix" "$out" "#4567 changes ✗"
+
+seed_pr_cache "$PR_REPO" "jordan/pr-test" "https://github.com/org/repo/pull/4567" "OPEN" "true" "" "APPROVED"
+out=$(run_statusline_plain "$INPUT_PR")
+assert_not_contains "draft PR hides review decision" "$out" "approved"
+
+seed_pr_cache "$PR_REPO" "jordan/pr-test" "https://github.com/org/repo/pull/4567" "MERGED" "false"
+out=$(run_statusline_plain "$INPUT_PR")
+assert_contains "merged PR shows merged suffix" "$out" "#4567 merged"
+assert_not_contains "merged PR hides stale CI glyph" "$out" "⏳"
+rm -rf "$PR_REPO"
+
+printf "\n\033[38;5;141m━━━ One-Line Mode ━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+
+# Wide terminal: everything joins onto a single line
+out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT STATUSLINE_ONE_LINE=1 STATUSLINE_COLS=300 bash "$STATUSLINE" 2>/dev/null | strip_ansi)
+line_count=$(echo "$out" | wc -l | tr -d ' ')
+if [ "$line_count" -eq 1 ]; then
+  passed=$((passed + 1))
+  printf "  \033[38;5;114m✓\033[0m one-line mode joins output when terminal is wide\n"
+else
+  failed=$((failed + 1))
+  errors+="  FAIL: one-line mode joins output when terminal is wide — got $line_count lines\n"
+  printf "  \033[38;5;203m✗\033[0m one-line mode joins output when terminal is wide (got %s lines)\n" "$line_count"
+fi
+assert_contains "one-line output keeps line-2 content" "$out" '+42'
+
+# Narrow terminal: falls back to multi-line instead of overflowing
+out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT STATUSLINE_ONE_LINE=1 STATUSLINE_COLS=40 bash "$STATUSLINE" 2>/dev/null | strip_ansi)
+line_count=$(echo "$out" | wc -l | tr -d ' ')
+if [ "$line_count" -gt 1 ]; then
+  passed=$((passed + 1))
+  printf "  \033[38;5;114m✓\033[0m one-line mode falls back to multi-line when too wide\n"
+else
+  failed=$((failed + 1))
+  errors+="  FAIL: one-line mode falls back to multi-line when too wide — got $line_count line\n"
+  printf "  \033[38;5;203m✗\033[0m one-line mode falls back to multi-line when too wide (got %s line)\n" "$line_count"
+fi
+
+# Unknown width (no override, no COLUMNS, no tty in test env): stays one-line
+out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u COLUMNS STATUSLINE_ONE_LINE=1 bash "$STATUSLINE" 2>/dev/null | strip_ansi)
+line_count=$(echo "$out" | wc -l | tr -d ' ')
+if [ "$line_count" -eq 1 ]; then
+  passed=$((passed + 1))
+  printf "  \033[38;5;114m✓\033[0m one-line mode kept when terminal width is unknown\n"
+else
+  failed=$((failed + 1))
+  errors+="  FAIL: one-line mode kept when terminal width is unknown — got $line_count lines\n"
+  printf "  \033[38;5;203m✗\033[0m one-line mode kept when terminal width is unknown (got %s lines)\n" "$line_count"
+fi
+
+# Mode off: multi-line output unchanged
+out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u STATUSLINE_ONE_LINE bash "$STATUSLINE" 2>/dev/null | strip_ansi)
+line_count=$(echo "$out" | wc -l | tr -d ' ')
+if [ "$line_count" -gt 1 ]; then
+  passed=$((passed + 1))
+  printf "  \033[38;5;114m✓\033[0m default multi-line output unaffected by one-line code\n"
+else
+  failed=$((failed + 1))
+  errors+="  FAIL: default multi-line output unaffected — got $line_count line\n"
+  printf "  \033[38;5;203m✗\033[0m default multi-line output unaffected (got %s line)\n" "$line_count"
+fi
 
 printf "\n\033[38;5;141m━━━ Output Structure ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
