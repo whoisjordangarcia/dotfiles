@@ -16,9 +16,11 @@ hot_reload = true
 # Sketchybar integration — subscribe to rift events and forward them
 # workspace_changed: no debounce needed, Lua gen counter handles races
 # windows_changed: lockfile debounce (500ms) to prevent pile-up from display hotplug cascades
+# NOTE: absolute paths required — rift is spawned by launchd, whose minimal
+# PATH lacks /opt/homebrew/bin, so bare `rift-cli`/`sketchybar` won't resolve.
 run_on_start = [
-  "rift-cli subscribe cli --event workspace_changed --command sketchybar --args --trigger --args rift_workspace_changed --args RIFT_WORKSPACE_NAME=$RIFT_WORKSPACE_NAME --args RIFT_WORKSPACE_ID=$RIFT_WORKSPACE_ID",
-  "rift-cli subscribe cli --event windows_changed --command sh --args -c --args 'LOCK=/tmp/.sb_win_lock; [ -f $LOCK ] && exit 0; touch $LOCK; sketchybar --trigger rift_windows_changed RIFT_WORKSPACE_NAME=\"$RIFT_WORKSPACE_NAME\" RIFT_WINDOW_COUNT=\"$RIFT_WINDOW_COUNT\"; (sleep 0.5 && rm -f $LOCK) &'",
+  "/opt/homebrew/bin/rift-cli subscribe cli --event workspace_changed --command /opt/homebrew/bin/sketchybar --args --trigger --args rift_workspace_changed --args RIFT_WORKSPACE_NAME=$RIFT_WORKSPACE_NAME --args RIFT_WORKSPACE_ID=$RIFT_WORKSPACE_ID",
+  "/opt/homebrew/bin/rift-cli subscribe cli --event windows_changed --command sh --args -c --args 'LOCK=/tmp/.sb_win_lock; [ -f $LOCK ] && exit 0; touch $LOCK; /opt/homebrew/bin/sketchybar --trigger rift_windows_changed RIFT_WORKSPACE_NAME=\"$RIFT_WORKSPACE_NAME\" RIFT_WINDOW_COUNT=\"$RIFT_WINDOW_COUNT\"; (sleep 0.5 && rm -f $LOCK) &'",
   "sh -c '$HOME/dev/dotfiles/configs/rift/bordersrc'",
 ]
 
@@ -34,6 +36,17 @@ new_window_placement = "master"
 [settings.layout.stack]
 stack_offset = 40.0
 default_orientation = "perpendicular"
+
+# Scrolling (niri-style) layout tuning — only applies when a workspace uses
+# mode = "scrolling" (via workspace_rules or the set_workspace_layout binds).
+[settings.layout.scrolling]
+column_width_ratio = 0.7
+min_column_width_ratio = 0.3
+max_column_width_ratio = 0.9
+alignment = "center"
+# "niri": reveal columns based on navigation direction; "anchored": always
+# honor the alignment above.
+focus_navigation_style = "niri"
 
 [settings.layout.gaps.outer]
 top = 40
@@ -61,8 +74,10 @@ enabled = false
 [settings.ui.mission_control]
 enabled = false
 
+# 3-finger horizontal swipe switches virtual workspaces (skips empty ones,
+# haptic tick on commit). Matches the native macOS Spaces swipe direction.
 [settings.gestures]
-enabled = false
+enabled = true
 
 [settings.window_snapping]
 drag_swap_fraction = 0.5
@@ -70,20 +85,25 @@ drag_swap_fraction = 0.5
 [virtual_workspaces]
 enabled = true
 default_workspace_count = 10
-# Disabled temporarily to test cross-display window-move flicker.
-# When enabled, Rift re-evaluates workspace assignment on windows_changed,
-# which can trigger a brief re-tile during display moves. The
-# display-change.sh debouncer covers hotplug events but not the
-# `display move-window` keybind path.
-auto_assign_windows = false
+# Re-enabled after rift v0.4.1: the cross-display window-move flicker this
+# was disabled for should be fixed upstream (PR #342 prevents oscillation
+# after display topology changes, PR #310 fixes cross-display drag snapback).
+# If flicker returns when moving windows between displays, set back to false.
+auto_assign_windows = true
 preserve_focus_per_workspace = true
-workspace_auto_back_and_forth = false
+# Pressing the current workspace's bind again bounces to the last workspace
+# (i3-style back-and-forth; complements Option+Tab).
+workspace_auto_back_and_forth = true
 reapply_app_rules_on_title_change = false
 # Assign specific workspaces to external display
 # workspace_rules = [
 #   { workspace = "6", display = "DISPLAY_NAME" },
 #   { workspace = "7", display = "DISPLAY_NAME" },
 #   { workspace = "8", display = "DISPLAY_NAME" },
+# ]
+# Per-workspace layouts are also set here, e.g. make workspace 10 scrolling:
+# workspace_rules = [
+#   { workspace = 9, layout = "scrolling" },
 # ]
 workspace_rules = []
 workspace_names = [
@@ -114,8 +134,13 @@ comb1 = "Option + Shift"
 # i3/sway keybinds using Option as $mod
 # Navigation: jkl; (i3 default)
 
-# Layout toggle
-"Option + J" = "toggle_orientation"
+# Focus movement (vim-style, matches cmux's cmd+opt+hjkl pane focus).
+# In the scrolling layout, H/L is how you scroll along the column strip.
+# (Option+J previously duplicated toggle_orientation — Option+E still does it.)
+"Option + H" = { move_focus = "left" }
+"Option + J" = { move_focus = "down" }
+"Option + K" = { move_focus = "up" }
+"Option + L" = { move_focus = "right" }
 
 # Workspaces (Option + 1-9,0)
 "Option + 1" = { switch_to_workspace = 0 }
@@ -152,6 +177,11 @@ comb1 = "Option + Shift"
 "Option + S" = "toggle_stack"
 "Option + E" = "toggle_orientation"
 
+# Switch the ACTIVE workspace's layout on the fly (rift 0.4.0+).
+# Try the niri-style scrolling layout with Option+Shift+S; back with Option+Shift+T.
+"Option + Shift + S" = { set_workspace_layout = { mode = "scrolling" } }
+"Option + Shift + T" = { set_workspace_layout = { mode = "traditional" } }
+
 # Fullscreen
 "Option + F" = "toggle_fullscreen"
 "Option + Shift + F" = "toggle_fullscreen_within_gaps"
@@ -182,7 +212,11 @@ comb1 = "Option + Shift"
 "Option + Slash" = { exec = ["open", "-a", "1Password"] }
 
 # System
-"Option + Shift + R" = { exec = ["sh", "-c", "brew services restart rift"] }
+# rift runs under brew services (homebrew.mxcl.rift), and hot_reload can't
+# see symlinked-config edits (acsandmann/rift#377), so this restart bind is
+# the reliable way to apply config changes. brew needs an absolute path:
+# rift is spawned by launchd, whose minimal PATH lacks /opt/homebrew/bin.
+"Option + Shift + R" = { exec = ["sh", "-c", "/opt/homebrew/bin/brew services restart rift"] }
 "Option + Shift + D" = "debug"
 "Option + Ctrl + S" = "serialize"
 "Option + Ctrl + Q" = "save_and_exit"
