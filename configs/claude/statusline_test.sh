@@ -474,6 +474,25 @@ else
   printf "  \033[38;5;203m✗\033[0m default multi-line output unaffected (got %s line)\n" "$line_count"
 fi
 
+printf "\n\033[38;5;141m━━━ Node Apps (line 3) ━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+
+# Cache stores plain "name:port" entries; the statusline wraps each in an
+# OSC 8 link to http://localhost:<port> at display time.
+NODE_TEST_CWD=$(mktemp -d "/tmp/statusline-test-node-XXXXXX")
+mkdir -p /tmp/claude-statusline-node-cache
+node_test_key=$(printf '%s' "$NODE_TEST_CWD" | md5 -q 2>/dev/null || printf '%s' "$NODE_TEST_CWD" | md5sum | cut -d' ' -f1)
+printf 'provider-portal:3601 yoda:3603' >"/tmp/claude-statusline-node-cache/${node_test_key}_node"
+INPUT_NODE='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.10,"total_duration_ms":30000},"session_id":"test-node","cwd":"'"$NODE_TEST_CWD"'","context_window":{"context_window_size":200000,"used_percentage":3,"current_usage":{"input_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
+
+out_raw=$(run_statusline "$INPUT_NODE")
+out=$(printf '%s' "$out_raw" | strip_ansi)
+assert_contains "shows app:port entries" "$out" 'provider-portal:3601 yoda:3603'
+assert_contains "wraps first port in OSC 8 localhost link" "$out_raw" ']8;;http://localhost:3601'
+assert_contains "wraps every listed port in a link" "$out_raw" ']8;;http://localhost:3603'
+assert_not_contains "link URL adds no visible text" "$out" 'http://localhost'
+
+rm -rf "$NODE_TEST_CWD" "/tmp/claude-statusline-node-cache/${node_test_key}_node"
+
 printf "\n\033[38;5;141m━━━ Output Structure ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 line_count=$(run_statusline_plain "$INPUT_FULL" | wc -l | tr -d ' ')

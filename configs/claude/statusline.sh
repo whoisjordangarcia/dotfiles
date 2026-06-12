@@ -645,7 +645,7 @@ fi
 # ─── Node app detection (line 3) ───────────────────────────────────
 fetch_node_apps() {
   local cwd="$1" cache_file="$2"
-  local listening app_entries="" display="" parts
+  local listening app_entries="" parts=""
   local l_pid l_addr l_port proc_args proc_cwd in_scope app_name combined
   listening=$(lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | awk '$1 == "node" && $2 ~ /^[0-9]+$/ {print $2, $9}' | sort -u)
   if [ -n "$listening" ]; then
@@ -676,9 +676,10 @@ fetch_node_apps() {
   fi
   if [ -n "$app_entries" ]; then
     parts=$(printf '%b' "$app_entries" | sort -u -t: -k1,1 | tr '\n' ' ' | sed 's/ $//')
-    display="${COLOR_NODE}${parts}${COLOR_RESET}"
   fi
-  cache_write "$cache_file" "$display"
+  # Cache stores plain "name:port" entries — color + clickable links are
+  # rendered at display time so the cache stays format-agnostic.
+  cache_write "$cache_file" "$parts"
 }
 
 node_display=""
@@ -690,7 +691,20 @@ if [ -n "$cwd" ]; then
   # (or a previous scan already left a cache to serve/refresh).
   if [ -f "$cwd/package.json" ] || [ -f "$node_cache_file" ]; then
     swr_refresh "$node_cache_file" "$NODE_CACHE_TTL" fetch_node_apps "$cwd" "$node_cache_file"
-    node_display=$(cat "$node_cache_file" 2>/dev/null)
+    node_parts=$(cat "$node_cache_file" 2>/dev/null)
+    if [ -n "$node_parts" ]; then
+      # Wrap each "name:port" in an OSC 8 link so the port opens the app
+      node_linked=""
+      for node_entry in $node_parts; do
+        node_port="${node_entry##*:}"
+        if [[ "$node_port" =~ ^[0-9]+$ ]]; then
+          node_linked+="${node_linked:+ }$(osc_link "http://localhost:${node_port}" "$node_entry")"
+        else
+          node_linked+="${node_linked:+ }${node_entry}"
+        fi
+      done
+      node_display="${COLOR_NODE}${node_linked}${COLOR_RESET}"
+    fi
   fi
 fi
 
