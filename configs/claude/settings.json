@@ -96,6 +96,18 @@
             "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
             "timeout": 10,
             "statusMessage": "Setting cmux workspace title"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\"",
+            "timeout": 10,
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-progress.py\"",
+            "timeout": 10,
+            "async": true
           }
         ]
       }
@@ -118,6 +130,36 @@
           {
             "type": "command",
             "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
+            "timeout": 10,
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\"",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "TodoWrite",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-progress.py\"",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // \"\"' | grep -qE 'git +push|gh +pr +create' && python3 \"$HOME/.claude/scripts/cmux-pr.py\" </dev/null || true",
             "timeout": 10,
             "async": true
           }
@@ -234,6 +276,5 @@
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
       }
     }
-  },
-  "model": "claude-fable-5[1m]"
+  }
 }

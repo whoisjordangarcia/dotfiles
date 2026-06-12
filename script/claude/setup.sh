@@ -27,6 +27,8 @@ link_file "$SCRIPT_DIR/../../configs/claude/prompts/" "$HOME/.claude/prompts" "d
 link_file "$SCRIPT_DIR/../../configs/claude/statusline.sh" "$HOME/.claude/statusline.sh"
 link_file "$SCRIPT_DIR/../../configs/claude/settings.json" "$HOME/.claude/settings.json"
 link_file "$SCRIPT_DIR/../../configs/claude/hooks/" "$HOME/.claude/hooks"
+# cmux sidebar hook scripts (workspace title, PR-approval pill, task progress bar)
+link_file "$SCRIPT_DIR/../../configs/claude/scripts/" "$HOME/.claude/scripts" "directory"
 
 # Touch ID command gate (macOS): compile the bioprompt helper used by the
 # touchid-gate.py PreToolUse hook to biometric-gate sensitive Bash commands.
