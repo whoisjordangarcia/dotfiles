@@ -45,8 +45,11 @@ fi
 # ==============================================================================
 #  Lightweight node version manager (replaces nvm for speed)
 # ==============================================================================
-# Uses nvm's installed versions but skips the full nvm.sh load on startup.
-export NVM_DIR="${NVM_DIR:-$HOME/.config/nvm}"
+# Uses nvm's installed versions at ~/.nvm/versions/node/ but skips the full
+# nvm.sh load on startup. Default MUST match where the setup scripts install
+# (script/{node,codex,claude}/setup.sh all use $HOME/.nvm) — otherwise node and
+# its global bins (codex, claude) silently fall back to Homebrew node.
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 
 _node_use() {
   local version_dir="$NVM_DIR/versions/node"
