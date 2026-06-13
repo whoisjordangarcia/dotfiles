@@ -346,5 +346,14 @@ header "33. One-line mode but terminal too narrow (60 cols) — falls back to mu
 expect "Same content as #32 but split across lines (no overflow)"
 run_one_line 60 '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000,"total_lines_added":42,"total_lines_removed":7},"session_id":"demo-33","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
 
+# ─── 34. Light vs dark terminal background (COLORFGBG) ──────────
+clear_caches
+BG_JSON='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.25,"total_duration_ms":60000},"session_id":"demo-34","cwd":"/tmp","context_window":{"used_percentage":12},"effort":{"level":"high"}}'
+header "34. Background detection — same input, dark vs light palette"
+expect "dark  (COLORFGBG=15;0): key data near-white (255)"
+COLORFGBG="15;0" run "$BG_JSON"
+expect "light (COLORFGBG=0;15): key data near-black (235); warnings become amber (130)"
+COLORFGBG="0;15" run "$BG_JSON"
+
 printf '\033[38;5;141m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
-printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 31
+printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 32

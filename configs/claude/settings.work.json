@@ -1,0 +1,27 @@
+{
+  "enabledPlugins": {
+    "nest-ai-skill-audit@nest-genomics-skills": false,
+    "nest-ehr-research@nest-genomics-skills": false,
+    "nest-linear@nest-genomics-skills": false,
+    "nest-portal-sign-in@nest-genomics-skills": false,
+    "nest-posthog@nest-genomics-skills": false,
+    "nest-pr@nest-genomics-skills": false,
+    "nest-ralph-prd@nest-genomics-skills": false,
+    "nest-sentry@nest-genomics-skills": false,
+    "nest-slite@nest-genomics-skills": false,
+    "nest-summary-html@nest-genomics-skills": false,
+    "nest-factory@nest-genomics-skills": false,
+    "nest-snyk-code@nest-genomics-skills": false,
+    "nest-gpt-validate@nest-genomics-skills": true,
+    "nest-skills-report@nest-genomics-skills": false,
+    "nest-gpt-validate-plan@nest-genomics-skills": false
+  },
+  "extraKnownMarketplaces": {
+    "nest-genomics-skills": {
+      "source": {
+        "source": "github",
+        "repo": "Nest-Genomics/ai-skills"
+      }
+    }
+  }
+}

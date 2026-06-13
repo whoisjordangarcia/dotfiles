@@ -273,6 +273,30 @@ assert_contains "falls back to CLAUDE_EFFORT env var" "$out" "◯ low"
 out=$(run_statusline_plain "$INPUT_FULL")
 assert_not_contains "hides effort when key absent" "$out" "◯"
 
+printf "\n\033[38;5;141m━━━ Light/Dark Background (COLORFGBG) ━━━━━━━\033[0m\n"
+
+# Background detection swaps key-data + warning colors. We assert on the raw
+# (un-stripped) ANSI so we can see which palette was chosen.
+INPUT_BG='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.00,"total_duration_ms":60000},"session_id":"test-bg","cwd":"/tmp","context_window":{"used_percentage":10}}'
+
+# Light bg (bg field = 15 → white background): key data is near-black (235)
+out=$(echo "$INPUT_BG" | COLORFGBG="0;15" bash "$STATUSLINE" 2>/dev/null)
+assert_contains "light bg uses near-black key data (235)" "$out" "38;5;235"
+assert_not_contains "light bg drops near-white key data (255)" "$out" "38;5;255"
+
+# bg field = 7 (silver) also counts as light
+out=$(echo "$INPUT_BG" | COLORFGBG="0;7" bash "$STATUSLINE" 2>/dev/null)
+assert_contains "silver bg (7) treated as light" "$out" "38;5;235"
+
+# Dark bg (bg field = 0 → black background): key data stays near-white (255)
+out=$(echo "$INPUT_BG" | COLORFGBG="15;0" bash "$STATUSLINE" 2>/dev/null)
+assert_contains "dark bg keeps near-white key data (255)" "$out" "38;5;255"
+assert_not_contains "dark bg avoids near-black key data (235)" "$out" "38;5;235"
+
+# Unset COLORFGBG defaults to the dark palette
+out=$(echo "$INPUT_BG" | env -u COLORFGBG bash "$STATUSLINE" 2>/dev/null)
+assert_contains "unset COLORFGBG defaults to dark (255)" "$out" "38;5;255"
+
 printf "\n\033[38;5;141m━━━ Worktree/Branch Dedup ━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 # Fresh worktree repo where wt dir name matches branch (slash → dash)

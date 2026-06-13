@@ -40,9 +40,16 @@ SECRETS_TPL="$ZSHRC_MODULES_SOURCE/.zshrc.sec.${SECRETS_ENV}.tpl"
 SECRETS_OUT="$ZSHRC_MODULES_TARGET/.zshrc.sec"
 if [ -f "$SECRETS_TPL" ]; then
 	if command -v op &>/dev/null && op whoami &>/dev/null 2>&1; then
-		op inject -i "$SECRETS_TPL" -o "$SECRETS_OUT"
-		chmod 600 "$SECRETS_OUT"
-		success "Secrets injected from 1Password"
+		# op inject scans the whole template (comments included) and aborts on any
+		# unresolvable {{ op://... }} reference — degrade to a warning, not a
+		# component failure, so one bad reference doesn't kill the zsh setup.
+		if op inject -i "$SECRETS_TPL" -o "$SECRETS_OUT"; then
+			chmod 600 "$SECRETS_OUT"
+			success "Secrets injected from 1Password"
+		else
+			info "op inject failed — check the op:// references in $SECRETS_TPL,"
+			info "then re-run: ./script/zsh/setup.sh"
+		fi
 	else
 		info "1Password CLI not available or not connected. Skipping secrets injection."
 		info "Enable: 1Password app → Settings → Developer → 'Integrate with 1Password CLI',"

@@ -1,3 +1,5 @@
+Include /Users/jordangarcia/.colima/ssh_config
+
 # ── Local host aliases (machine-specific, not in git) ──────────────
 # Create ~/.ssh/hosts.local with your Host entries, e.g.:
 #

@@ -68,6 +68,10 @@ fi
 if brew services list | grep -Eq '^rift\s+started'; then
     brew services restart rift
 else
+    # The agent can be loaded outside brew's bookkeeping (status "other",
+    # e.g. after a manual launchctl load or an interrupted brew run). In that
+    # state `launchctl bootstrap` fails with EIO 5 — boot it out first.
+    launchctl bootout "gui/$(id -u)/homebrew.mxcl.rift" 2>/dev/null || true
     brew services start rift
 fi
 success "rift service started"

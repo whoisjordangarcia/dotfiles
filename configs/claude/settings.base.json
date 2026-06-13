@@ -181,37 +181,16 @@
     "context7@claude-plugins-official": false,
     "explanatory-output-style@claude-plugins-official": true,
     "impeccable@impeccable": true,
-    "nest-ai-skill-audit@nest-genomics-skills": false,
-    "nest-ehr-research@nest-genomics-skills": false,
-    "nest-linear@nest-genomics-skills": false,
-    "nest-portal-sign-in@nest-genomics-skills": false,
-    "nest-posthog@nest-genomics-skills": false,
-    "nest-pr@nest-genomics-skills": false,
-    "nest-ralph-prd@nest-genomics-skills": false,
-    "nest-sentry@nest-genomics-skills": false,
-    "nest-slite@nest-genomics-skills": false,
     "superpowers@superpowers-marketplace": true,
     "swift-lsp@claude-plugins-official": false,
     "typescript-lsp@claude-plugins-official": false,
-    "nest-summary-html@nest-genomics-skills": false,
-    "nest-factory@nest-genomics-skills": false,
-    "nest-snyk-code@nest-genomics-skills": false,
-    "nest-gpt-validate@nest-genomics-skills": true,
-    "infracost@infracost": false,
-    "nest-skills-report@nest-genomics-skills": false,
-    "nest-gpt-validate-plan@nest-genomics-skills": false
+    "infracost@infracost": false
   },
   "extraKnownMarketplaces": {
     "impeccable": {
       "source": {
         "source": "github",
         "repo": "pbakaus/impeccable"
-      }
-    },
-    "nest-genomics-skills": {
-      "source": {
-        "source": "github",
-        "repo": "Nest-Genomics/ai-skills"
       }
     },
     "superpowers-marketplace": {
@@ -255,7 +234,6 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "medium",
   "autoUpdatesChannel": "latest",
   "tui": "default",
   "showThinkingSummaries": true,

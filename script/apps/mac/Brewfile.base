@@ -58,7 +58,6 @@ cask 'brave-browser'
 cask 'music-decoy'
 cask 'betterdisplay'
 cask 'raycast'
-cask 'bartender'
 cask 'obsidian'       # bundles the `obsidian` CLI; enabled by script/notes/setup.sh
 cask 'tailscale-app'
 

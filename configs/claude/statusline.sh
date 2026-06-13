@@ -2,13 +2,26 @@
 
 input=$(cat)
 
+# ─── Terminal background detection (COLORFGBG: "fg;bg", bg is last) ───
+# Light backgrounds report 7 (silver) or 15 (white); anything else (or an
+# unset var, common in Ghostty/tmux) falls back to the dark palette.
+_LIGHT_BG=0
+case "${COLORFGBG##*;}" in
+  7 | 15) _LIGHT_BG=1 ;;
+esac
+
 # ─── Colors (soft purple theme) ──────────────────────────────────────
-COLOR_ACCENT=$'\033[38;5;141m' # Soft purple — primary accent
-COLOR_WHITE=$'\033[38;5;255m'  # White — key data
-COLOR_DIM=$'\033[38;5;245m'    # Medium gray — secondary info
-COLOR_ADD=$'\033[38;5;114m'    # Green — positive (additions, pass, fresh)
-COLOR_DEL=$'\033[38;5;203m'    # Red — negative (deletions, fail, critical)
-COLOR_WARN=$'\033[38;5;221m'   # Yellow — warnings, stale
+COLOR_ACCENT=$'\033[38;5;141m' # Soft purple — primary accent (reads on both)
+if [ "$_LIGHT_BG" = 1 ]; then
+  COLOR_WHITE=$'\033[38;5;235m' # Near-black — key data on light bg
+  COLOR_WARN=$'\033[38;5;130m'  # Dark amber — warnings on light bg
+else
+  COLOR_WHITE=$'\033[38;5;255m' # White — key data on dark bg
+  COLOR_WARN=$'\033[38;5;221m'  # Yellow — warnings, stale on dark bg
+fi
+COLOR_DIM=$'\033[38;5;245m' # Medium gray — secondary info (reads on both)
+COLOR_ADD=$'\033[38;5;114m' # Green — positive (additions, pass, fresh)
+COLOR_DEL=$'\033[38;5;203m' # Red — negative (deletions, fail, critical)
 COLOR_RESET=$'\033[0m'
 
 # Aliases (semantic mapping to palette)

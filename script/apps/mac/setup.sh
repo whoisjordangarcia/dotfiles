@@ -34,13 +34,23 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
 brew analytics off
 
-# Install packages
-info "Installing Brewfile packages..."
-brew bundle --file="$SCRIPT_DIR/Brewfile.base"
-
 # Machine-specific overlay (gitignored) — packages that belong to this machine
 # only. Also keeps `brew bundle cleanup` below from flagging them for removal.
 BREWFILE_LOCAL="$SCRIPT_DIR/Brewfile.local"
+
+# Homebrew 6+ refuses formulae from untrusted third-party taps. The Brewfile
+# IS our trust declaration, so trust its taps up front (official homebrew/*
+# taps need no entry; `brew trust` is a no-op on older Homebrew without it).
+if brew trust --help &>/dev/null; then
+  while IFS= read -r tap_name; do
+    [[ "$tap_name" == homebrew/* ]] && continue
+    brew trust --tap "$tap_name" >/dev/null 2>&1 || true
+  done < <(sed -nE "s/^tap ['\"]([^'\"]+)['\"].*/\1/p" "$SCRIPT_DIR/Brewfile.base" "$BREWFILE_LOCAL" 2>/dev/null | tr '[:upper:]' '[:lower:]' | sort -u)
+fi
+
+# Install packages
+info "Installing Brewfile packages..."
+brew bundle --file="$SCRIPT_DIR/Brewfile.base"
 if [[ -f "$BREWFILE_LOCAL" ]]; then
   info "Installing Brewfile.local packages..."
   brew bundle --file="$BREWFILE_LOCAL"
