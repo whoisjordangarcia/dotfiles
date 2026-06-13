@@ -183,6 +183,13 @@ sudo mdutil -a -i off 2>/dev/null || true
 # Flush the hotkey change without logging out (may still need a re-login on some versions)
 /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u 2>/dev/null || true
 
+# Raycast's own hotkey lives in its internal store (not a `defaults` key), so it
+# can't be scripted. Cmd+Space is now free — bind it in Raycast manually:
+#   Raycast → Settings → General → "Raycast Hotkey" → press ⌘Space
+if [ -d "/Applications/Raycast.app" ]; then
+  info "Cmd+Space freed from Spotlight. Set it in Raycast: Settings → General → Raycast Hotkey → ⌘Space"
+fi
+
 # --- Suppress login message ---
 touch "$HOME/.hushlogin"
 
