@@ -24,8 +24,17 @@ local battery = sbar.add("item", "widgets.battery", {
 	padding_right = 4,
 })
 
+local battery_spacer = sbar.add("item", "widgets.battery.spacer", { position = "right", width = 4 })
+
 battery:subscribe({ "routine", "power_source_change", "system_woke" }, function()
 	sbar.exec("pmset -g batt", function(batt_info)
+		-- Desktops (Mac mini/Studio) have no InternalBattery line — hide entirely.
+		if not batt_info:find("InternalBattery") then
+			battery:set({ drawing = false })
+			battery_spacer:set({ drawing = false })
+			return
+		end
+
 		local icon = "!"
 		local label = "?"
 
@@ -63,5 +72,3 @@ battery:subscribe({ "routine", "power_source_change", "system_woke" }, function(
 		})
 	end)
 end)
-
-sbar.add("item", { position = "right", width = 4 })

@@ -34,6 +34,14 @@ local icons = {
       connected = "􀙇",
       disconnected = "􀙈",
       router = "􁓤",
+      -- SF Symbols has no per-strength wifi glyphs; reuse the base icon
+      signal = {
+        _0 = "􀙈",
+        _1 = "􀙇",
+        _2 = "􀙇",
+        _3 = "􀙇",
+        _4 = "􀙇",
+      },
     },
     media = {
       back = "􀊊",
@@ -75,7 +83,14 @@ local icons = {
       download = "",
       connected = "󰖩",
       disconnected = "󰖪",
-      router = "Missing Icon"
+      router = "󱇢",
+      signal = {
+        _0 = "󰤯",
+        _1 = "󰤟",
+        _2 = "󰤢",
+        _3 = "󰤥",
+        _4 = "󰤨",
+      },
     },
     media = {
       back = "",

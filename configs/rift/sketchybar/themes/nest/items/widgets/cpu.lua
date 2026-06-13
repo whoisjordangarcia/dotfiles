@@ -1,5 +1,7 @@
 local colors = require("colors")
 local settings = require("settings")
+local proc_popup = require("items.widgets.proc_popup")
+local style = require("items.widgets.popup_style")
 
 -- Start the cpu_load event provider binary
 sbar.exec(
@@ -46,5 +48,18 @@ cpu:subscribe("cpu_update", function(env)
 		label = { string = env.total_load .. "%", color = color },
 	})
 end)
+
+-- Top CPU consumers, fetched only when the popup opens
+proc_popup.attach(cpu, {
+	title = "CPU",
+	icon = "",
+	command = "ps axr -o pcpu=,comm= | head -5",
+	format = function(pct)
+		return string.format("%.1f%%", pct)
+	end,
+	accent = function(pct)
+		return style.severity(pct)
+	end,
+})
 
 sbar.add("item", { position = "right", width = 4 })

@@ -1,5 +1,7 @@
 local colors = require("colors")
 local settings = require("settings")
+local popup_manager = require("items.widgets.popup_manager")
+local style = require("items.widgets.popup_style")
 
 -- Start the temp_sensor event provider
 sbar.exec(
@@ -39,121 +41,15 @@ local temp_bracket = sbar.add("bracket", "widgets.temp.bracket", {
   temp.name,
 }, {
   background = { color = colors.bg1 },
-  popup = { align = "center", height = 30 },
+  popup = { align = "center", height = style.height },
 })
 
 -- Popup items
-local popup_header = sbar.add("item", {
-  position = "popup." .. temp_bracket.name,
-  icon = {
-    string = "󰔏",
-    font = {
-      family = settings.font.text,
-      style = settings.font.style_map["Regular"],
-      size = 15.0,
-    },
-  },
-  label = {
-    font = {
-      size = 15,
-      style = settings.font.style_map["Regular"],
-    },
-    string = "Thermals",
-  },
-  width = popup_width,
-  align = "center",
-  background = {
-    height = 2,
-    color = colors.grey,
-    y_offset = -15,
-  },
-})
-
-local popup_cpu = sbar.add("item", {
-  position = "popup." .. temp_bracket.name,
-  icon = {
-    align = "left",
-    string = "CPU",
-    width = popup_width / 2,
-    color = colors.subtext,
-  },
-  label = {
-    string = "—°C",
-    width = popup_width / 2,
-    align = "right",
-  },
-})
-
-local popup_gpu = sbar.add("item", {
-  position = "popup." .. temp_bracket.name,
-  icon = {
-    align = "left",
-    string = "GPU",
-    width = popup_width / 2,
-    color = colors.subtext,
-  },
-  label = {
-    string = "—°C",
-    width = popup_width / 2,
-    align = "right",
-  },
-})
-
-local popup_fan_header = sbar.add("item", {
-  position = "popup." .. temp_bracket.name,
-  icon = {
-    string = "󰈐",
-    font = {
-      family = settings.font.text,
-      style = settings.font.style_map["Regular"],
-      size = 15.0,
-    },
-  },
-  label = {
-    font = {
-      size = 15,
-      style = settings.font.style_map["Regular"],
-    },
-    string = "Fans",
-  },
-  width = popup_width,
-  align = "center",
-  background = {
-    height = 2,
-    color = colors.grey,
-    y_offset = -15,
-  },
-})
-
-local popup_fan0 = sbar.add("item", {
-  position = "popup." .. temp_bracket.name,
-  icon = {
-    align = "left",
-    string = "Fan 1",
-    width = popup_width / 2,
-    color = colors.subtext,
-  },
-  label = {
-    string = "— RPM",
-    width = popup_width / 2,
-    align = "right",
-  },
-})
-
-local popup_fan1 = sbar.add("item", {
-  position = "popup." .. temp_bracket.name,
-  icon = {
-    align = "left",
-    string = "Fan 2",
-    width = popup_width / 2,
-    color = colors.subtext,
-  },
-  label = {
-    string = "— RPM",
-    width = popup_width / 2,
-    align = "right",
-  },
-})
+style.header(temp_bracket.name, "󰔏", "Thermals")
+local popup_cpu = style.row(temp_bracket.name, "", "CPU")
+local popup_gpu = style.row(temp_bracket.name, "󰢮", "GPU")
+local popup_fan0 = style.row(temp_bracket.name, "󰈐", "Fan 1")
+local popup_fan1 = style.row(temp_bracket.name, "󰈐", "Fan 2")
 
 sbar.add("item", { position = "right", width = 4 })
 
@@ -173,6 +69,7 @@ temp:subscribe("temp_update", function(env)
   local cpu_int = env.cpu_temp_int or "0"
   local fan0_rpm = env.fan0_rpm or "0"
   local fan1_rpm = env.fan1_rpm or "0"
+  local fan_count = tonumber(env.fan_count) or 0
 
   local color = temp_color(cpu_temp)
 
@@ -187,16 +84,25 @@ temp:subscribe("temp_update", function(env)
   popup_gpu:set({ label = { string = string.format("%.1f°C", gpu_temp), color = temp_color(gpu_temp) } })
   popup_fan0:set({ label = { string = fan0_rpm .. " RPM" } })
   popup_fan1:set({ label = { string = fan1_rpm .. " RPM" } })
+
+  -- Hide fan rows the hardware doesn't have (Mac mini = 1 fan, no F1Ac key).
+  -- fan_count == 0 means the count read failed; leave both rows as-is then.
+  if fan_count > 0 then
+    popup_fan0:set({ drawing = fan_count >= 1 })
+    popup_fan1:set({ drawing = fan_count >= 2 })
+  end
 end)
 
 -- Toggle popup on click
 local function hide_details()
   temp_bracket:set({ popup = { drawing = false } })
 end
+local hide = popup_manager.register(hide_details)
 
 local function toggle_details()
   local should_draw = temp_bracket:query().popup.drawing == "off"
   if should_draw then
+    popup_manager.close_others(hide)
     temp_bracket:set({ popup = { drawing = true } })
   else
     hide_details()

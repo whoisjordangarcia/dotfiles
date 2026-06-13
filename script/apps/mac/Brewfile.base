@@ -3,6 +3,7 @@ tap 'LizardByte/homebrew'
 tap 'FelixKratz/formulae'
 tap 'acsandmann/tap'
 tap 'homebrew/autoupdate'
+tap 'narugit/tap'
 
 # CLI Tools
 brew 'zsh'
@@ -48,6 +49,7 @@ brew 'FelixKratz/formulae/borders'
 brew 'lua'
 brew 'switchaudio-osx'
 brew 'nowplaying-cli'
+brew 'narugit/tap/smctemp' # temp/fan readings for widgets.temp
 
 # Window Management
 brew 'acsandmann/tap/rift'

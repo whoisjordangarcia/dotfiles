@@ -23,6 +23,12 @@ fan0=0
 fan1=0
 cycle=0
 
+# Fan count is fixed per machine; read it once (FNum key). Mac mini = 1,
+# most MacBook Pros = 2. Drives how many fan rows the popup draws.
+# `[ui8 ]` splits into two fields, so the value is $4 (same as the F0Ac parse).
+fan_count=$(smctemp -l 2>/dev/null | awk '/^[[:space:]]*FNum/ {printf "%.0f", $4; exit}')
+fan_count="${fan_count:-0}"
+
 while true; do
   # Orphan guard: don't outlive sketchybar.
   pgrep -qx sketchybar || exit 0
@@ -52,6 +58,7 @@ while true; do
     cpu_temp="$cpu_temp" \
     gpu_temp="$gpu_temp" \
     cpu_temp_int="$cpu_int" \
+    fan_count="$fan_count" \
     fan0_rpm="$fan0" \
     fan1_rpm="$fan1"
 
