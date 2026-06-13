@@ -28,7 +28,36 @@ link_file "$SCRIPT_DIR/../../configs/claude/prompts/" "$HOME/.claude/prompts" "d
 # projected per-skill (work-only gating) by script/skills/setup.sh below.
 # A whole-dir link here would make per-skill links resolve INTO the repo.
 link_file "$SCRIPT_DIR/../../configs/claude/statusline.sh" "$HOME/.claude/statusline.sh"
-link_file "$SCRIPT_DIR/../../configs/claude/settings.json" "$HOME/.claude/settings.json"
+
+# settings.json is GENERATED (base + work/personal overlay), not symlinked, so
+# work-only plugins/marketplaces never follow personal machines around. The
+# repo is authoritative for the structured blocks (enabledPlugins, hooks,
+# permissions, marketplaces); machine-local drift the app writes at runtime
+# (model, effortLevel, ...) survives regeneration via the existing-file merge.
+SETTINGS_BASE="$SCRIPT_DIR/../../configs/claude/settings.base.json"
+if [[ "${WORK_ENV:-}" == "1" || "${DOT_ENVIRONMENT:-}" == "work" ]]; then
+	SETTINGS_OVERLAY="$SCRIPT_DIR/../../configs/claude/settings.work.json"
+else
+	SETTINGS_OVERLAY="$SCRIPT_DIR/../../configs/claude/settings.personal.json"
+fi
+SETTINGS_TARGET="$HOME/.claude/settings.json"
+if ! command -v jq &>/dev/null; then
+	fail "jq is required to generate Claude settings (brew/apt install jq)"
+fi
+# Capture current settings (drift source) BEFORE touching the target — the
+# legacy layout was a symlink to the repo file, which we then replace.
+SETTINGS_EXISTING="{}"
+[ -f "$SETTINGS_TARGET" ] && SETTINGS_EXISTING=$(cat "$SETTINGS_TARGET")
+[ -L "$SETTINGS_TARGET" ] && rm "$SETTINGS_TARGET"
+printf '%s' "$SETTINGS_EXISTING" | jq -s \
+	'(.[0] // {}) as $cur | (.[1] * .[2]) as $repo |
+	 ($cur * $repo)
+	 + {enabledPlugins: $repo.enabledPlugins, hooks: $repo.hooks, permissions: $repo.permissions}
+	 + (if $repo.extraKnownMarketplaces then {extraKnownMarketplaces: $repo.extraKnownMarketplaces} else {} end)' \
+	- "$SETTINGS_BASE" "$SETTINGS_OVERLAY" >"${SETTINGS_TARGET}.tmp" \
+	&& mv "${SETTINGS_TARGET}.tmp" "$SETTINGS_TARGET"
+success "Generated $SETTINGS_TARGET ($(basename "$SETTINGS_OVERLAY"))"
+
 link_file "$SCRIPT_DIR/../../configs/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
 link_file "$SCRIPT_DIR/../../configs/claude/hooks/" "$HOME/.claude/hooks"
 # cmux sidebar hook scripts (workspace title, PR-approval pill, task progress bar)

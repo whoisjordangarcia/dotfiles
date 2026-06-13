@@ -307,7 +307,7 @@ If you add a new field, branch/PR/worktree case, or line-3 indicator, add a corr
 
 `configs/claude/scripts/` holds Claude Code hook scripts that drive the cmux
 sidebar (symlinked to `~/.claude/scripts` by `script/claude/setup.sh`; wired in
-`configs/claude/settings.json`). Shared identity/guard logic lives in
+`configs/claude/settings.base.json`). Shared identity/guard logic lives in
 `cmux_common.py` — `resolve_workspace()` maps this session to its workspace UUID,
 and `alive()` makes every script a cheap no-op when cmux isn't running (it
 short-circuits on socket existence, so a closed cmux or a non-macOS box spawns no
@@ -337,7 +337,21 @@ AI-initiated sensitive Bash commands require biometric approval via a Claude Cod
 
 - `configs/claude/hooks/touchid-gate.py` — pattern-matches sensitive commands (sudo, force push, prod AWS profiles, 1Password/keychain access, `curl | sh`, secrets-file reads) and pops an approval dialog. Approved → `allow`; denied → `deny`; biometrics unavailable → falls back to the normal permission prompt (`ask`).
 - `configs/claude/hooks/bioprompt.swift` — two-stage approval UI: an AppKit alert showing the full command in a monospaced box, then Touch ID (`.deviceOwnerAuthentication`, so password fallback works in clamshell mode). Compiled by `script/claude/setup.sh` to `~/.local/bin/bioprompt`.
-- Wired in `configs/claude/settings.json` under `hooks.PreToolUse`. **Bootstrap order matters**: the `~/.claude/hooks` symlink must exist before the hook entry is live, or every Bash call is blocked (claude/setup.sh links it).
+- Wired in `configs/claude/settings.base.json` under `hooks.PreToolUse`. **Bootstrap order matters**: the `~/.claude/hooks` symlink must exist before the hook entry is live, or every Bash call is blocked (claude/setup.sh links it).
+
+### Claude Settings (work/personal split)
+
+`~/.claude/settings.json` is **generated, not symlinked**, by `script/claude/setup.sh`:
+`settings.base.json` (shared) deep-merged with `settings.work.json` or
+`settings.personal.json` (selected via `WORK_ENV`/`DOT_ENVIRONMENT`). Work-only
+plugins (`nest-*@nest-genomics-skills`) and the `nest-genomics-skills`
+marketplace live only in the work overlay, so personal machines never see them.
+The repo is authoritative for `enabledPlugins`, `hooks`, `permissions`, and
+`extraKnownMarketplaces`; machine-local keys the app writes at runtime (`model`,
+`effortLevel`, ...) survive regeneration. After editing any settings file,
+re-run `script/claude/setup.sh` to apply. Similarly, `nest-*` skills in
+`configs/skills/` are only projected by `script/skills/setup.sh` in work mode
+(and pruned elsewhere).
 - This is a tripwire, not a sandbox — pattern matching can be evaded; Claude Code's permission system remains the enforcement layer.
 
 ### Secrets: Lazy 1Password Fetch
