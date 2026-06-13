@@ -715,6 +715,10 @@ fetch_node_apps() {
       elif echo "$proc_args" | grep -qE 'nx\.js run [^:]+:'; then
         app_name=$(echo "$proc_args" | sed -n 's|.*nx\.js run \([^:]*\):.*|\1|p')
       fi
+      # Fallback for non-monorepo projects (plain Next.js, Vite, etc.): name the
+      # app after the project directory so the running dev server still shows
+      # with a clickable http://localhost:<port> link.
+      [ -z "$app_name" ] && app_name="${cwd##*/}"
       [ -n "$app_name" ] && app_entries="${app_entries}${app_name}:${l_port}\n"
     done <<<"$listening"
   fi
