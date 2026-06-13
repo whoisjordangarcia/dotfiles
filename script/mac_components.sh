@@ -33,7 +33,7 @@ component_installation=(
   codex
   fastfetch
   opencode
-  brave/mac
+  brave/mac  # managed policies are opt-in: no-op unless DOT_BRAVE_MANAGED=1
   sunshine/mac
   appearance-watcher/mac
 )

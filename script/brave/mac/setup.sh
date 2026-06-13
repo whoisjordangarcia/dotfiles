@@ -5,6 +5,17 @@ BRAVE_SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 source "$BRAVE_SCRIPT_DIR/../../common/log.sh"
 
+# Managed Brave policies (force-installed extensions, disabled built-in
+# password manager, forced search engine, blocked sign-in) are OPT-IN.
+# They are intended for fresh/work machines and will clobber a personal
+# Brave profile: saved logins get hidden, you get signed out, and your
+# extensions become enterprise-managed. To apply them, set
+# DOT_BRAVE_MANAGED=1; otherwise this component is a no-op.
+if [[ "${DOT_BRAVE_MANAGED:-0}" != "1" ]]; then
+	info "Brave managed policies are opt-in (set DOT_BRAVE_MANAGED=1 to apply). Skipping."
+	exit 0
+fi
+
 # macOS uses plist files in /Library/Managed Preferences/, NOT JSON in Application Support
 MANAGED_PREFS_DIR="/Library/Managed Preferences"
 PLIST_FILE="$MANAGED_PREFS_DIR/com.brave.Browser.plist"

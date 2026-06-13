@@ -6,6 +6,17 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 source "$SCRIPT_DIR/../../common/log.sh"
 source "$SCRIPT_DIR/../../common/symlink.sh"
 
+# Managed Brave policies (force-installed extensions, disabled built-in
+# password manager, forced search engine, blocked sign-in) are OPT-IN.
+# They are intended for fresh/work machines and will clobber a personal
+# Brave profile: saved logins get hidden, you get signed out, and your
+# extensions become enterprise-managed. To apply them, set
+# DOT_BRAVE_MANAGED=1; otherwise this component is a no-op.
+if [[ "${DOT_BRAVE_MANAGED:-0}" != "1" ]]; then
+    info "Brave managed policies are opt-in (set DOT_BRAVE_MANAGED=1 to apply). Skipping."
+    exit 0
+fi
+
 # Brave policy directory on Linux (user-level)
 BRAVE_POLICY_DIR="$HOME/.config/BraveSoftware/Brave-Browser/policies/managed"
 
