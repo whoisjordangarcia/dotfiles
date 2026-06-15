@@ -28,7 +28,13 @@ function M.attach(item, opts)
 	local rows = {}
 	for i = 1, row_count do
 		rows[i] = style.row(bracket.name, rank_glyph[i], "")
-		rows[i]:set({ icon = { max_chars = 16 } })
+		-- Process names are longer than the field-name popups this style was
+		-- built for, so give the name column more room (0.72 vs the default
+		-- 0.6) to stop "WindowServer"/"screencapture" from clipping.
+		rows[i]:set({
+			icon = { max_chars = 18, width = style.width * 0.72 },
+			label = { width = style.width * 0.28 },
+		})
 	end
 
 	local function refresh()

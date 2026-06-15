@@ -114,12 +114,12 @@ local wifi_bracket = sbar.add("bracket", "widgets.wifi.bracket", {
 
 style.header(wifi_bracket.name, icons.wifi.signal._4, "Wi-Fi")
 
-local ssid = style.row(wifi_bracket.name, "", "Network")
-local signal_row = style.row(wifi_bracket.name, "", "Signal")
+local ssid = style.row(wifi_bracket.name, "󰖩", "Network")
+local signal_row = style.row(wifi_bracket.name, "󰤨", "Signal")
 local ip = style.row(wifi_bracket.name, "", "IP")
-local mask = style.row(wifi_bracket.name, "", "Subnet")
+local mask = style.row(wifi_bracket.name, "󰩠", "Subnet")
 local router = style.row(wifi_bracket.name, icons.wifi.router, "Router")
-local hostname = style.row(wifi_bracket.name, "", "Host")
+local hostname = style.row(wifi_bracket.name, "󰇄", "Host")
 
 sbar.add("item", { position = "right", width = settings.group_paddings })
 

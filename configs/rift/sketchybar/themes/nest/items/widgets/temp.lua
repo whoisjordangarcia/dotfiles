@@ -46,7 +46,7 @@ local temp_bracket = sbar.add("bracket", "widgets.temp.bracket", {
 
 -- Popup items
 style.header(temp_bracket.name, "󰔏", "Thermals")
-local popup_cpu = style.row(temp_bracket.name, "", "CPU")
+local popup_cpu = style.row(temp_bracket.name, "󰘚", "CPU")
 local popup_gpu = style.row(temp_bracket.name, "󰢮", "GPU")
 local popup_fan0 = style.row(temp_bracket.name, "󰈐", "Fan 1")
 local popup_fan1 = style.row(temp_bracket.name, "󰈐", "Fan 2")
