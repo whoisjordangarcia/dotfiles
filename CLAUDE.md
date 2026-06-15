@@ -307,7 +307,7 @@ If you add a new field, branch/PR/worktree case, or line-3 indicator, add a corr
 
 `configs/claude/scripts/` holds Claude Code hook scripts that drive the cmux
 sidebar (symlinked to `~/.claude/scripts` by `script/claude/setup.sh`; wired in
-`configs/claude/settings.base.json`). Shared identity/guard logic lives in
+the dedicated `settings.{work,personal}.json` files). Shared identity/guard logic lives in
 `cmux_common.py` — `resolve_workspace()` maps this session to its workspace UUID,
 and `alive()` makes every script a cheap no-op when cmux isn't running (it
 short-circuits on socket existence, so a closed cmux or a non-macOS box spawns no
@@ -337,22 +337,53 @@ AI-initiated sensitive Bash commands require biometric approval via a Claude Cod
 
 - `configs/claude/hooks/touchid-gate.py` — pattern-matches sensitive commands (sudo, force push, prod AWS profiles, 1Password/keychain access, `curl | sh`, secrets-file reads) and pops an approval dialog. Approved → `allow`; denied → `deny`; biometrics unavailable → falls back to the normal permission prompt (`ask`).
 - `configs/claude/hooks/bioprompt.swift` — two-stage approval UI: an AppKit alert showing the full command in a monospaced box, then Touch ID (`.deviceOwnerAuthentication`, so password fallback works in clamshell mode). Compiled by `script/claude/setup.sh` to `~/.local/bin/bioprompt`.
-- Wired in `configs/claude/settings.base.json` under `hooks.PreToolUse`. **Bootstrap order matters**: the `~/.claude/hooks` symlink must exist before the hook entry is live, or every Bash call is blocked (claude/setup.sh links it).
+- Wired in the dedicated `settings.{work,personal}.json` files under `hooks.PreToolUse`. **Bootstrap order matters**: the `~/.claude/hooks` symlink must exist before the hook entry is live, or every Bash call is blocked (claude/setup.sh links it).
 
-### Claude Settings (work/personal split)
+### Claude Settings (dedicated work/personal files)
 
-`~/.claude/settings.json` is **generated, not symlinked**, by `script/claude/setup.sh`:
-`settings.base.json` (shared) deep-merged with `settings.work.json` or
-`settings.personal.json` (selected via `WORK_ENV`/`DOT_ENVIRONMENT`). Work-only
-plugins (`nest-*@nest-genomics-skills`) and the `nest-genomics-skills`
-marketplace live only in the work overlay, so personal machines never see them.
-The repo is authoritative for `enabledPlugins`, `hooks`, `permissions`, and
-`extraKnownMarketplaces`; machine-local keys the app writes at runtime (`model`,
-`effortLevel`, ...) survive regeneration. After editing any settings file,
-re-run `script/claude/setup.sh` to apply. Similarly, `nest-*` skills in
-`configs/skills/` are only projected by `script/skills/setup.sh` in work mode
-(and pruned elsewhere).
+`~/.claude/settings.json` comes from a **dedicated, complete per-environment
+file** — no base/overlay merge. `script/claude/setup.sh` **copies** (not
+symlinks) `configs/claude/settings.work.json` or `settings.personal.json`
+(selected via `WORK_ENV`/`DOT_ENVIRONMENT`) verbatim to `~/.claude/settings.json`.
+Work-only plugins (`nest-*@nest-genomics-skills`) and the `nest-genomics-skills`
+marketplace live only in `settings.work.json`, so personal machines never see them.
+
+Each dedicated file is the **single source of truth** for its environment and
+holds the whole settings object (including runtime keys like `effortLevel`).
+Because setup.sh copies rather than merges, re-running it **overwrites** the live
+file — so capture live edits first:
+
+- **Forward**: `script/claude/setup.sh` → copies active file to `~/.claude/settings.json`.
+- **Reverse**: **`claude-settings-sync`** (alias for `script/claude/sync-settings.sh`)
+  copies the live file back into this env's dedicated file. 1:1 copy, no routing;
+  env resolved from `.dotconfig` (`DOT_ENVIRONMENT`) or `WORK_ENV=1`.
+
+The two files are **independent** — a setting you want on both machines must be
+made in both (review `git diff configs/claude/settings.*.json`). `nest-*` skills
+in `configs/skills/` are similarly projected by `script/skills/setup.sh` only in
+work mode (and pruned elsewhere).
 - This is a tripwire, not a sandbox — pattern matching can be evaded; Claude Code's permission system remains the enforcement layer.
+
+### Claude Instructions (CLAUDE.md work/personal split)
+
+`~/.claude/CLAUDE.md` (Claude's global memory) is **generated, not symlinked**, by
+`script/claude/setup.sh` — same base+overlay pattern as `settings.json`:
+`configs/claude/CLAUDE.md` (shared base) concatenated with `CLAUDE.work.md` or
+`CLAUDE.personal.md` (selected via `WORK_ENV`/`DOT_ENVIRONMENT`). The final file
+**must keep the name `CLAUDE.md`** because that's what Claude Code reads; it is a
+real file, not a symlink to an overlay. A hidden marker line
+(`<!-- @dot-overlay:<env> -->`) is inserted between base and overlay.
+
+**Editing both directions:**
+- Edit the repo sources (`configs/claude/CLAUDE.{md,work,personal}.md`) then re-run
+  `script/claude/setup.sh` to regenerate — *or* —
+- Edit `~/.claude/CLAUDE.md` live, then run **`claude-sync`** (alias for
+  `script/claude/sync-claude.sh`) to split your edits back into the base + active
+  overlay at the marker. Content above the marker → base (shared); below → the
+  active overlay. The round-trip is stable (sync-back then regenerate is a no-op).
+
+`claude.local.md` remains untracked/machine-local for true per-machine notes —
+prefer the tracked overlays for anything you want version-controlled and synced.
 
 ### Secrets: Lazy 1Password Fetch
 

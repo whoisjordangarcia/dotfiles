@@ -1,5 +1,186 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "DISABLE_TELEMETRY": "1",
+    "DISABLE_BUG_COMMAND": "1",
+    "DISABLE_ERROR_REPORTING": "1",
+    "ENABLE_LSP_TOOL": "0"
+  },
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "Bash(gh api *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr view *)",
+      "Bash(gh run view *)",
+      "Bash(git add *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(git commit *)",
+      "Bash(git diff *)",
+      "Bash(git fetch *)",
+      "Bash(git log *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(git status *)",
+      "Bash(docker build *)",
+      "Bash(npm info *)",
+      "Bash(npm run *)",
+      "Bash(npx eslint *)",
+      "Bash(npx tsc *)",
+      "Bash(nx *)",
+      "Bash(pnpm *)",
+      "Bash(task *)",
+      "Bash(wt *)",
+      "Skill(superpowers:brainstorming)",
+      "Skill(superpowers:writing-plans)",
+      "Bash(ssh -vT git@github.com)",
+      "Bash(bun run:*)",
+      "Bash(bunx npm-check-updates:*)"
+    ],
+    "deny": [
+      "Read(./**/*.htpasswd)",
+      "Read(./**/*.jks)",
+      "Read(./**/*.key)",
+      "Read(./**/*.keystore)",
+      "Read(./**/*.netrc)",
+      "Read(./**/*.npmrc)",
+      "Read(./**/*.p12)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.pfx)",
+      "Read(./**/*.pgpass)",
+      "Read(./**/*.pypirc)",
+      "Read(./**/*credentials*)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.ssh/**)",
+      "Read(./**/.zshrc.sec)",
+      "Read(~/.zshrc-modules/.zshrc.sec)",
+      "Read(~/.zshrc-sec)"
+    ],
+    "ask": ["Bash(git push *)", "Bash(curl *)"],
+    "defaultMode": "auto"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // \"\"' | grep -qiF 'prd-account-administrator-role' && printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"ask\",\"permissionDecisionReason\":\"Production AWS profile (prd-account-administrator-role) detected - confirm before running against prod.\"}}' || true",
+            "statusMessage": "Checking for prod AWS profile"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/touchid-gate.py\"",
+            "timeout": 120,
+            "statusMessage": "Touch ID gate: checking for sensitive command"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
+            "timeout": 10,
+            "statusMessage": "Setting cmux workspace title"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\"",
+            "timeout": 10,
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-progress.py\"",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "CwdChanged": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
+            "timeout": 10,
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\"",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "TodoWrite",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-progress.py\"",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // \"\"' | grep -qE 'git +push|gh +pr +create' && python3 \"$HOME/.claude/scripts/cmux-pr.py\" </dev/null || true",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "STATUSLINE_ONE_LINE=1 ~/.claude/statusline.sh",
+    "padding": 0
+  },
   "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": false,
+    "claude-mem@thedotmack": false,
+    "code-review@claude-plugins-official": false,
+    "code-simplifier@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": false,
+    "context7@claude-plugins-official": false,
+    "explanatory-output-style@claude-plugins-official": true,
+    "impeccable@impeccable": true,
+    "superpowers@superpowers-marketplace": true,
+    "swift-lsp@claude-plugins-official": false,
+    "typescript-lsp@claude-plugins-official": false,
+    "infracost@infracost": false,
     "nest-ai-skill-audit@nest-genomics-skills": false,
     "nest-ehr-research@nest-genomics-skills": false,
     "nest-linear@nest-genomics-skills": false,
@@ -17,11 +198,55 @@
     "nest-gpt-validate-plan@nest-genomics-skills": false
   },
   "extraKnownMarketplaces": {
+    "impeccable": {
+      "source": {
+        "source": "github",
+        "repo": "pbakaus/impeccable"
+      }
+    },
+    "superpowers-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers-marketplace"
+      }
+    },
+    "infracost": {
+      "source": {
+        "source": "github",
+        "repo": "infracost/claude-skills"
+      }
+    },
     "nest-genomics-skills": {
       "source": {
         "source": "github",
         "repo": "Nest-Genomics/ai-skills"
       }
     }
-  }
+  },
+  "outputStyle": "Explanatory",
+  "sandbox": {
+    "enabled": false,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": false,
+    "network": {
+      "allowLocalBinding": true
+    },
+    "excludedCommands": ["git"]
+  },
+  "spinnerTipsEnabled": false,
+  "spinnerVerbs": {
+    "mode": "append",
+    "verbs": ["Nesting", "sahh good", "ralphing"]
+  },
+  "alwaysThinkingEnabled": true,
+  "autoUpdatesChannel": "latest",
+  "tui": "fullscreen",
+  "showThinkingSummaries": true,
+  "skipDangerousModePermissionPrompt": true,
+  "verbose": true,
+  "preferredNotifChannel": "ghostty",
+  "autoCompactEnabled": false,
+  "skipAutoPermissionPrompt": true,
+  "useAutoModeDuringPlan": true,
+  "voiceEnabled": true
 }

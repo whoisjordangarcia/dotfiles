@@ -17,6 +17,10 @@ alias ca="CLAUDE_CODE_NO_FLICKER=1 claude --enable-auto-mode"
 alias claude-otel="CLAUDE_CODE_NO_FLICKER=1 CLAUDE_CODE_ENABLE_TELEMETRY=1 OTEL_LOGS_EXPORTER=console OTEL_LOG_RAW_API_BODIES=file:$HOME/claude-otel-logs claude"
 alias colo="codex --dangerously-bypass-approvals-and-sandbox"
 alias update-claude="curl -fsSL https://claude.ai/install.sh | bash"
+# Sync live ~/.claude/CLAUDE.md edits back into the dotfiles base + active overlay
+alias claude-sync="bash ~/dev/dotfiles/script/claude/sync-claude.sh"
+# Sync live ~/.claude/settings.json back into this env's dedicated dotfiles copy
+alias claude-settings-sync="bash ~/dev/dotfiles/script/claude/sync-settings.sh"
 alias lg="lazygit"
 alias vim="nvim"
 alias vi="nvim"
