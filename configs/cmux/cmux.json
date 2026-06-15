@@ -14,13 +14,7 @@
       "focusUp": "cmd+opt+k",
       "focusRight": "cmd+opt+l",
 
-      // tmux-style PREFIX CHORDS for splits only: press ctrl+a, release, then the key.
-      // (Non-shift second keys — shifted keys like % / ' did not register as chords.)
-      // Everything else is LEFT AT ITS cmux DEFAULT on purpose — overriding those broke
-      // native Cmd shortcuts: Cmd+T new tab (same path), Cmd+W close, Cmd+R rename,
-      // Ctrl+Cmd+[ / ] workspace nav, Cmd+Shift+Enter zoom.
-      "splitRight": ["ctrl+a", "\\"],
-      "splitDown": ["ctrl+a", "-"]
+      // Split bindings removed — ctrl+a is reserved for tmux prefix.
     }
   },
 

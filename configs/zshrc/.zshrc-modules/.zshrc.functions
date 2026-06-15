@@ -193,6 +193,36 @@ syu() {
   sudo pacman -Syu
 }
 
+# cmux_import_tmux — open every running tmux session as its own cmux workspace,
+# titled to match the session name. cmux has no native "import tmux" command;
+# this just loops `cmux workspace create` over `tmux ls`. Idempotent: sessions
+# that already have a same-named workspace are skipped, so it's safe to re-run.
+# macOS-only in practice (cmux is mac), but guarded so it's a no-op elsewhere.
+cmux_import_tmux() {
+  if ! command -v cmux &>/dev/null; then
+    echo "cmux_import_tmux: cmux not installed" >&2
+    return 1
+  fi
+  if ! command -v tmux &>/dev/null || ! tmux ls &>/dev/null; then
+    echo "cmux_import_tmux: no running tmux server" >&2
+    return 1
+  fi
+
+  # Workspace titles that already exist — column 2 of `list-workspaces`.
+  local existing
+  existing=$(CMUX_QUIET=1 cmux list-workspaces 2>/dev/null | awk '{print $2}')
+
+  local s
+  while IFS= read -r s; do
+    if grep -qx "$s" <<<"$existing"; then
+      echo "skip $s (workspace exists)"
+      continue
+    fi
+    CMUX_QUIET=1 cmux workspace create --name "$s" --command "tmux attach -t $s" \
+      && echo "created $s"
+  done < <(tmux ls -F '#{session_name}')
+}
+
 # opsec — fetch a 1Password secret at use-time (Touch ID via the 1Password app).
 # Keeps secrets out of disk/env at rest; pairs with the *_REF variables defined
 # in .zshrc.sec (see .zshrc.sec.{personal,work}.tpl).
