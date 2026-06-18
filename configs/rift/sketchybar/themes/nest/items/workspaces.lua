@@ -3,6 +3,10 @@ local settings = require("settings")
 local app_icons = require("helpers.app_icons")
 
 local max_workspaces = 10
+-- Active-workspace identifier: an accent border drawn around the focused
+-- workspace (on top of the existing surface1 background + text highlight).
+local active_border_width = 2
+local active_border_color = colors.blue
 -- `timeout` guards against a wedged rift daemon: an unresponsive socket would
 -- otherwise leave every event-driven query hanging forever, piling up hundreds
 -- of rift-cli processes. After 3s the query is killed instead of accumulating.
@@ -144,6 +148,8 @@ for workspace_index = 1, max_workspaces do
 				label = { highlight = is_focused },
 				background = {
 					color = is_focused and colors.surface1 or colors.surface0,
+					border_width = is_focused and active_border_width or 0,
+					border_color = active_border_color,
 				},
 			})
 		end)
@@ -193,6 +199,8 @@ sbar.exec(query_workspaces, function(all_workspaces)
 				label = { highlight = true },
 				background = {
 					color = colors.with_alpha(colors.white, 0.15),
+					border_width = active_border_width,
+					border_color = active_border_color,
 				},
 			})
 		end

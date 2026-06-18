@@ -1,13 +1,17 @@
 # rift config — ported from aerospace (i3/sway style)
 
+# animate: async since rift 0.4.3 — animations no longer block input, so
+# enabling them carries no input-lag penalty (the reason this was off pre-0.4.3).
 [settings]
-animate = false
+animate = true
 animation_duration = 0.3
 animation_fps = 100.0
 
-focus_follows_mouse = false 
-mouse_follows_focus = false 
-mouse_hides_on_focus = false 
+# mouse_follows_focus: warp the cursor to the newly focused window on keyboard
+# nav so the pointer doesn't get lost on the external display.
+focus_follows_mouse = false
+mouse_follows_focus = true
+mouse_hides_on_focus = false
 default_disable = false
 
 auto_focus_blacklist = []
@@ -68,8 +72,10 @@ vertical = 10
 [settings.ui.menu_bar]
 enabled = false
 
+# stack_line: tab-strip indicator showing what's in a stack (toggle_stack /
+# join_window). Visualizes stacked windows instead of flying blind.
 [settings.ui.stack_line]
-enabled = false
+enabled = true
 
 [settings.ui.mission_control]
 enabled = false
@@ -91,9 +97,9 @@ default_workspace_count = 10
 # If flicker returns when moving windows between displays, set back to false.
 auto_assign_windows = true
 preserve_focus_per_workspace = true
-# Pressing the current workspace's bind again bounces to the last workspace
-# (i3-style back-and-forth; complements Option+Tab).
-workspace_auto_back_and_forth = true
+# Pressing the current workspace's bind again is a no-op (disabled the i3-style
+# back-and-forth bounce; use Option+Tab for back-and-forth instead).
+workspace_auto_back_and_forth = false
 reapply_app_rules_on_title_change = false
 # Assign specific workspaces to external display
 # workspace_rules = [
@@ -124,6 +130,9 @@ app_rules = [
   { app_id = "com.apple.iphonesimulator", floating = true },
   { app_id = "com.apple.dt.Xcode", floating = true },
   { app_id = "com.timpler.screenstudio", floating = true },
+
+  # Force-tile cmux — rift auto-floats it otherwise; an explicit rule wins.
+  { app_id = "com.cmuxterm.app", floating = false },
 ]
 
 # Modifier combinations (i3/sway style: Option as $mod)
@@ -160,17 +169,20 @@ comb1 = "Option + Shift"
 "Option + 9" = { switch_to_workspace = 8 }
 "Option + 0" = { switch_to_workspace = 9 }
 
-# Move window to workspace (stay on current workspace)
-"comb1 + 1" = { exec = ["rift-cli", "execute", "workspace", "move-window", "0"] }
-"comb1 + 2" = { exec = ["rift-cli", "execute", "workspace", "move-window", "1"] }
-"comb1 + 3" = { exec = ["rift-cli", "execute", "workspace", "move-window", "2"] }
-"comb1 + 4" = { exec = ["rift-cli", "execute", "workspace", "move-window", "3"] }
-"comb1 + 5" = { exec = ["rift-cli", "execute", "workspace", "move-window", "4"] }
-"comb1 + 6" = { exec = ["rift-cli", "execute", "workspace", "move-window", "5"] }
-"comb1 + 7" = { exec = ["rift-cli", "execute", "workspace", "move-window", "6"] }
-"comb1 + 8" = { exec = ["rift-cli", "execute", "workspace", "move-window", "7"] }
-"comb1 + 9" = { exec = ["rift-cli", "execute", "workspace", "move-window", "8"] }
-"comb1 + 0" = { exec = ["rift-cli", "execute", "workspace", "move-window", "9"] }
+# Move window to workspace AND follow it there (move-window + switch).
+# rift-cli has no --follow flag, so we chain via `sh -c`. Following also makes
+# sketchybar update instantly: `switch` fires rift_workspace_changed, which runs
+# an un-debounced refreshAllWorkspaces (vs the 500ms windows_changed debounce).
+"comb1 + 1" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 0 && rift-cli execute workspace switch 0"] }
+"comb1 + 2" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 1 && rift-cli execute workspace switch 1"] }
+"comb1 + 3" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 2 && rift-cli execute workspace switch 2"] }
+"comb1 + 4" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 3 && rift-cli execute workspace switch 3"] }
+"comb1 + 5" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 4 && rift-cli execute workspace switch 4"] }
+"comb1 + 6" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 5 && rift-cli execute workspace switch 5"] }
+"comb1 + 7" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 6 && rift-cli execute workspace switch 6"] }
+"comb1 + 8" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 7 && rift-cli execute workspace switch 7"] }
+"comb1 + 9" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 8 && rift-cli execute workspace switch 8"] }
+"comb1 + 0" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 9 && rift-cli execute workspace switch 9"] }
 
 # Move window to display by index (Ctrl + Cmd + N)
 "Ctrl + Meta + 1" = { exec = ["rift-cli", "execute", "display", "move-window", "--index", "0"] }
