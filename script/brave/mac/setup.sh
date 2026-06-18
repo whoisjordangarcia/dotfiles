@@ -46,16 +46,27 @@ fi
 # Create new plist
 sudo /usr/libexec/PlistBuddy -c "Clear dict" "$PLIST_FILE" 2>/dev/null || sudo /usr/libexec/PlistBuddy -c "Save" "$PLIST_FILE"
 
-# ExtensionInstallForcelist - array of extension IDs with update URLs
+# ExtensionInstallForcelist — force-installed extensions (managed: can't be
+# removed by the user). Keep this in sync with the curated daily-driver set;
+# the inline names document the otherwise-opaque 32-char IDs. Mirror any change
+# into configs/brave/policies/managed/policies.json for Linux.
+# Update URL is the Chrome Web Store CRX endpoint (Brave honours it too).
+CRX_UPDATE_URL="https://clients2.google.com/service/update2/crx"
+FORCED_EXTENSIONS=(
+	"aeblfdkhhhdcdjpifhhbdiojplfjncoa" # 1Password – Password Manager
+	"fcoeoabgfenejglbffodgkkbkcdhcgfn" # Claude
+	"jdkknkkbebbapilgoeccciglkfbmbnfm" # Apollo Client Devtools
+	"cjpalhdlnbpafiamejdnhcphjbkeiagm" # uBlock Origin
+	"ndlbedplllcgconngcnfmkadhokfaaln" # GraphQL Network Inspector
+)
+
 sudo /usr/libexec/PlistBuddy -c "Add :ExtensionInstallForcelist array" "$PLIST_FILE"
-sudo /usr/libexec/PlistBuddy -c "Add :ExtensionInstallForcelist:0 string 'ddkjiahejlhfcafbddmgiahcphecmpfh;https://clients2.google.com/service/update2/crx'" "$PLIST_FILE"
-sudo /usr/libexec/PlistBuddy -c "Add :ExtensionInstallForcelist:1 string 'aeblfdkhhhdcdjpifhhbdiojplfjncoa;https://clients2.google.com/service/update2/crx'" "$PLIST_FILE"
-sudo /usr/libexec/PlistBuddy -c "Add :ExtensionInstallForcelist:2 string 'dbepggeogbaibhgnhhndojpepiihcmeb;https://clients2.google.com/service/update2/crx'" "$PLIST_FILE"
-sudo /usr/libexec/PlistBuddy -c "Add :ExtensionInstallForcelist:3 string 'iphcomljdfghbkdcfndaijbokpgddeno;https://clients2.google.com/service/update2/crx'" "$PLIST_FILE"
-sudo /usr/libexec/PlistBuddy -c "Add :ExtensionInstallForcelist:4 string 'eimadpbcbfnmbkopoojfekhnkhdbieeh;https://clients2.google.com/service/update2/crx'" "$PLIST_FILE"
-sudo /usr/libexec/PlistBuddy -c "Add :ExtensionInstallForcelist:5 string 'dkgjnpbipbdaoaadbdhpiokaemhlphep;https://clients2.google.com/service/update2/crx'" "$PLIST_FILE"
-sudo /usr/libexec/PlistBuddy -c "Add :ExtensionInstallForcelist:6 string 'hlepfoohegkhhmjieoechaddaejaokhf;https://clients2.google.com/service/update2/crx'" "$PLIST_FILE"
-sudo /usr/libexec/PlistBuddy -c "Add :ExtensionInstallForcelist:7 string 'neebplgakaahbhdphmkckjjcegoiijjo;https://clients2.google.com/service/update2/crx'" "$PLIST_FILE"
+_idx=0
+for _ext in "${FORCED_EXTENSIONS[@]}"; do
+	sudo /usr/libexec/PlistBuddy -c "Add :ExtensionInstallForcelist:$_idx string '${_ext};${CRX_UPDATE_URL}'" "$PLIST_FILE"
+	_idx=$((_idx + 1))
+done
+unset _idx _ext
 
 # Default search provider
 sudo /usr/libexec/PlistBuddy -c "Add :DefaultSearchProviderEnabled bool true" "$PLIST_FILE"
@@ -96,9 +107,9 @@ sudo /usr/libexec/PlistBuddy -c "Add :ExtensionSettings dict" "$PLIST_FILE"
 # 1Password - pin to toolbar
 sudo /usr/libexec/PlistBuddy -c "Add :ExtensionSettings:aeblfdkhhhdcdjpifhhbdiojplfjncoa dict" "$PLIST_FILE"
 sudo /usr/libexec/PlistBuddy -c "Add :ExtensionSettings:aeblfdkhhhdcdjpifhhbdiojplfjncoa:toolbar_pin string 'force_pinned'" "$PLIST_FILE"
-# Dark Reader - pin to toolbar
-sudo /usr/libexec/PlistBuddy -c "Add :ExtensionSettings:eimadpbcbfnmbkopoojfekhnkhdbieeh dict" "$PLIST_FILE"
-sudo /usr/libexec/PlistBuddy -c "Add :ExtensionSettings:eimadpbcbfnmbkopoojfekhnkhdbieeh:toolbar_pin string 'force_pinned'" "$PLIST_FILE"
+# Claude - pin to toolbar
+sudo /usr/libexec/PlistBuddy -c "Add :ExtensionSettings:fcoeoabgfenejglbffodgkkbkcdhcgfn dict" "$PLIST_FILE"
+sudo /usr/libexec/PlistBuddy -c "Add :ExtensionSettings:fcoeoabgfenejglbffodgkkbkcdhcgfn:toolbar_pin string 'force_pinned'" "$PLIST_FILE"
 
 # Set correct ownership and permissions
 sudo chown root:wheel "$PLIST_FILE"

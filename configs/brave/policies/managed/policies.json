@@ -1,13 +1,11 @@
 {
+  "_comment_ExtensionInstallForcelist": "Curated daily-driver set; keep in sync with script/brave/mac/setup.sh FORCED_EXTENSIONS. Order: 1Password, Claude, Apollo Client Devtools, uBlock Origin, GraphQL Network Inspector.",
   "ExtensionInstallForcelist": [
-    "ddkjiahejlhfcafbddmgiahcphecmpfh;https://clients2.google.com/service/update2/crx",
     "aeblfdkhhhdcdjpifhhbdiojplfjncoa;https://clients2.google.com/service/update2/crx",
-    "dbepggeogbaibhgnhhndojpepiihcmeb;https://clients2.google.com/service/update2/crx",
-    "hdhngoamekjhmnpenphenpaiindoinpo;https://clients2.google.com/service/update2/crx",
-    "eimadpbcbfnmbkopoojfekhnkhdbieeh;https://clients2.google.com/service/update2/crx",
-    "dkgjnpbipbdaoaadbdhpiokaemhlphep;https://clients2.google.com/service/update2/crx",
-    "hlepfoohegkhhmjieoechaddaejaokhf;https://clients2.google.com/service/update2/crx",
-    "neebplgakaahbhdphmkckjjcegoiijjo;https://clients2.google.com/service/update2/crx"
+    "fcoeoabgfenejglbffodgkkbkcdhcgfn;https://clients2.google.com/service/update2/crx",
+    "jdkknkkbebbapilgoeccciglkfbmbnfm;https://clients2.google.com/service/update2/crx",
+    "cjpalhdlnbpafiamejdnhcphjbkeiagm;https://clients2.google.com/service/update2/crx",
+    "ndlbedplllcgconngcnfmkadhokfaaln;https://clients2.google.com/service/update2/crx"
   ],
   "DefaultSearchProviderEnabled": true,
   "DefaultSearchProviderName": "DuckDuckGo",
