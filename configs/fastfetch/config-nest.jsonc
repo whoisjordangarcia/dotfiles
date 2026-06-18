@@ -1,0 +1,34 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  // Work-mode greeting: NEST GENOMICS logo on the left, system info beside it.
+  "logo": {
+    "type": "file",
+    "source": "~/.config/fastfetch/logo-nest.txt",
+    "color": { "1": "208" },
+    "padding": { "top": 0, "right": 2 }
+  },
+  "display": {
+    "separator": "  ",
+    "color": {
+      "keys": "35",
+      "output": "default"
+    }
+  },
+  "modules": [
+    {
+      "type": "cpu",
+      "key": " 󰻠 ",
+      "keyColor": "blue"
+    },
+    {
+      "type": "memory",
+      "key": " 󰍛 ",
+      "keyColor": "magenta"
+    },
+    {
+      "type": "uptime",
+      "key": " 󰅐 ",
+      "keyColor": "green"
+    }
+  ]
+}

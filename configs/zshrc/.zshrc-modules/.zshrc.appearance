@@ -1,9 +1,10 @@
 # ==============================================================================
 #  Shell greeting
 # ==============================================================================
-# First shell per tmux session gets minimal fastfetch; non-tmux terminals get
-# full fastfetch once per day. Subsequent shells get _mini_greeting so startup
-# stays responsive without making new panes feel blank.
+# tmux panes get minimal fastfetch every time (it's ~30ms); non-tmux terminals
+# get the full fastfetch once per day, minimal fastfetch after that. In work mode
+# the minimal logo is a compact NEST GENOMICS banner. _mini_greeting is the
+# fallback only when fastfetch isn't installed.
 
 # No greeting for non-terminal interactive command shells, e.g. `zsh -i -c`.
 [[ -t 1 && "$TERM" != "dumb" ]] || return 0
@@ -34,20 +35,23 @@ _mini_greeting() {
   print -P ""
 }
 
+# Minimal fastfetch greeting. Work mode uses config-nest.jsonc, which stacks the
+# NEST GENOMICS logo above the system info; personal mode uses the generic
+# side-by-side minimal config with the small OS logo.
+_ff_mini() {
+  # One blank line above; the line below comes from starship's add_newline.
+  print ""
+  if [[ -f ~/.zshrc-work-mode ]]; then
+    fastfetch --config ~/.config/fastfetch/config-nest.jsonc
+  else
+    fastfetch --config ~/.config/fastfetch/config-minimal.jsonc
+  fi
+}
+
 if command -v fastfetch &>/dev/null; then
   if [[ -n "$TMUX" ]]; then
-    _session_id=$(tmux display -p '#{session_id}' 2>/dev/null | tr -d '$')
-    if [[ -n "$_session_id" ]]; then
-      _sentinel="${TMPDIR:-/tmp}/.fastfetch-tmux-${_session_id}"
-      if [[ ! -f "$_sentinel" ]]; then
-        fastfetch --config ~/.config/fastfetch/config-minimal.jsonc
-        : > "$_sentinel"
-      else
-        _mini_greeting
-      fi
-      unset _sentinel
-    fi
-    unset _session_id
+    # fastfetch minimal is ~30ms — cheap enough to show in every pane.
+    _ff_mini
   else
     _today=$(date '+%Y%m%d')
     _sentinel="${TMPDIR:-/tmp}/.fastfetch-${USER}-${_today}"
@@ -55,7 +59,7 @@ if command -v fastfetch &>/dev/null; then
       fastfetch
       : > "$_sentinel"
     else
-      _mini_greeting
+      _ff_mini
     fi
     unset _sentinel _today
   fi

@@ -11,6 +11,10 @@ source "$COMPONENT_ROOT/../common/symlink.sh"
 debug "Ensuring $HOME/.config/fastfetch exists"
 mkdir -p "$HOME/.config/fastfetch"
 
+# NEST GENOMICS logo + work-mode greeting config (logo stacked above info)
+link_file "$DOTFILES_ROOT/configs/fastfetch/logo-nest.txt" "$HOME/.config/fastfetch/logo-nest.txt"
+link_file "$DOTFILES_ROOT/configs/fastfetch/config-nest.jsonc" "$HOME/.config/fastfetch/config-nest.jsonc"
+
 # On server profiles, use minimal config as the default
 if [[ "${DOT_SYSTEM:-}" == "linux_server" ]]; then
 	link_file "$DOTFILES_ROOT/configs/fastfetch/config-minimal.jsonc" "$HOME/.config/fastfetch/config.jsonc"
