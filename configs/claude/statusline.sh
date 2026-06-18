@@ -708,8 +708,12 @@ fetch_node_apps() {
       [ "$in_scope" = false ] && continue
       app_name=""
       combined="$proc_args $proc_cwd"
-      if echo "$combined" | grep -qE 'apps/backend/[^/]+/dist'; then
-        app_name=$(echo "$combined" | sed -n 's|.*apps/backend/\([^/]*\)/dist.*|\1|p' | head -1)
+      if echo "$combined" | grep -qE 'apps/backend/[^/]+'; then
+        # Match by the service dir alone — `node dist/main.js` run from the
+        # app's cwd puts "apps/backend/<name>" in proc_cwd but not contiguous
+        # with the "/dist" in proc_args, so requiring "/dist" here missed it
+        # and fell through to the bare worktree-name fallback.
+        app_name=$(echo "$combined" | sed -n 's|.*apps/backend/\([^/ ]*\).*|\1|p' | head -1)
       elif echo "$combined" | grep -qE 'apps/frontend/[^/]+'; then
         app_name=$(echo "$combined" | sed -n 's|.*apps/frontend/\([^/]*\).*|\1|p' | head -1)
       elif echo "$proc_args" | grep -qE 'nx\.js run [^:]+:'; then
