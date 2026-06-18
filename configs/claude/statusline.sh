@@ -366,6 +366,7 @@ is_worktree=false
 wt_name=""
 sync_display=""
 dirty_display=""
+git_lines_display=""
 commit_age_display=""
 base_branch_display=""
 pr_number=""
@@ -440,6 +441,31 @@ if [ -n "$cwd" ] && [ -d "$cwd" ] && { [ -d "$cwd/.git" ] || [ -f "$cwd/.git" ];
       }
     fi
     cache_write "$dirty_cache" "$dirty_display"
+  fi
+
+  # Uncommitted line changes vs HEAD (cached) — "+added -deleted" of tracked
+  # working-tree edits, staged or not. Collapses to nothing once everything is
+  # committed, so it doubles as a "you have uncommitted work" signal. Untracked
+  # files aren't counted (git diff ignores them); their count is in dirty_display.
+  gitlines_cache="$GIT_CACHE_DIR/${cache_key}_gitlines"
+  if cache_fresh "$gitlines_cache" "$GIT_CACHE_TTL"; then
+    git_lines_display=$(cat "$gitlines_cache")
+  else
+    git_lines_display=""
+    # ` N files changed, A insertions(+), D deletions(-)` — either count may be absent.
+    shortstat=$(cd "$cwd" 2>/dev/null && git diff --shortstat HEAD 2>/dev/null)
+    if [ -n "$shortstat" ]; then
+      g_added=$(grep -oE '[0-9]+ insertion' <<<"$shortstat" | grep -oE '^[0-9]+') || g_added=0
+      g_removed=$(grep -oE '[0-9]+ deletion' <<<"$shortstat" | grep -oE '^[0-9]+') || g_removed=0
+      [ -n "$g_added" ] || g_added=0
+      [ -n "$g_removed" ] || g_removed=0
+      [ "$g_added" -gt 0 ] 2>/dev/null && git_lines_display+="${COLOR_ADD}+${g_added}${COLOR_RESET}"
+      [ "$g_removed" -gt 0 ] 2>/dev/null && {
+        [ -n "$git_lines_display" ] && git_lines_display+=" "
+        git_lines_display+="${COLOR_DEL}-${g_removed}${COLOR_RESET}"
+      }
+    fi
+    cache_write "$gitlines_cache" "$git_lines_display"
   fi
 
   # Last commit age (cached with git cache TTL)
@@ -534,14 +560,11 @@ if [ -n "$branch" ] && [ -n "$cwd" ]; then
   fi
 fi
 
-# ─── Lines changed this session ──────────────────────────────────────
-lines_display=""
-if [ "$lines_added" -gt 0 ] 2>/dev/null || [ "$lines_removed" -gt 0 ] 2>/dev/null; then
-  parts=""
-  [ "$lines_added" -gt 0 ] && parts+="${COLOR_ADD}+${lines_added}${COLOR_RESET}"
-  [ "$lines_removed" -gt 0 ] && parts+=" ${COLOR_DEL}-${lines_removed}${COLOR_RESET}"
-  lines_display="${parts}"
-fi
+# ─── Uncommitted line changes (git working tree vs HEAD) ─────────────
+# Was the session edit counter (.cost.total_lines_*); now mirrors the git diff
+# so it answers "do I have uncommitted work?" and resets on commit. Computed
+# (and colorized) in the git block above; empty outside a git repo.
+lines_display="$git_lines_display"
 
 # ─── Assemble output ─────────────────────────────────────────────────
 sep=" ${COLOR_DIM}·${COLOR_RESET} "

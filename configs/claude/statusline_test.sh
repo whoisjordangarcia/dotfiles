@@ -178,15 +178,45 @@ assert_contains "shows token count next to context pct" "$out" "70% (140k)"
 out=$(run_statusline_plain "$INPUT_MINIMAL")
 assert_not_contains "hides token count when usage is zero" "$out" "(0"
 
-printf "\n\033[38;5;141m━━━ Lines Changed ━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[38;5;141m━━━ Uncommitted Lines (git diff vs HEAD) ━━━\033[0m\n"
 
-out=$(run_statusline_plain "$INPUT_FULL")
-assert_contains "shows lines added" "$out" "+42"
-assert_contains "shows lines removed" "$out" "-7"
+# +/- now mirrors `git diff --shortstat HEAD` (uncommitted tracked changes),
+# NOT the session edit counter — so it resets on commit. The high session
+# counts in the JSON below must NOT appear; only the real git diff should.
 
-out=$(run_statusline_plain "$INPUT_NO_LINES")
-assert_not_contains "hides lines when zero" "$out" "+"
-assert_not_contains "hides lines when zero" "$out" "-"
+# Dirty repo: appended lines → "+N" insertions, no deletions
+LINES_ADD_REPO=$(mktemp -d -t statusline-lines.XXXXXX)
+(cd "$LINES_ADD_REPO" && git init -q -b main && printf 'a\nb\n' >f.txt \
+  && git add f.txt && git -c user.email=t@t -c user.name=t commit -q -m init \
+  && printf 'a\nb\nc\nd\ne\n' >f.txt) >/dev/null
+rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
+LINES_ADD_INPUT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.1,"total_duration_ms":1000,"total_lines_added":999,"total_lines_removed":888},"session_id":"lines-add","cwd":"'"$LINES_ADD_REPO"'","context_window":{"used_percentage":10}}'
+out=$(run_statusline_plain "$LINES_ADD_INPUT")
+assert_contains "shows uncommitted insertions from git diff" "$out" "+3"
+assert_not_contains "ignores session lines_added" "$out" "+999"
+assert_not_contains "no deletions when only insertions" "$out" "-888"
+
+# Dirty repo: removed lines → "-N" deletions
+LINES_DEL_REPO=$(mktemp -d -t statusline-lines.XXXXXX)
+(cd "$LINES_DEL_REPO" && git init -q -b main && printf 'a\nb\nc\nd\n' >f.txt \
+  && git add f.txt && git -c user.email=t@t -c user.name=t commit -q -m init \
+  && printf 'a\nb\n' >f.txt) >/dev/null
+rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
+LINES_DEL_INPUT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.1,"total_duration_ms":1000},"session_id":"lines-del","cwd":"'"$LINES_DEL_REPO"'","context_window":{"used_percentage":10}}'
+out=$(run_statusline_plain "$LINES_DEL_INPUT")
+assert_contains "shows uncommitted deletions from git diff" "$out" "-2"
+
+# Clean repo: everything committed → no +/- even with session edits in JSON
+LINES_CLEAN_REPO=$(mktemp -d -t statusline-lines.XXXXXX)
+(cd "$LINES_CLEAN_REPO" && git init -q -b main && printf 'a\nb\n' >f.txt \
+  && git add f.txt && git -c user.email=t@t -c user.name=t commit -q -m init) >/dev/null
+rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
+LINES_CLEAN_INPUT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.1,"total_duration_ms":1000,"total_lines_added":50,"total_lines_removed":20},"session_id":"lines-clean","cwd":"'"$LINES_CLEAN_REPO"'","context_window":{"used_percentage":10}}'
+out=$(run_statusline_plain "$LINES_CLEAN_INPUT")
+assert_not_contains "hides lines on clean tree (added)" "$out" "+50"
+assert_not_contains "hides lines on clean tree (deleted)" "$out" "-20"
+
+rm -rf "$LINES_ADD_REPO" "$LINES_DEL_REPO" "$LINES_CLEAN_REPO"
 
 printf "\n\033[38;5;141m━━━ Cache Hit Rate ━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
@@ -460,7 +490,8 @@ else
   errors+="  FAIL: one-line mode joins output when terminal is wide — got $line_count lines\n"
   printf "  \033[38;5;203m✗\033[0m one-line mode joins output when terminal is wide (got %s lines)\n" "$line_count"
 fi
-assert_contains "one-line output keeps line-2 content" "$out" '+42'
+# Project name ("tmp") is line-2 content; its presence proves line 2 was joined in.
+assert_contains "one-line output keeps line-2 content" "$out" 'tmp'
 
 # Narrow terminal: falls back to multi-line instead of overflowing
 out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT STATUSLINE_ONE_LINE=1 STATUSLINE_COLS=40 bash "$STATUSLINE" 2>/dev/null | strip_ansi)

@@ -75,11 +75,17 @@ header "1. Normal repo (no worktree)"
 expect "dotfiles · 🌿 main"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.23,"total_duration_ms":120000},"session_id":"demo-1","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":25,"current_usage":{"input_tokens":40000,"cache_creation_input_tokens":2000,"cache_read_input_tokens":8000}}}'
 
-# ─── 2. Normal repo with lines changed ──────────────────────────
+# ─── 2. Repo with uncommitted changes (+/- = git diff vs HEAD) ──
 clear_caches
-header "2. Normal repo with lines changed"
-expect "dotfiles · 🌿 main · +42 -7 written"
-run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000,"total_lines_added":42,"total_lines_removed":7},"session_id":"demo-2","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
+REPO_DIRTY="$DEMO_DIR/webapp"
+make_repo "$REPO_DIRTY"
+# Commit a file, then leave uncommitted edits → git diff --shortstat HEAD = +4 -2.
+# The session counts in the JSON (42/7) are intentionally ignored now.
+(cd "$REPO_DIRTY" && printf '1\n2\n3\n4\n5\n' >work.txt && git add work.txt \
+  && git commit -q -m base && printf '1\n2\n3\nA\nB\nC\nD\n' >work.txt)
+header "2. Repo with uncommitted changes (+/- mirrors git diff, resets on commit)"
+expect "webapp · 🌿 main · +4 -2"
+run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000,"total_lines_added":42,"total_lines_removed":7},"session_id":"demo-2","cwd":"'"$REPO_DIRTY"'","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
 
 # ─── 3. Worktree, name ≈ branch (slash/dash) ────────────────────
 clear_caches
@@ -337,14 +343,14 @@ run_one_line() {
 # ─── 32. One-line mode, wide terminal ────────────────────────────
 clear_caches
 header "32. One-line mode (codex style), wide terminal — everything joins with ·"
-expect "dotfiles · \$1.23 ... [bar] 70% (140k) · 🌿 main · +42 -7  — all on ONE line"
-run_one_line 300 '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000,"total_lines_added":42,"total_lines_removed":7},"session_id":"demo-32","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
+expect "webapp · \$1.23 ... [bar] 70% (140k) · 🌿 main · +4 -2  — all on ONE line"
+run_one_line 300 '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000,"total_lines_added":42,"total_lines_removed":7},"session_id":"demo-32","cwd":"'"$REPO_DIRTY"'","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
 
 # ─── 33. One-line mode, narrow terminal → multi-line fallback ────
 clear_caches
 header "33. One-line mode but terminal too narrow (60 cols) — falls back to multi-line"
 expect "Same content as #32 but split across lines (no overflow)"
-run_one_line 60 '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000,"total_lines_added":42,"total_lines_removed":7},"session_id":"demo-33","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
+run_one_line 60 '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000,"total_lines_added":42,"total_lines_removed":7},"session_id":"demo-33","cwd":"'"$REPO_DIRTY"'","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
 
 # ─── 34. Light vs dark terminal background (COLORFGBG) ──────────
 clear_caches
