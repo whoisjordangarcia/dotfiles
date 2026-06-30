@@ -12,7 +12,7 @@ A comprehensive cross-platform dotfiles repository that makes strong choices abo
 - **Zero-decision installation** - Smart system detection with guided setup—no overwhelming choices
 - **Modular architecture** - Component-based system with sensible defaults
 - **Symlink-based configs** - Centralized configuration management for easy updates
-- **AI development tools** - Curated AI assistant rules for Cursor, Aider, and Avante
+- **AI development tools** - Curated AI assistant rules for Cursor
 
 > [!TIP]
 > The system automatically detects your platform and environment, making installation straightforward across different setups.
@@ -259,8 +259,6 @@ Context rules for AI coding assistants:
 | Directory | Tool | Contents |
 |-----------|------|----------|
 | `cursor-rules/` | Cursor IDE | cursor_rules.mdc, dev_workflow.mdc, nextjs.mdc, taskmaster.mdc |
-| `aider-rules/` | Aider | Framework-specific guidance (TypeScript, Next.js, NestJS, Django) |
-| `avante-rules/` | Avante | Planning workflow rules |
 
 ---
 
@@ -291,9 +289,9 @@ Context rules for AI coding assistants:
 ./bin/dot --system mac
 ```
 
-**Installs:** Git, Zsh, Neovim nightly, Node, Tmux+TPM, Fonts, Starship, Ghostty, LazyGit, Claude/Codex/OpenCode, Fastfetch, Brave
+**Installs:** Homebrew + macOS defaults, 1Password, Git/SSH/GitHub CLI, Zsh, Neovim, Node, Tmux, Starship, Rift (tiling WM) + Ghostty, cmux, LazyGit, Claude/Codex/OpenCode + Agents, Fastfetch, Brave, Sunshine
 
-**Work variant** (`mac_work`): Adds Homebrew apps + Rift + enterprise tools
+**Work variant** (`mac_work`): Same component list as personal — `script/mac_components.sh` is the single source of truth. `WORK_ENV=1` only changes environment-specific config (work git email, etc.), not which components install.
 
 ### Arch Linux (`linux_arch`)
 
@@ -301,7 +299,7 @@ Context rules for AI coding assistants:
 ./bin/dot --system linux_arch
 ```
 
-**Installs:** Pacman packages, Git, Node, LazyGit, Zsh, Vim, Tmux, Bat, Ghostty, Fonts, Starship, Fastfetch, Brave, Docker, Claude/Codex, Dolphin, HyDE
+**Installs:** Pacman packages, Git/SSH/GitHub CLI, Node, LazyGit, Zsh, Vim, Tmux, Bat, Ghostty, Fonts, Starship, Fastfetch, Brave, Podman, Claude/Codex + Agents, Dolphin, HyDE theming (Hyprland/Rofi/Btop), VPN split-tunnel, UFW
 
 **Pacman packages:** zsh, starship, tmux, ripgrep, eza, zoxide, wl-clipboard, fzf, jq, bat, dysk, htop, btop, ttf-jetbrains-mono-nerd, mangohud, darktable, podman, yubikey-manager, github-cli
 
@@ -311,7 +309,7 @@ Context rules for AI coding assistants:
 ./bin/dot --system linux_ubuntu
 ```
 
-**Installs:** Core dev tools via apt, Node, LazyGit, Starship, Fastfetch, Wezterm (Windows-compatible)
+**Installs:** Core dev tools via apt, Git/SSH, Zsh, Vim, Tmux, Node, LazyGit, Starship, Fastfetch, Brave
 
 ### Fedora (`linux_fedora`)
 
@@ -319,7 +317,7 @@ Context rules for AI coding assistants:
 ./bin/dot --system linux_fedora
 ```
 
-**Installs:** i3wm, Polybar, LazyGit, Fonts, Starship, Fastfetch
+**Installs:** Git/Zsh/Vim/Tmux, i3wm, Polybar, LazyGit, Fonts, Starship, Fastfetch, Brave
 
 ### Headless Server / Proxmox / LXC (`server/`)
 

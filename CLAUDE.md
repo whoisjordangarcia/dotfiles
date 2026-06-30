@@ -86,7 +86,7 @@ configs/                          # Configuration files (symlinked to home)
   ├── hypr/                      # Hyprland (Arch)
   ├── i3/, sway/                 # i3/Sway window managers (Linux)
   ├── claude/, codex/, opencode/ # AI tool configs
-  ├── ai-rules/                  # AI assistant rules (Cursor, Aider, Avante)
+  ├── ai-rules/                  # AI assistant rules (Cursor)
   ├── vpn-split/                 # AirVPN WireGuard split tunnel (Arch)
   └── ...                        # ~40 total config dirs (lazygit, bat, btop, etc.)
 functions/
@@ -533,8 +533,6 @@ source <(fzf --zsh)    # FZF keybindings
 ### AI Rules
 AI assistant rules in `configs/ai-rules/`:
 - **Cursor**: `.mdc` format rules with file patterns
-- **Aider**: Framework-specific guidance (TypeScript, Next.js, NestJS, Django)
-- **Avante**: Planning workflow rules
 
 ## Security — No Sensitive Data in This Repository
 

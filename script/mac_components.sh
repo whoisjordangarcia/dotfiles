@@ -28,7 +28,6 @@ component_installation=(
   # code
   lazygit/mac
   claude
-  claude-mem
   agents
   codex
   fastfetch
