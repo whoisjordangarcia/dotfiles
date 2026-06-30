@@ -128,10 +128,10 @@ workspace_names = [
 # (Option+1..0). So number-key "N" == workspace id N-1, and number-key "0"
 # (Option+0) == id 9. Pinned homes below:
 #   cmux        -> "1" (id 0)
-#   browser     -> "2" (id 1)
 #   slack       -> "3" (id 2)
 #   fantastical -> "0" (id 9)
-#   macOS apps  -> "1" (id 0), tiled
+# Browser, Finder, and other apps without a `workspace` rule open on the
+# current workspace (rift's default when auto_assign_windows can't match a pin).
 app_rules = [
   # --- Pinned app homes ---------------------------------------------------
   # cmux pinned to "1", force-tiled. rift auto-floats it otherwise (it's an
@@ -139,7 +139,7 @@ app_rules = [
   # which rift reads as float-like) — an explicit `floating = false` wins.
   # (If the old jitter / off-screen flash returns, set `floating = true`.)
   { app_id = "com.cmuxterm.app", workspace = 0, floating = false },
-  { app_id = "com.brave.Browser", workspace = 1 },                          # Browser -> "2", tiled
+  { app_id = "com.brave.Browser" },                                         # Browser -> opens on current workspace, tiled
   { app_id = "com.tinyspeck.slackmacgap", workspace = 2 },                  # Slack   -> "3", tiled
   { app_id = "com.flexibits.fantastical2.mac", workspace = 9, floating = true },  # Fantastical -> "0"
 
@@ -147,82 +147,11 @@ app_rules = [
   { app_id = "io.rancherdesktop.app", floating = true },
   { app_id = "com.cisco.secureclient.gui", floating = true },
   { app_id = "com.1password.1password", floating = true },
-  { app_id = "pro.betterdisplay.BetterDisplay", floating = true },
   { app_id = "com.timpler.screenstudio", floating = true },
   { app_id = "us.zoom.xos", floating = true },                              # Zoom -> floating
   # Dev tools: tile where you're working (not pinned to "1").
   { app_id = "com.apple.iphonesimulator" },
   { app_id = "com.apple.dt.Xcode" },
-
-  # --- Built-in macOS apps -> "1" (id 0), tiled ---------------------------
-  # No com.apple.* wildcard exists (app_id is exact-match), so these are
-  # enumerated from /System/Applications + /System/Applications/Utilities.
-  { app_id = "com.apple.finder", workspace = 0 },  # Finder
-  { app_id = "com.apple.systempreferences", workspace = 0 },  # System Settings
-  { app_id = "com.apple.ActivityMonitor", workspace = 0 },  # Activity Monitor
-  { app_id = "com.apple.AddressBook", workspace = 0 },  # Contacts
-  { app_id = "com.apple.airport.airportutility", workspace = 0 },  # AirPort Utility
-  { app_id = "com.apple.apps.launcher", workspace = 0 },  # Apps
-  { app_id = "com.apple.AppStore", workspace = 0 },  # App Store
-  { app_id = "com.apple.audio.AudioMIDISetup", workspace = 0 },  # Audio MIDI Setup
-  { app_id = "com.apple.Automator", workspace = 0 },  # Automator
-  { app_id = "com.apple.backup.launcher", workspace = 0 },  # Time Machine
-  { app_id = "com.apple.BluetoothFileExchange", workspace = 0 },  # Bluetooth File Exchange
-  { app_id = "com.apple.bootcampassistant", workspace = 0 },  # Boot Camp Assistant
-  { app_id = "com.apple.calculator", workspace = 0 },  # Calculator
-  { app_id = "com.apple.Chess", workspace = 0 },  # Chess
-  { app_id = "com.apple.clock", workspace = 0 },  # Clock
-  { app_id = "com.apple.ColorSyncUtility", workspace = 0 },  # ColorSync Utility
-  { app_id = "com.apple.Console", workspace = 0 },  # Console
-  { app_id = "com.apple.Dictionary", workspace = 0 },  # Dictionary
-  { app_id = "com.apple.DigitalColorMeter", workspace = 0 },  # Digital Color Meter
-  { app_id = "com.apple.DiskUtility", workspace = 0 },  # Disk Utility
-  { app_id = "com.apple.exposelauncher", workspace = 0 },  # Mission Control
-  { app_id = "com.apple.FaceTime", workspace = 0 },  # FaceTime
-  { app_id = "com.apple.findmy", workspace = 0 },  # FindMy
-  { app_id = "com.apple.FontBook", workspace = 0 },  # Font Book
-  { app_id = "com.apple.freeform", workspace = 0 },  # Freeform
-  { app_id = "com.apple.games", workspace = 0 },  # Games
-  { app_id = "com.apple.GenerativePlaygroundApp", workspace = 0 },  # Image Playground
-  { app_id = "com.apple.grapher", workspace = 0 },  # Grapher
-  { app_id = "com.apple.helpviewer", workspace = 0 },  # Tips
-  { app_id = "com.apple.Home", workspace = 0 },  # Home
-  { app_id = "com.apple.iBooksX", workspace = 0 },  # Books
-  { app_id = "com.apple.iCal", workspace = 0 },  # Calendar
-  { app_id = "com.apple.Image_Capture", workspace = 0 },  # Image Capture
-  { app_id = "com.apple.journal", workspace = 0 },  # Journal
-  { app_id = "com.apple.Magnifier", workspace = 0 },  # Magnifier
-  { app_id = "com.apple.mail", workspace = 0 },  # Mail
-  { app_id = "com.apple.Maps", workspace = 0 },  # Maps
-  { app_id = "com.apple.MigrateAssistant", workspace = 0 },  # Migration Assistant
-  { app_id = "com.apple.mobilephone", workspace = 0 },  # Phone
-  { app_id = "com.apple.MobileSMS", workspace = 0 },  # Messages
-  { app_id = "com.apple.Music", workspace = 0 },  # Music
-  { app_id = "com.apple.news", workspace = 0 },  # News
-  { app_id = "com.apple.Notes", workspace = 0 },  # Notes
-  { app_id = "com.apple.Passwords", workspace = 0 },  # Passwords
-  { app_id = "com.apple.PhotoBooth", workspace = 0 },  # Photo Booth
-  { app_id = "com.apple.Photos", workspace = 0 },  # Photos
-  { app_id = "com.apple.podcasts", workspace = 0 },  # Podcasts
-  { app_id = "com.apple.Preview", workspace = 0 },  # Preview
-  { app_id = "com.apple.printcenter", workspace = 0 },  # Print Center
-  { app_id = "com.apple.QuickTimePlayerX", workspace = 0 },  # QuickTime Player
-  { app_id = "com.apple.reminders", workspace = 0 },  # Reminders
-  { app_id = "com.apple.ScreenContinuity", workspace = 0 },  # iPhone Mirroring
-  { app_id = "com.apple.ScreenSharing", workspace = 0 },  # Screen Sharing
-  { app_id = "com.apple.screenshot.launcher", workspace = 0 },  # Screenshot
-  { app_id = "com.apple.ScriptEditor2", workspace = 0 },  # Script Editor
-  { app_id = "com.apple.shortcuts", workspace = 0 },  # Shortcuts
-  { app_id = "com.apple.siri.launcher", workspace = 0 },  # Siri
-  { app_id = "com.apple.Stickies", workspace = 0 },  # Stickies
-  { app_id = "com.apple.stocks", workspace = 0 },  # Stocks
-  { app_id = "com.apple.SystemProfiler", workspace = 0 },  # System Information
-  { app_id = "com.apple.Terminal", workspace = 0 },  # Terminal
-  { app_id = "com.apple.TextEdit", workspace = 0 },  # TextEdit
-  { app_id = "com.apple.TV", workspace = 0 },  # TV
-  { app_id = "com.apple.VoiceMemos", workspace = 0 },  # VoiceMemos
-  { app_id = "com.apple.VoiceOverUtility", workspace = 0 },  # VoiceOver Utility
-  { app_id = "com.apple.weather", workspace = 0 },  # Weather
 ]
 
 # Modifier combinations (i3/sway style: Option as $mod)
@@ -234,7 +163,7 @@ comb1 = "Option + Shift"
 # Navigation: jkl; (i3 default)
 
 # Focus movement (vim-style, matches cmux's cmd+opt+hjkl pane focus).
-# In the scrolling layout, H/L is how you scroll along the column strip.
+# In the scrolling layout, H/L is how you scroll along the column strip
 # (Option+J previously duplicated toggle_orientation — Option+E still does it.)
 "Option + H" = { move_focus = "left" }
 "Option + J" = { move_focus = "down" }
@@ -259,20 +188,6 @@ comb1 = "Option + Shift"
 "Option + 9" = { switch_to_workspace = 8 }
 "Option + 0" = { switch_to_workspace = 9 }
 
-# Move the focused window to workspace N AND follow it there.
-# rift has no native move+switch action and no --follow flag, so we chain the two
-# steps via `sh -c`. The `&&` runs them sequentially (switch waits for the move to
-# finish), so only the focused window moves — then focus follows to the destination.
-"comb1 + 1" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 0 && rift-cli execute workspace switch 0"] }
-"comb1 + 2" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 1 && rift-cli execute workspace switch 1"] }
-"comb1 + 3" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 2 && rift-cli execute workspace switch 2"] }
-"comb1 + 4" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 3 && rift-cli execute workspace switch 3"] }
-"comb1 + 5" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 4 && rift-cli execute workspace switch 4"] }
-"comb1 + 6" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 5 && rift-cli execute workspace switch 5"] }
-"comb1 + 7" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 6 && rift-cli execute workspace switch 6"] }
-"comb1 + 8" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 7 && rift-cli execute workspace switch 7"] }
-"comb1 + 9" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 8 && rift-cli execute workspace switch 8"] }
-"comb1 + 0" = { exec = ["sh", "-c", "rift-cli execute workspace move-window 9 && rift-cli execute workspace switch 9"] }
 
 # Move window to display by index (Ctrl + Cmd + N)
 "Ctrl + Meta + 1" = { exec = ["rift-cli", "execute", "display", "move-window", "--index", "0"] }
