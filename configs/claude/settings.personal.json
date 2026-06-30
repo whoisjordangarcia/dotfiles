@@ -184,7 +184,8 @@
     "superpowers@superpowers-marketplace": true,
     "swift-lsp@claude-plugins-official": false,
     "typescript-lsp@claude-plugins-official": false,
-    "infracost@infracost": false
+    "infracost@infracost": false,
+    "ponytail@ponytail": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -209,6 +210,12 @@
       "source": {
         "source": "github",
         "repo": "infracost/claude-skills"
+      }
+    },
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
       }
     }
   },

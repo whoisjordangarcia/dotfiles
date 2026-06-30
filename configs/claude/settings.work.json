@@ -190,7 +190,8 @@
     "nest-summary-html@nest-genomics-skills": false,
     "superpowers@superpowers-marketplace": true,
     "swift-lsp@claude-plugins-official": false,
-    "typescript-lsp@claude-plugins-official": false
+    "typescript-lsp@claude-plugins-official": false,
+    "ponytail@ponytail": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -215,6 +216,12 @@
       "source": {
         "source": "github",
         "repo": "Nest-Genomics/ai-skills"
+      }
+    },
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
       }
     }
   },

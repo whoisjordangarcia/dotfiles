@@ -41,6 +41,7 @@
   ```
   Call the binary `~/.nest/bin/wt` directly (the `wt` shell function only `cd`s your interactive shell, which doesn't persist from a tool call). Pass both `name` and a `release/X.Y.Z` base-ref (never `main`). Default setup is full and slow — background it and tail the log, or use `--setup install` for just deps + husky.
 - **Cap lint/test concurrency at 3** so the machine stays responsive: `turbo run lint --concurrency=3 --filter=<app>` / `turbo run test --concurrency=3 --filter=<app>`.
+- **When running client-api, auto-check seed + index first.** Before (or right after) bringing up `serve:client-api` for an instance, check whether the instance DB has been seeded and the ES indexes built, and run them automatically if not — don't wait to be asked. Cheap checks against the instance's shared infra (Postgres 5432 / ES 9244): a seeded DB has rows in `nestclientapi."Patient"` (e.g. `psql … -tAc 'SELECT count(*) FROM nestclientapi."Patient"'` > 0); indexes exist when the instance's ES prefix (`dev-<instance>-patients-v1` etc.) returns docs. If either is empty, run `pnpm run seed` then `pnpm run index-all-records` with the instance env (shared-infra port overrides, same recipe as serving the API). It's a once-off per instance — seed/index persist in the shared Postgres/ES, so skip when already populated.
 
 ## Code Style
 
