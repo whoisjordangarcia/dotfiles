@@ -1,0 +1,13 @@
+{
+    "apps": [
+        {
+            "name": "Desktop",
+            "auto-detach": true,
+            "exit-timeout": 5,
+            "wait-all": true,
+            "cmd": [],
+            "prep-cmd": []
+        }
+    ],
+    "env": {}
+}

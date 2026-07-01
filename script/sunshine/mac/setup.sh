@@ -4,7 +4,9 @@ set -euo pipefail
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 SUNSHINE_CONFIG_DIR="$HOME/.config/sunshine"
-CONFIGS_DIR="$SCRIPT_DIR/../../../configs/sunshine"
+# macOS-specific config (the Linux/Arch config lives in ../linux and is used
+# directly on that machine — the two OSes need different encoders/displays).
+CONFIGS_DIR="$SCRIPT_DIR/../../../configs/sunshine/mac"
 
 source "$SCRIPT_DIR/../../common/log.sh"
 source "$SCRIPT_DIR/../../common/symlink.sh"
@@ -16,9 +18,23 @@ brew install lizardbyte/homebrew/sunshine-beta
 # Create config directory if it doesn't exist
 mkdir -p "$SUNSHINE_CONFIG_DIR"
 
-# Symlink config files
+# apps.json has no host-specific data → symlink it (edits sync back to the repo).
 link_file "$CONFIGS_DIR/apps.json" "$SUNSHINE_CONFIG_DIR/apps.json"
-link_file "$CONFIGS_DIR/sunshine.conf" "$SUNSHINE_CONFIG_DIR/sunshine.conf"
+
+# sunshine.conf embeds this host's LAN IP(s) in csrf_allowed_origins so the web
+# UI doesn't 403 from other machines. It's GENERATED, not symlinked, so no real
+# address is committed. Enumerate ALL private-range IPv4 addresses (a Mac can be
+# multi-homed: Ethernet + Wi-Fi), so the origin check passes whichever IP the
+# client reaches — DHCP/interface changes won't reintroduce the 403.
+ORIGINS="https://localhost:47990"
+for ip in $(ifconfig 2>/dev/null | awk '/inet /{print $2}' \
+    | grep -E '^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)'); do
+  ORIGINS="$ORIGINS,https://$ip:47990"
+done
+info "Generating sunshine.conf with CSRF origins: $ORIGINS"
+[ -L "$SUNSHINE_CONFIG_DIR/sunshine.conf" ] && rm -f "$SUNSHINE_CONFIG_DIR/sunshine.conf"
+sed "s|^csrf_allowed_origins = .*|csrf_allowed_origins = $ORIGINS|" \
+  "$CONFIGS_DIR/sunshine.conf" > "$SUNSHINE_CONFIG_DIR/sunshine.conf"
 
 SUNSHINE_BIN=$(readlink -f /opt/homebrew/opt/sunshine-beta/bin/sunshine 2>/dev/null || echo "/opt/homebrew/opt/sunshine-beta/bin/sunshine")
 PLIST_SRC="/opt/homebrew/opt/sunshine-beta/homebrew.mxcl.sunshine-beta.plist"
