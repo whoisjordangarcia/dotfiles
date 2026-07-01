@@ -4,12 +4,14 @@ tap 'FelixKratz/formulae'
 tap 'acsandmann/tap'
 tap 'homebrew/autoupdate'
 tap 'narugit/tap'
+tap 'neurosnap/tap'
 
 # CLI Tools
 brew 'zsh'
 brew 'fzf'
 brew 'fd'
 brew 'tmux'
+brew 'neurosnap/tap/zmx' # session persistence (attach/detach), tmux alternative
 brew 'zoxide'
 brew 'starship'
 brew 'jq'

@@ -9,6 +9,7 @@ component_installation=(
 	zsh
 	vim
 	tmux
+	zmx/linux
 	node
 	lazygit/linux
 	starship

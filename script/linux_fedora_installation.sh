@@ -10,6 +10,7 @@ component_installation=(
 	zsh
 	vim
 	tmux
+	zmx/linux
 	lazygit/fedora
 	# essentials
 	fonts/linux

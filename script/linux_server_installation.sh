@@ -8,6 +8,7 @@ component_installation=(
 	zsh
 	vim-starter
 	tmux
+	zmx/linux
 	starship
 	fastfetch
 	claude
