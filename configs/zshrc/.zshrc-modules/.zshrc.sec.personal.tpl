@@ -22,6 +22,11 @@
 
 # -- injected (plaintext at rest — use sparingly; remove inner quotes to arm) --
 #export SOME_LOW_RISK_VALUE="{{ "op://Personal/Item/field" }}"
+# Tavily search API key — must be exported in-env so the `tavily` MCP server
+# (settings.personal.json: "TAVILY_API_KEY": "${TAVILY_API_KEY}") resolves it.
+# Low-sensitivity, rate-limited key; injected (unquoted ref) so the value lands
+# in .zshrc.sec and is actually exported, not just stored as a reference string.
+export TAVILY_API_KEY="{{ op://Personal/Tavily/credential }}"
 
 # -- lazy references (keep inner quotes; resolved per-use via opsec) --
 #export ANTHROPIC_API_KEY_REF="{{ "op://Personal/Anthropic/credential" }}"
