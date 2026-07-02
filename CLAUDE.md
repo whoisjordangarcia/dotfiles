@@ -336,7 +336,7 @@ Add a test case for any new state mapping before considering the change complete
 AI-initiated sensitive Bash commands require biometric approval via a Claude Code `PreToolUse` hook:
 
 - `configs/claude/hooks/touchid-gate.py` — pattern-matches sensitive commands (sudo, force push, prod AWS profiles, 1Password/keychain access, `curl | sh`, secrets-file reads) and pops an approval dialog. Approved → `allow`; denied → `deny`; biometrics unavailable → falls back to the normal permission prompt (`ask`).
-- `configs/claude/hooks/bioprompt.swift` — two-stage approval UI: an AppKit alert showing the full command in a monospaced box, then Touch ID (`.deviceOwnerAuthentication`, so password fallback works in clamshell mode). Compiled by `script/claude/setup.sh` to `~/.local/bin/bioprompt`.
+- `configs/claude/hooks/bioprompt.swift` — SwiftUI Liquid Glass approval dialog: the command rendered syntax-highlighted (colors parsed live from the Ghostty theme's dark variant) with Touch ID embedded inline via `LAAuthenticationView`; falls back to a two-stage alert + `.deviceOwnerAuthentication` when biometrics are unavailable (clamshell mode), so password fallback still works. Built by `script/claude/setup.sh` into `~/Applications/BioPrompt.app` (`bioprompt-Info.plist`); `~/.local/bin/bioprompt` is an exec shim into the bundle so the hook keeps calling the same path.
 - Wired in the dedicated `settings.{work,personal}.json` files under `hooks.PreToolUse`. **Bootstrap order matters**: the `~/.claude/hooks` symlink must exist before the hook entry is live, or every Bash call is blocked (claude/setup.sh links it).
 
 ### Claude Settings (dedicated work/personal files)

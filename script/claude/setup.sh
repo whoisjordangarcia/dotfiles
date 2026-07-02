@@ -74,18 +74,27 @@ link_file "$SCRIPT_DIR/../../configs/claude/hooks/" "$HOME/.claude/hooks"
 # cmux sidebar hook scripts (workspace title, PR-approval pill, task progress bar)
 link_file "$SCRIPT_DIR/../../configs/claude/scripts/" "$HOME/.claude/scripts" "directory"
 
-# Touch ID command gate (macOS): compile the bioprompt helper used by the
-# touchid-gate.py PreToolUse hook to biometric-gate sensitive Bash commands.
+# Touch ID command gate (macOS): build BioPrompt.app — the SwiftUI approval
+# dialog used by the touchid-gate.py PreToolUse hook to biometric-gate
+# sensitive Bash commands. ~/.local/bin/bioprompt is a shim that execs the
+# bundled binary (running it at its bundle path is what gives it app identity
+# in the system auth UI).
 if [[ "$OSTYPE" == darwin* ]] && command -v swiftc &>/dev/null; then
 	BIOPROMPT_SRC="$SCRIPT_DIR/../../configs/claude/hooks/bioprompt.swift"
-	BIOPROMPT_BIN="$HOME/.local/bin/bioprompt"
-	if [[ ! -x "$BIOPROMPT_BIN" || "$BIOPROMPT_SRC" -nt "$BIOPROMPT_BIN" ]]; then
-		step "Compiling bioprompt (Touch ID helper)..."
-		mkdir -p "$(dirname "$BIOPROMPT_BIN")"
+	BIOPROMPT_PLIST="$SCRIPT_DIR/../../configs/claude/hooks/bioprompt-Info.plist"
+	BIOPROMPT_APP="$HOME/Applications/BioPrompt.app"
+	BIOPROMPT_BIN="$BIOPROMPT_APP/Contents/MacOS/bioprompt"
+	BIOPROMPT_SHIM="$HOME/.local/bin/bioprompt"
+	if [[ ! -x "$BIOPROMPT_BIN" || "$BIOPROMPT_SRC" -nt "$BIOPROMPT_BIN" || "$BIOPROMPT_PLIST" -nt "$BIOPROMPT_APP/Contents/Info.plist" ]]; then
+		step "Building BioPrompt.app (Touch ID helper)..."
+		mkdir -p "$BIOPROMPT_APP/Contents/MacOS" "$(dirname "$BIOPROMPT_SHIM")"
+		cp "$BIOPROMPT_PLIST" "$BIOPROMPT_APP/Contents/Info.plist"
 		swiftc -O "$BIOPROMPT_SRC" -o "$BIOPROMPT_BIN"
-		success "bioprompt compiled to $BIOPROMPT_BIN"
+		printf '#!/bin/sh\nexec "%s" "$@"\n' "$BIOPROMPT_BIN" >"$BIOPROMPT_SHIM"
+		chmod +x "$BIOPROMPT_SHIM"
+		success "BioPrompt.app built at $BIOPROMPT_APP (shim: $BIOPROMPT_SHIM)"
 	else
-		debug "bioprompt already compiled and up to date. Skipping."
+		debug "BioPrompt.app already built and up to date. Skipping."
 	fi
 fi
 
