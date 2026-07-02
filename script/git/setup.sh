@@ -77,6 +77,11 @@ if [[ -f "$GITCONFIG_TEMPLATE" ]]; then
 		info "No YubiKey provided - removed signing configuration"
 	fi
 
+	# Linux ssh-keygen has FIDO support built in — only macOS needs the brew one
+	if [[ "$(uname)" != "Darwin" ]]; then
+		"${SED_INLINE[@]}" 's|program = /opt/homebrew/bin/ssh-keygen|program = ssh-keygen|' "$GITCONFIG_TARGET"
+	fi
+
 	DOT_DISPLAY_NAME=${DOT_NAME:-Unknown}
 	DOT_DISPLAY_EMAIL=${DOT_EMAIL:-unknown@example.com}
 	success "Updated .gitconfig with: ${DOT_DISPLAY_NAME} <${DOT_DISPLAY_EMAIL}>"
