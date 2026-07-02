@@ -10,7 +10,12 @@
   gpgsign = true
 
 [gpg]
-  program = gpg
+  format = ssh
+
+[gpg "ssh"]
+  # Stock /usr/bin/ssh-keygen on macOS has no FIDO middleware — brew openssh required
+  program = /opt/homebrew/bin/ssh-keygen
+  allowedSignersFile = ~/.ssh/allowed_signers
 
 [init]
   defaultBranch = main

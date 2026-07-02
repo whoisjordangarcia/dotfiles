@@ -1,7 +1,6 @@
 [user]
   name = Jordan Garcia
   email = jordan@nestgenomics.com
-  signingkey = DEBA020FBA01DBF6
 
 [commit]
   gpgsign = true

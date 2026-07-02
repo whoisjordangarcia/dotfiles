@@ -18,6 +18,15 @@ mkdir -p "$HOME/.ssh/sockets"
 link_file "$DOTFILES_ROOT/configs/ssh/config" "$HOME/.ssh/config"
 chmod 600 "$HOME/.ssh/config" 2>/dev/null || true
 
+# Allowed signers for SSH commit signature verification (public keys only).
+# The signing key itself is a FIDO handle (~/.ssh/id_ed25519_sk_git) — useless
+# without the physical YubiKey, but NOT regenerable: copy it from an existing
+# machine when setting up a new one.
+link_file "$DOTFILES_ROOT/configs/ssh/allowed_signers" "$HOME/.ssh/allowed_signers"
+if [[ ! -f "$HOME/.ssh/id_ed25519_sk_git" ]]; then
+	info "Commit-signing key handle missing — copy ~/.ssh/id_ed25519_sk_git{,.pub} from another machine (needs the YubiKey to sign)"
+fi
+
 # Create hosts.local if it doesn't exist (machine-specific, not in git)
 if [[ ! -f "$HOME/.ssh/hosts.local" ]]; then
 	cat > "$HOME/.ssh/hosts.local" <<'EOF'
