@@ -39,6 +39,7 @@ brew 'go'
 # Security / YubiKey
 brew 'gnupg'
 brew 'yubico-piv-tool'
+brew 'libfido2'          # fido2-assert/-cred for bioprompt YubiKey approval
 brew 'pcsc-lite'
 
 # Streaming

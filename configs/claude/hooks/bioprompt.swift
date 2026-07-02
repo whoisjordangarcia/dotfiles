@@ -20,6 +20,7 @@
 
 import AppKit
 import SwiftUI
+import Security
 import LocalAuthentication
 import LocalAuthenticationEmbeddedUI
 
@@ -27,6 +28,167 @@ let args = Array(CommandLine.arguments.dropFirst())
 let label = args.first ?? "sensitive command"
 let detail = args.count > 1 ? args[1...].joined(separator: " ") : ""
 let reason = String("approve \(label)".prefix(180))
+
+// --- YubiKey (FIDO2) approval ---
+// A user-presence assertion via libfido2: tap the key to approve. Enrolled once
+// with `bioprompt --enroll` (stores credential id + PUBLIC key only under
+// ~/.config/bioprompt; each approval signs a fresh random challenge, verified
+// against that key — nothing replayable sits on disk). Races the other auth
+// paths; first success wins.
+
+let fidoDir = NSHomeDirectory() + "/.config/bioprompt"
+let fidoRP = "bioprompt"
+var fidoProc: Process?  // the blocking -G call, terminated when the dialog closes
+
+func fidoBin(_ name: String) -> String? {
+    ["/opt/homebrew/bin/", "/usr/local/bin/"]
+        .map { $0 + name }
+        .first { FileManager.default.isExecutableFile(atPath: $0) }
+}
+
+var lastProcErr = ""  // stderr of the most recent runProc call (for diagnostics)
+
+func runProc(_ bin: String, _ args: [String], stdin: String? = nil, track: Bool = false) -> (status: Int32, out: String) {
+    let p = Process()
+    p.executableURL = URL(fileURLWithPath: bin)
+    p.arguments = args
+    let outPipe = Pipe(), errPipe = Pipe()
+    p.standardOutput = outPipe
+    p.standardError = errPipe
+    let inPipe = Pipe()
+    p.standardInput = inPipe
+    do { try p.run() } catch { lastProcErr = error.localizedDescription; return (-1, "") }
+    if track { fidoProc = p }
+    if let stdin = stdin { inPipe.fileHandleForWriting.write(Data(stdin.utf8)) }
+    inPipe.fileHandleForWriting.closeFile()
+    var errData = Data()
+    errPipe.fileHandleForReading.readabilityHandler = { h in errData.append(h.availableData) }
+    let data = outPipe.fileHandleForReading.readDataToEndOfFile()
+    p.waitUntilExit()
+    errPipe.fileHandleForReading.readabilityHandler = nil
+    lastProcErr = String(data: errData, encoding: .utf8) ?? ""
+    return (p.terminationStatus, String(data: data, encoding: .utf8) ?? "")
+}
+
+func randomB64() -> String {
+    var bytes = [UInt8](repeating: 0, count: 32)
+    _ = SecRandomCopyBytes(kSecRandomDefault, 32, &bytes)
+    return Data(bytes).base64EncodedString()
+}
+
+func fidoDevice() -> String? {
+    guard let tok = fidoBin("fido2-token") else { return nil }
+    let r = runProc(tok, ["-L"])
+    guard r.status == 0,
+          let first = r.out.split(separator: "\n").first?.split(separator: " ").first else { return nil }
+    return String(first.hasSuffix(":") ? first.dropLast() : first)
+}
+
+func yubiArmed() -> Bool {
+    FileManager.default.fileExists(atPath: fidoDir + "/cred.id") && fidoBin("fido2-assert") != nil
+}
+
+// Background watcher: keeps the key's touch window armed (fresh challenge per
+// ~30s round) until a tap approves or a hard error occurs. Dies with the process.
+func yubiWatch(onApproved: @escaping () -> Void) {
+    DispatchQueue.global().async {
+        while true {
+            if yubiApprove() {
+                onApproved()
+                return
+            }
+            if !lastProcErr.contains("ACTION_TIMEOUT") {
+                FileHandle.standardError.write(Data("bioprompt: yubikey: \(lastProcErr.trimmingCharacters(in: .whitespacesAndNewlines))\n".utf8))
+                return
+            }
+        }
+    }
+}
+
+// Blocks until the key is tapped (or its ~30s touch window lapses); returns
+// whether a valid signature over a fresh challenge was produced. Callers loop
+// on ACTION_TIMEOUT via yubiWatch to keep the window armed.
+func yubiApprove() -> Bool {
+    guard let assertBin = fidoBin("fido2-assert"),
+          let credId = (try? String(contentsOfFile: fidoDir + "/cred.id", encoding: .utf8))?
+              .trimmingCharacters(in: .whitespacesAndNewlines),
+          let dev = fidoDevice() else { return false }
+    let got = runProc(assertBin, ["-G", "-t", "up=true", dev],
+                      stdin: "\(randomB64())\n\(fidoRP)\n\(credId)\n", track: true)
+    guard got.status == 0 else { return false }
+    let tmp = NSTemporaryDirectory() + "bioprompt-assert-\(getpid())"
+    defer { try? FileManager.default.removeItem(atPath: tmp) }
+    guard (try? got.out.write(toFile: tmp, atomically: true, encoding: .utf8)) != nil else { return false }
+    return runProc(assertBin, ["-V", "-i", tmp, fidoDir + "/cred.pub", "es256"]).status == 0
+}
+
+var enrollError = ""
+
+// Shows a glass popup and re-arms the key's ~30s touch window until the user
+// taps (each retry uses a fresh challenge) or cancels. Real errors abort.
+func enroll() -> Never {
+    func die(_ msg: String) -> Never {
+        FileHandle.standardError.write(Data("bioprompt --enroll: \(msg)\n".utf8))
+        exit(1)
+    }
+    guard let credBin = fidoBin("fido2-cred") else { die("libfido2 not installed (brew install libfido2)") }
+    guard fidoDevice() != nil else { die("no FIDO2 device found — is the YubiKey plugged in?") }
+
+    let app = NSApplication.shared
+    app.setActivationPolicy(.accessory)
+    let win = showGlass(EnrollView())
+
+    DispatchQueue.global().async {
+        while true {
+            guard let dev = fidoDevice() else {
+                enrollError = "FIDO2 device disappeared"
+                DispatchQueue.main.async { NSApp.stopModal(withCode: .abort) }
+                return
+            }
+            let made = runProc(credBin, ["-M", dev, "es256"],
+                               stdin: "\(randomB64())\n\(fidoRP)\nbioprompt\n\(randomB64())\n", track: true)
+            if made.status == 0 {
+                let verified = runProc(credBin, ["-V"], stdin: made.out)
+                let parts = verified.out.split(separator: "\n", maxSplits: 1)
+                guard verified.status == 0, parts.count == 2 else {
+                    enrollError = "credential verification failed: \(lastProcErr)"
+                    DispatchQueue.main.async { NSApp.stopModal(withCode: .abort) }
+                    return
+                }
+                do {
+                    try FileManager.default.createDirectory(atPath: fidoDir, withIntermediateDirectories: true)
+                    try (String(parts[0]) + "\n").write(toFile: fidoDir + "/cred.id", atomically: true, encoding: .utf8)
+                    try String(parts[1]).write(toFile: fidoDir + "/cred.pub", atomically: true, encoding: .utf8)
+                } catch {
+                    enrollError = "could not write \(fidoDir): \(error.localizedDescription)"
+                    DispatchQueue.main.async { NSApp.stopModal(withCode: .abort) }
+                    return
+                }
+                DispatchQueue.main.async { NSApp.stopModal(withCode: .OK) }
+                return
+            }
+            if !lastProcErr.contains("ACTION_TIMEOUT") {
+                enrollError = "make-credential failed: \(lastProcErr.trimmingCharacters(in: .whitespacesAndNewlines))"
+                DispatchQueue.main.async { NSApp.stopModal(withCode: .abort) }
+                return
+            }
+            // touch window lapsed — arm a fresh one and keep blinking
+        }
+    }
+
+    let code = NSApp.runModal(for: win)
+    win.orderOut(nil)
+    fidoProc?.terminate()
+    switch code {
+    case .OK:
+        print("Enrolled. A YubiKey tap can now approve bioprompt dialogs.")
+        exit(0)
+    case .abort:
+        die(enrollError)
+    default:
+        exit(1)  // cancelled
+    }
+}
 
 // --- Ghostty theme (dynamic) ---
 // Parses `theme =` from ~/.config/ghostty/config (preferring the dark: variant)
@@ -160,37 +322,111 @@ struct AuthView: NSViewRepresentable {
     func updateNSView(_ nsView: LAAuthenticationView, context: Context) {}
 }
 
-struct PromptView: View {
-    let ctx: LAContext
-    let box: (view: NSScrollView, height: CGFloat)?
+// Glass tinted toward the terminal background so the card and the command box
+// read as one surface (card kept slightly lighter so the box sits inset).
+let cardGlass: Glass = theme.map { .regular.tint(Color(nsColor: $0.bg).opacity(0.55)) } ?? .regular
+let accent = Color(nsColor: theme?.ansi[4] ?? .controlAccentColor)
+
+struct YubiHint: View {
+    let solo: Bool       // no inline biometry → the tap is the primary path
+    let connected: Bool  // enrolled key currently plugged in
+    @State private var pulse = false
 
     var body: some View {
-        VStack(spacing: 16) {
-            VStack(spacing: 5) {
+        HStack(spacing: 7) {
+            Circle()
+                .fill(connected ? Color.green : Color.secondary.opacity(0.5))
+                .frame(width: 6, height: 6)
+            Image(systemName: "key.radiowaves.forward.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(connected ? accent : .secondary)
+                .opacity(connected ? (pulse ? 1 : 0.4) : 0.4)
+                .animation(connected ? .easeInOut(duration: 1.1).repeatForever(autoreverses: true) : .default, value: pulse)
+            Text(connected
+                 ? (solo ? "YubiKey connected — press its gold contact to approve" : "YubiKey connected — or press its gold contact")
+                 : "YubiKey enrolled, but not connected")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color.white.opacity(0.06), in: Capsule())
+        .onAppear { pulse = true }
+    }
+}
+
+struct PromptView: View {
+    let ctx: LAContext?  // nil → button-driven approval (no inline biometry)
+    let box: (view: NSScrollView, height: CGFloat)?
+    let yubi: Bool
+    let yubiConnected: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 6) {
                 Text("Claude wants to run")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
                     .tracking(0.8)
                 Text(label)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .lineLimit(2)
             }
+            .padding(.bottom, 18)
+
             if let box = box {
                 CodeBox(view: box.view)
                     .frame(width: 560, height: box.height)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
+                    .padding(.bottom, 18)
             }
-            AuthView(ctx: ctx)
-            Button("Deny") {
-                NSApp.stopModal(withCode: .cancel)
+
+            if let ctx = ctx {
+                AuthView(ctx: ctx)
+                    .padding(.bottom, 8)
             }
-            .buttonStyle(.glass)
-            .keyboardShortcut(.cancelAction)
+            if yubi {
+                YubiHint(solo: ctx == nil, connected: yubiConnected)
+                    .padding(.bottom, 16)
+            }
+
+            HStack(spacing: 12) {
+                Button {
+                    NSApp.stopModal(withCode: .cancel)
+                } label: {
+                    Text("Deny").frame(minWidth: 110)
+                }
+                .buttonStyle(.glass)
+                .controlSize(.large)
+                .keyboardShortcut(.cancelAction)
+
+                if ctx == nil {
+                    Button {
+                        NSApp.stopModal(withCode: .continue)
+                    } label: {
+                        Text("Approve").frame(minWidth: 110)
+                    }
+                    .buttonStyle(.glassProminent)
+                    .tint(accent)
+                    .controlSize(.large)
+                    .keyboardShortcut(.defaultAction)
+                }
+            }
         }
-        .padding(24)
-        .frame(width: 608)
+        .padding(28)
+        .frame(width: 616)
         // Native Liquid Glass card — the window behind is fully transparent.
-        .glassEffect(.regular, in: .rect(cornerRadius: 26))
+        .glassEffect(cardGlass, in: .rect(cornerRadius: 26))
+    }
+}
+
+var approvedVia = ""  // logged on exit so hook output shows which path approved
+
+func logApproval() {
+    if !approvedVia.isEmpty {
+        FileHandle.standardError.write(Data("bioprompt: approved via \(approvedVia)\n".utf8))
     }
 }
 
@@ -200,11 +436,10 @@ final class KeyWindow: NSWindow {
     override var canBecomeKey: Bool { true }
 }
 
-func runInline(_ ctx: LAContext) -> Never {
-    let hosting = NSHostingView(rootView: PromptView(ctx: ctx, box: makeCommandBox()))
+// Transparent borderless modal window so the glass refracts what's behind it.
+func showGlass<V: View>(_ root: V) -> NSWindow {
+    let hosting = NSHostingView(rootView: root)
     hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
-
-    // Transparent borderless window so the glass refracts what's behind it.
     let win = KeyWindow(contentRect: hosting.frame,
                         styleMask: [.borderless],
                         backing: .buffered, defer: false)
@@ -219,57 +454,128 @@ func runInline(_ ctx: LAContext) -> Never {
     win.level = .modalPanel
     NSApp.activate(ignoringOtherApps: true)
     win.makeKeyAndOrderFront(nil)
+    return win
+}
+
+struct EnrollView: View {
+    var body: some View {
+        VStack(spacing: 14) {
+            Text("Bioprompt setup")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .tracking(0.8)
+            Text("Touch your YubiKey")
+                .font(.system(size: 15, weight: .semibold))
+            Text("Hold a finger on the gold contact until it stops blinking.")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+            ProgressView()
+                .controlSize(.small)
+            Button("Cancel") {
+                NSApp.stopModal(withCode: .cancel)
+            }
+            .buttonStyle(.glass)
+            .keyboardShortcut(.cancelAction)
+        }
+        .padding(24)
+        .frame(width: 360)
+        .glassEffect(.regular, in: .rect(cornerRadius: 22))
+    }
+}
+
+func runInline(_ ctx: LAContext) -> Never {
+    let yubi = yubiArmed()
+    let connected = yubi && fidoDevice() != nil
+    let win = showGlass(PromptView(ctx: ctx, box: makeCommandBox(), yubi: yubi, yubiConnected: connected))
 
     ctx.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { ok, error in
+        if ok { approvedVia = "touch id" }
         if let error = error, !ok {
             FileHandle.standardError.write(Data("bioprompt: \(error.localizedDescription)\n".utf8))
         }
         DispatchQueue.main.async { NSApp.stopModal(withCode: ok ? .OK : .cancel) }
     }
+    if connected {
+        yubiWatch {
+            approvedVia = "yubikey tap"
+            DispatchQueue.main.async { NSApp.stopModal(withCode: .OK) }
+        }
+    }
     let code = NSApp.runModal(for: win)
     win.orderOut(nil)
     ctx.invalidate()
+    fidoProc?.terminate()
+    logApproval()
     exit(code == .OK ? 0 : 1)
 }
 
-// --- Fallback flow: NSAlert, then a separate system auth prompt ---
+// --- Fallback flow (no usable biometrics, e.g. clamshell): same glass dialog
+// with Approve/Deny buttons. A key tap while the dialog is up approves outright;
+// Approve falls through to the system password / Apple Watch prompt, with the
+// key still racing it.
+
+var laCtx: LAContext?  // stage-2 context, invalidated if the key wins the race
 
 func runTwoStage() -> Never {
-    let alert = NSAlert()
-    alert.messageText = "Claude wants to run: \(label)"
-    alert.informativeText = "Review the command below. Approving requires authentication."
-    alert.alertStyle = .warning
-    if let box = makeCommandBox() { alert.accessoryView = box.view }
-    alert.addButton(withTitle: "Approve")
-    alert.addButton(withTitle: "Deny")
+    let semaphore = DispatchSemaphore(value: 0)
+    var approved = false
+    let yubi = yubiArmed()
+    let connected = yubi && fidoDevice() != nil
+    let win = showGlass(PromptView(ctx: nil, box: makeCommandBox(), yubi: yubi, yubiConnected: connected))
 
-    NSApp.activate(ignoringOtherApps: true)
-    guard alert.runModal() == .alertFirstButtonReturn else {
+    if connected {
+        yubiWatch {
+            approved = true
+            approvedVia = "yubikey tap"
+            laCtx?.invalidate()  // dismiss a pending password sheet, if any
+            DispatchQueue.main.async { NSApp.stopModal(withCode: .OK) }
+            semaphore.signal()
+        }
+    }
+
+    let code = NSApp.runModal(for: win)
+    if code == .OK {  // key tap won while the dialog was up
+        win.orderOut(nil)
+        logApproval()
+        exit(0)
+    }
+    guard code == .continue else {  // denied / Esc
+        win.orderOut(nil)
+        fidoProc?.terminate()
         exit(1)
     }
 
+    // Approve clicked → system auth, key still armed.
     let ctx = LAContext()
+    laCtx = ctx
     var unavailable: NSError?
     guard ctx.canEvaluatePolicy(.deviceOwnerAuthentication, error: &unavailable) else {
         FileHandle.standardError.write(Data("bioprompt: authentication unavailable: \(unavailable?.localizedDescription ?? "unknown")\n".utf8))
+        win.orderOut(nil)
         exit(2)
     }
-
-    let semaphore = DispatchSemaphore(value: 0)
-    var approved = false
     ctx.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, error in
-        approved = success
+        if success {
+            approved = true
+            approvedVia = "password / watch"
+        }
         if let error = error, !success {
             FileHandle.standardError.write(Data("bioprompt: \(error.localizedDescription)\n".utf8))
         }
         semaphore.signal()
     }
     semaphore.wait()
+    win.orderOut(nil)
+    fidoProc?.terminate()
+    logApproval()
     exit(approved ? 0 : 1)
 }
 
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
+
+if args.first == "--enroll" { enroll() }
 
 let inlineCtx = LAContext()
 if inlineCtx.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) {
