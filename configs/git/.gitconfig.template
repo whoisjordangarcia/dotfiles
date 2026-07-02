@@ -21,6 +21,9 @@
   defaultBranch = main
 
 [core]
+  # System ssh for transport — brew openssh (needed for FIDO signing) shadows
+  # it in PATH but rejects Apple-only config options like UseKeychain
+  sshCommand = /usr/bin/ssh
   editor = nvim
   autocrlf = input 
   safecrlf = true
