@@ -21,6 +21,7 @@
 import AppKit
 import SwiftUI
 import Security
+import OpenDirectory
 import LocalAuthentication
 import LocalAuthenticationEmbeddedUI
 
@@ -74,6 +75,16 @@ func randomB64() -> String {
     var bytes = [UInt8](repeating: 0, count: 32)
     _ = SecRandomCopyBytes(kSecRandomDefault, 32, &bytes)
     return Data(bytes).base64EncodedString()
+}
+
+// Local account password check via OpenDirectory — lets the fallback flow use
+// our own glass password card instead of the unstylable system auth sheet.
+func verifyLocalPassword(_ pw: String) -> Bool {
+    guard let session = ODSession.default(),
+          let node = try? ODNode(session: session, type: ODNodeType(kODNodeTypeAuthentication)),
+          let record = try? node.record(withRecordType: kODRecordTypeUsers, name: NSUserName(), attributes: nil)
+    else { return false }
+    return (try? record.verifyPassword(pw)) != nil
 }
 
 func fidoDevice() -> String? {
@@ -355,6 +366,92 @@ struct YubiHint: View {
     }
 }
 
+struct PasswordView: View {
+    let yubiConnected: Bool
+    @State private var password = ""
+    @State private var failed = false
+    @State private var checking = false
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 6) {
+                Text("Bioprompt")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+                    .tracking(0.8)
+                Text("Enter your password to approve")
+                    .font(.system(size: 16, weight: .semibold))
+            }
+            .padding(.bottom, 16)
+
+            SecureField("Account password", text: $password)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 280)
+                .focused($focused)
+                .onSubmit { submit() }
+                .padding(.bottom, 6)
+            // opacity (not if) keeps the card height fixed — the window can't resize
+            Text("Incorrect password — try again")
+                .font(.system(size: 11))
+                .foregroundStyle(Color(nsColor: theme?.ansi[1] ?? .systemRed))
+                .opacity(failed ? 1 : 0)
+                .padding(.bottom, 12)
+
+            if yubiConnected {
+                YubiHint(solo: false, connected: true)
+                    .padding(.bottom, 16)
+            }
+
+            HStack(spacing: 12) {
+                Button {
+                    NSApp.stopModal(withCode: .cancel)
+                } label: {
+                    Text("Cancel").frame(minWidth: 100)
+                }
+                .buttonStyle(.glass)
+                .controlSize(.large)
+                .keyboardShortcut(.cancelAction)
+
+                Button {
+                    submit()
+                } label: {
+                    Text(checking ? "Checking…" : "Approve").frame(minWidth: 100)
+                }
+                .buttonStyle(.glassProminent)
+                .tint(accent)
+                .controlSize(.large)
+                .keyboardShortcut(.defaultAction)
+                .disabled(checking || password.isEmpty)
+            }
+        }
+        .padding(28)
+        .glassEffect(cardGlass, in: .rect(cornerRadius: 26))
+        .onAppear { focused = true }
+    }
+
+    private func submit() {
+        guard !password.isEmpty, !checking else { return }
+        checking = true
+        let pw = password
+        DispatchQueue.global().async {
+            let ok = verifyLocalPassword(pw)
+            DispatchQueue.main.async {
+                checking = false
+                if ok {
+                    approvedVia = "password"
+                    NSApp.stopModal(withCode: .OK)
+                } else {
+                    failed = true
+                    password = ""
+                    focused = true
+                }
+            }
+        }
+    }
+}
+
 struct PromptView: View {
     let ctx: LAContext?  // nil → button-driven approval (no inline biometry)
     let box: (view: NSScrollView, height: CGFloat)?
@@ -511,65 +608,43 @@ func runInline(_ ctx: LAContext) -> Never {
 }
 
 // --- Fallback flow (no usable biometrics, e.g. clamshell): same glass dialog
-// with Approve/Deny buttons. A key tap while the dialog is up approves outright;
-// Approve falls through to the system password / Apple Watch prompt, with the
-// key still racing it.
+// with Approve/Deny buttons. A key tap approves outright at any point; Approve
+// opens a glass password card (verified locally via OpenDirectory).
 
-var laCtx: LAContext?  // stage-2 context, invalidated if the key wins the race
+var yubiApproved = false
 
 func runTwoStage() -> Never {
-    let semaphore = DispatchSemaphore(value: 0)
-    var approved = false
     let yubi = yubiArmed()
     let connected = yubi && fidoDevice() != nil
     let win = showGlass(PromptView(ctx: nil, box: makeCommandBox(), yubi: yubi, yubiConnected: connected))
 
     if connected {
         yubiWatch {
-            approved = true
+            yubiApproved = true
             approvedVia = "yubikey tap"
-            laCtx?.invalidate()  // dismiss a pending password sheet, if any
             DispatchQueue.main.async { NSApp.stopModal(withCode: .OK) }
-            semaphore.signal()
         }
     }
 
     let code = NSApp.runModal(for: win)
-    if code == .OK {  // key tap won while the dialog was up
-        win.orderOut(nil)
+    win.orderOut(nil)
+    if code == .OK || yubiApproved {  // key tap won while the dialog was up
+        fidoProc?.terminate()
         logApproval()
         exit(0)
     }
     guard code == .continue else {  // denied / Esc
-        win.orderOut(nil)
         fidoProc?.terminate()
         exit(1)
     }
 
-    // Approve clicked → system auth, key still armed.
-    let ctx = LAContext()
-    laCtx = ctx
-    var unavailable: NSError?
-    guard ctx.canEvaluatePolicy(.deviceOwnerAuthentication, error: &unavailable) else {
-        FileHandle.standardError.write(Data("bioprompt: authentication unavailable: \(unavailable?.localizedDescription ?? "unknown")\n".utf8))
-        win.orderOut(nil)
-        exit(2)
-    }
-    ctx.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, error in
-        if success {
-            approved = true
-            approvedVia = "password / watch"
-        }
-        if let error = error, !success {
-            FileHandle.standardError.write(Data("bioprompt: \(error.localizedDescription)\n".utf8))
-        }
-        semaphore.signal()
-    }
-    semaphore.wait()
-    win.orderOut(nil)
+    // Approve clicked → glass password card, key still armed.
+    let pwWin = showGlass(PasswordView(yubiConnected: connected))
+    let pwCode = NSApp.runModal(for: pwWin)
+    pwWin.orderOut(nil)
     fidoProc?.terminate()
     logApproval()
-    exit(approved ? 0 : 1)
+    exit((pwCode == .OK || yubiApproved) ? 0 : 1)
 }
 
 let app = NSApplication.shared
