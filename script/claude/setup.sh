@@ -96,6 +96,11 @@ if [[ "$OSTYPE" == darwin* ]] && command -v swiftc &>/dev/null; then
 	else
 		debug "BioPrompt.app already built and up to date. Skipping."
 	fi
+	# YubiKey tap-to-approve is enrolled per machine (credential lives in
+	# ~/.config/bioprompt, never in this public repo).
+	if [[ -x "$BIOPROMPT_BIN" && ! -f "$HOME/.config/bioprompt/cred.id" ]]; then
+		info "YubiKey tap-to-approve not enrolled on this machine — run: bioprompt --enroll"
+	fi
 fi
 
 # Skills live in configs/skills and are projected into each agent CLI.
