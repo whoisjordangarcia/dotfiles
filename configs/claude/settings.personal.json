@@ -239,6 +239,7 @@
   "tui": "fullscreen",
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
+  "theme": "dark",
   "verbose": true,
   "preferredNotifChannel": "ghostty",
   "autoCompactEnabled": false,
