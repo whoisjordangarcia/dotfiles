@@ -58,6 +58,7 @@ configs/codex/config.toml
 # Compiled Go binaries
 bin/nxps
 nxps
+bin/otobun
 
 # Python bytecode cache (e.g. from configs/claude/scripts)
 __pycache__/
