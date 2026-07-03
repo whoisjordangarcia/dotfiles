@@ -235,6 +235,7 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
+  "model": "claude-fable-5[1m]",
   "autoUpdatesChannel": "latest",
   "tui": "fullscreen",
   "showThinkingSummaries": true,
