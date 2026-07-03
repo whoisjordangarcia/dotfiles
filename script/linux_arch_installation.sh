@@ -33,6 +33,8 @@ component_installation=(
 	dolphin/linux
 	vpn/linux
 	ufw/linux
+	# T2 MacBook Touch Bar (tiny-dfr drop-in; no-ops on non-T2 hardware)
+	touchbar/arch
 )
 
 for component in "${component_installation[@]}"; do

@@ -1,8 +1,18 @@
 #!/bin/bash
 set -euo pipefail
 
-# Fix Touch Bar on T2 MacBooks running Linux
-# Reloads apple_bce kernel module to re-initialize Touch Bar device nodes
+# Fix Touch Bar on T2 MacBooks running Linux.
+#
+# Two failure modes are handled:
+#   1. Touch Bar blank / device gone (common after suspend/resume) — the
+#      apple_bce virtual USB bus needs the module reloaded to re-enumerate it.
+#   2. Buttons show but touch is dead — after re-enumeration the Touch Bar HID
+#      device (05AC:8103) gets grabbed by the catch-all `hid-generic` driver
+#      instead of `hid-appletb-kbd`, so tiny-dfr draws but touches go nowhere.
+#
+# Strategy: prefer the cheap fix. If the HID device exists but is on the wrong
+# driver, just rebind it (no module reload, no audio interruption). Only fall
+# back to the full apple_bce reload when the device is missing entirely.
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -13,27 +23,94 @@ info()    { echo -e "${GREEN}[✓]${NC} $1"; }
 warn()    { echo -e "${YELLOW}[!]${NC} $1"; }
 err()     { echo -e "${RED}[✗]${NC} $1"; }
 
+# Touch Bar HID device: Apple vendor 05AC, product 8103. The trailing instance
+# id (e.g. .0016) is dynamic, so always glob for it.
+TB_GLOB='/sys/bus/hid/devices/*05AC:8103*'
+TB_DRIVER=hid-appletb-kbd
+
 FORCE=false
 [[ "${1:-}" == "-f" || "${1:-}" == "--force" ]] && FORCE=true
 
-# Check if we're on a T2 Mac
+# Path to the Touch Bar HID device, or empty if it isn't present.
+tb_device() {
+    local d
+    for d in $TB_GLOB; do
+        [[ -e "$d" ]] && { echo "$d"; return 0; }
+    done
+    return 1
+}
+
+# Current driver bound to the Touch Bar HID ("none" if unbound, "" if no device).
+tb_current_driver() {
+    local d; d=$(tb_device) || return 1
+    basename "$(readlink -f "$d/driver" 2>/dev/null)" 2>/dev/null || echo none
+}
+
+# Rebind the Touch Bar HID to hid-appletb-kbd if it's on the wrong driver.
+# Returns 0 if the device ends up on the right driver, 1 if no device present.
+rebind_touchbar() {
+    local d id cur
+    d=$(tb_device) || { warn "Touch Bar HID device not present."; return 1; }
+    id=$(basename "$d")
+    cur=$(tb_current_driver)
+    if [[ "$cur" == "$TB_DRIVER" ]]; then
+        info "Touch Bar HID already bound to $TB_DRIVER."
+        return 0
+    fi
+    warn "Touch Bar HID on '$cur' — rebinding to $TB_DRIVER..."
+    if [[ "$cur" != "none" && -e "/sys/bus/hid/drivers/$cur/unbind" ]]; then
+        echo -n "$id" | sudo tee "/sys/bus/hid/drivers/$cur/unbind" >/dev/null 2>&1 || true
+    fi
+    echo -n "$id" | sudo tee "/sys/bus/hid/drivers/$TB_DRIVER/bind" >/dev/null 2>&1 || true
+    [[ "$(tb_current_driver)" == "$TB_DRIVER" ]]
+}
+
+# Healthy = tiny-dfr running AND the HID device bound to the right driver.
+touchbar_ok() {
+    systemctl is-active --quiet tiny-dfr 2>/dev/null || return 1
+    [[ "$(tb_current_driver 2>/dev/null)" == "$TB_DRIVER" ]]
+}
+
+# Restart tiny-dfr so it re-opens the (re)bound input device.
+restart_tiny_dfr() {
+    sleep 1
+    if systemctl is-active --quiet tiny-dfr 2>/dev/null; then
+        sudo systemctl restart tiny-dfr 2>/dev/null || true
+    else
+        sudo systemctl start tiny-dfr 2>/dev/null || true
+    fi
+}
+
+# --- preflight ---------------------------------------------------------------
+
 if [[ ! -d /sys/module/apple_bce ]]; then
     err "apple_bce module not found — this doesn't appear to be a T2 Mac."
     exit 1
 fi
 
-# Quick sanity check — only short-circuit if the device node also exists.
-# tiny-dfr can stay 'active' while bound to a stale device after suspend/resume.
-if [[ "$FORCE" == false ]] \
-    && systemctl is-active --quiet tiny-dfr 2>/dev/null \
-    && ls /dev/dri/card* &>/dev/null \
-    && [[ -e /sys/bus/hid/drivers/hid-appletb-kbd ]]; then
-    info "tiny-dfr is running and Touch Bar device is present."
-    echo "    Run with -f to force reload."
+if [[ "$FORCE" == false ]] && touchbar_ok; then
+    info "Touch Bar is healthy (tiny-dfr running, HID bound to $TB_DRIVER)."
+    echo "    Run with -f to force a full reload."
     exit 0
 fi
 
-echo "Fixing Touch Bar..."
+# --- cheap path: device present, just on the wrong driver --------------------
+
+if [[ "$FORCE" == false ]] && tb_device >/dev/null; then
+    echo "Touch Bar device present — trying lightweight rebind (no module reload)..."
+    if rebind_touchbar; then
+        restart_tiny_dfr
+        if touchbar_ok; then
+            info "Touch Bar is back! (rebind only)"
+            exit 0
+        fi
+    fi
+    warn "Rebind alone didn't recover it — falling back to full reload."
+fi
+
+# --- heavy path: full apple_bce reload ---------------------------------------
+
+echo "Fixing Touch Bar (full reload)..."
 
 # Stop tiny-dfr first so udev can cleanly re-activate it when the device reappears.
 info "Stopping tiny-dfr..."
@@ -57,12 +134,19 @@ sudo modprobe apple_bce
 info "Restarting audio services..."
 systemctl --user start pipewire pipewire-pulse wireplumber 2>/dev/null || true
 
-# Give udev a moment to (re)activate tiny-dfr via device rules
+# Give udev a moment to re-create the HID device after re-enumeration.
 sleep 2
 
-if systemctl is-active --quiet tiny-dfr 2>/dev/null; then
+# Ensure the Touch Bar HID landed on hid-appletb-kbd, not hid-generic.
+info "Checking Touch Bar HID driver binding..."
+rebind_touchbar || warn "Touch Bar HID device still not present after reload."
+
+# (re)activate tiny-dfr
+restart_tiny_dfr
+
+if touchbar_ok; then
     info "Touch Bar is back!"
 else
-    warn "tiny-dfr didn't auto-start. Starting manually..."
-    sudo systemctl restart tiny-dfr 2>/dev/null && info "Touch Bar is back!" || err "Failed to start tiny-dfr."
+    err "Touch Bar still not healthy. Check: systemctl status tiny-dfr; '$TB_GLOB' driver."
+    exit 1
 fi
