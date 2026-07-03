@@ -5,12 +5,22 @@
 
 /* ── Lock down wallbash/theme color variables ── */
 @define-color bar-bg rgba(17, 17, 27, 0.85);
-@define-color main-bg rgba(30, 30, 46, 0.6);
-@define-color main-fg rgba(186, 194, 222, 0.75);
-@define-color wb-act-bg rgba(137, 180, 250, 0.25);
+@define-color main-bg rgba(30, 30, 46, 0.82);
+@define-color main-fg rgba(186, 194, 222, 0.92);
+@define-color wb-act-bg rgba(137, 180, 250, 0.45);
 @define-color wb-act-fg #89b4fa;
 @define-color wb-hvr-bg rgba(137, 180, 250, 0.15);
 @define-color wb-hvr-fg rgba(186, 194, 222, 0.8);
+
+/* ── Font: match Ghostty terminal (GohuFont bitmap) ──
+ *  GohuFont is a bitmap font with a native 14px strike, so module
+ *  font-sizes are pinned to 14 for crispness. JetBrainsMono Nerd Font is
+ *  kept as a fallback so any missing glyph degrades instead of showing tofu.
+ * ─────────────────────────────────────────────── */
+* {
+    font-family: "GohuFont 14 Nerd Font Mono", "JetBrainsMono Nerd Font", monospace;
+    font-size: 14px;
+}
 
 /* ── Bar ─────────────────────────────────────── */
 window#waybar {
@@ -21,7 +31,7 @@ window#waybar {
 
 /* ── Base module text ────────────────────────── */
 .module {
-    color: rgba(186, 194, 222, 0.75);
+    color: rgba(186, 194, 222, 0.92);
 }
 
 /* ── All pill containers ─────────────────────── */
@@ -32,24 +42,24 @@ window#waybar {
 #pill-up,
 #pill-in,
 #pill-out {
-    background-color: rgba(30, 30, 46, 0.6);
-    border-color: rgba(30, 30, 46, 0.6);
+    background-color: rgba(30, 30, 46, 0.82);
+    border-color: rgba(30, 30, 46, 0.82);
     border-radius: 10px;
 }
 
 /* ── Workspaces ──────────────────────────────── */
 #workspaces button {
-    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-family: "GohuFont 14 Nerd Font Mono", "JetBrainsMono Nerd Font", monospace;
     font-size: 14px;
     padding: 0 10px;
     margin: 2px;
     border-radius: 6px;
-    color: rgba(205, 214, 244, 0.4);
+    color: rgba(205, 214, 244, 0.7);
     transition: all 0.3s cubic-bezier(0.55, -0.68, 0.48, 1.682);
 }
 
 #workspaces button.active {
-    background: rgba(137, 180, 250, 0.25);
+    background: rgba(137, 180, 250, 0.45);
     color: #89b4fa;
     border-bottom: 1px solid #89b4fa;
     padding-left: 10px;
@@ -65,7 +75,7 @@ window#waybar {
 
 /* ── Clock ───────────────────────────────────── */
 #clock {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
     color: rgba(205, 214, 244, 0.9);
 }
@@ -81,13 +91,13 @@ window#waybar {
 
 /* ── Network bandwidth ───────────────────────── */
 #network {
-    font-size: 12px;
-    color: rgba(186, 194, 222, 0.75);
+    font-size: 14px;
+    color: rgba(186, 194, 222, 0.92);
 }
 
 /* ── Volume ──────────────────────────────────── */
 #pulseaudio {
-    color: rgba(186, 194, 222, 0.75);
+    color: rgba(186, 194, 222, 0.92);
 }
 
 #pulseaudio:hover {
@@ -105,8 +115,8 @@ window#waybar {
 #custom-gpuinfo,
 #custom-cpuinfo,
 #custom-sensorsinfo {
-    color: rgba(205, 214, 244, 0.8);
-    font-size: 12px;
+    color: rgba(205, 214, 244, 0.92);
+    font-size: 14px;
 }
 
 /* Warning states */
@@ -141,7 +151,7 @@ window#waybar {
 #custom-gpuinfo.temp-45,
 #custom-gpuinfo.temp-50,
 #custom-gpuinfo.temp-55 {
-    color: rgba(186, 194, 222, 0.75);
+    color: rgba(186, 194, 222, 0.92);
 }
 
 /* Warm (60–75°C): orange */
@@ -173,17 +183,17 @@ window#waybar {
 /* ── Notifications ───────────────────────────── */
 #custom-swaync,
 #custom-dunst {
-    color: rgba(186, 194, 222, 0.75);
+    color: rgba(186, 194, 222, 0.92);
 }
 
 /* ── Tray ────────────────────────────────────── */
 #tray {
-    color: rgba(186, 194, 222, 0.75);
+    color: rgba(186, 194, 222, 0.92);
 }
 
 /* ── Battery ─────────────────────────────────── */
 #battery {
-    color: rgba(186, 194, 222, 0.75);
+    color: rgba(186, 194, 222, 0.92);
 }
 
 #battery.charging {

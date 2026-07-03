@@ -1,0 +1,45 @@
+/*
+ * User-level GTK3 overrides — loaded at GTK_STYLE_PROVIDER_PRIORITY_USER (800),
+ * which beats the active named theme (Wallbash-Gtk, priority 200). GTK's CSS
+ * cascade sorts by provider priority FIRST and specificity second, so these
+ * short rules override even the theme's most specific selectors.
+ *
+ * Why this exists:
+ *   HyDE's wallbash regenerates Wallbash-Gtk from the current wallpaper and
+ *   BAKES LITERAL HEX into the CSS (not @theme_fg_color). For green/dark
+ *   wallpapers it picked:
+ *       background-color: #41523A   (dark olive-green)
+ *       color:            #29524F   (dark teal-green)  -> ~1.1:1 contrast
+ *   ...hardcoded ~99 times. That made the gnome-keyring (gcr-prompter) and
+ *   polkit-gnome auth dialogs (both GTK3) unreadable: green text on green.
+ *
+ * Fix: re-assert a high-contrast light foreground on text-bearing widgets.
+ * Wallbash never writes this file, so the fix survives every wallpaper change.
+ */
+
+@define-color theme_fg_color   #ECFFE4;
+@define-color theme_text_color  #ECFFE4;
+@define-color wm_title          #ECFFE4;
+
+.background,
+label,
+button,
+button label,
+entry,
+entry text,
+spinbutton,
+textview,
+textview text,
+headerbar,
+.titlebar,
+popover,
+menu,
+.menu,
+.menu label,
+.dialog-action-box,
+.dialog-action-box label,
+messagedialog,
+messagedialog label,
+.csd label {
+  color: #ECFFE4;
+}

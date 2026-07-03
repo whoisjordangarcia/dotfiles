@@ -1,4 +1,4 @@
-#background-opacity = 0.90
+background-opacity = 1
 clipboard-read = allow
 clipboard-write = allow
 
@@ -18,8 +18,19 @@ macos-titlebar-style = hidden
 mouse-hide-while-typing = true
 
 #theme = dark:Catppuccin Mocha,light:Catppuccin Frappe
+# dark:/light: auto-switches with the system color-scheme reported over the
+# XDG portal (org.freedesktop.appearance). On Hyprland this requires the gtk
+# portal backend to be unmasked so it can serve the Settings interface.
 theme = dark:Rose Pine,light:Rose Pine Dawn
 unfocused-split-opacity = 0.9
+
+# Faint wallpaper behind the terminal (repo clones to ~/dev/dotfiles on every box).
+# Disabled: the 0.15 overlay reads as a translucent/washed-out background.
+# Re-enable these four lines to bring the faint wallpaper back.
+#background-image = ~/dev/dotfiles/wallpapers/desktop.jpg
+#background-image-opacity = 0.15
+#background-image-fit = cover
+#background-image-position = center
 
 window-decoration = false
 window-padding-x = 5

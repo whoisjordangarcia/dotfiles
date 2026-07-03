@@ -26,12 +26,12 @@
     },
     {
       "type": "os",
-      "key": "  ",
+      "key": " 󰣇 ",
       "keyColor": "38;2;137;180;250"
     },
     {
       "type": "kernel",
-      "key": "  ",
+      "key": " 󰌽 ",
       "keyColor": "38;2;137;180;250",
       "format": "{release}"
     },
