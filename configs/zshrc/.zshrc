@@ -38,13 +38,6 @@ export PATH="$HOME/.local/bin:$PATH"
 # bun completions (BUN_INSTALL is exported in .zshrc.envvars; defaults to ~/.bun)
 [ -s "${BUN_INSTALL:-$HOME/.bun}/_bun" ] && source "${BUN_INSTALL:-$HOME/.bun}/_bun"
 
-# Resolve the highest installed claude-mem plugin version instead of hardcoding
-# one (the pinned path breaks on every plugin update).
-_claude_mem_base="$HOME/.claude/plugins/cache/thedotmack/claude-mem"
-_claude_mem_latest=("$_claude_mem_base"/*/scripts/worker-service.cjs(Nn))
-(( ${#_claude_mem_latest} )) && alias claude-mem="bun ${_claude_mem_latest[-1]}"
-unset _claude_mem_base _claude_mem_latest
-
 # glr — "go latest release": fetch, switch to the highest release/X.Y.Z on
 # origin, carrying any uncommitted changes (tracked + untracked) along via stash.
 # When already on the latest release, rebase local commits onto origin (pull --rebase).

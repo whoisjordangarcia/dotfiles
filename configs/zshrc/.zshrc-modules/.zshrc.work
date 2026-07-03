@@ -704,5 +704,3 @@ if [ -f "$_gcloud_completion_inc" ]; then
   gsutil()  { _lazy_gcloud_load; gsutil "$@"; }
 fi
 
-alias claude-mem='bun "$HOME/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'
-
