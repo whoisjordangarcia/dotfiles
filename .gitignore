@@ -62,3 +62,8 @@ nxps
 # Python bytecode cache (e.g. from configs/claude/scripts)
 __pycache__/
 *.pyc
+
+# Generated dark-mode wallpaper variants (rebuilt via wallpapers/build.sh)
+wallpapers/*-dark.jpg
+wallpapers/*-dark.jpeg
+wallpapers/*-dark.png
