@@ -19,6 +19,14 @@ SKETCHYBAR_TARGET="$HOME/.config/sketchybar"
 
 link_file "$SKETCHYBAR_SOURCE" "$SKETCHYBAR_TARGET"
 
+# Seed the active-theme symlink (machine-local, gitignored — switched later
+# via switch-theme.sh). helpers/init.lua falls back to nest without it, but
+# seeding keeps switch-theme.sh's "current theme" display accurate.
+if [ ! -e "$SKETCHYBAR_SOURCE/themes/active" ]; then
+    step "Setting default sketchybar theme (nest)..."
+    ln -s nest "$SKETCHYBAR_SOURCE/themes/active"
+fi
+
 # Borders (JankyBorders) — active-window highlight
 # Bare `borders` sources ~/.config/borders/bordersrc, so the symlink must
 # point at the rift copy (the old aerospace one left a dangling link).

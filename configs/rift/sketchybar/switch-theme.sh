@@ -24,5 +24,7 @@ if [ ! -d "$THEMES_DIR/$THEME" ]; then
 fi
 
 ln -sfn "$THEME" "$THEMES_DIR/active"
-brew services restart sketchybar
+# --reload re-runs the config in place (theme resolves via package.path at
+# load time) — much faster than bouncing the brew service
+sketchybar --reload
 echo "Switched to theme: $THEME"
