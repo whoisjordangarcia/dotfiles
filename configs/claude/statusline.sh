@@ -34,7 +34,6 @@ COLOR_BAR_EMPTY="$COLOR_DIM"
 COLOR_PCT="$COLOR_WHITE"
 COLOR_PCT_WARNING="$COLOR_WARN"
 COLOR_PCT_CRITICAL="$COLOR_DEL"
-COLOR_DUR="$COLOR_DIM"
 COLOR_GIT="$COLOR_ACCENT"
 COLOR_WORKTREE="$COLOR_DIM"
 COLOR_PR_OPEN="$COLOR_ADD"
@@ -292,23 +291,14 @@ effort_display=""
 # ─── Session cost ────────────────────────────────────────────────────
 cost_display=$(printf '$%.2f' "$cost")
 
-# ─── Session duration (from Claude's total_duration_ms) ─────────────
-duration_display=""
+# ─── Session burn rate (from Claude's total_duration_ms) ────────────
+# Elapsed duration is no longer displayed on its own; total_duration_ms is
+# still used to derive the $/hr burn rate once past a 5-minute warm-up.
 duration_seconds=0
 cost_rate_display=""
 
 if [ "$duration_ms" -gt 0 ] 2>/dev/null; then
   duration_seconds=$((duration_ms / 1000))
-
-  if [ "$duration_seconds" -lt 60 ]; then
-    duration_display="${duration_seconds}s"
-  elif [ "$duration_seconds" -lt 3600 ]; then
-    duration_display="$((duration_seconds / 60))m"
-  else
-    h=$((duration_seconds / 3600))
-    m=$(((duration_seconds % 3600) / 60))
-    [ "$m" -eq 0 ] && duration_display="${h}h" || duration_display="${h}h ${m}m"
-  fi
 
   if [ "$duration_seconds" -gt 300 ] 2>/dev/null; then
     rate=$(awk "BEGIN { printf \"%.2f\", $cost / $duration_seconds * 3600 }")
@@ -626,24 +616,23 @@ fi
 
 # Assemble line 1 with a selectable set of optional segments. On a narrow pane
 # the print section rebuilds with fewer of them (cache % → cost-rate → token
-# count → duration) so the line shrinks to fit instead of wrapping. The
-# essentials — model/effort · project · cost · context bar % — always render.
-# Args (1/0): include cost-rate, duration, token count, cache %.
+# count) so the line shrinks to fit instead of wrapping. The essentials —
+# model/effort · project · cost · context bar % — always render.
+# Args (1/0): include cost-rate, token count, cache %.
 build_line1() {
-  local inc_rate="$1" inc_dur="$2" inc_tok="$3" inc_cache="$4" l=""
+  local inc_rate="$1" inc_tok="$2" inc_cache="$3" l=""
   [ -n "$project_name" ] && l+="${COLOR_WHITE}${project_name}${COLOR_RESET}"
   [ -n "$l" ] && l+="${sep}"
   l+="${COLOR_COST}${cost_display}${COLOR_RESET}"
   [ -n "$model_segment" ] && l="${model_segment}${sep}${l}"
   [ "$inc_rate" = 1 ] && [ -n "$cost_rate_display" ] && l+="${cost_rate_display}"
-  [ "$inc_dur" = 1 ] && [ -n "$duration_display" ] && l+="${sep}${COLOR_DUR}${duration_display}${COLOR_RESET}"
   l+="${sep}${context_bar}"
   [ "$inc_tok" = 1 ] && l+="${tokens_display}"
   l+="${warn}"
   [ "$inc_cache" = 1 ] && l+="${cache_display}"
   printf '%s' "$l"
 }
-line1=$(build_line1 1 1 1 1)
+line1=$(build_line1 1 1 1)
 # Rate limits: hide when low; show 5h at ≥70% and 7d at ≥80%
 rate_display=""
 rate_5h_int=0
@@ -812,10 +801,11 @@ if [ -n "$node_display" ]; then
 fi
 
 # ─── Helper: visible width of a line (ANSI colors + OSC 8 stripped) ─
+# Uses `wc -L` (wcwidth-based display columns), not ${#s} (codepoints): wide
+# glyphs like ⚡ and ⚠️ occupy 2 columns but 1–2 codepoints, and the terminal
+# wraps on columns — so codepoint counts undercount and let a line overflow.
 visible_width() {
-  local s
-  s=$(printf '%s' "$1" | sed $'s/\033\[[0-9;]*m//g; s/\033]8;;[^\007]*\007//g')
-  printf '%s' "${#s}"
+  printf '%s' "$1" | sed $'s/\033\[[0-9;]*m//g; s/\033]8;;[^\007]*\007//g' | wc -L | tr -d ' '
 }
 
 # ─── Helper: clamp a colored/linked line to `max` visible columns ────
@@ -908,10 +898,10 @@ else
   # Fit every line to the pane so none wrap — a wrapped line takes an extra
   # terminal row the renderer didn't reserve, which reads as a double-render
   # in tmux over SSH. Line 1 first sheds its low-value optional segments
-  # (cache % → cost-rate → token count → duration); then all lines are
-  # hard-clamped as a final guarantee. cols unknown → leave everything as-is.
+  # (cache % → cost-rate → token count); then all lines are hard-clamped as a
+  # final guarantee. cols unknown → leave everything as-is.
   if [ "$cols" -gt 0 ] 2>/dev/null; then
-    for combo in "1 1 1 1" "1 1 1 0" "0 1 1 0" "0 1 0 0" "0 0 0 0"; do
+    for combo in "1 1 1" "1 1 0" "0 1 0" "0 0 0"; do
       line1=$(build_line1 $combo)
       [ "$(visible_width "$line1")" -le "$cols" ] && break
     done

@@ -584,15 +584,22 @@ assert_within_cols() {
 
 run_cols() { echo "$1" | env -u CLAUDE_EFFORT STATUSLINE_COLS="$2" bash "$STATUSLINE" 2>/dev/null; }
 
-# Moderate narrowing: line 1 sheds low-value segments (cache % then token count)
-# but keeps the essentials, and no longer overflows.
+# Moderate narrowing: line 1 sheds the cache badge (⚡) first but keeps the
+# token count + essentials, and no longer overflows.
 out=$(run_cols "$INPUT_FULL" 50 | strip_ansi)
 line1=$(echo "$out" | head -1)
 assert_within_cols "line 1 fits a 50-col pane" "$line1" 50
 assert_not_contains "sheds cache badge first when narrow" "$line1" "⚡"
-assert_not_contains "sheds token count when narrow" "$line1" "(140k)"
+assert_contains "keeps token count at 50 cols" "$line1" "(140k)"
 assert_contains "keeps cost when narrow" "$line1" '$1.23'
 assert_contains "keeps context pct when narrow" "$line1" "70%"
+
+# Narrower: also sheds the token count, still within the pane.
+out=$(run_cols "$INPUT_FULL" 44 | strip_ansi)
+line1=$(echo "$out" | head -1)
+assert_within_cols "line 1 fits a 44-col pane" "$line1" 44
+assert_not_contains "sheds token count when narrower" "$line1" "(140k)"
+assert_contains "keeps context pct at 44 cols" "$line1" "70%"
 
 # Phone-width: even the essentials don't fit, so line 1 is hard-clamped with an
 # ellipsis rather than wrapping.
@@ -600,6 +607,14 @@ out=$(run_cols "$INPUT_FULL" 20 | strip_ansi)
 line1=$(echo "$out" | head -1)
 assert_within_cols "line 1 fits a 20-col phone pane" "$line1" 20
 assert_contains "hard-clamp appends ellipsis" "$line1" "…"
+
+# Emoji-width regression: ⚠️ (>80% ctx) and ⚡ render as 2 display columns but
+# 1–2 codepoints. The fit math must measure display columns (wc -L), or these
+# lines overflow the pane by one and wrap. INPUT_HIGH_CTX carries the ⚠️ glyph.
+for wcol in 52 50 48 40; do
+  out=$(run_cols "$INPUT_HIGH_CTX" "$wcol" | strip_ansi)
+  assert_within_cols "high-ctx (⚠️) line 1 fits ${wcol}-col pane" "$(echo "$out" | head -1)" "$wcol"
+done
 
 # Line 3 (rate limits) is clamped too — uses no OSC 8 / node cache, so this is a
 # deterministic no-wrap check for the third line in any terminal.

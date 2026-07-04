@@ -367,9 +367,9 @@ COLORFGBG="0;15" run "$BG_JSON"
 # ─── 35. Responsive width fit (anti-wrap / anti double-render) ──
 # A line wider than the pane wraps onto an extra terminal row, which reads as a
 # double-render in tmux over SSH. As COLUMNS shrinks, line 1 first SHEDS its
-# low-value optional segments (cache % → cost-rate → token count → duration),
-# then all lines are hard-CLAMPED with … . The [w=NN] prefix is each rendered
-# line's visible width — it must never exceed the pane width.
+# low-value optional segments (cache % → cost-rate → token count), then all
+# lines are hard-CLAMPED with … . The [w=NN] prefix is each rendered line's
+# visible width (display columns) — it must never exceed the pane width.
 run_cols() {
   local cols="$1"
   local input="${2//Claude Opus 4.6/Claude Opus 4.8 (1M context)}"
@@ -385,15 +385,13 @@ run_cols() {
 clear_caches
 WIDTH_JSON='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":4.87,"total_duration_ms":5400000},"session_id":"demo-35","cwd":"/tmp","context_window":{"context_window_size":1000000,"used_percentage":62,"current_usage":{"input_tokens":180000,"cache_creation_input_tokens":20000,"cache_read_input_tokens":420000}},"effort":{"level":"high"}}'
 header "35. Same session rendered at shrinking pane widths (no line exceeds w=cols)"
-expect "120 cols — full line 1: effort · project · cost (\$/hr) · duration · [bar] % (tokens) ⚡cache"
+expect "120 cols — full line 1: effort · project · cost (\$/hr) · [bar] % (tokens) ⚡cache"
 run_cols 120 "$WIDTH_JSON"
-expect "68 cols — sheds cache % (⚡67%)"
-run_cols 68 "$WIDTH_JSON"
-expect "58 cols — also sheds cost-rate (\$3.25/hr)"
-run_cols 58 "$WIDTH_JSON"
-expect "48 cols — also sheds token count (620k)"
-run_cols 48 "$WIDTH_JSON"
-expect "40 cols (phone) — also sheds duration → essentials only"
+expect "60 cols — sheds cache % (⚡67%)"
+run_cols 60 "$WIDTH_JSON"
+expect "50 cols — also sheds cost-rate (\$3.25/hr)"
+run_cols 50 "$WIDTH_JSON"
+expect "40 cols (phone) — also sheds token count (620k) → essentials only"
 run_cols 40 "$WIDTH_JSON"
 expect "24 cols (tiny) — even essentials overflow → hard clamp with …"
 run_cols 24 "$WIDTH_JSON"
