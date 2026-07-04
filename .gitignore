@@ -68,3 +68,7 @@ __pycache__/
 wallpapers/*-dark.jpg
 wallpapers/*-dark.jpeg
 wallpapers/*-dark.png
+
+# Sunshine box-art images live on the vault SMB mount (see linux/apps.json);
+# the local copy is machine-only — never commit ~9MB of PNGs to a public repo
+configs/sunshine/box-art/
