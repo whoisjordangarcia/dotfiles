@@ -68,7 +68,11 @@ NODE_CACHE_TTL=30 # 30 seconds — apps can start/stop frequently
 cache_fresh() {
   local file="$1" ttl="$2"
   [ -f "$file" ] || return 1
-  local age=$(($(date +%s) - $(stat -f %m "$file" 2>/dev/null || stat -c %Y "$file" 2>/dev/null || echo 0)))
+  # GNU stat (`-c %Y`) MUST be tried first: on Linux `stat -f %m` is a valid but
+  # different option (filesystem mode) that prints a blob to stdout with exit 1,
+  # so a BSD-first chain returns garbage and every cache read looks stale. BSD
+  # stat rejects `-c` cleanly to stderr, so this order is correct on macOS too.
+  local age=$(($(date +%s) - $(stat -c %Y "$file" 2>/dev/null || stat -f %m "$file" 2>/dev/null || echo 0)))
   [ "$age" -lt "$ttl" ]
 }
 
@@ -282,7 +286,8 @@ fi
 # ≥2.1.133); $CLAUDE_EFFORT is the documented env-var equivalent fallback.
 [ -z "$effort_level" ] && effort_level="${CLAUDE_EFFORT:-}"
 effort_display=""
-[ -n "$effort_level" ] && effort_display="${COLOR_DIM}◯ ${COLOR_ACCENT}${effort_level}${COLOR_RESET}"
+# No leading glyph — the accent-colored level word is the indicator on its own.
+[ -n "$effort_level" ] && effort_display="${COLOR_ACCENT}${effort_level}${COLOR_RESET}"
 
 # ─── Session cost ────────────────────────────────────────────────────
 cost_display=$(printf '$%.2f' "$cost")
@@ -349,7 +354,9 @@ tokens_display=""
 if [ "$ctx_current" -gt 0 ] 2>/dev/null; then
   tokens_display=" ${COLOR_DIM}($(format_tokens "$ctx_current"))${COLOR_RESET}"
 fi
-context_bar="${COLOR_DIM}[${COLOR_RESET}${bar_color}${filled_bar}${COLOR_BAR_EMPTY}${empty_bar}${COLOR_DIM}]${COLOR_RESET} ${pct_color}${pct}%${COLOR_RESET}${tokens_display}${warn}"
+# tokens_display and warn are kept OUT of context_bar so line-1 assembly can
+# drop the token count independently on a narrow pane (build_line1 below).
+context_bar="${COLOR_DIM}[${COLOR_RESET}${bar_color}${filled_bar}${COLOR_BAR_EMPTY}${empty_bar}${COLOR_DIM}]${COLOR_RESET} ${pct_color}${pct}%${COLOR_RESET}"
 
 # ─── Cache hit rate ──────────────────────────────────────────────────
 cache_display=""
@@ -603,10 +610,6 @@ if [ -n "$branch" ]; then
 fi
 
 # Line 1: model + effort · project · cost · session vitals
-line1=""
-[ -n "$project_name" ] && line1+="${COLOR_WHITE}${project_name}${COLOR_RESET}"
-[ -n "$line1" ] && line1+="${sep}"
-line1+="${COLOR_COST}${cost_display}${COLOR_RESET}"
 # Model segment (far left of line 1). Hide the default model (Opus 4.8 1M —
 # showing it is noise); show anything else. Override per-machine with
 # STATUSLINE_HIDE_MODEL_REGEX instead of editing this file.
@@ -620,10 +623,27 @@ if [ -n "$effort_display" ]; then
   [ -n "$model_segment" ] && model_segment+=" "
   model_segment+="${effort_display}"
 fi
-[ -n "$model_segment" ] && line1="${model_segment}${sep}${line1}"
-[ -n "$cost_rate_display" ] && line1+="${cost_rate_display}"
-[ -n "$duration_display" ] && line1+="${sep}${COLOR_DUR}${duration_display}${COLOR_RESET}"
-line1+="${sep}${context_bar}${cache_display}"
+
+# Assemble line 1 with a selectable set of optional segments. On a narrow pane
+# the print section rebuilds with fewer of them (cache % → cost-rate → token
+# count → duration) so the line shrinks to fit instead of wrapping. The
+# essentials — model/effort · project · cost · context bar % — always render.
+# Args (1/0): include cost-rate, duration, token count, cache %.
+build_line1() {
+  local inc_rate="$1" inc_dur="$2" inc_tok="$3" inc_cache="$4" l=""
+  [ -n "$project_name" ] && l+="${COLOR_WHITE}${project_name}${COLOR_RESET}"
+  [ -n "$l" ] && l+="${sep}"
+  l+="${COLOR_COST}${cost_display}${COLOR_RESET}"
+  [ -n "$model_segment" ] && l="${model_segment}${sep}${l}"
+  [ "$inc_rate" = 1 ] && [ -n "$cost_rate_display" ] && l+="${cost_rate_display}"
+  [ "$inc_dur" = 1 ] && [ -n "$duration_display" ] && l+="${sep}${COLOR_DUR}${duration_display}${COLOR_RESET}"
+  l+="${sep}${context_bar}"
+  [ "$inc_tok" = 1 ] && l+="${tokens_display}"
+  l+="${warn}"
+  [ "$inc_cache" = 1 ] && l+="${cache_display}"
+  printf '%s' "$l"
+}
+line1=$(build_line1 1 1 1 1)
 # Rate limits: hide when low; show 5h at ≥70% and 7d at ≥80%
 rate_display=""
 rate_5h_int=0
@@ -798,6 +818,50 @@ visible_width() {
   printf '%s' "${#s}"
 }
 
+# ─── Helper: clamp a colored/linked line to `max` visible columns ────
+# A line wider than the pane wraps onto an extra terminal row that Claude
+# Code didn't reserve — the tmux-over-SSH "double render". This hard-limits
+# any line so that can't happen. ANSI SGR (\e[..m) and OSC 8 (\e]8;;..\a)
+# sequences are copied but don't count toward width; a cut made inside a
+# hyperlink is closed so the link state can't bleed into later output.
+# Appends … (which occupies the reserved final column) when it truncates.
+fit_line() {
+  local s="$1" max="$2"
+  [ "$max" -gt 0 ] 2>/dev/null || { printf '%s' "$s"; return; }
+  [ "$(visible_width "$s")" -le "$max" ] && { printf '%s' "$s"; return; }
+  local out="" vis=0 i=0 n=${#s} c nxt j lim=$((max - 1)) osc_open=0
+  while [ "$i" -lt "$n" ]; do
+    c=${s:i:1}
+    if [ "$c" = $'\033' ]; then
+      nxt=${s:i+1:1}
+      if [ "$nxt" = "]" ]; then
+        # OSC 8: copy through the BEL terminator
+        j=$((i + 1))
+        while [ "$j" -lt "$n" ] && [ "${s:j:1}" != $'\007' ]; do j=$((j + 1)); done
+        out+=${s:i:j-i+1}
+        if [ "${s:i:6}" = $'\033]8;;\007' ]; then osc_open=0; else osc_open=1; fi
+        i=$((j + 1))
+        continue
+      fi
+      # CSI/SGR: copy through the letter terminator
+      j=$((i + 1))
+      while [ "$j" -lt "$n" ]; do
+        case "${s:j:1}" in [A-Za-z]) break ;; esac
+        j=$((j + 1))
+      done
+      out+=${s:i:j-i+1}
+      i=$((j + 1))
+      continue
+    fi
+    [ "$vis" -ge "$lim" ] && break
+    out+=$c
+    vis=$((vis + 1))
+    i=$((i + 1))
+  done
+  [ "$osc_open" = 1 ] && out+=$'\033]8;;\007'
+  printf '%s%s…' "$out" $'\033[0m'
+}
+
 # ─── Helper: terminal width (statusline stdout is not a tty) ────────
 # Order: explicit override → inherited COLUMNS → controlling tty.
 # Empty/0 means unknown — caller decides the fallback.
@@ -817,13 +881,16 @@ term_width() {
 # STATUSLINE_ONE_LINE=1 joins everything onto a single codex-style line —
 # but only when it fits the terminal; too wide falls back to multi-line
 # (wrapped/clipped one-liners are worse than two short lines).
+# Terminal width from COLUMNS (Claude Code sets it; the statusline stdout is
+# not a tty so tput/stty can't read it). Empty/0 → unknown, keep everything.
+cols=$(term_width)
+
 use_one_line=false
 if [ -n "${STATUSLINE_ONE_LINE:-}" ]; then
   one_line="$line1"
   [ -n "$line2" ] && one_line+="${sep}${line2}"
   [ -n "$line3" ] && one_line+="${sep}${line3}"
   use_one_line=true
-  cols=$(term_width)
   if [ -f /tmp/statusline-debug ]; then
     printf '%s cols=%s COLUMNS=%s stty=%s linewidth=%s\n' \
       "$(date +%T)" "$cols" "${COLUMNS:-unset}" \
@@ -838,6 +905,20 @@ fi
 if [ "$use_one_line" = true ]; then
   printf '%b\n' "$one_line"
 else
+  # Fit every line to the pane so none wrap — a wrapped line takes an extra
+  # terminal row the renderer didn't reserve, which reads as a double-render
+  # in tmux over SSH. Line 1 first sheds its low-value optional segments
+  # (cache % → cost-rate → token count → duration); then all lines are
+  # hard-clamped as a final guarantee. cols unknown → leave everything as-is.
+  if [ "$cols" -gt 0 ] 2>/dev/null; then
+    for combo in "1 1 1 1" "1 1 1 0" "0 1 1 0" "0 1 0 0" "0 0 0 0"; do
+      line1=$(build_line1 $combo)
+      [ "$(visible_width "$line1")" -le "$cols" ] && break
+    done
+    line1=$(fit_line "$line1" "$cols")
+    [ -n "$line2" ] && line2=$(fit_line "$line2" "$cols")
+    [ -n "$line3" ] && line3=$(fit_line "$line3" "$cols")
+  fi
   printf '%b\n' "$line1"
   [ -n "$line2" ] && printf '%b\n' "$line2"
   [ -n "$line3" ] && printf '%b\n' "$line3"

@@ -6,6 +6,12 @@ set -euo pipefail
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 STATUSLINE="$SCRIPT_DIR/statusline.sh"
 
+# Pin a wide pane by default so content assertions are independent of the
+# terminal the suite happens to run in. Line-1 shedding / fit_line only kick in
+# when the line exceeds the pane, so a wide default keeps full output visible;
+# width-specific tests below override STATUSLINE_COLS per-invocation.
+export STATUSLINE_COLS="${STATUSLINE_COLS:-300}"
+
 passed=0
 failed=0
 errors=""
@@ -150,7 +156,7 @@ assert_contains "shows Fable 5 (not a hidden default)" "$out" "Fable 5"
 # Effort rides to the right of a shown model name
 INPUT_MODEL_EFFORT='{"model":{"display_name":"Claude Opus 4.7"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"context_window":{"used_percentage":0},"effortLevel":"high"}'
 out_line1=$(run_statusline_plain "$INPUT_MODEL_EFFORT" | head -1)
-assert_contains "effort glyph sits to the right of the model name" "$out_line1" "Opus 4.7 ◯ high"
+assert_contains "effort level sits to the right of the model name" "$out_line1" "Opus 4.7 high"
 
 printf "\n\033[38;5;141m━━━ Context Bar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
@@ -288,20 +294,25 @@ printf "\n\033[38;5;141m━━━ Reasoning Effort ━━━━━━━━━�
 # Primary source: .effort.level (real Claude Code payload field, ≥2.1.133)
 INPUT_EFFORT_REAL='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.00,"total_duration_ms":60000},"session_id":"test-eff-real","cwd":"/tmp","context_window":{"used_percentage":10},"effort":{"level":"high"}}'
 out=$(run_statusline_plain "$INPUT_EFFORT_REAL")
-assert_contains "shows effort.level (real payload field)" "$out" "◯ high"
+assert_contains "shows effort.level (real payload field)" "$out" "high"
 
 # Legacy fallback key still honored
 INPUT_EFFORT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.00,"total_duration_ms":60000},"session_id":"test-eff","cwd":"/tmp","context_window":{"used_percentage":10},"effortLevel":"xhigh"}'
 out=$(run_statusline_plain "$INPUT_EFFORT")
 assert_contains "shows effortLevel when set" "$out" "xhigh"
-assert_contains "shows effort indicator glyph" "$out" "◯"
+# Effort now renders with no leading glyph — the level word in accent color is
+# the whole indicator. Guard against reintroducing the old ◯ dot.
+assert_not_contains "effort shows no ◯ glyph" "$out" "◯"
+out_raw=$(run_statusline "$INPUT_EFFORT")
+assert_contains "effort level is accent-colored" "$out_raw" $'\033[38;5;141mxhigh'
 
 # $CLAUDE_EFFORT env var fallback when the JSON carries no effort field
 out=$(echo "$INPUT_FULL" | env CLAUDE_EFFORT=low bash "$STATUSLINE" 2>/dev/null | strip_ansi)
-assert_contains "falls back to CLAUDE_EFFORT env var" "$out" "◯ low"
+assert_contains "falls back to CLAUDE_EFFORT env var" "$out" "low"
 
+# INPUT_FULL carries no effort field/env → no effort level word appears
 out=$(run_statusline_plain "$INPUT_FULL")
-assert_not_contains "hides effort when key absent" "$out" "◯"
+assert_not_contains "hides effort when key absent" "$out" "low"
 
 printf "\n\033[38;5;141m━━━ Light/Dark Background (COLORFGBG) ━━━━━━━\033[0m\n"
 
@@ -506,7 +517,7 @@ else
 fi
 
 # Unknown width (no override, no COLUMNS, no tty in test env): stays one-line
-out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u COLUMNS STATUSLINE_ONE_LINE=1 bash "$STATUSLINE" 2>/dev/null | strip_ansi)
+out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u COLUMNS -u STATUSLINE_COLS STATUSLINE_ONE_LINE=1 bash "$STATUSLINE" 2>/dev/null | strip_ansi)
 line_count=$(echo "$out" | wc -l | tr -d ' ')
 if [ "$line_count" -eq 1 ]; then
   passed=$((passed + 1))
@@ -550,6 +561,66 @@ assert_contains "unmapped app falls back to localhost link" "$out_raw" ']8;;http
 assert_not_contains "link URL adds no visible text" "$out" 'nestgenomics.com'
 
 rm -rf "$NODE_TEST_CWD" "/tmp/claude-statusline-node-cache/${node_test_key}_node"
+
+printf "\n\033[38;5;141m━━━ Width Fit (no-wrap / anti double-render) ━\033[0m\n"
+
+# A line wider than the pane wraps onto an extra terminal row Claude Code didn't
+# reserve — the tmux-over-SSH double render. Every emitted line must fit COLUMNS.
+# wc -L reports the widest line's display columns (after ANSI/OSC-8 stripping).
+disp_width() { printf '%s' "$1" | strip_ansi | wc -L | tr -d ' '; }
+
+assert_within_cols() {
+  local test_name="$1" line="$2" cols="$3" w
+  w=$(disp_width "$line")
+  if [ "$w" -le "$cols" ]; then
+    passed=$((passed + 1))
+    printf "  \033[38;5;114m✓\033[0m %s (%s ≤ %s)\n" "$test_name" "$w" "$cols"
+  else
+    failed=$((failed + 1))
+    errors+="  FAIL: $test_name — line width $w > $cols cols (would wrap)\n"
+    printf "  \033[38;5;203m✗\033[0m %s (%s > %s cols)\n" "$test_name" "$w" "$cols"
+  fi
+}
+
+run_cols() { echo "$1" | env -u CLAUDE_EFFORT STATUSLINE_COLS="$2" bash "$STATUSLINE" 2>/dev/null; }
+
+# Moderate narrowing: line 1 sheds low-value segments (cache % then token count)
+# but keeps the essentials, and no longer overflows.
+out=$(run_cols "$INPUT_FULL" 50 | strip_ansi)
+line1=$(echo "$out" | head -1)
+assert_within_cols "line 1 fits a 50-col pane" "$line1" 50
+assert_not_contains "sheds cache badge first when narrow" "$line1" "⚡"
+assert_not_contains "sheds token count when narrow" "$line1" "(140k)"
+assert_contains "keeps cost when narrow" "$line1" '$1.23'
+assert_contains "keeps context pct when narrow" "$line1" "70%"
+
+# Phone-width: even the essentials don't fit, so line 1 is hard-clamped with an
+# ellipsis rather than wrapping.
+out=$(run_cols "$INPUT_FULL" 20 | strip_ansi)
+line1=$(echo "$out" | head -1)
+assert_within_cols "line 1 fits a 20-col phone pane" "$line1" 20
+assert_contains "hard-clamp appends ellipsis" "$line1" "…"
+
+# Line 3 (rate limits) is clamped too — uses no OSC 8 / node cache, so this is a
+# deterministic no-wrap check for the third line in any terminal.
+out=$(run_cols "$INPUT_RATE_HIGH" 10 | strip_ansi)
+line3=$(echo "$out" | tail -1)
+assert_within_cols "line 3 fits a 10-col pane" "$line3" 10
+assert_contains "line 3 hard-clamp appends ellipsis" "$line3" "…"
+
+# fit_line's OSC 8 handling: when it cuts through a hyperlink it must close it so
+# link state can't bleed into later output. Force a link-capable terminal
+# (TERM_PROGRAM=ghostty, no TMUX) so node links are actually emitted.
+NODE_W_CWD=$(mktemp -d "/tmp/statusline-test-nodew-XXXXXX")
+mkdir -p /tmp/claude-statusline-node-cache
+node_w_key=$(printf '%s' "$NODE_W_CWD" | md5 -q 2>/dev/null || printf '%s' "$NODE_W_CWD" | md5sum | cut -d' ' -f1)
+printf 'client-api:3000 patient-navigator:3602 provider-portal:3601 yoda:3603' >"/tmp/claude-statusline-node-cache/${node_w_key}_node"
+INPUT_NODE_W='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.10,"total_duration_ms":30000},"session_id":"test-nodew","cwd":"'"$NODE_W_CWD"'","context_window":{"context_window_size":200000,"used_percentage":3}}'
+out_raw=$(echo "$INPUT_NODE_W" | env -u CLAUDE_EFFORT -u TMUX TERM_PROGRAM=ghostty STATUSLINE_COLS=40 bash "$STATUSLINE" 2>/dev/null)
+line3_raw=$(echo "$out_raw" | tail -1)
+assert_within_cols "line 3 node apps fit a 40-col pane" "$line3_raw" 40
+assert_contains "clamped line 3 closes the OSC 8 link" "$line3_raw" $']8;;\007'
+rm -rf "$NODE_W_CWD" "/tmp/claude-statusline-node-cache/${node_w_key}_node"
 
 printf "\n\033[38;5;141m━━━ Output Structure ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 

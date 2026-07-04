@@ -50,7 +50,10 @@ run() {
   local output
   # -u CLAUDE_EFFORT: keep scenarios deterministic when the demo itself runs
   # inside a Claude Code session that exports the effort env var.
-  output=$(echo "$input" | env -u CLAUDE_EFFORT bash "$STATUSLINE" 2>/dev/null)
+  # STATUSLINE_COLS=200: pin a wide pane so these scenarios show full output
+  # regardless of the demo terminal's width (narrow-pane shedding/clamping has
+  # its own dedicated section below).
+  output=$(echo "$input" | env -u CLAUDE_EFFORT STATUSLINE_COLS=200 bash "$STATUSLINE" 2>/dev/null)
   local first=true
   while IFS= read -r line; do
     if [ "$first" = true ]; then
@@ -268,7 +271,7 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},
 # ─── 24. Reasoning effort indicator ─────────────────────────────
 clear_caches
 header "24. Reasoning effort (.effort.level from statusline JSON)"
-expect "L1: ◯ xhigh · tmp · \$0.25 · ..."
+expect "L1: xhigh · tmp · \$0.25 · ..."
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.25,"total_duration_ms":60000},"session_id":"demo-24","cwd":"/tmp","context_window":{"used_percentage":12},"effort":{"level":"xhigh"}}'
 
 # ─── 25. Long project name + cwd path truncation ────────────────
@@ -299,13 +302,13 @@ run '{"model":{"display_name":"Claude Opus 4.8 (1M context)"},"cost":{"total_cos
 # ─── 28. Non-default model + effort to its right ────────────────
 clear_caches
 header "28. Non-default model shows, with reasoning effort to the RIGHT of it"
-expect "L1: Opus 4.7 ◯ high · tmp · \$0.30 · ..."
+expect "L1: Opus 4.7 high · tmp · \$0.30 · ..."
 run '{"model":{"display_name":"Claude Opus 4.7"},"cost":{"total_cost_usd":0.30,"total_duration_ms":120000},"session_id":"demo-28","cwd":"/tmp","context_window":{"used_percentage":15},"effortLevel":"high"}'
 
 # ─── 29. Default model hidden but effort still shows alone ───────
 clear_caches
 header "29. Opus 4.8 1M hidden, but effort still rides at the far left when set"
-expect "L1: ◯ xhigh · tmp · \$0.20 · ... (no \"Opus\")"
+expect "L1: xhigh · tmp · \$0.20 · ... (no \"Opus\")"
 run '{"model":{"display_name":"Claude Opus 4.8 (1M context)"},"cost":{"total_cost_usd":0.20,"total_duration_ms":90000},"session_id":"demo-29","cwd":"/tmp","context_window":{"used_percentage":8},"effortLevel":"xhigh"}'
 
 # ─── 30. Rate limit reset countdown ──────────────────────────────
@@ -360,6 +363,40 @@ expect "dark  (COLORFGBG=15;0): key data near-white (255)"
 COLORFGBG="15;0" run "$BG_JSON"
 expect "light (COLORFGBG=0;15): key data near-black (235); warnings become amber (130)"
 COLORFGBG="0;15" run "$BG_JSON"
+
+# ─── 35. Responsive width fit (anti-wrap / anti double-render) ──
+# A line wider than the pane wraps onto an extra terminal row, which reads as a
+# double-render in tmux over SSH. As COLUMNS shrinks, line 1 first SHEDS its
+# low-value optional segments (cache % → cost-rate → token count → duration),
+# then all lines are hard-CLAMPED with … . The [w=NN] prefix is each rendered
+# line's visible width — it must never exceed the pane width.
+run_cols() {
+  local cols="$1"
+  local input="${2//Claude Opus 4.6/Claude Opus 4.8 (1M context)}"
+  local output vw
+  output=$(echo "$input" | env -u CLAUDE_EFFORT STATUSLINE_COLS="$cols" bash "$STATUSLINE" 2>/dev/null)
+  while IFS= read -r line; do
+    vw=$(printf '%s' "$line" | sed $'s/\033\[[0-9;]*m//g; s/\033]8;;[^\007]*\007//g' | wc -L | tr -d ' ')
+    printf '          \033[38;5;245m│ [w=%2s]\033[0m %b\n' "$vw" "$line"
+  done <<<"$output"
+  echo ""
+}
+
+clear_caches
+WIDTH_JSON='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":4.87,"total_duration_ms":5400000},"session_id":"demo-35","cwd":"/tmp","context_window":{"context_window_size":1000000,"used_percentage":62,"current_usage":{"input_tokens":180000,"cache_creation_input_tokens":20000,"cache_read_input_tokens":420000}},"effort":{"level":"high"}}'
+header "35. Same session rendered at shrinking pane widths (no line exceeds w=cols)"
+expect "120 cols — full line 1: effort · project · cost (\$/hr) · duration · [bar] % (tokens) ⚡cache"
+run_cols 120 "$WIDTH_JSON"
+expect "68 cols — sheds cache % (⚡67%)"
+run_cols 68 "$WIDTH_JSON"
+expect "58 cols — also sheds cost-rate (\$3.25/hr)"
+run_cols 58 "$WIDTH_JSON"
+expect "48 cols — also sheds token count (620k)"
+run_cols 48 "$WIDTH_JSON"
+expect "40 cols (phone) — also sheds duration → essentials only"
+run_cols 40 "$WIDTH_JSON"
+expect "24 cols (tiny) — even essentials overflow → hard clamp with …"
+run_cols 24 "$WIDTH_JSON"
 
 printf '\033[38;5;141m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
 printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 32
