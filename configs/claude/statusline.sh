@@ -801,25 +801,52 @@ if [ -n "$node_display" ]; then
 fi
 
 # ─── Helper: visible width of a line (ANSI colors + OSC 8 stripped) ─
-# Uses `wc -L` (wcwidth-based display columns), not ${#s} (codepoints): wide
-# glyphs like ⚡ and ⚠️ occupy 2 columns but 1–2 codepoints, and the terminal
-# wraps on columns — so codepoint counts undercount and let a line overflow.
+# Measures DISPLAY columns (what the terminal wraps on), not ${#s} codepoints.
+# Two corrections over a naive count:
+#   1. `wc -L` uses wcwidth(), so default-emoji glyphs like ⚡/⏳ count as 2.
+#   2. wcwidth still counts a U+FE0F variation selector as 0 and its base char
+#      as 1, but the terminal renders the pair as a 2-column emoji (e.g. ⚠️).
+#      Add one column per VS16 so the measure matches what is actually drawn.
 visible_width() {
-  printf '%s' "$1" | sed $'s/\033\[[0-9;]*m//g; s/\033]8;;[^\007]*\007//g' | wc -L | tr -d ' '
+  local stripped base novs
+  stripped=$(printf '%s' "$1" | sed $'s/\033\[[0-9;]*m//g; s/\033]8;;[^\007]*\007//g')
+  base=$(printf '%s' "$stripped" | wc -L | tr -d ' ')
+  novs=${stripped//$'️'/} # drop every VS16 (U+FE0F) to count how many there are
+  printf '%s' $((base + ${#stripped} - ${#novs}))
+}
+
+# ─── Helper: display columns of one visible character ───────────────
+# Fast paths cover every glyph the statusline actually emits (all width 1);
+# anything unlisted falls back to wcwidth via `wc -L`, so a newly introduced
+# glyph is still measured dynamically rather than assumed. A zero-width
+# combiner (e.g. the U+FE0F variation selector that turns ⚠ into the 2-column
+# ⚠️) floors to 1, which is exactly the +1 that upgrades its base to emoji
+# width — keeping this in lock-step with visible_width's VS16 correction.
+char_display_width() {
+  case "$1" in
+    [$'\x20'-$'\x7e']) printf 1 ;;
+    '·' | '←' | '↑' | '↓' | '◦' | '●' | '⎇' | '…' | '█' | '░' | '▏' | '▎' | '▍' | '▌' | '▋' | '▊' | '▉') printf 1 ;;
+    *)
+      local w
+      w=$(printf '%s' "$1" | wc -L | tr -d ' ')
+      [ "${w:-0}" -gt 0 ] 2>/dev/null && printf '%s' "$w" || printf 1
+      ;;
+  esac
 }
 
 # ─── Helper: clamp a colored/linked line to `max` visible columns ────
 # A line wider than the pane wraps onto an extra terminal row that Claude
 # Code didn't reserve — the tmux-over-SSH "double render". This hard-limits
 # any line so that can't happen. ANSI SGR (\e[..m) and OSC 8 (\e]8;;..\a)
-# sequences are copied but don't count toward width; a cut made inside a
-# hyperlink is closed so the link state can't bleed into later output.
-# Appends … (which occupies the reserved final column) when it truncates.
+# sequences are copied but don't count toward width; width is accumulated in
+# display columns (char_display_width) so wide glyphs can't push it over. A
+# cut made inside a hyperlink is closed so the link state can't bleed into
+# later output. Appends … (which occupies the reserved final column).
 fit_line() {
   local s="$1" max="$2"
   [ "$max" -gt 0 ] 2>/dev/null || { printf '%s' "$s"; return; }
   [ "$(visible_width "$s")" -le "$max" ] && { printf '%s' "$s"; return; }
-  local out="" vis=0 i=0 n=${#s} c nxt j lim=$((max - 1)) osc_open=0
+  local out="" dw=0 cw i=0 n=${#s} c nxt j lim=$((max - 1)) osc_open=0
   while [ "$i" -lt "$n" ]; do
     c=${s:i:1}
     if [ "$c" = $'\033' ]; then
@@ -843,9 +870,10 @@ fit_line() {
       i=$((j + 1))
       continue
     fi
-    [ "$vis" -ge "$lim" ] && break
+    cw=$(char_display_width "$c")
+    [ $((dw + cw)) -gt "$lim" ] && break
     out+=$c
-    vis=$((vis + 1))
+    dw=$((dw + cw))
     i=$((i + 1))
   done
   [ "$osc_open" = 1 ] && out+=$'\033]8;;\007'

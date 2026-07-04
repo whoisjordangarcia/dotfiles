@@ -567,7 +567,14 @@ printf "\n\033[38;5;141m━━━ Width Fit (no-wrap / anti double-render) ━\0
 # A line wider than the pane wraps onto an extra terminal row Claude Code didn't
 # reserve — the tmux-over-SSH double render. Every emitted line must fit COLUMNS.
 # wc -L reports the widest line's display columns (after ANSI/OSC-8 stripping).
-disp_width() { printf '%s' "$1" | strip_ansi | wc -L | tr -d ' '; }
+# Display columns as the terminal draws them: wcwidth (wc -L) plus one per
+# U+FE0F variation selector (wcwidth counts VS16 as 0 but ⚠️ renders 2 wide).
+disp_width() {
+  local stripped novs
+  stripped=$(printf '%s' "$1" | strip_ansi)
+  novs=${stripped//$'️'/}
+  printf '%s' $(( $(printf '%s' "$stripped" | wc -L | tr -d ' ') + ${#stripped} - ${#novs} ))
+}
 
 assert_within_cols() {
   local test_name="$1" line="$2" cols="$3" w
