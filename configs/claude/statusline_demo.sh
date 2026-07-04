@@ -53,7 +53,10 @@ run() {
   # STATUSLINE_COLS=200: pin a wide pane so these scenarios show full output
   # regardless of the demo terminal's width (narrow-pane shedding/clamping has
   # its own dedicated section below).
-  output=$(echo "$input" | env -u CLAUDE_EFFORT STATUSLINE_COLS=200 bash "$STATUSLINE" 2>/dev/null)
+  # -u TMUX + TERM_PROGRAM=ghostty: pin an OSC 8-capable identity so link
+  # scenarios render the same everywhere (inside tmux an empty client
+  # termname would silently strip links from the demo).
+  output=$(echo "$input" | env -u CLAUDE_EFFORT -u TMUX TERM_PROGRAM=ghostty STATUSLINE_COLS=200 bash "$STATUSLINE" 2>/dev/null)
   local first=true
   while IFS= read -r line; do
     if [ "$first" = true ]; then
@@ -330,7 +333,7 @@ run_one_line() {
   local cols="$1"
   local input="${2//Claude Opus 4.6/Claude Opus 4.8 (1M context)}"
   local output
-  output=$(echo "$input" | env -u CLAUDE_EFFORT STATUSLINE_ONE_LINE=1 STATUSLINE_COLS="$cols" bash "$STATUSLINE" 2>/dev/null)
+  output=$(echo "$input" | env -u CLAUDE_EFFORT -u TMUX TERM_PROGRAM=ghostty STATUSLINE_ONE_LINE=1 STATUSLINE_COLS="$cols" bash "$STATUSLINE" 2>/dev/null)
   local first=true
   while IFS= read -r line; do
     if [ "$first" = true ]; then
@@ -374,7 +377,7 @@ run_cols() {
   local cols="$1"
   local input="${2//Claude Opus 4.6/Claude Opus 4.8 (1M context)}"
   local output vw
-  output=$(echo "$input" | env -u CLAUDE_EFFORT STATUSLINE_COLS="$cols" bash "$STATUSLINE" 2>/dev/null)
+  output=$(echo "$input" | env -u CLAUDE_EFFORT -u TMUX TERM_PROGRAM=ghostty STATUSLINE_COLS="$cols" bash "$STATUSLINE" 2>/dev/null)
   while IFS= read -r line; do
     vw=$(printf '%s' "$line" | sed $'s/\033\[[0-9;]*m//g; s/\033]8;;[^\007]*\007//g' | wc -L | tr -d ' ')
     printf '          \033[38;5;245m│ [w=%2s]\033[0m %b\n' "$vw" "$line"

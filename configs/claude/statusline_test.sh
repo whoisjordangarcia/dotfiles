@@ -23,7 +23,11 @@ strip_ansi() { sed $'s/\033\[[0-9;]*m//g; s/\033]8;;[^\007]*\007//g'; }
 run_statusline() {
   # -u CLAUDE_EFFORT: the suite itself may run inside a Claude Code session
   # where that var is set; fixtures must control effort explicitly.
-  echo "$1" | env -u CLAUDE_EFFORT bash "$STATUSLINE" 2>/dev/null
+  # -u TMUX + TERM_PROGRAM=ghostty: pin an OSC 8-capable terminal identity so
+  # link assertions don't depend on where the suite runs (inside tmux the
+  # script asks `tmux display` for the client termname, which is empty in
+  # detached/agent contexts and would silently disable links).
+  echo "$1" | env -u CLAUDE_EFFORT -u TMUX TERM_PROGRAM=ghostty bash "$STATUSLINE" 2>/dev/null
 }
 
 run_statusline_plain() {
@@ -559,6 +563,13 @@ assert_contains "patient-navigator links to dev.app host" "$out_raw" ']8;;https:
 assert_contains "provider-portal links to dev.portal host" "$out_raw" ']8;;https://dev.portal.nestgenomics.com:3601'
 assert_contains "unmapped app falls back to localhost link" "$out_raw" ']8;;http://localhost:3000'
 assert_not_contains "link URL adds no visible text" "$out" 'nestgenomics.com'
+
+# Unsupported terminal (no TMUX, unrecognized TERM_PROGRAM): OSC 8 is
+# suppressed entirely — mobile terminals like Terminus render the raw
+# escape bytes as visible text, so plain entries must be emitted instead.
+out_raw=$(echo "$INPUT_NODE" | env -u CLAUDE_EFFORT -u TMUX -u TERM_PROGRAM bash "$STATUSLINE" 2>/dev/null)
+assert_not_contains "unsupported terminal gets no OSC 8 sequences" "$out_raw" ']8;;'
+assert_contains "unsupported terminal still shows app:port text" "$(printf '%s' "$out_raw" | strip_ansi)" 'yoda:3603'
 
 rm -rf "$NODE_TEST_CWD" "/tmp/claude-statusline-node-cache/${node_test_key}_node"
 
