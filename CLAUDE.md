@@ -303,6 +303,17 @@ bash configs/claude/statusline_demo.sh   # visually confirm each variation still
 
 If you add a new field, branch/PR/worktree case, or line-3 indicator, add a corresponding test in `statusline_test.sh` and a scenario in `statusline_demo.sh` before considering the change complete. The demo doubles as living documentation for every supported rendering.
 
+### Tmux Scripts
+
+Statusline/window-name scripts in `configs/tmux/scripts/` follow the same pattern: pure logic exposed via test hooks, with assertion-based tests alongside. **When modifying `smart_window_name.sh` or `claude_status.sh`, run:**
+
+```bash
+bash configs/tmux/scripts/smart_window_name_test.sh   # must end with "All N tests passed"
+bash configs/tmux/scripts/claude_status_test.sh       # must end with "All N tests passed"
+```
+
+`claude_status.sh` renders the Claude state dot in `status-left` (amber ● waiting / green ● churning / dim ○ idle); its `--classify`/`--render` flags test the mapping without a tmux server.
+
 ### cmux Sidebar Hooks (macOS)
 
 `configs/claude/scripts/` holds Claude Code hook scripts that drive the cmux

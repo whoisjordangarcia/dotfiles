@@ -5,8 +5,8 @@ path="$1"
 cmd="$2"
 pane_pid="$3"
 
-# Known dev roots — add more as needed
-DEV_ROOTS="$HOME/dev:$HOME/projects:$HOME/work:$HOME/src"
+# Known dev roots — add more as needed (env-overridable for tests)
+DEV_ROOTS="${DEV_ROOTS:-$HOME/dev:$HOME/projects:$HOME/work:$HOME/src}"
 
 # Fast git repo name: use git rev-parse instead of walking directories
 # Strips "jordan-" or "jordan/" prefix from worktree names
@@ -98,8 +98,13 @@ if [ "$cmd" != "zsh" ] && [ "$cmd" != "bash" ] && [ "$cmd" != "fish" ]; then
         display_cmd=$(resolve_node_cmd "$pane_pid")
     fi
 
-    repo=$(get_repo_name "$path")
-    if [ -n "$repo" ] && is_dev_path "$path"; then
+    # is_dev_path (pure bash) gates get_repo_name (spawns git) — this runs
+    # per-window every status-interval, so skip git outside dev roots
+    repo=""
+    if is_dev_path "$path"; then
+        repo=$(get_repo_name "$path")
+    fi
+    if [ -n "$repo" ]; then
         truncate_name "$display_cmd:$repo"
     else
         truncate_name "$display_cmd"
