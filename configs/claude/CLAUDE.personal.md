@@ -78,3 +78,38 @@ done
 
 Notes: `cmux new-workspace` is now an alias for `cmux workspace create`;
 `--name` sets the workspace title at creation (no separate rename needed).
+
+## Browser automation on this Mac → drive Brave via CDP (non-headless)
+
+The "Agent Browser" Chrome profile does **not** exist on this Mac (only
+Chrome's `Default (Personal)`). When a task needs my logged-in sessions
+(Facebook Marketplace, shopping, etc.), attach agent-browser to my real
+**Brave** browser over CDP instead. This is inherently non-headless — I can
+watch it work in my actual browser window.
+
+Recipe (verified working 2026-07-03):
+
+1. Brave doesn't listen on a CDP port by default. Quit it gracefully and
+   relaunch with debugging enabled (tabs restore automatically):
+   ```bash
+   osascript -e 'quit app "Brave Browser"'
+   sleep 3
+   nohup "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" \
+     --remote-debugging-port=9222 --restore-last-session >/dev/null 2>&1 &
+   sleep 5
+   curl -s http://127.0.0.1:9222/json/version   # confirm CDP is up
+   ```
+2. Drive it with `agent-browser --cdp 9222 ...`. Open work in a **new tab**
+   (`tab new <url>`) so my existing tabs aren't clobbered.
+3. Skip screenshots — read pages with `snapshot -i` or `eval` on the DOM
+   (see agent-browser memory note).
+
+Gotchas (don't re-debug these):
+
+- **"Chrome profile 'Agent Browser' not found" even with `--cdp`** → a stale
+  agent-browser daemon is holding the dead profile config. Fix:
+  `agent-browser close --all`, kill the pid in `~/.agent-browser/default.pid`,
+  remove `~/.agent-browser/default.{sock,pid}`, retry.
+- Brave (v150) does **not** block `--remote-debugging-port` on the default
+  profile the way Chrome 136+ does — attaching to the real profile works.
+- A normal quit + reopen of Brave later closes the debug port (back to stock).
