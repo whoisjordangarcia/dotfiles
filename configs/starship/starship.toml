@@ -1,6 +1,13 @@
 add_newline = true
 command_timeout = 1500
-format = "${custom.prompt_info}$terraform$git_status$git_metrics$character"
+format = "${env_var.ZMX_SESSION}${custom.prompt_info}$terraform$git_status$git_metrics$character"
+
+[env_var.ZMX_SESSION]
+# zmx exports ZMX_SESSION inside attached sessions; module hides when unset.
+symbol = " "
+format = "[$symbol$env_value]($style) "
+description = "zmx session name"
+style = "bold magenta"
 
 [custom.prompt_info]
 when = true
