@@ -64,7 +64,7 @@ After items have been bought, mark them complete via the URL scheme. (No direct 
 
 ## Bulk-adding items to Groceries with section headings
 
-The Groceries project has 4 headings: **Protein**, **Produce**, **Pantry**, **Weekly Recurring** (matches the store-section ordering in `~/dev/notes/CLAUDE.md`). New grocery items should land under the right heading so shopping is a top-to-bottom walk.
+The Groceries project has four **store-section headings** used for the weekly shop — **Protein**, **Produce**, **Pantry**, **Weekly Recurring** (matches the store-section ordering in `~/dev/notes/CLAUDE.md`). New grocery items should land under the right one so shopping is a top-to-bottom walk. (The project also carries a few non-shopping headings like `Recipes`, `Rubys Snacks`, `Cost Estimate`, `External`, `Double check` — ignore those when adding weekly items.)
 
 ### The right approach: URL scheme with `heading=` param
 

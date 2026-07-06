@@ -113,3 +113,18 @@ Gotchas (don't re-debug these):
 - Brave (v150) does **not** block `--remote-debugging-port` on the default
   profile the way Chrome 136+ does — attaching to the real profile works.
 - A normal quit + reopen of Brave later closes the debug port (back to stock).
+
+## Things 3 tasks (~/dev/things3-cli) → use the `things3` skill
+
+Tasks live in Things 3. For anything task-related — Today, inbox, "things to
+buy", add/trash a to-do — use the **`things3` skill** (full reference, schema,
+grocery patterns; auto-triggers on task keywords). Run commands from
+`~/dev/things3-cli`. Essentials the skill assumes you know:
+
+- Read: `python3 -m things3_cli today|inbox|summary|projects` (`--format json`).
+- Add: `add "Title" --when tomorrow --list "Project" --heading "Section"` — `--heading` must name an **existing** heading (URL scheme can't create them).
+- Remove: `trash --title "Exact title"` (repeatable) or `--id UUID`.
+- Groceries = canonical shopping list: project UUID `FMx42m3VnWN4uKjXZPXaiw` (query by UUID — a stale dupe exists), headings Protein/Produce/Pantry/Weekly Recurring. `THINGS_TOKEN` is set for bulk `push`.
+- **Never** write the SQLite DB directly; don't `add`/`trash`/`push` without an explicit request.
+
+<!-- After editing this section live, run `claude-sync` to persist it to the dotfiles overlay. -->
