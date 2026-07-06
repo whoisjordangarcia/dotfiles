@@ -240,3 +240,91 @@ opsec() {
   fi
   op read "$1"
 }
+
+# zma — fuzzy zmx session picker, adapted from the recipe in the zmx README
+# (https://github.com/neurosnap/zmx). `zmx attach` is an upsert, so:
+#   enter   attach to the highlighted session, or create one named after the
+#           typed query when nothing matches
+#   ctrl-n  create from the query even while a match is highlighted
+#   ctrl-x  kill the highlighted session, then reopen the picker
+#   esc     leave the picker (never creates — deliberate deviation from
+#           upstream, which attaches to the typed query even on abort)
+# While attached, ctrl+\ (zmx's detach key, intercepted client-side like a
+# tmux prefix, so it works even with a TUI running) lands you back in the
+# picker — making it the tmux-style "switch session" key. Same on session
+# exit. Only `zma <name>` direct attaches skip the loop.
+# Supacode's internal supa-<uuid> sessions are hidden; `zma -a` shows them.
+# `zma <name>` skips the picker and attaches/creates directly.
+zma() {
+  if ! command -v zmx &>/dev/null; then
+    echo "zma: zmx not installed" >&2
+    return 1
+  fi
+  if [[ -n "$1" && "$1" != "-a" ]]; then
+    zmx attach "$1"
+    return
+  fi
+  if ! command -v fzf &>/dev/null; then
+    echo "zma: fzf not installed" >&2
+    return 1
+  fi
+
+  local show_all=""
+  [[ "$1" == "-a" ]] && show_all=1
+
+  local display output rc query key selected session_name
+  while true; do
+    display=$(zmx list 2>/dev/null | _zma_format "$show_all")
+
+    output=$({ [[ -n "$display" ]] && echo "$display"; } | fzf \
+      --print-query \
+      --expect=ctrl-n,ctrl-x \
+      --height=95% \
+      --reverse \
+      --prompt="zmx> " \
+      --header="enter: attach/create  ctrl-n: new from query  ctrl-x: kill" \
+      --preview='zmx history {1}' \
+      --preview-window=down:60%:follow)
+    rc=$?
+
+    # --print-query + --expect make fzf emit: query, key pressed, selection.
+    query=$(sed -n '1p' <<<"$output")
+    key=$(sed -n '2p' <<<"$output")
+    selected=$(sed -n '3p' <<<"$output")
+
+    if [[ "$key" == "ctrl-x" ]]; then
+      [[ -n "$selected" ]] && zmx kill "${selected%% *}"
+      continue
+    fi
+
+    if [[ "$key" == "ctrl-n" && -n "$query" ]]; then
+      session_name="$query"
+    elif [[ $rc -eq 0 && -n "$selected" ]]; then
+      session_name="${selected%% *}"
+    elif [[ $rc -ne 130 && -n "$query" ]]; then
+      session_name="$query"
+    else
+      return 130
+    fi
+
+    # Attach returns on detach (ctrl+\) or session exit — fall back into the
+    # picker either way; esc is the way out to a plain shell.
+    zmx attach "$session_name"
+  done
+}
+
+# _zma_format — turn `zmx list` key=value lines into aligned picker rows
+# (name, clients, start_dir). Sessions with a cmd= field carry it after
+# start_dir in the same tab-separated remainder, so it's trimmed off. Pass a
+# non-empty arg to include Supacode's supa-* sessions.
+_zma_format() {
+  local show_all="$1" name pid clients created rest dir
+  while IFS=$'\t' read -r name pid clients created rest; do
+    name=${name#*name=}
+    [[ -z "$show_all" && "$name" == supa-* ]] && continue
+    clients=${clients#*clients=}
+    dir=${rest#*start_dir=}
+    dir=${dir%%$'\t'*}
+    printf "%-24s  clients:%-2s  %s\n" "$name" "$clients" "${dir/#$HOME/~}"
+  done | sort
+}
