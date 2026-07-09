@@ -46,6 +46,14 @@ brew 'pcsc-lite'
 # Streaming
 brew 'sunshine-beta'
 
+# Music
+brew 'mpv'  # libmpv — audio backend for sonic-tui (Navidrome TUI client)
+brew 'rust' # cargo — builds sonic-tui (no brew formula, see script/sonic-tui)
+brew 'mpd'  # music daemon for rmpc, reads the NAS share (see script/rmpc)
+brew 'mpc'  # mpd CLI (update/stats)
+brew 'rmpc' # the nicest music TUI — MPD client with album art
+brew 'cava' # audio visualizer, rendered by rmpc's Visualizer tab
+
 # Sketchybar
 brew 'FelixKratz/formulae/sketchybar'
 brew 'FelixKratz/formulae/borders'

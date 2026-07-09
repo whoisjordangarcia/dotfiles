@@ -11,7 +11,7 @@ animation_fps = 100.0
 
 # mouse_follows_focus: off — the cursor stays put on keyboard nav rather than
 # warping to the newly focused window.
-focus_follows_mouse = false
+focus_follows_mouse = true
 mouse_follows_focus = false
 mouse_hides_on_focus = false
 default_disable = false
@@ -140,7 +140,9 @@ app_rules = [
   # (If the old jitter / off-screen flash returns, set `floating = true`.)
   { app_id = "com.cmuxterm.app", workspace = 0, floating = false },
   { app_id = "com.brave.Browser" },                                         # Browser -> opens on current workspace, tiled
-  { app_id = "com.tinyspeck.slackmacgap", workspace = 2 },                  # Slack   -> "3", tiled
+  # floating = false: Slack is Electron (same auto-float issue as cmux above) —
+  # without it rift floats the window and it hovers over the layout.
+  { app_id = "com.tinyspeck.slackmacgap", workspace = 2, floating = false }, # Slack   -> "3", tiled
   { app_id = "com.flexibits.fantastical2.mac", workspace = 9, floating = true },  # Fantastical -> "0"
 
   # --- Floating utilities (dialog-like; not pinned) -----------------------
@@ -187,6 +189,22 @@ comb1 = "Option + Shift"
 "Option + 8" = { switch_to_workspace = 7 }
 "Option + 9" = { switch_to_workspace = 8 }
 "Option + 0" = { switch_to_workspace = 9 }
+
+# Move focused window to workspace (i3's $mod+Shift+N; does not follow).
+# Native action — replaces the old `sh -c "rift-cli …"` move+follow chains,
+# which silently no-oped under launchd's minimal PATH (bare `rift-cli`) and
+# were dropped in 93efb9f. rift-cli still has no --follow; if follow is ever
+# wanted again, chain move-window && switch with absolute /opt/homebrew paths.
+"comb1 + 1" = { move_window_to_workspace = 0 }
+"comb1 + 2" = { move_window_to_workspace = 1 }
+"comb1 + 3" = { move_window_to_workspace = 2 }
+"comb1 + 4" = { move_window_to_workspace = 3 }
+"comb1 + 5" = { move_window_to_workspace = 4 }
+"comb1 + 6" = { move_window_to_workspace = 5 }
+"comb1 + 7" = { move_window_to_workspace = 6 }
+"comb1 + 8" = { move_window_to_workspace = 7 }
+"comb1 + 9" = { move_window_to_workspace = 8 }
+"comb1 + 0" = { move_window_to_workspace = 9 }
 
 
 # Move window to display by index (Ctrl + Cmd + N)

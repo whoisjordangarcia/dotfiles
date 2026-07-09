@@ -46,22 +46,15 @@ detect_system() {
 }
 
 get_modules_from_script() {
-	local script="$1"
-	if [[ ! -f "$script" ]]; then
-		return 1
-	fi
-	# mac installers share their component list via script/mac_components.sh
-	if [[ "$script" == *"/mac"*"_installation.sh" && -f "$dotfilesDirectory/script/mac_components.sh" ]]; then
-		script="$dotfilesDirectory/script/mac_components.sh"
-	fi
-	# Extract component_installation array entries
-	grep -A 100 'component_installation=(' "$script" |
-		grep -v '^#' |
-		sed -n '/(/,/)/p' |
-		grep -v '(' | grep -v ')' |
-		sed 's/^[[:space:]]*//' |
-		sed 's/#.*//' |
-		grep -v '^$'
+	local system="$1"
+	local components_file="$dotfilesDirectory/script/${system}_components.sh"
+	[[ -f "$components_file" ]] || return 1
+	# Each *_components.sh only defines the component_installation array, so we
+	# can source it for the real list instead of text-scraping the installer.
+	(
+		source "$components_file"
+		printf '%s\n' "${component_installation[@]}"
+	)
 }
 
 interactive_module_selection() {
@@ -76,7 +69,7 @@ interactive_module_selection() {
 	local modules=()
 	while IFS= read -r module; do
 		modules+=("$module")
-	done < <(get_modules_from_script "$script")
+	done < <(get_modules_from_script "$system")
 
 	if [[ ${#modules[@]} -eq 0 ]]; then
 		fail "No modules found in $script"
@@ -192,6 +185,12 @@ load_config() {
 	if [[ -f "$configFile" ]]; then
 		source "$configFile"
 	fi
+	# Back-compat: the separate "<os>_work" installer was removed — WORK_ENV
+	# (derived from DOT_ENVIRONMENT) now drives work config. Normalize any
+	# stored "mac_work" etc. so old .dotconfig files keep resolving.
+	if [[ "${DOT_SYSTEM:-}" == *_work ]]; then
+		DOT_SYSTEM="${DOT_SYSTEM%_work}"
+	fi
 }
 
 save_config() {
@@ -204,6 +203,15 @@ DOT_SYSTEM="$DOT_SYSTEM"
 DOT_YUBIKEY="$DOT_YUBIKEY"
 EOF
 	info "Configuration saved to $configFile"
+}
+
+# Pretty-print the resolved config (Name/Email/Environment/System/YubiKey).
+print_config_summary() {
+	printf "  ${GREEN}Name:${RESET}         %s\n" "${DOT_NAME:-not set}"
+	printf "  ${GREEN}Email:${RESET}        %s\n" "${DOT_EMAIL:-not set}"
+	printf "  ${GREEN}Environment:${RESET}  %s\n" "${DOT_ENVIRONMENT:-not set}"
+	printf "  ${GREEN}System:${RESET}       %s\n" "${DOT_SYSTEM:-not set}"
+	printf "  ${GREEN}YubiKey:${RESET}      %s\n" "${DOT_YUBIKEY:-not set}"
 }
 
 get_available_installations() {
@@ -253,7 +261,7 @@ show_installation_plan() {
 	local modules=()
 	while IFS= read -r module; do
 		modules+=("$module")
-	done < <(get_modules_from_script "$script")
+	done < <(get_modules_from_script "$system")
 
 	if [[ ${#modules[@]} -eq 0 ]]; then
 		return
@@ -352,27 +360,14 @@ interactive_setup() {
 	read input_yubikey
 	DOT_YUBIKEY="${input_yubikey:-${DOT_YUBIKEY}}"
 
-	# Auto-select installation with work variant
-	if [[ -n "$auto_installation" ]]; then
-		if [[ "$DOT_ENVIRONMENT" == "work" ]]; then
-			local os_only="${auto_installation%%_*}"
-			if [[ -f "$dotfilesDirectory/script/${os_only}_work_installation.sh" ]]; then
-				auto_installation="${os_only}_work"
-			fi
-		fi
-		DOT_SYSTEM="$auto_installation"
-	else
-		DOT_SYSTEM="mac" # fallback
-	fi
+	# Auto-select installation. WORK_ENV (exported by run_installation) drives
+	# environment-specific config — there's no separate work installer.
+	DOT_SYSTEM="${auto_installation:-mac}"
 
 	# Clean summary
 	echo ""
 	header "Ready to Install"
-	printf "  ${GREEN}Name:${RESET}         %s\n" "$DOT_NAME"
-	printf "  ${GREEN}Email:${RESET}        %s\n" "$DOT_EMAIL"
-	printf "  ${GREEN}Environment:${RESET}  %s\n" "$DOT_ENVIRONMENT"
-	printf "  ${GREEN}System:${RESET}       %s\n" "$DOT_SYSTEM"
-	printf "  ${GREEN}YubiKey:${RESET}      %s\n" "${DOT_YUBIKEY:-not set}"
+	print_config_summary
 	echo ""
 
 	show_installation_plan "$DOT_SYSTEM"
@@ -439,6 +434,15 @@ displayUsageAndExit() {
 # Flag defaults (declared before parsing so `set -u` never trips on them)
 FORCE_INTERACTIVE=0
 DIRECT_INSTALL=0
+CLI_DOT_SYSTEM=""
+CLI_DOT_ENVIRONMENT=""
+
+# Command-line choices must win over the persisted defaults in .dotconfig.
+# Keep them separate while parsing, then apply them after load_config below.
+apply_cli_overrides() {
+	[[ -n "$CLI_DOT_SYSTEM" ]] && DOT_SYSTEM="$CLI_DOT_SYSTEM"
+	[[ -n "$CLI_DOT_ENVIRONMENT" ]] && DOT_ENVIRONMENT="$CLI_DOT_ENVIRONMENT"
+}
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -496,16 +500,19 @@ while [[ $# -gt 0 ]]; do
 		exit 0
 		;;
 	"--system")
+		if [[ $# -lt 2 || -z "${2:-}" ]]; then
+			fail "--system requires an installation name (for example: mac)"
+		fi
 		shift
-		DOT_SYSTEM="$1"
+		CLI_DOT_SYSTEM="$1"
 		DIRECT_INSTALL=1
 		;;
 	"--work")
-		DOT_ENVIRONMENT="work"
+		CLI_DOT_ENVIRONMENT="work"
 		DIRECT_INSTALL=1
 		;;
 	"--personal")
-		DOT_ENVIRONMENT="personal"
+		CLI_DOT_ENVIRONMENT="personal"
 		DIRECT_INSTALL=1
 		;;
 	*)
@@ -518,6 +525,7 @@ done
 
 # Default behavior - check if config exists, if not run interactive setup
 load_config
+apply_cli_overrides
 if [[ "${DIRECT_INSTALL:-0}" == "1" && -n "${DOT_SYSTEM:-}" ]]; then
 	show_logo
 	header "Direct Installation"
@@ -537,11 +545,7 @@ elif [[ -z "${DOT_SYSTEM:-}" ]] || [[ "$FORCE_INTERACTIVE" == "1" ]]; then
 else
 	show_logo
 	header "Using Existing Configuration"
-	printf "  ${GREEN}Name:${RESET}         %s\n" "$DOT_NAME"
-	printf "  ${GREEN}Email:${RESET}        %s\n" "$DOT_EMAIL"
-	printf "  ${GREEN}Environment:${RESET}  %s\n" "$DOT_ENVIRONMENT"
-	printf "  ${GREEN}System:${RESET}       %s\n" "$DOT_SYSTEM"
-	printf "  ${GREEN}YubiKey:${RESET}      %s\n" "${DOT_YUBIKEY:-not set}"
+	print_config_summary
 	echo ""
 
 	show_installation_plan "$DOT_SYSTEM"

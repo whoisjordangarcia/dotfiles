@@ -1,11 +1,11 @@
 #!/bin/bash
 #
 # Single source of truth for the macOS component list.
-# Sourced by mac_installation.sh, mac_work_installation.sh, and bin/dot
-# (module selection menu) — edit here, never in the installers.
+# Sourced by mac_installation.sh and bin/dot (module selection menu) —
+# edit here, never in the installers.
 #
-# Environment-specific components: append to the array inside the
-# WORK_ENV conditional at the bottom.
+# For an environment-specific component, append it inside a guard, e.g.
+#   [[ "${WORK_ENV:-}" == "1" ]] && component_installation+=(some/work-only)
 
 component_installation=(
   apps/mac
@@ -32,18 +32,11 @@ component_installation=(
   codex
   fastfetch
   opencode
-  # brave/mac managed policies are opt-in: no-op unless DOT_BRAVE_MANAGED=1
+  # music
+  sonic-tui
+  rmpc
+  # brave/mac soft-installs extensions from configs/brave/extensions.txt (brave-sync)
   brave/mac
   sunshine/mac
   appearance-watcher/mac
 )
-
-# NOTE: keep "(" out of comments below — bin/dot's module parser
-# (get_modules_from_script) text-scans this file for the array.
-if [[ "${WORK_ENV:-}" == "1" ]]; then
-  # Work-only components: append with component_installation+=...
-  :
-else
-  # Personal-only components: append with component_installation+=...
-  :
-fi

@@ -34,6 +34,7 @@ fi
 
 export GPG_TTY=$TTY
 export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH" # cargo-installed tools (sonic-tui)
 
 # bun completions (BUN_INSTALL is exported in .zshrc.envvars; defaults to ~/.bun)
 [ -s "${BUN_INSTALL:-$HOME/.bun}/_bun" ] && source "${BUN_INSTALL:-$HOME/.bun}/_bun"
@@ -85,3 +86,70 @@ alias glr='() {
     echo "glr: on $latest (was clean)"
   fi
 }'
+
+# _zmxrows — shared source of truth: one tab-separated row per session
+# (fullname, short id, age, worktree), sorted by worktree. zmxls and zmxa
+# both consume this so the row numbers you see match what you attach to.
+_zmxrows() {
+  zmx list | awk -v now="$(date +%s)" -F'\t' '
+    /name=/ {
+      full=""; id=""; age=0; dir=""
+      for (i=1; i<=NF; i++) {
+        if ($i ~ /name=/)           { s=$i; sub(/.*name=/,"",s);      full=s; id=substr(s,length(s)-7) }
+        else if ($i ~ /created=/)   { s=$i; sub(/.*created=/,"",s);   age=now-s }
+        else if ($i ~ /start_dir=/) { s=$i; sub(/.*start_dir=/,"",s); sub(/.*\//,"",s); dir=s }
+      }
+      a = age<3600 ? int(age/60)"m" : age<86400 ? int(age/3600)"h" : int(age/86400)"d"
+      printf "%s\t%s\t%s\t%s\n", full, id, a, dir
+    }' | sort -t$'\t' -k4
+}
+
+# zmxls — narrow `zmx list` for mobile: row#, short id, age, worktree.
+zmxls() { _zmxrows | awk -F'\t' '{ printf "%3d  %-8s %4s  %s\n", NR, $2, $3, $4 }' }
+
+# _zmxpick — resolve a session selector to a full session name on stdout.
+#   `1` (digits)  → that row number from zmxls
+#   `foo` (text)  → first session whose row matches the substring
+#   (no arg)      → fzf pick, with a live scrollback preview (`zmx history`).
+# $2 = "new" lets the fzf branch return a name you TYPE (Ctrl-N, or a query that
+# matches nothing) so the caller can create it — attach passes this, kill/tail
+# don't, so they only ever resolve existing sessions. Returns 1 if unresolved.
+# Runs `zmx list` once (via _zmxrows); every zmx* helper below builds on this.
+_zmxpick() {
+  local rows n
+  rows=$(_zmxrows)
+  if [[ "$1" == <-> ]]; then                        # all-digits → row number
+    n=$(sed -n "${1}p" <<<"$rows" | cut -f1)
+    [[ -z "$n" ]] && { echo "zmx: no row $1" >&2; return 1 }
+  elif [[ -n "$1" ]]; then                          # substring → match a name
+    n=$(grep -- "$1" <<<"$rows" | head -1 | cut -f1)
+    [[ -z "$n" ]] && { echo "zmx: no session matching $1" >&2; return 1 }
+  else                                              # no arg → fzf pick
+    local out query key sel
+    out=$(awk -F'\t' '{ printf "%-8s %4s  %s\t%s\n", $2, $3, $4, $1 }' <<<"$rows" \
+        | fzf --height=80% --reverse --with-nth=1 --delimiter=$'\t' \
+              --print-query --expect=ctrl-n \
+              --header='enter: pick · ctrl-n: new from query' \
+              --preview='zmx history {2} 2>/dev/null | tail -300' \
+              --preview-window=right:60%:follow)
+    query=$(sed -n 1p <<<"$out"); key=$(sed -n 2p <<<"$out"); sel=$(sed -n 3p <<<"$out")
+    if [[ -n "$2" && ( "$key" == ctrl-n || ( -z "$sel" && -n "$query" ) ) ]]; then
+      n="$query"                                    # create-new: use the typed name
+    elif [[ -n "$sel" ]]; then
+      n=$(cut -f2 <<<"$sel")                         # picked an existing row
+    else
+      return 1                                       # escaped / nothing chosen
+    fi
+  fi
+  print -r -- "$n"
+}
+
+# zmxa — attach by row #, substring, or fzf. In fzf, ctrl-n (or a query that
+# matches nothing) creates a new session named after what you typed. `zmxa 1`.
+zmxa() { local n; n=$(_zmxpick "$1" new) || return; zmx attach "$n" }
+
+# zmxk — kill a session picked the same way, and echo which one went.
+zmxk() { local n; n=$(_zmxpick "$1") || return; zmx kill "$n" && echo "killed $n" }
+
+# zmxt — tail (follow live output of) a session picked the same way.
+zmxt() { local n; n=$(_zmxpick "$1") || return; zmx tail "$n" }

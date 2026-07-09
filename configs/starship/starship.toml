@@ -1,6 +1,8 @@
 add_newline = true
 command_timeout = 1500
-format = "${env_var.ZMX_SESSION}${custom.prompt_info}$terraform$git_status$git_metrics$character"
+# ponytail: only the terraform module scans the dir; bail fast in huge repos
+scan_timeout = 10
+format = "${env_var.ZMX_SESSION}${custom.prompt_info}$terraform$git_status$character"
 
 [env_var.ZMX_SESSION]
 # zmx exports ZMX_SESSION inside attached sessions; module hides when unset.

@@ -1,0 +1,9 @@
+# Per-profile Brave theme colors — matched by profile NAME (from Local State),
+# so you can tell profiles apart at a glance. Applied by script/brave/theme.sh
+# (brave-theme). SOFT + ADDITIVE: written into each profile's plain Preferences
+# (browser.theme), preserving all other prefs; change or clear anytime in
+# Settings -> Appearance. Brave must be CLOSED when applying (it overwrites the
+# file on exit otherwise). Format: <Profile Name>=#RRGGBB  (full-line # comments
+# only — no inline comments, since the value itself starts with #).
+Work=#1A73E8
+Personal=#E8710A

@@ -802,22 +802,24 @@ fi
 
 # ─── Helper: visible width of a line (ANSI colors + OSC 8 stripped) ─
 # Measures DISPLAY columns (what the terminal wraps on), not ${#s} codepoints.
-# Two corrections over a naive count:
-#   1. `wc -L` uses wcwidth(), so default-emoji glyphs like ⚡/⏳ count as 2.
-#   2. wcwidth still counts a U+FE0F variation selector as 0 and its base char
-#      as 1, but the terminal renders the pair as a 2-column emoji (e.g. ⚠️).
-#      Add one column per VS16 so the measure matches what is actually drawn.
+# zsh's ${(m)#var} is wcwidth()-based, so default-emoji glyphs like ⚡/⏳ count
+# as 2. (NOT `wc -L`: only GNU wc uses wcwidth — BSD/macOS wc -L counts bytes
+# and returns 0 for an unterminated final line, so widths read as 0 or way
+# over and shedding/clamping misfire. zsh ships with every dotfiles profile.)
+# One correction remains: wcwidth counts a U+FE0F variation selector as 0 and
+# its base char as 1, but the terminal renders the pair as a 2-column emoji
+# (e.g. ⚠️). Add one column per VS16 to match what is actually drawn.
 visible_width() {
   local stripped base novs
   stripped=$(printf '%s' "$1" | sed $'s/\033\[[0-9;]*m//g; s/\033]8;;[^\007]*\007//g')
-  base=$(printf '%s' "$stripped" | wc -L | tr -d ' ')
+  base=$(zsh -c 'print -rn -- ${(m)#1}' _ "$stripped")
   novs=${stripped//$'️'/} # drop every VS16 (U+FE0F) to count how many there are
   printf '%s' $((base + ${#stripped} - ${#novs}))
 }
 
 # ─── Helper: display columns of one visible character ───────────────
 # Fast paths cover every glyph the statusline actually emits (all width 1);
-# anything unlisted falls back to wcwidth via `wc -L`, so a newly introduced
+# anything unlisted falls back to wcwidth via zsh ${(m)#}, so a newly introduced
 # glyph is still measured dynamically rather than assumed. A zero-width
 # combiner (e.g. the U+FE0F variation selector that turns ⚠ into the 2-column
 # ⚠️) floors to 1, which is exactly the +1 that upgrades its base to emoji
@@ -828,7 +830,7 @@ char_display_width() {
     '·' | '←' | '↑' | '↓' | '◦' | '●' | '⎇' | '…' | '█' | '░' | '▏' | '▎' | '▍' | '▌' | '▋' | '▊' | '▉') printf 1 ;;
     *)
       local w
-      w=$(printf '%s' "$1" | wc -L | tr -d ' ')
+      w=$(zsh -c 'print -rn -- ${(m)#1}' _ "$1")  # wcwidth; see visible_width
       [ "${w:-0}" -gt 0 ] 2>/dev/null && printf '%s' "$w" || printf 1
       ;;
   esac

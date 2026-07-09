@@ -7,6 +7,11 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 STATUSLINE="$SCRIPT_DIR/statusline.sh"
 DEMO_DIR=$(mktemp -d "/tmp/statusline-demo-XXXXXX")
 
+# Hermetic git: ignore global/system config so scratch-repo commits don't
+# inherit commit.gpgsign (a YubiKey-signing setup would hang the demo on a
+# key tap and fail headless). Statusline git calls are read-only, unaffected.
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
+
 cleanup() { rm -rf "$DEMO_DIR" /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache /tmp/claude-statusline-node-cache; }
 trap cleanup EXIT
 

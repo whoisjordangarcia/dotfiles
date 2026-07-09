@@ -12,6 +12,11 @@ STATUSLINE="$SCRIPT_DIR/statusline.sh"
 # width-specific tests below override STATUSLINE_COLS per-invocation.
 export STATUSLINE_COLS="${STATUSLINE_COLS:-300}"
 
+# Hermetic git: ignore global/system config so scratch-repo commits don't
+# inherit commit.gpgsign (a YubiKey-signing setup would hang the suite on a
+# key tap and fail headless). Statusline git calls are read-only, unaffected.
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
+
 passed=0
 failed=0
 errors=""
@@ -577,14 +582,14 @@ printf "\n\033[38;5;141m━━━ Width Fit (no-wrap / anti double-render) ━\0
 
 # A line wider than the pane wraps onto an extra terminal row Claude Code didn't
 # reserve — the tmux-over-SSH double render. Every emitted line must fit COLUMNS.
-# wc -L reports the widest line's display columns (after ANSI/OSC-8 stripping).
-# Display columns as the terminal draws them: wcwidth (wc -L) plus one per
+# Display columns as the terminal draws them: wcwidth via zsh ${(m)#} (NOT
+# `wc -L` — BSD/macOS wc counts bytes, only GNU wc uses wcwidth) plus one per
 # U+FE0F variation selector (wcwidth counts VS16 as 0 but ⚠️ renders 2 wide).
 disp_width() {
   local stripped novs
   stripped=$(printf '%s' "$1" | strip_ansi)
   novs=${stripped//$'️'/}
-  printf '%s' $(( $(printf '%s' "$stripped" | wc -L | tr -d ' ') + ${#stripped} - ${#novs} ))
+  printf '%s' $(( $(zsh -c 'print -rn -- ${(m)#1}' _ "$stripped") + ${#stripped} - ${#novs} ))
 }
 
 assert_within_cols() {

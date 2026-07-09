@@ -2,45 +2,25 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-
 source "$SCRIPT_DIR/../../common/log.sh"
-source "$SCRIPT_DIR/../../common/symlink.sh"
+source "$SCRIPT_DIR/../soft_install.sh"
+REPO_DIR=$(cd -- "$SCRIPT_DIR/../../.." &>/dev/null && pwd)
 
-# Managed Brave policies (force-installed extensions, disabled built-in
-# password manager, forced search engine, blocked sign-in) are OPT-IN.
-# They are intended for fresh/work machines and will clobber a personal
-# Brave profile: saved logins get hidden, you get signed out, and your
-# extensions become enterprise-managed. To apply them, set
-# DOT_BRAVE_MANAGED=1; otherwise this component is a no-op.
-if [[ "${DOT_BRAVE_MANAGED:-0}" != "1" ]]; then
-    info "Brave managed policies are opt-in (set DOT_BRAVE_MANAGED=1 to apply). Skipping."
-    exit 0
-fi
-
-# Brave policy directory on Linux (user-level)
-BRAVE_POLICY_DIR="$HOME/.config/BraveSoftware/Brave-Browser/policies/managed"
-
-# Check if Brave is installed
+# Check Brave is installed (install paths vary by distro — leave to the user)
 if ! command -v brave-browser &>/dev/null && ! command -v brave &>/dev/null; then
-    info "Brave Browser not found."
-    info "Install instructions:"
-    info "  Ubuntu/Debian: https://brave.com/linux/#debian-ubuntu-mint"
-    info "  Fedora: https://brave.com/linux/#fedora-centos-streamrhel"
-    info "  Arch: pacman -S brave-bin (AUR)"
-    info "Skipping Brave policy setup..."
-    exit 0
+	info "Brave Browser not found — install from https://brave.com/linux/ then re-run. Skipping."
+	exit 0
 fi
 
-# Create policy directory if it doesn't exist
-if [ ! -d "$BRAVE_POLICY_DIR" ]; then
-    info "Creating Brave policies directory..."
-    mkdir -p "$BRAVE_POLICY_DIR"
-fi
+# ponytail: Linux external-extension autoload is less documented than macOS — some
+# builds only scan a system dir (/usr/share/brave/extensions). If the extensions
+# don't show at brave://extensions after restart, Brave Sync is the reliable
+# cross-machine fallback; upgrade this to the system dir if that's your build.
+brave_soft_install \
+	"$REPO_DIR/configs/brave/extensions.txt" \
+	"$HOME/.config/BraveSoftware/Brave-Browser/External Extensions"
 
-# Symlink policies.json
-step "Linking Brave managed policies..."
-link_file "$SCRIPT_DIR/../../../configs/brave/policies/managed/policies.json" "$BRAVE_POLICY_DIR/policies.json"
+# Per-profile colors (skips itself if Brave is running).
+bash "$SCRIPT_DIR/../theme.sh"
 
-success "Brave policies configured!"
-info "Restart Brave Browser for policies to take effect."
-info "Extensions will be installed automatically on next launch."
+info "Verify after restarting Brave at brave://extensions"

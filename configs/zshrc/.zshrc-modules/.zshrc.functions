@@ -328,3 +328,60 @@ _zma_format() {
     printf "%-24s  clients:%-2s  %s\n" "$name" "$clients" "${dir/#$HOME/~}"
   done | sort
 }
+# nv — play Navidrome straight through mpv (no TUI): fzf album picker → gapless mpv.
+# Creds come from ~/.config/sonic-tui/config.yaml (chmod 600) so there's one
+# credentials file shared with sonic-tui. Optional arg pre-fills the fzf query.
+nv() {
+  local cfg="$HOME/.config/sonic-tui/config.yaml"
+  [[ -f "$cfg" ]] || { echo "nv: $cfg not found" >&2; return 1; }
+  local base user pw salt token auth
+  base=$(awk -F'"' '/^  url:/{print $2}' "$cfg")
+  user=$(awk -F'"' '/^  username:/{print $2}' "$cfg")
+  pw=$(awk -F'"' '/^  password:/{print $2}' "$cfg")
+  salt=$(openssl rand -hex 8)
+  if command -v md5 &>/dev/null; then
+    # BSD/macOS md5 prints "MD5 (stdin) = <digest>" unless -q is supplied;
+    # Subsonic's token parameter must contain only the hexadecimal digest.
+    token=$(printf '%s%s' "$pw" "$salt" | md5 -q)
+  else
+    token=$(printf '%s%s' "$pw" "$salt" | md5sum | cut -d' ' -f1)
+  fi
+  auth="u=$user&t=$token&s=$salt&v=1.16.1&c=nv&f=json"
+
+  # page through the full library (the API caps each request at 500 albums)
+  local album offset=0 batch all=""
+  while :; do
+    batch=$(curl -s "$base/rest/getAlbumList2?type=alphabeticalByArtist&size=500&offset=$offset&$auth" |
+      jq -r '.["subsonic-response"].albumList2.album[]? | "\(.id)\t\(.artist) — \(.name) (\(.year // "?"))"')
+    [[ -z "$batch" ]] && break
+    all+="$batch"$'\n'
+    (( $(wc -l <<<"$batch") < 500 )) && break
+    (( offset += 500 ))
+  done
+  album=$(printf '%s' "$all" |
+    fzf --with-nth=2.. --delimiter='\t' --prompt='album> ' --query="$*") || return
+
+  local pl
+  pl=$(mktemp) || return
+  curl -s "$base/rest/getAlbum?id=${album%%$'\t'*}&$auth" |
+    jq -r --arg b "$base" --arg a "$auth" \
+      '.["subsonic-response"].album.song[] | "\($b)/rest/stream?id=\(.id)&\($a)"' > "$pl"
+  # playlist via temp file, not stdin — mpv needs the terminal for keybindings
+  mpv --no-video --playlist="$pl"
+  rm -f "$pl"
+}
+
+# rmpc — music TUI backed by mpd reading the NAS share. Mounts the share
+# (creds live in macOS Keychain; URL in ~/.zshrc-modules/.zshrc.sec since
+# the public repo bans real IPs) and starts mpd on demand, then launches.
+rmpc() {
+  if [[ ! -d /Volumes/tank01/Music-clean ]]; then
+    : "${NAS_SMB_URL:?set NAS_SMB_URL in ~/.zshrc-modules/.zshrc.sec}"
+    open "$NAS_SMB_URL"
+    local i=0
+    until [[ -d /Volumes/tank01/Music-clean ]] || (( i++ > 20 )); do sleep 0.5; done
+  fi
+  pgrep -x mpd >/dev/null || mpd ~/.config/mpd/mpd.conf
+  command rmpc "$@"
+}
+alias lamusique="rmpc"  # la musique -> the rmpc() wrapper above (mounts NAS, starts mpd)

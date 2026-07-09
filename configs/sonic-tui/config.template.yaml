@@ -1,0 +1,63 @@
+# sonic-tui — OpenSubsonic/Navidrome terminal client
+# Template only: setup.sh copies this to ~/.config/sonic-tui/config.yaml
+# (chmod 600), which is where the real server URL + credentials live —
+# the real file is never committed.
+
+server:
+  url: "http://CHANGE_ME:4533"
+  username: "CHANGE_ME"
+  password: "CHANGE_ME"
+
+audio:
+  volume: 100
+  # max_bitrate: 320  # uncomment to transcode; omit for original quality
+  gapless: true
+
+ui:
+  show_cover_art: true
+  color_from_cover: false # theme the UI from the album art palette
+  # accent_color: "#ff6600"
+  show_visualizer: true
+
+cache:
+  directory: "~/.cache/sonic-tui"
+  enabled: true
+
+keybindings:
+  # Navigation
+  quit: "q"
+  help: "?"
+  search: "/"
+  filter: "\\" # enter filter mode; 'c' clears the filter
+  focus_left: "h"
+  focus_right: "l"
+
+  # Playback
+  play_pause: " "
+  next: "n"
+  previous: "p"
+  volume_up: "+"
+  volume_down: "-"
+  shuffle: "s"
+  repeat: "r"
+
+  # Queue
+  enqueue: "e"
+  enqueue_next: "E"
+  enqueue_album: "a"
+  clear_queue: "x"
+  remove_from_queue: "d"
+
+  # Features
+  star: "S"
+  lyrics: "L"
+  add_to_playlist: "A"
+  now_playing: "f"
+  favorites: "F"
+  history: "H"
+  statistics: "I"
+  radio: "R"
+  command_palette: ":"
+
+  # Sorting
+  sort: "o"

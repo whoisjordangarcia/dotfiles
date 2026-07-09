@@ -1,27 +1,14 @@
 #!/bin/bash
+set -euo pipefail
 
-source ./script/common/log.sh
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
-component_installation=(
-	apps/server
-	git
-	zsh
-	vim-starter
-	tmux
-	zmx/linux
-	starship
-	fastfetch
-	claude
-	agents
-)
+source "$SCRIPT_DIR/common/log.sh"
+source "$SCRIPT_DIR/common/run_components.sh"
+source "$SCRIPT_DIR/linux_server_components.sh"
 
-for component in "${component_installation[@]}"; do
-	section "$component"
-	script_path="./script/${component}/setup.sh"
+run_components "${component_installation[@]}"
 
-	if [ -f "$script_path" ]; then
-		source "$script_path"
-	else
-		info "Script for $component does not exist."
-	fi
-done
+header "Installation Complete"
+success "All components installed successfully!"
+info "Restart your terminal or run: source ~/.zshrc"

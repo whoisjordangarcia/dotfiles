@@ -1,4 +1,6 @@
-background-opacity = 1
+# Glass mode: slight translucency + native blur (macOS; Hyprland blurs via compositor)
+background-opacity = 0.9
+background-blur = 20
 clipboard-read = allow
 clipboard-write = allow
 

@@ -1,0 +1,174 @@
+diff --git a/src/app/media.rs b/src/app/media.rs
+index bf93de8..3b8b564 100644
+--- a/src/app/media.rs
++++ b/src/app/media.rs
+@@ -5,68 +5,20 @@ use super::App;
+ use super::prefetch::PrefetchResult;
+
+ impl App {
+-    pub async fn load_cover_art(&mut self, cover_id: &str) -> Result<()> {
+-        // Skip if already loaded
+-        if self.loaded_cover_id.as_deref() == Some(cover_id) {
+-            return Ok(());
+-        }
+-
+-        // Fetch from network
+-        let url = self.client.get_cover_art_url(cover_id, Some(300));
+-        match reqwest::get(&url).await {
+-            Ok(response) => {
+-                if let Ok(bytes) = response.bytes().await {
+-                    self.cover_art_data = Some(bytes.to_vec());
+-
+-                    // Pre-process image for display
+-                    if let Ok(img) = image::ImageReader::new(std::io::Cursor::new(&self.cover_art_data.as_ref().unwrap()))
+-                        .with_guessed_format()
+-                        .and_then(|r| r.decode().map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)))
+-                    {
+-                        let mut picker = Picker::from_termios().unwrap_or_else(|_| Picker::new((8, 16)));
+-                        picker.guess_protocol();
+-                        let protocol = picker.new_resize_protocol(img);
+-                        self.cover_art_protocol = Some(protocol);
+-                    } else {
+-                        self.cover_art_protocol = None;
+-                    }
+-                    self.loaded_cover_id = Some(cover_id.to_string());
+-                }
+-            }
+-            Err(_) => {
+-                self.cover_art_data = None;
+-                self.cover_art_protocol = None;
+-                self.loaded_cover_id = None;
+-            }
+-        }
++    // Patched: was a blocking network fetch + image encode on the UI event
++    // loop. Track-change data now comes from the background Prefetcher (see
++    // tick() in mod.rs), so the inline call sites become no-ops.
++    pub async fn load_cover_art(&mut self, _cover_id: &str) -> Result<()> {
+         Ok(())
+     }
+
+-    pub async fn load_lyrics(&mut self, artist: &str, title: &str) -> Result<()> {
+-        // Skip if already loaded
+-        let lyrics_key = format!("{}:{}", artist, title);
+-        if self.loaded_lyrics_key.as_deref() == Some(&lyrics_key) {
+-            return Ok(());
+-        }
+-
+-        // Try server lyrics first
+-        match self.client.get_lyrics(artist, title).await {
+-            Ok(Some(lyrics)) => {
+-                self.lyrics_lines = lyrics.lines().map(|s| s.to_string()).collect();
+-                self.lyrics_timestamps = Vec::new(); // No timestamps from server
+-                self.lyrics = Some(lyrics);
+-                self.loaded_lyrics_key = Some(lyrics_key);
+-                return Ok(());
+-            }
+-            _ => {}
+-        }
+-
+-        // Fallback to LRCLIB for synced lyrics
+-        self.fetch_lrclib_lyrics(artist, title).await?;
+-        self.loaded_lyrics_key = Some(lyrics_key);
++    // Patched: same as load_cover_art — the LRCLIB fallback blocked the UI
++    // for up to 5s per track. Lyrics now load via the background Prefetcher.
++    pub async fn load_lyrics(&mut self, _artist: &str, _title: &str) -> Result<()> {
+         Ok(())
+     }
+
++    #[allow(dead_code)]
+     async fn fetch_lrclib_lyrics(&mut self, artist: &str, title: &str) -> Result<()> {
+         let url = format!(
+             "https://lrclib.net/api/get?artist_name={}&track_name={}",
+diff --git a/src/app/mod.rs b/src/app/mod.rs
+index a0e569c..bf99626 100644
+--- a/src/app/mod.rs
++++ b/src/app/mod.rs
+@@ -1388,7 +1388,13 @@ impl App {
+
+         // Poll prefetcher for ready results (non-blocking)
+         for result in self.prefetcher.poll() {
+-            self.prefetch_cache.insert(result.song_id.clone(), result);
++            // Manual plays request their data in the background (see below);
++            // apply immediately when the result is for the song now playing.
++            if self.player.current_song.as_ref().map(|s| &s.id) == Some(&result.song_id) {
++                self.apply_prefetch_result(result);
++            } else {
++                self.prefetch_cache.insert(result.song_id.clone(), result);
++            }
+         }
+
+         // Track new songs in history and send "now playing" scrobble
+@@ -1404,12 +1410,10 @@ impl App {
+                 if let Some(result) = self.prefetch_cache.remove(&song_id) {
+                     self.apply_prefetch_result(result);
+                 } else {
+-                    // Fallback to synchronous load (for manual skips, first play, etc.)
+-                    if let Some(cover_id) = &song.cover_art {
+-                        self.load_cover_art(cover_id).await?;
+-                    }
+-                    let artist = song.artist.as_deref().unwrap_or("");
+-                    self.load_lyrics(artist, &song.title).await?;
++                    // Fetch in the background — the old synchronous fallback
++                    // froze the whole UI for up to 5s per track when lrclib.net
++                    // was slow/unreachable. The result applies via poll() above.
++                    self.prefetcher.request(&song);
+                 }
+             }
+
+@@ -1441,7 +1445,15 @@ impl App {
+
+         // Check if current song ended
+         // Only trigger if playback was actually initiated this session (prevents autoplay on startup)
+-        if self.player.current_song.is_some() && self.player.is_idle() && self.player.has_playback_initiated() {
++        let end_reason = self.player.poll_ended();
++        // Advance on eof (played to the end) or error (stream died — skipping
++        // beats stalling). Stop = we replaced the file ourselves; ignore it.
++        let song_ended = matches!(
++            end_reason,
++            Some(r) if r == libmpv2::mpv_end_file_reason::Eof
++                || r == libmpv2::mpv_end_file_reason::Error
++        );
++        if song_ended && self.player.current_song.is_some() && self.player.has_playback_initiated() {
+             match self.repeat {
+                 RepeatMode::One => {
+                     // Replay current song
+diff --git a/src/player/mod.rs b/src/player/mod.rs
+index 3e20ff0..5464305 100644
+--- a/src/player/mod.rs
++++ b/src/player/mod.rs
+@@ -46,6 +46,8 @@ impl Player {
+     }
+
+     pub fn play_url(&mut self, url: &str, song: Song) -> Result<()> {
++        // Log the load without auth params (everything after the first '&').
++        tracing::info!("play_url: loadfile {}", url.split('&').next().unwrap_or(url));
+         mpv_err(self.mpv.command("loadfile", &[url, "replace"]))?;
+         mpv_err(self.mpv.set_property("volume", self.volume as i64))?;
+         self.current_song = Some(song);
+@@ -109,6 +111,26 @@ impl Player {
+         self.mpv.get_property("duration").unwrap_or(0.0)
+     }
+
++    /// Drain pending mpv events; return the reason if the file ended.
++    /// Event-driven end detection: unlike polling idle-active, an EndFile
++    /// event can't be confused with "network stream still opening", and the
++    /// reason distinguishes eof / replaced-by-loadfile / stream error.
++    pub fn poll_ended(&mut self) -> Option<libmpv2::EndFileReason> {
++        let mut ended = None;
++        while let Some(ev) = self.mpv.event_context_mut().wait_event(0.0) {
++            match ev {
++                Ok(e) => {
++                    tracing::info!("mpv event: {:?}", e);
++                    if let libmpv2::events::Event::EndFile(reason) = e {
++                        ended = Some(reason);
++                    }
++                }
++                Err(e) => tracing::info!("mpv event error: {:?}", e),
++            }
++        }
++        ended
++    }
++
+     pub fn is_idle(&self) -> bool {
+         self.mpv.get_property("idle-active").unwrap_or(true)
+     }

@@ -266,12 +266,17 @@ return {
 	["Spotify"] = ":spotify:",
 	["Spotlight"] = ":spotlight:",
 	["Sublime Text"] = ":sublime_text:",
+	-- Supacode (AI coding agent, cmux successor) has no font glyph; :claude:
+	-- reads as "AI agent workspace" and stays distinct from :terminal:/:iterm:.
+	["Supacode"] = ":claude:",
 	["superProductivity"] = ":superproductivity:",
 	["Tana"] = ":tana:",
 	["TeamSpeak 3"] = ":team_speak:",
 	["Telegram"] = ":telegram:",
 	["Terminal"] = ":terminal:",
-	["Ghostty"] = ":terminal:",
+	-- The v2.0.28 font ships no ghostty glyph; :iterm: is the closest
+	-- terminal glyph that differentiates Ghostty from macOS Terminal (:terminal:).
+	["Ghostty"] = ":iterm:",
 	["终端"] = ":terminal:",
 	["Typora"] = ":text:",
 	["Microsoft To Do"] = ":things:",

@@ -27,6 +27,7 @@ _cached_init() {
 }
 
 export STARSHIP_CONFIG=~/.config/starship.toml
+export STARSHIP_LOG=error # scan_timeout bails are intentional; don't warn
 
 # Load prompt/keybinding integrations only for real terminal sessions. This keeps
 # `zsh -i -c ...` fast and avoids ZLE/TERM=dumb errors in scripted invocations.
