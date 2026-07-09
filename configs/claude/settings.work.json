@@ -62,7 +62,10 @@
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
-    "ask": ["Bash(git push *)", "Bash(curl *)"],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(curl *)"
+    ],
     "defaultMode": "auto"
   },
   "hooks": {
@@ -169,7 +172,7 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "code-simplifier@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": false,
     "explanatory-output-style@claude-plugins-official": true,
     "impeccable@impeccable": true,
     "infracost@infracost": false,
@@ -233,12 +236,18 @@
     "network": {
       "allowLocalBinding": true
     },
-    "excludedCommands": ["git"]
+    "excludedCommands": [
+      "git"
+    ]
   },
   "spinnerTipsEnabled": false,
   "spinnerVerbs": {
     "mode": "append",
-    "verbs": ["Nesting", "sahh good", "ralphing"]
+    "verbs": [
+      "Nesting",
+      "sahh good",
+      "ralphing"
+    ]
   },
   "alwaysThinkingEnabled": true,
   "autoUpdatesChannel": "latest",
