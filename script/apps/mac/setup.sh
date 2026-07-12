@@ -56,7 +56,12 @@ if [[ -f "$BREWFILE_LOCAL" ]]; then
   brew bundle --file="$BREWFILE_LOCAL"
 fi
 
-# Keep packages fresh in the background (tap: homebrew/autoupdate)
+# Keep packages fresh in the background. `homebrew/autoupdate` now redirects to
+# the third-party domt4/autoupdate, and `autoupdate` is an external *command* —
+# a separate trust kind from --tap, so the loop above doesn't cover it.
+if brew trust --help &>/dev/null; then
+  brew trust --command domt4/autoupdate/autoupdate >/dev/null 2>&1 || true
+fi
 if ! brew autoupdate status 2>/dev/null | grep -q 'and running'; then
   step "Enabling brew autoupdate (daily upgrade + cleanup)..."
   brew autoupdate start 86400 --upgrade --cleanup
