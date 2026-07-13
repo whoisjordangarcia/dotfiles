@@ -372,11 +372,15 @@ nv() {
 }
 
 # rmpc — music TUI backed by mpd reading the NAS share. Mounts the share
-# (creds live in macOS Keychain; URL in ~/.zshrc-modules/.zshrc.sec since
-# the public repo bans real IPs) and starts mpd on demand, then launches.
+# (creds live in macOS Keychain; URL in ~/.zshrc-sec since the public repo bans
+# real IPs) and starts mpd on demand, then launches.
+#
+# ~/.zshrc-sec, NOT ~/.zshrc-modules/.zshrc.sec — the latter is regenerated from
+# the 1Password template by script/zsh/setup.sh on every run, so a hand-written
+# value there is destroyed on the next ./bin/dot.
 rmpc() {
   if [[ ! -d /Volumes/tank01/Music-clean ]]; then
-    : "${NAS_SMB_URL:?set NAS_SMB_URL in ~/.zshrc-modules/.zshrc.sec}"
+    : "${NAS_SMB_URL:?set NAS_SMB_URL in ~/.zshrc-sec (e.g. export NAS_SMB_URL=\"smb://user@host/tank01\")}"
     open "$NAS_SMB_URL"
     local i=0
     until [[ -d /Volumes/tank01/Music-clean ]] || (( i++ > 20 )); do sleep 0.5; done
