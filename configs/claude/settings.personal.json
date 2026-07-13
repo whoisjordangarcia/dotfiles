@@ -1,9 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "DISABLE_TELEMETRY": "1",
     "DISABLE_BUG_COMMAND": "1",
     "DISABLE_ERROR_REPORTING": "1",
+    "DISABLE_TELEMETRY": "1",
     "ENABLE_LSP_TOOL": "0"
   },
   "includeCoAuthoredBy": false,
@@ -38,10 +38,10 @@
       "Skill(superpowers:writing-plans)",
       "Bash(ssh -vT git@github.com)",
       "Bash(bun run:*)",
-      "Bash(bunx npm-check-updates:*)",
-      "mcp__pencil"
+      "Bash(bunx npm-check-updates:*)"
     ],
     "deny": [
+      "WebSearch",
       "Read(./**/*.htpasswd)",
       "Read(./**/*.jks)",
       "Read(./**/*.key)",
@@ -70,48 +70,6 @@
     "defaultMode": "auto"
   },
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jq -r '.tool_input.command // \"\"' | grep -qiF 'prd-account-administrator-role' && printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"ask\",\"permissionDecisionReason\":\"Production AWS profile (prd-account-administrator-role) detected - confirm before running against prod.\"}}' || true",
-            "statusMessage": "Checking for prod AWS profile"
-          },
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/hooks/touchid-gate.py\"",
-            "timeout": 120,
-            "statusMessage": "Touch ID gate: checking for sensitive command"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
-            "timeout": 10,
-            "statusMessage": "Setting cmux workspace title"
-          },
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\"",
-            "timeout": 10,
-            "async": true
-          },
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-progress.py\"",
-            "timeout": 10,
-            "async": true
-          }
-        ]
-      }
-    ],
     "CwdChanged": [
       {
         "hooks": [
@@ -124,19 +82,23 @@
         ]
       }
     ],
-    "Stop": [
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"${SUPACODE_SURFACE_ID:-}\" ] && { __tty=$(ps -o tty= -p \"$PPID\" 2>/dev/null | tr -d '[:space:]'); case \"$__tty\" in *[0-9]*) __tty=\"/dev/${__tty#/dev/}\";; *) __tty=\"/dev/tty\";; esac; __sp=\"\"; [ -n \"${SUPACODE_SOCKET_PATH:-}\" ] && __sp=\";pid=$PPID\"; printf '\\033]3008;start=claude;event=awaiting_input%s\\033\\\\' \"$__sp\" > \"$__tty\"; __in=$(cat); __t=$(printf '%s' \"$__in\" | LC_ALL=C awk -v keys=\"title\" -v budget=160 'function ws(c){return c==\" \"||c==\"\\t\"||c==\"\\n\"||c==\"\\r\"}function fv(s,key,  p,i,n,c,o,e){p=\"\\\"\"key\"\\\"\";i=index(s,p);if(i==0)return \"\";i+=length(p);n=length(s);while(i<=n){if(ws(substr(s,i,1)))i++;else break}if(substr(s,i,1)!=\":\")return \"\";i++;while(i<=n){if(ws(substr(s,i,1)))i++;else break}if(substr(s,i,1)!=\"\\\"\")return \"\";i++;o=\"\";e=0;while(i<=n){c=substr(s,i,1);if(e){o=o c;e=0;i++;continue}if(c==\"\\\\\"){o=o c;e=1;i++;continue}if(c==\"\\\"\")break;o=o c;i++}return o}{d=d $0}END{n=split(keys,ks,\",\");v=\"\";for(j=1;j<=n;j++){v=fv(d,ks[j]);if(v!=\"\")break}if(length(v)>budget+0)v=substr(v,1,budget+0);printf \"%s\",v}' | base64 | tr -d '\\n'); __b=$(printf '%s' \"$__in\" | LC_ALL=C awk -v keys=\"message,last_assistant_message,assistant_response\" -v budget=1000 'function ws(c){return c==\" \"||c==\"\\t\"||c==\"\\n\"||c==\"\\r\"}function fv(s,key,  p,i,n,c,o,e){p=\"\\\"\"key\"\\\"\";i=index(s,p);if(i==0)return \"\";i+=length(p);n=length(s);while(i<=n){if(ws(substr(s,i,1)))i++;else break}if(substr(s,i,1)!=\":\")return \"\";i++;while(i<=n){if(ws(substr(s,i,1)))i++;else break}if(substr(s,i,1)!=\"\\\"\")return \"\";i++;o=\"\";e=0;while(i<=n){c=substr(s,i,1);if(e){o=o c;e=0;i++;continue}if(c==\"\\\\\"){o=o c;e=1;i++;continue}if(c==\"\\\"\")break;o=o c;i++}return o}{d=d $0}END{n=split(keys,ks,\",\");v=\"\";for(j=1;j<=n;j++){v=fv(d,ks[j]);if(v!=\"\")break}if(length(v)>budget+0)v=substr(v,1,budget+0);printf \"%s\",v}' | base64 | tr -d '\\n'); printf '\\033]3008;start=claude;kind=notify;title=%s;body=%s\\033\\\\' \"$__t\" \"$__b\" > \"$__tty\"; } >/dev/null 2>&1 || true # supacode-managed-hook",
+            "timeout": 10
+          }
+        ]
+      },
       {
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
-            "timeout": 10,
-            "async": true
-          },
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\"",
-            "timeout": 10,
+            "command": "/Users/jordangarcia/.ghostmux/claude-hook.sh",
+            "timeout": 5,
             "async": true
           }
         ]
@@ -164,6 +126,141 @@
             "async": true
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"${SUPACODE_SURFACE_ID:-}\" ] && { __tty=$(ps -o tty= -p \"$PPID\" 2>/dev/null | tr -d '[:space:]'); case \"$__tty\" in *[0-9]*) __tty=\"/dev/${__tty#/dev/}\";; *) __tty=\"/dev/tty\";; esac; __sp=\"\"; [ -n \"${SUPACODE_SOCKET_PATH:-}\" ] && __sp=\";pid=$PPID\"; printf '\\033]3008;start=claude;event=idle%s\\033\\\\' \"$__sp\" > \"$__tty\"; } >/dev/null 2>&1 || true # supacode-managed-hook",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"${SUPACODE_SURFACE_ID:-}\" ] && { __tty=$(ps -o tty= -p \"$PPID\" 2>/dev/null | tr -d '[:space:]'); case \"$__tty\" in *[0-9]*) __tty=\"/dev/${__tty#/dev/}\";; *) __tty=\"/dev/tty\";; esac; __sp=\"\"; [ -n \"${SUPACODE_SOCKET_PATH:-}\" ] && __sp=\";pid=$PPID\"; printf '\\033]3008;start=claude;event=busy%s\\033\\\\' \"$__sp\" > \"$__tty\"; } >/dev/null 2>&1 || true # supacode-managed-hook",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion|ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"${SUPACODE_SURFACE_ID:-}\" ] && { __tty=$(ps -o tty= -p \"$PPID\" 2>/dev/null | tr -d '[:space:]'); case \"$__tty\" in *[0-9]*) __tty=\"/dev/${__tty#/dev/}\";; *) __tty=\"/dev/tty\";; esac; __sp=\"\"; [ -n \"${SUPACODE_SOCKET_PATH:-}\" ] && __sp=\";pid=$PPID\"; printf '\\033]3008;start=claude;event=awaiting_input%s\\033\\\\' \"$__sp\" > \"$__tty\"; } >/dev/null 2>&1 || true # supacode-managed-hook",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"${SUPACODE_SURFACE_ID:-}\" ] && { __tty=$(ps -o tty= -p \"$PPID\" 2>/dev/null | tr -d '[:space:]'); case \"$__tty\" in *[0-9]*) __tty=\"/dev/${__tty#/dev/}\";; *) __tty=\"/dev/tty\";; esac; __sp=\"\"; [ -n \"${SUPACODE_SOCKET_PATH:-}\" ] && __sp=\";pid=$PPID\"; printf '\\033]3008;end=claude;event=session_end%s\\033\\\\' \"$__sp\" > \"$__tty\"; __sp=\"\"; [ -n \"${SUPACODE_SOCKET_PATH:-}\" ] && __sp=\";pid=$PPID\"; printf '\\033]3008;start=claude;event=idle%s\\033\\\\' \"$__sp\" > \"$__tty\"; } >/dev/null 2>&1 || true # supacode-managed-hook",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
+            "timeout": 10,
+            "statusMessage": "Setting cmux workspace title"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\"",
+            "timeout": 10,
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-progress.py\"",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"${SUPACODE_SURFACE_ID:-}\" ] && { __tty=$(ps -o tty= -p \"$PPID\" 2>/dev/null | tr -d '[:space:]'); case \"$__tty\" in *[0-9]*) __tty=\"/dev/${__tty#/dev/}\";; *) __tty=\"/dev/tty\";; esac; __sp=\"\"; [ -n \"${SUPACODE_SOCKET_PATH:-}\" ] && __sp=\";pid=$PPID\"; printf '\\033]3008;start=claude;event=session_start%s\\033\\\\' \"$__sp\" > \"$__tty\"; } >/dev/null 2>&1 || true # supacode-managed-hook",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
+            "timeout": 10,
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\"",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"${SUPACODE_SURFACE_ID:-}\" ] && { __tty=$(ps -o tty= -p \"$PPID\" 2>/dev/null | tr -d '[:space:]'); case \"$__tty\" in *[0-9]*) __tty=\"/dev/${__tty#/dev/}\";; *) __tty=\"/dev/tty\";; esac; __sp=\"\"; [ -n \"${SUPACODE_SOCKET_PATH:-}\" ] && __sp=\";pid=$PPID\"; printf '\\033]3008;start=claude;event=idle%s\\033\\\\' \"$__sp\" > \"$__tty\"; __in=$(cat); __t=$(printf '%s' \"$__in\" | LC_ALL=C awk -v keys=\"title\" -v budget=160 'function ws(c){return c==\" \"||c==\"\\t\"||c==\"\\n\"||c==\"\\r\"}function fv(s,key,  p,i,n,c,o,e){p=\"\\\"\"key\"\\\"\";i=index(s,p);if(i==0)return \"\";i+=length(p);n=length(s);while(i<=n){if(ws(substr(s,i,1)))i++;else break}if(substr(s,i,1)!=\":\")return \"\";i++;while(i<=n){if(ws(substr(s,i,1)))i++;else break}if(substr(s,i,1)!=\"\\\"\")return \"\";i++;o=\"\";e=0;while(i<=n){c=substr(s,i,1);if(e){o=o c;e=0;i++;continue}if(c==\"\\\\\"){o=o c;e=1;i++;continue}if(c==\"\\\"\")break;o=o c;i++}return o}{d=d $0}END{n=split(keys,ks,\",\");v=\"\";for(j=1;j<=n;j++){v=fv(d,ks[j]);if(v!=\"\")break}if(length(v)>budget+0)v=substr(v,1,budget+0);printf \"%s\",v}' | base64 | tr -d '\\n'); __b=$(printf '%s' \"$__in\" | LC_ALL=C awk -v keys=\"message,last_assistant_message,assistant_response\" -v budget=1000 'function ws(c){return c==\" \"||c==\"\\t\"||c==\"\\n\"||c==\"\\r\"}function fv(s,key,  p,i,n,c,o,e){p=\"\\\"\"key\"\\\"\";i=index(s,p);if(i==0)return \"\";i+=length(p);n=length(s);while(i<=n){if(ws(substr(s,i,1)))i++;else break}if(substr(s,i,1)!=\":\")return \"\";i++;while(i<=n){if(ws(substr(s,i,1)))i++;else break}if(substr(s,i,1)!=\"\\\"\")return \"\";i++;o=\"\";e=0;while(i<=n){c=substr(s,i,1);if(e){o=o c;e=0;i++;continue}if(c==\"\\\\\"){o=o c;e=1;i++;continue}if(c==\"\\\"\")break;o=o c;i++}return o}{d=d $0}END{n=split(keys,ks,\",\");v=\"\";for(j=1;j<=n;j++){v=fv(d,ks[j]);if(v!=\"\")break}if(length(v)>budget+0)v=substr(v,1,budget+0);printf \"%s\",v}' | base64 | tr -d '\\n'); printf '\\033]3008;start=claude;kind=notify;title=%s;body=%s\\033\\\\' \"$__t\" \"$__b\" > \"$__tty\"; } >/dev/null 2>&1 || true # supacode-managed-hook",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jordangarcia/.ghostmux/claude-hook.sh",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"${SUPACODE_SURFACE_ID:-}\" ] && { __tty=$(ps -o tty= -p \"$PPID\" 2>/dev/null | tr -d '[:space:]'); case \"$__tty\" in *[0-9]*) __tty=\"/dev/${__tty#/dev/}\";; *) __tty=\"/dev/tty\";; esac; __sp=\"\"; [ -n \"${SUPACODE_SOCKET_PATH:-}\" ] && __sp=\";pid=$PPID\"; printf '\\033]3008;start=claude;event=busy%s\\033\\\\' \"$__sp\" > \"$__tty\"; } >/dev/null 2>&1 || true # supacode-managed-hook",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jordangarcia/.ghostmux/claude-hook.sh",
+            "timeout": 5,
+            "async": true
+          }
+        ]
       }
     ]
   },
@@ -174,6 +271,7 @@
   },
   "enabledPlugins": {
     "claude-md-management@claude-plugins-official": false,
+    "claude-mem@thedotmack": false,
     "code-review@claude-plugins-official": false,
     "code-simplifier@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": false,
@@ -182,9 +280,7 @@
     "impeccable@impeccable": true,
     "superpowers@superpowers-marketplace": true,
     "swift-lsp@claude-plugins-official": false,
-    "typescript-lsp@claude-plugins-official": false,
-    "infracost@infracost": false,
-    "ponytail@ponytail": true
+    "typescript-lsp@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -197,18 +293,6 @@
       "source": {
         "source": "github",
         "repo": "obra/superpowers-marketplace"
-      }
-    },
-    "infracost": {
-      "source": {
-        "source": "github",
-        "repo": "infracost/claude-skills"
-      }
-    },
-    "ponytail": {
-      "source": {
-        "source": "github",
-        "repo": "DietrichGebert/ponytail"
       }
     }
   },
@@ -225,22 +309,13 @@
     ]
   },
   "spinnerTipsEnabled": false,
-  "spinnerVerbs": {
-    "mode": "append",
-    "verbs": [
-      "Nesting",
-      "sahh good",
-      "ralphing"
-    ]
-  },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
-  "model": "claude-fable-5[1m]",
   "autoUpdatesChannel": "latest",
   "tui": "fullscreen",
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
-  "theme": "dark",
+  "skipWorkflowUsageWarning": true,
   "verbose": true,
   "preferredNotifChannel": "ghostty",
   "autoCompactEnabled": false,
@@ -249,20 +324,15 @@
   "voiceEnabled": true,
   "mcpServers": {
     "tavily": {
-      "command": "npx",
       "args": [
         "-y",
         "tavily-mcp@latest"
       ],
+      "command": "npx",
       "env": {
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
       }
-    },
-    "playwright": {
-      "command": "npx",
-      "args": [
-        "@playwright/mcp@latest"
-      ]
     }
-  }
+  },
+  "model": "claude-fable-5[1m]"
 }
