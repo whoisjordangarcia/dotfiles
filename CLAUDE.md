@@ -454,7 +454,10 @@ registers as `custom:catppuccin-mocha`; `name` is only the label shown in
 ```
 
 - `base` ∈ `dark`, `light`, `dark-ansi`, `light-ansi`, `dark-daltonized`, `light-daltonized`.
-- Colors: `#rrggbb`, `#rgb`, `rgb(r,g,b)`, `ansi256(n)`, `ansi:<name>`.
+- Colors: `#rrggbb`, `#rgb`, `rgb(r,g,b)`, `ansi256(n)`, or `ansi:<name>` where
+  `<name>` is one of exactly 16: `black`, `red`, `green`, `yellow`, `blue`,
+  `magenta`, `cyan`, `white` and their `…Bright` variants. **`ansi:` is a
+  membership test** — `ansi:orange` is silently dropped, not an error.
 - `overrides` merges over `base`, so a partial theme is fine — 72 keys available.
 
 > [!IMPORTANT]
@@ -466,6 +469,25 @@ registers as `custom:catppuccin-mocha`; `name` is only the label shown in
 ```bash
 configs/claude/themes/theme_preview.py            # render every theme: swatches + mock UI
 configs/claude/themes/theme_preview.py --check    # validate; non-zero exit on problems
+```
+
+`theme_preview.py` re-implements an **undocumented** contract reverse-engineered
+from the Claude Code binary (`ghg()`/`JOe()`/`Wdi`/`Kpg`/`mhg`), so it **will
+drift on upgrades**. `theme_test.sh` pins it — a `--check` that passes a theme the
+loader would gut is worse than none, since it certifies the bug. **When modifying
+`theme_preview.py`, run:**
+
+```bash
+bash configs/claude/themes/theme_test.sh   # must end with "All N tests passed"
+```
+
+If it fails after a Claude Code upgrade, re-extract the contract:
+
+```bash
+V=~/.local/share/claude/versions/<version>
+strings -n 4 "$V" | grep -o 'function JOe(e).\{0,700\}'   # color validator
+strings -n 3 "$V" | grep -o 'Kpg=[^;]\{0,300\}'           # the 16 ansi names
+strings -n 3 "$V" | grep -o 'Wdi=\[[^]]*\]'               # valid `base` values
 ```
 
 **Authoring rules** (reverse-engineered from the built-in themes — follow them or

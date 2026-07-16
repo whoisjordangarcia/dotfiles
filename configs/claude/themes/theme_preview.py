@@ -32,15 +32,36 @@ import re
 import sys
 
 # ── loader contract, extracted from the Claude Code binary ───────────────────
-# JOe(): the accepted color formats.
+# JOe(): the accepted non-ansi color formats.
+# re.fullmatch, NOT re.match: Python's `$` also matches just before a trailing
+# newline, so "#ff0000\n" would pass here while JS's `$` (and thus the loader)
+# rejects it.
 COLOR_RE = re.compile(
-    r"^#[0-9a-fA-F]{6}$|^#[0-9a-fA-F]{3}$"
-    r"|^rgb\(\s?\d{1,3},\s?\d{1,3},\s?\d{1,3}\s?\)$"
-    r"|^ansi256\(\d{1,3}\)$|^ansi:"
+    r"#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}"
+    r"|rgb\(\s?\d{1,3},\s?\d{1,3},\s?\d{1,3}\s?\)"
+    r"|ansi256\(\d{1,3}\)"
 )
+# Kpg: JOe() resolves an "ansi:<name>" via `Kpg.has(name)` — a MEMBERSHIP test,
+# not a prefix check. A prefix check would green-light "ansi:orange", which the
+# loader silently drops; that is exactly the false confidence --check exists to
+# prevent, so these 16 names are verbatim from the binary.
+ANSI_NAMES = {
+    "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
+    "blackBright", "redBright", "greenBright", "yellowBright",
+    "blueBright", "magentaBright", "cyanBright", "whiteBright",
+}
 # Wdi: valid `base` values. An unknown base silently falls back to "dark".
 BASES = ["dark", "light", "light-daltonized", "dark-daltonized", "light-ansi", "dark-ansi"]
 MAX_BYTES = 262144  # mhg: files larger than this are skipped outright
+
+
+def valid_color(v):
+    """JOe(): is this a color the loader will actually keep?"""
+    if not isinstance(v, str):
+        return False
+    if v.startswith("ansi:"):
+        return v[5:] in ANSI_NAMES
+    return COLOR_RE.fullmatch(v) is not None
 
 # Vpg: the built-in `dark` theme. Doubles as the authoritative key set — an
 # override key absent from here is dropped by the loader.
@@ -119,12 +140,6 @@ BASE_DARK = {
     'rainbow_violet_shimmer': 'rgb(230,180,210)',}
 
 # ── color helpers ────────────────────────────────────────────────────────────
-ANSI16 = {
-    "black": 0, "red": 1, "green": 2, "yellow": 3, "blue": 4, "magenta": 5,
-    "cyan": 6, "white": 7,
-}
-
-
 def to_rgb(v):
     """Resolve any accepted color format to (r,g,b), or None if unrenderable."""
     if v.startswith("#"):
@@ -150,52 +165,73 @@ def fg(v, s):
 
 # ── loader simulation ────────────────────────────────────────────────────────
 def load(path):
-    """Mirror ghg()/eiu(): returns (theme, problems). Never raises."""
-    problems = []
-    slug = os.path.basename(path)[:-5]
+    """Mirror ghg()/eiu(): returns (theme, errors, notes).
 
-    if os.path.getsize(path) > MAX_BYTES:
-        return None, [f"exceeds 256KB — the loader skips this file entirely"]
+    errors = the loader will silently discard something; --check must fail.
+    notes  = advisory only (valid theme, worth knowing); --check still passes.
+    Kept separate so a legitimate non-dark theme isn't failed by an FYI.
+    """
+    errors, notes = [], []
+    slug = os.path.basename(path)
+    slug = slug[:-5] if slug.endswith(".json") else slug
+
+    # The real loader (eiu) catches read errors and warns rather than throwing.
     try:
-        raw = json.load(open(path))
+        if os.path.getsize(path) > MAX_BYTES:
+            return None, ["exceeds 256KB — the loader skips this file entirely"], notes
+        with open(path) as fh:
+            raw = json.load(fh)
+    except OSError as e:
+        return None, [f"cannot read: {e.strerror}"], notes
     except json.JSONDecodeError as e:
-        return None, [f"invalid JSON: {e}"]
+        return None, [f"invalid JSON: {e}"], notes
     if not isinstance(raw, dict):
-        return None, ["top level must be an object"]
+        return None, ["top level must be an object"], notes
 
     base = raw.get("base")
     if base is None:
-        problems.append('no "base" — defaults to "dark"')
+        notes.append('no "base" — defaults to "dark"')
         base = "dark"
-    elif base not in BASES:
-        problems.append(f'base {base!r} is not valid — SILENTLY falls back to "dark" '
-                        f'(valid: {", ".join(BASES)})')
+    elif not isinstance(base, str) or base not in BASES:
+        errors.append(f'base {base!r} is not valid — SILENTLY falls back to "dark" '
+                      f'(valid: {", ".join(BASES)})')
         base = "dark"
     if base != "dark":
-        problems.append(f'base is {base!r}; preview fills unset keys from the built-in '
-                        f'"dark" theme, so unset keys may render inaccurately')
+        # Advisory, not an error: the theme is valid, but this script only
+        # embeds the built-in `dark` values, so INHERITED keys render as dark's.
+        # (All six built-in bases share the same 72 KEY NAMES, so validation
+        # below is still exact for every base — only preview values differ.)
+        notes.append(f'base is {base!r}; unset keys are previewed with the built-in '
+                     f'"dark" values, so they may look wrong here (validation is unaffected)')
 
     name = raw.get("name")
     if not isinstance(name, str):
-        problems.append(f'no "name" string — /theme will label it {slug!r}')
+        notes.append(f'no "name" string — /theme will label it {slug!r}')
         name = slug
 
     kept, ov = {}, raw.get("overrides")
-    if not isinstance(ov, dict):
-        problems.append('no "overrides" object — theme is identical to its base')
+    if ov is None:
+        notes.append('no "overrides" — theme is identical to its base')
+        ov = {}
+    elif not isinstance(ov, dict):
+        errors.append(f'"overrides" must be an object, got {type(ov).__name__} — ignored')
         ov = {}
     for k, v in ov.items():
         if k not in BASE_DARK:
-            problems.append(f"unknown key {k!r} — DROPPED (typo? not a real theme key)")
-        elif not isinstance(v, str) or not COLOR_RE.match(v):
-            problems.append(f"{k}: {v!r} is not a valid color — DROPPED")
+            errors.append(f"unknown key {k!r} — DROPPED (typo? not a real theme key)")
+        elif not valid_color(v):
+            hint = ""
+            if isinstance(v, str) and v.startswith("ansi:"):
+                hint = f" (valid ansi names: {', '.join(sorted(ANSI_NAMES))})"
+            errors.append(f"{k}: {v!r} is not a valid color — DROPPED{hint}")
         else:
             kept[k] = v
 
     merged = dict(BASE_DARK)
     merged.update(kept)
-    return {"slug": slug, "name": name, "base": base, "kept": kept,
-            "unset": [k for k in BASE_DARK if k not in kept], "colors": merged}, problems
+    return ({"slug": slug, "name": name, "base": base, "kept": kept,
+             "unset": [k for k in BASE_DARK if k not in kept], "colors": merged},
+            errors, notes)
 
 
 # ── preview ──────────────────────────────────────────────────────────────────
@@ -277,15 +313,19 @@ def main():
 
     failed = False
     for p in paths:
-        t, problems = load(p)
-        if problems:
+        t, errors, notes = load(p)
+        if errors:
             failed = True
             print(f"\n  {os.path.basename(p)}")
-            for msg in problems:
+            for msg in errors:
                 print(f"    ✗ {msg}")
+            for msg in notes:
+                print(f"    · {msg}")
         elif check_only:
             print(f"  ✓ {os.path.basename(p):32} custom:{t['slug']:24} "
                   f"{len(t['kept'])}/{len(BASE_DARK)} keys")
+            for msg in notes:  # advisory: shown, but does not fail the check
+                print(f"    · {msg}")
         if t and not check_only:
             preview(t)
     return 1 if failed else 0
