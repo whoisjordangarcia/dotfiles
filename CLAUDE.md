@@ -367,9 +367,38 @@ AI-initiated sensitive Bash commands require biometric approval via a Claude Cod
 `~/.claude/settings.json` comes from a **dedicated, complete per-environment
 file** — no base/overlay merge. `script/claude/setup.sh` **copies** (not
 symlinks) `configs/claude/settings.work.json` or `settings.personal.json`
-(selected via `WORK_ENV`/`DOT_ENVIRONMENT`) verbatim to `~/.claude/settings.json`.
-Work-only plugins (`nest-*@nest-genomics-skills`) and the `nest-genomics-skills`
-marketplace live only in `settings.work.json`, so personal machines never see them.
+verbatim to `~/.claude/settings.json`. Work-only plugins
+(`nest-*@nest-genomics-skills`) and the `nest-genomics-skills` marketplace live
+only in `settings.work.json`, so personal machines never see them.
+
+**Environment selection lives in one place: `script/common/dot_env.sh`.** Source
+it and call `dot_export_env`; it sets `DOT_ENV` (`work`|`personal`) and aligns
+the `WORK_ENV`/`DOT_ENVIRONMENT` exports. Precedence:
+
+1. `WORK_ENV=1` — explicit override.
+2. non-empty `DOT_ENVIRONMENT` — how `bin/dot` drives component scripts.
+   (`bin/dot` exports `WORK_ENV=""` *empty* for personal, so an empty `WORK_ENV`
+   carries no signal — only `DOT_ENVIRONMENT` is authoritative there.)
+3. **`.dotconfig`'s `DOT_ENVIRONMENT`** — the standalone path.
+4. personal — safe default.
+
+> [!IMPORTANT]
+> Rule 3 is load-bearing. Component scripts are a documented **standalone**
+> install path (`./script/claude/setup.sh`) where `bin/dot` has exported nothing.
+> Without the fallback a work machine silently installs the **personal** config,
+> dropping the touchid-gate + prod-AWS tripwires and every `nest-*` plugin/skill
+> — a security regression that fails silently. `.dotconfig` is `source`d (in a
+> subshell, so it can't clobber caller vars), not grepped: a `grep|cut '"'` parse
+> mis-reads an unquoted `DOT_ENVIRONMENT=work` and falls right back into the bug.
+
+All three consumers (`claude/setup.sh`, `claude/sync-settings.sh`,
+`skills/setup.sh`) share it, so forward (setup) and reverse (sync) can't disagree
+about which machine this is. They previously had **three different** semantics.
+**When touching env resolution, run:**
+
+```bash
+bash script/common/dot_env_test.sh   # must end with "All N tests passed"
+```
 
 Each dedicated file is the **single source of truth** for its environment and
 holds the whole settings object (including runtime keys like `effortLevel`).

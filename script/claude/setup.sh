@@ -3,9 +3,18 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+REPO_DIR=$(cd -- "$SCRIPT_DIR/../.." &>/dev/null && pwd)
 
 source "$SCRIPT_DIR/../common/log.sh"
 source "$SCRIPT_DIR/../common/symlink.sh"
+source "$SCRIPT_DIR/../common/dot_env.sh"
+
+# Resolve the environment ONCE for everything below: settings.json, CLAUDE.md,
+# and the sourced skills/setup.sh (which reads the exports this sets). See
+# script/common/dot_env.sh for the precedence rules and why the .dotconfig
+# fallback is load-bearing for standalone runs.
+dot_export_env
+debug "Claude environment: $DOT_ENV"
 
 # Install Claude Code CLI if not present
 if ! command -v claude &>/dev/null; then
@@ -40,11 +49,7 @@ link_file "$SCRIPT_DIR/../../configs/claude/statusline.sh" "$HOME/.claude/status
 # touching the repo). That dedicated file is the single source of truth — run
 # `claude-settings-sync` (script/claude/sync-settings.sh) to capture live edits
 # back into it BEFORE re-running this script, or they'll be overwritten.
-if [[ "${WORK_ENV:-}" == "1" || "${DOT_ENVIRONMENT:-}" == "work" ]]; then
-	SETTINGS_SRC="$SCRIPT_DIR/../../configs/claude/settings.work.json"
-else
-	SETTINGS_SRC="$SCRIPT_DIR/../../configs/claude/settings.personal.json"
-fi
+SETTINGS_SRC="$REPO_DIR/configs/claude/settings.${DOT_ENV}.json"
 SETTINGS_TARGET="$HOME/.claude/settings.json"
 [ -L "$SETTINGS_TARGET" ] && rm "$SETTINGS_TARGET"  # drop legacy symlink layout
 cp "$SETTINGS_SRC" "$SETTINGS_TARGET"
@@ -57,13 +62,9 @@ success "Installed $SETTINGS_TARGET ($(basename "$SETTINGS_SRC"))"
 # (`<!-- @dot-overlay:<env> -->`) is inserted between base and overlay so live
 # edits to ~/.claude/CLAUDE.md can be split back into the repo sources via
 # script/claude/sync-claude.sh (the `claude-sync` shell alias).
-CLAUDE_BASE="$SCRIPT_DIR/../../configs/claude/CLAUDE.md"
-if [[ "${WORK_ENV:-}" == "1" || "${DOT_ENVIRONMENT:-}" == "work" ]]; then
-	CLAUDE_ENV="work"
-else
-	CLAUDE_ENV="personal"
-fi
-CLAUDE_OVERLAY="$SCRIPT_DIR/../../configs/claude/CLAUDE.${CLAUDE_ENV}.md"
+CLAUDE_BASE="$REPO_DIR/configs/claude/CLAUDE.md"
+CLAUDE_ENV="$DOT_ENV"
+CLAUDE_OVERLAY="$REPO_DIR/configs/claude/CLAUDE.${CLAUDE_ENV}.md"
 CLAUDE_TARGET="$HOME/.claude/CLAUDE.md"
 # Legacy layout symlinked this to the repo file; replace with a generated file.
 [ -L "$CLAUDE_TARGET" ] && rm "$CLAUDE_TARGET"

@@ -6,13 +6,22 @@ REPO_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
 
 source "$SCRIPT_DIR/../common/log.sh"
 source "$SCRIPT_DIR/../common/symlink.sh"
+source "$SCRIPT_DIR/../common/dot_env.sh"
 
 SKILLS_SOURCE="$REPO_ROOT/configs/skills"
 
-# nest-* skills are work-only — install them in work mode, prune them elsewhere
-IS_WORK_ENV=0
-if [[ "${WORK_ENV:-}" == "1" || "${DOT_ENVIRONMENT:-}" == "work" ]]; then
+# nest-* skills are work-only — install them in work mode, prune them elsewhere.
+# Resolution is shared (script/common/dot_env.sh) so a STANDALONE run here agrees
+# with claude/setup.sh; previously this read the env only, so running it directly
+# on a work machine pruned every nest-* skill. When claude/setup.sh sources this,
+# it has already resolved and exported the same env — dot_export_env is idempotent.
+dot_export_env
+# if/fi, not `[[ ]] && x`: under `set -e` that list yields 1 when false, which
+# becomes the script's exit status if it lands last.
+if [[ "$DOT_ENV" == "work" ]]; then
 	IS_WORK_ENV=1
+else
+	IS_WORK_ENV=0
 fi
 
 ensure_skill_dir() {

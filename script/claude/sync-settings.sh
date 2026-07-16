@@ -8,14 +8,16 @@
 # reverse — copies the live file back into the active env's dedicated file — so
 # edits/app drift you want to keep get version-controlled.
 #
-# Env is read from .dotconfig (DOT_ENVIRONMENT), overridable with WORK_ENV=1.
-# 1:1 copy: no merge, no routing.
+# Env resolution is shared with setup.sh via script/common/dot_env.sh, so the
+# forward (setup) and reverse (sync) directions can never disagree about which
+# machine this is. 1:1 copy: no merge, no routing.
 #===============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 source "$SCRIPT_DIR/../common/log.sh"
+source "$SCRIPT_DIR/../common/dot_env.sh"
 REPO_DIR=$(cd -- "$SCRIPT_DIR/../.." &>/dev/null && pwd)
 
 LIVE="${1:-$HOME/.claude/settings.json}"
@@ -24,15 +26,9 @@ if [ -L "$LIVE" ]; then
 	fail "$LIVE is a symlink (legacy layout). Run script/claude/setup.sh first."
 fi
 
-# Resolve environment: explicit WORK_ENV wins, else .dotconfig's DOT_ENVIRONMENT.
-env_name="personal"
-if [[ "${WORK_ENV:-}" == "1" ]]; then
-	env_name="work"
-elif [ -f "$REPO_DIR/.dotconfig" ]; then
-	# shellcheck disable=SC1091
-	dotenv=$(grep -E '^DOT_ENVIRONMENT=' "$REPO_DIR/.dotconfig" | head -1 | cut -d'"' -f2)
-	[ "$dotenv" = "work" ] && env_name="work"
-fi
+# Resolve environment (shared with setup.sh — see script/common/dot_env.sh).
+dot_export_env
+env_name="$DOT_ENV"
 DEST="$REPO_DIR/configs/claude/settings.${env_name}.json"
 
 step "Syncing $LIVE → settings.${env_name}.json"
