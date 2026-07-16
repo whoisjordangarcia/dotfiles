@@ -70,18 +70,6 @@
     "defaultMode": "auto"
   },
   "hooks": {
-    "CwdChanged": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
-            "timeout": 10,
-            "async": true
-          }
-        ]
-      }
-    ],
     "Notification": [
       {
         "matcher": "",
@@ -105,28 +93,6 @@
       }
     ],
     "PostToolUse": [
-      {
-        "matcher": "TodoWrite",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-progress.py\"",
-            "timeout": 10,
-            "async": true
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jq -r '.tool_input.command // \"\"' | grep -qE 'git +push|gh +pr +create' && python3 \"$HOME/.claude/scripts/cmux-pr.py\" </dev/null || true",
-            "timeout": 10,
-            "async": true
-          }
-        ]
-      },
       {
         "matcher": "",
         "hooks": [
@@ -177,28 +143,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
-            "timeout": 10,
-            "statusMessage": "Setting cmux workspace title"
-          },
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\"",
-            "timeout": 10,
-            "async": true
-          },
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-progress.py\"",
-            "timeout": 10,
-            "async": true
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
             "command": "[ -n \"${SUPACODE_SURFACE_ID:-}\" ] && { __tty=$(ps -o tty= -p \"$PPID\" 2>/dev/null | tr -d '[:space:]'); case \"$__tty\" in *[0-9]*) __tty=\"/dev/${__tty#/dev/}\";; *) __tty=\"/dev/tty\";; esac; __sp=\"\"; [ -n \"${SUPACODE_SOCKET_PATH:-}\" ] && __sp=\";pid=$PPID\"; printf '\\033]3008;start=claude;event=session_start%s\\033\\\\' \"$__sp\" > \"$__tty\"; } >/dev/null 2>&1 || true # supacode-managed-hook",
             "timeout": 5
           }
@@ -206,22 +150,6 @@
       }
     ],
     "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-title.py\"",
-            "timeout": 10,
-            "async": true
-          },
-          {
-            "type": "command",
-            "command": "python3 \"$HOME/.claude/scripts/cmux-pr.py\"",
-            "timeout": 10,
-            "async": true
-          }
-        ]
-      },
       {
         "hooks": [
           {
@@ -271,7 +199,6 @@
   },
   "enabledPlugins": {
     "claude-md-management@claude-plugins-official": false,
-    "claude-mem@thedotmack": false,
     "code-review@claude-plugins-official": false,
     "code-simplifier@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": false,
