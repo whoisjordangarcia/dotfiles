@@ -10,6 +10,7 @@ set -euo pipefail
 
 DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 source "$DIR/../common/log.sh"
+source "$DIR/soft_install.sh"
 REPO_DIR=$(cd -- "$DIR/../.." &>/dev/null && pwd)
 
 case "$OSTYPE" in
@@ -28,6 +29,17 @@ if pgrep -x "Brave Browser" &>/dev/null || pgrep -x brave &>/dev/null || pgrep -
 fi
 
 if [ -f "$THEMES" ]; then
+	# A Web Store theme must be INSTALLED before activating it, or extensions.theme.id
+	# points at nothing and Brave silently falls back to the default theme. Queue the
+	# manifests here (not just in setup.sh) so `brave-theme` alone is sufficient.
+	# They can't ride extensions.txt: brave-sync regenerates it and skips themes.
+	theme_ids=$(python3 "$DIR/apply_themes.py" ids "$THEMES")
+	if [ -n "$theme_ids" ]; then
+		theme_list=$(mktemp)
+		printf '%s\n' "$theme_ids" >"$theme_list"
+		brave_soft_install "$theme_list" "$BRAVE_DIR/External Extensions"
+		rm -f "$theme_list"
+	fi
 	python3 "$DIR/apply_themes.py" "$BRAVE_DIR" "$THEMES" | while read -r line; do step "$line"; done
 fi
 if [ -f "$FLAGS" ]; then

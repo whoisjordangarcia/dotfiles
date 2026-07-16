@@ -4,4 +4,5 @@
 # no managed policy). Re-run 'brave-sync' after adding/removing extensions.
 aeblfdkhhhdcdjpifhhbdiojplfjncoa  # 1Password – Password Manager
 fcoeoabgfenejglbffodgkkbkcdhcgfn  # Claude
+ponfpcnoihfmfllpaingbgckeeldkhle  # Enhancer for YouTube
 ddkjiahejlhfcafbddmgiahcphecmpfh  # uBlock Origin Lite

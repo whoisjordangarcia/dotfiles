@@ -1,9 +1,22 @@
-# Per-profile Brave theme colors — matched by profile NAME (from Local State),
-# so you can tell profiles apart at a glance. Applied by script/brave/theme.sh
+# Per-profile Brave themes — matched by profile NAME (from Local State), so you
+# can tell profiles apart at a glance. Applied by script/brave/theme.sh
 # (brave-theme). SOFT + ADDITIVE: written into each profile's plain Preferences
-# (browser.theme), preserving all other prefs; change or clear anytime in
-# Settings -> Appearance. Brave must be CLOSED when applying (it overwrites the
-# file on exit otherwise). Format: <Profile Name>=#RRGGBB  (full-line # comments
-# only — no inline comments, since the value itself starts with #).
-Work=#1A73E8
-Personal=#E8710A
+# (browser.theme / extensions.theme), preserving all other prefs; change or clear
+# anytime in Settings -> Appearance. Brave must be CLOSED when applying (it
+# overwrites the file on exit otherwise).
+#
+# Format: <Profile Name>=<value>, where <value> is either
+#   #RRGGBB      a built-in generated color theme, or
+#   <32-char id> a Web Store theme (the id in its store URL).
+# Full-line # comments ONLY — an inline comment would be parsed as part of the
+# value (a color value legitimately starts with #), so labels go above the line.
+#
+# Web Store themes are soft-installed browser-wide by setup.sh from the ids here;
+# which one is ACTIVE is per-profile. Brave auto-activates a theme in EVERY profile
+# the first time it installs it, so the first launch after adding one can show the
+# wrong theme — re-run `brave-theme` once it's installed and the choice sticks.
+
+# Banana
+Work=cdkecinaonohgbmhojlaeeoalomfhlal
+# Ultra Violet
+Personal=lcknjpenlfdlffeafcadkbjfodmmgdip
