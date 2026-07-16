@@ -1,5 +1,24 @@
 if [[ -n "$SSH_CONNECTION" ]]; then export TERM=xterm-256color; fi
 
+# Any ssh-* entry in shell-integration-features makes ghostty's shell
+# integration define an `ssh` wrapper that runs "$GHOSTTY_BIN_DIR/ghostty +ssh".
+# cmux embeds libghostty and reads the same ghostty config, but ships its
+# ghostty CLI in Contents/Resources/bin while pointing GHOSTTY_BIN_DIR at
+# Contents/MacOS (upstream Ghostty.app's layout) — so the wrapper calls a binary
+# that isn't there and every `ssh` dies with "no such file or directory".
+# Drop the ssh-* features when that binary is missing, so the wrapper is never
+# defined and `ssh` stays the real one. Nothing is lost under cmux: it already
+# pins TERM to xterm-256color, which is all ssh-env would have set. Real
+# Ghostty.app is untouched, and this self-heals if cmux fixes the path.
+# Must run before the first prompt — that's when ghostty's deferred init
+# defines the wrapper.
+if [[ -n "$GHOSTTY_BIN_DIR" && ! -x "$GHOSTTY_BIN_DIR/ghostty" ]]; then
+  _ghostty_feats=(${(s:,:)GHOSTTY_SHELL_FEATURES})
+  _ghostty_feats=(${_ghostty_feats:#ssh-*})
+  GHOSTTY_SHELL_FEATURES="${(j:,:)_ghostty_feats}"
+  unset _ghostty_feats
+fi
+
 # Keep $PATH entries unique so re-sourcing this file (e.g. `reload`) is
 # idempotent — without this, every prepend in .zshrc.{envvars,paths} stacks
 # another duplicate copy onto PATH.
@@ -86,6 +105,12 @@ alias glr='() {
     echo "glr: on $latest (was clean)"
   fi
 }'
+
+# Prompt copy of the zmx session name, with Supacode's internal supa-<uuid>
+# sessions blanked out (noise — same ones `zma` hides). Set once per shell
+# rather than filtered in starship, so the prompt forks nothing; ZMX_SESSION
+# itself is left intact for zmx and child processes.
+export ZMX_PROMPT_SESSION="${ZMX_SESSION:#supa-*}"
 
 # _zmxrows — shared source of truth: one tab-separated row per session
 # (fullname, short id, age, worktree), sorted by worktree. zmxls and zmxa
