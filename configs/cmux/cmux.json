@@ -12,7 +12,7 @@
       "focusLeft": "cmd+opt+h",
       "focusDown": "cmd+opt+j",
       "focusUp": "cmd+opt+k",
-      "focusRight": "cmd+opt+l",
+      "focusRight": "cmd+opt+l"
 
       // Split bindings removed — ctrl+a is reserved for tmux prefix.
     }
@@ -35,7 +35,7 @@
     "copyOnSelect": true
   },
   "automation": {
-    "claudeCodeIntegration": true,
+    "claudeCodeIntegration": false,
     "suppressSubagentNotifications": true
   }
 }

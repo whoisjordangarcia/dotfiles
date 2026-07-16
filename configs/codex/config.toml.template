@@ -11,10 +11,10 @@
 # this PUBLIC repo would leak those and churn on every machine. Keep that state
 # local; keep only stable preferences here.
 
-model = "gpt-5.5"
+model = "gpt-5.6-terra"
 personality = "pragmatic"
 model_reasoning_effort = "medium"
-plan_mode_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "medium"
 service_tier = "default"
 
 [plugins."computer-use@openai-bundled"]
