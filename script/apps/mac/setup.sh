@@ -39,11 +39,13 @@ brew analytics off
 BREWFILE_LOCAL="$SCRIPT_DIR/Brewfile.local"
 
 # Homebrew 6+ refuses formulae from untrusted third-party taps. The Brewfile
-# IS our trust declaration, so trust its taps up front (official homebrew/*
-# taps need no entry; `brew trust` is a no-op on older Homebrew without it).
+# IS our trust declaration, so trust its taps up front (official homebrew/core
+# and homebrew/cask need no entry; `brew trust` is a no-op on older Homebrew
+# without it). Only those two are skipped — other homebrew/* names can be
+# redirects to third-party repos that do need trusting.
 if brew trust --help &>/dev/null; then
   while IFS= read -r tap_name; do
-    [[ "$tap_name" == homebrew/* ]] && continue
+    [[ "$tap_name" == homebrew/core || "$tap_name" == homebrew/cask ]] && continue
     brew trust --tap "$tap_name" >/dev/null 2>&1 || true
   done < <(sed -nE "s/^tap ['\"]([^'\"]+)['\"].*/\1/p" "$SCRIPT_DIR/Brewfile.base" "$BREWFILE_LOCAL" 2>/dev/null | tr '[:upper:]' '[:lower:]' | sort -u)
 fi
@@ -56,12 +58,8 @@ if [[ -f "$BREWFILE_LOCAL" ]]; then
   brew bundle --file="$BREWFILE_LOCAL"
 fi
 
-# Keep packages fresh in the background. `homebrew/autoupdate` now redirects to
-# the third-party domt4/autoupdate, and `autoupdate` is an external *command* —
-# a separate trust kind from --tap, so the loop above doesn't cover it.
-if brew trust --help &>/dev/null; then
-  brew trust --command domt4/autoupdate/autoupdate >/dev/null 2>&1 || true
-fi
+# Keep packages fresh in the background. The tap trust loop above covers
+# domt4/autoupdate, so `brew autoupdate` loads without a trust prompt.
 if ! brew autoupdate status 2>/dev/null | grep -q 'and running'; then
   step "Enabling brew autoupdate (daily upgrade + cleanup)..."
   brew autoupdate start 86400 --upgrade --cleanup

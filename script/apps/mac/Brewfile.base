@@ -2,7 +2,8 @@
 tap 'LizardByte/homebrew'
 tap 'FelixKratz/formulae'
 tap 'acsandmann/tap'
-tap 'homebrew/autoupdate'
+# real tap name; 'homebrew/autoupdate' is a redirect to it and taps a duplicate
+tap 'domt4/autoupdate'
 tap 'narugit/tap'
 tap 'neurosnap/tap'
 
