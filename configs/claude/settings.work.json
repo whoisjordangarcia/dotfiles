@@ -262,7 +262,7 @@
   "tui": "fullscreen",
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
-  "theme": "auto",
+  "theme": "custom:catppuccin-mocha",
   "verbose": true,
   "preferredNotifChannel": "ghostty",
   "autoCompactEnabled": false,
