@@ -408,6 +408,50 @@ real file, not a symlink to an overlay. A hidden marker line
 `claude.local.md` remains untracked/machine-local for true per-machine notes —
 prefer the tracked overlays for anything you want version-controlled and synced.
 
+### Claude Code Themes (custom)
+
+Custom themes live in `configs/claude/themes/`, symlinked whole-dir to
+`~/.claude/themes` by `script/claude/setup.sh`. Unlike settings/CLAUDE.md, themes
+are **not** work/personal-gated — one dir, shared by both. Ships
+`catppuccin-mocha.json` (Mocha to match `bat`, rift borders, and the GTK cursor).
+
+**The slug is the FILENAME, not the `name` field.** `catppuccin-mocha.json`
+registers as `custom:catppuccin-mocha`; `name` is only the label shown in
+`/theme`. Select via `/theme`, or set `"theme": "custom:<slug>"` in **both**
+`settings.work.json` and `settings.personal.json` (they're independent files).
+
+```json
+{"name": "Catppuccin Mocha", "base": "dark", "overrides": {"claude": "#fab387"}}
+```
+
+- `base` ∈ `dark`, `light`, `dark-ansi`, `light-ansi`, `dark-daltonized`, `light-daltonized`.
+- Colors: `#rrggbb`, `#rgb`, `rgb(r,g,b)`, `ansi256(n)`, `ansi:<name>`.
+- `overrides` merges over `base`, so a partial theme is fine — 72 keys available.
+
+> [!IMPORTANT]
+> **The loader is silently lossy.** An override with a misspelled key, an invalid
+> color, or a bogus `base` is **dropped with no error** — the theme just renders
+> wrong. Non-`.json` files in the dir are ignored by Claude Code (which is why the
+> preview script can live alongside the themes). Always run `--check`:
+
+```bash
+configs/claude/themes/theme_preview.py            # render every theme: swatches + mock UI
+configs/claude/themes/theme_preview.py --check    # validate; non-zero exit on problems
+```
+
+**Authoring rules** (reverse-engineered from the built-in themes — follow them or
+a new theme will look subtly off):
+
+- **Shimmer keys brighten additively** (~`+38`/channel, clamped at 255) — they are
+  *not* blended toward white. Built-in dark: `inactive` 153 → `inactiveShimmer` 193.
+- **`subtle` is darker than `inactive`** (built-in dark: 80 vs 153 grey), not the
+  reverse. `background` is a teal *accent* in both light and dark — not a fill.
+- **Diff fills need a monotonic chroma hierarchy**: `Dimmed` < normal < `Word`
+  (Mocha uses 0.12 / 0.25 / 0.55 mixed over `base`). Don't luminance-match the
+  built-in theme — its diffs are dark *saturated* colors, and mixing scales chroma
+  linearly, so a pastel palette like Catppuccin can never reach that saturation.
+  Chasing it inverts `Dimmed` and normal, collapsing the two into one shade.
+
 ### Secrets: Lazy 1Password Fetch
 
 `.zshrc.sec` is rendered from an environment-specific template (`.zshrc.sec.work.tpl` / `.zshrc.sec.personal.tpl`, selected by `WORK_ENV` in `script/zsh/setup.sh`). Two patterns:
