@@ -9,14 +9,11 @@ alias wm='workmux'
 alias hyprc="nvim ~/.config/hypr/hyprland.conf"
 
 #development
-# Startup: claude.ai account connectors cost ~5.4s of a ~6.1s launch (floor is ~0.6s).
-# --strict-mcp-config alone does NOT disable them; the empty --mcp-config is what does.
-CLAUDE_NO_MCP="--strict-mcp-config --mcp-config '{\"mcpServers\":{}}'"
-alias c="CLAUDE_CODE_NO_FLICKER=1 claude $CLAUDE_NO_MCP"
-alias cr="CLAUDE_CODE_NO_FLICKER=1 claude --resume $CLAUDE_NO_MCP"
+alias c="CLAUDE_CODE_NO_FLICKER=1 claude"
+alias cr="CLAUDE_CODE_NO_FLICKER=1 claude --resume"
 alias claude-yolo="CLAUDE_CODE_NO_FLICKER=1 claude --dangerously-skip-permissions"
-alias cy="claude --dangerously-skip-permissions $CLAUDE_NO_MCP"
-alias ca="CLAUDE_CODE_NO_FLICKER=1 claude --enable-auto-mode $CLAUDE_NO_MCP"
+alias cy="claude --dangerously-skip-permissions"
+alias ca="CLAUDE_CODE_NO_FLICKER=1 claude --enable-auto-mode"
 alias claude-otel="CLAUDE_CODE_NO_FLICKER=1 CLAUDE_CODE_ENABLE_TELEMETRY=1 OTEL_LOGS_EXPORTER=console OTEL_LOG_RAW_API_BODIES=file:$HOME/claude-otel-logs claude"
 alias colo="codex --dangerously-bypass-approvals-and-sandbox"
 alias update-claude="curl -fsSL https://claude.ai/install.sh | bash"

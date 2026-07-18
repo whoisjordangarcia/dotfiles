@@ -194,6 +194,7 @@
     "impeccable@impeccable": true,
     "nest-ehr-research@nest-genomics-skills": false,
     "nest-factory@nest-genomics-skills": true,
+    "nest-gpt-code-review@nest-genomics-skills": true,
     "nest-gpt-validate-plan@nest-genomics-skills": false,
     "nest-linear@nest-genomics-skills": true,
     "nest-portal-sign-in@nest-genomics-skills": true,
