@@ -36,10 +36,14 @@ BORDERS_TARGET="$HOME/.config/borders/bordersrc"
 mkdir -p "$HOME/.config/borders"
 link_file "$BORDERS_SOURCE" "$BORDERS_TARGET"
 
+# brew services list is slow (~1s) — snapshot it once for both checks below.
+# Starting borders doesn't invalidate the rift line we grep for later.
+BREW_SERVICES=$(brew services list)
+
 # Run under brew services: KeepAlive restarts borders if it dies, and the
 # appearance watcher relies on this — it only kills borders and lets
 # launchd relaunch it with the new appearance colors.
-if ! brew services list | grep -Eq '^borders\s+started'; then
+if ! grep -Eq '^borders\s+started' <<<"$BREW_SERVICES"; then
     step "Starting borders service..."
     brew services start borders
 fi
@@ -73,7 +77,7 @@ if [ -f "$RIFT_NATIVE_PLIST" ]; then
     rm "$RIFT_NATIVE_PLIST"
 fi
 
-if brew services list | grep -Eq '^rift\s+started'; then
+if grep -Eq '^rift\s+started' <<<"$BREW_SERVICES"; then
     brew services restart rift
 else
     # The agent can be loaded outside brew's bookkeeping (status "other",

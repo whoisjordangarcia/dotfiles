@@ -11,9 +11,12 @@ CONFIGS_DIR="$SCRIPT_DIR/../../../configs/sunshine/mac"
 source "$SCRIPT_DIR/../../common/log.sh"
 source "$SCRIPT_DIR/../../common/symlink.sh"
 
-# Install sunshine-beta via Homebrew
-info "Installing Sunshine beta..."
-brew install lizardbyte/homebrew/sunshine-beta
+# Install sunshine-beta if missing (Brewfile.base owns it; this is a guard for
+# standalone runs of this script)
+if [[ ! -d /opt/homebrew/opt/sunshine-beta ]]; then
+  info "Installing Sunshine beta..."
+  brew install lizardbyte/homebrew/sunshine-beta
+fi
 
 # Create config directory if it doesn't exist
 mkdir -p "$SUNSHINE_CONFIG_DIR"

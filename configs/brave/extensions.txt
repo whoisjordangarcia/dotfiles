@@ -2,7 +2,7 @@
 # Union of your Web Store extensions across all local Brave profiles.
 # setup.sh soft-installs each via 'External Extensions' (user-removable,
 # no managed policy). Re-run 'brave-sync' after adding/removing extensions.
-aeblfdkhhhdcdjpifhhbdiojplfjncoa  # 1Password – Password Manager
+khgocmkkpikpnmmkgmdnfckapcdkgfaf  # 1Password Beta – Password Manager
 fcoeoabgfenejglbffodgkkbkcdhcgfn  # Claude
 ponfpcnoihfmfllpaingbgckeeldkhle  # Enhancer for YouTube
 ddkjiahejlhfcafbddmgiahcphecmpfh  # uBlock Origin Lite
