@@ -3,7 +3,14 @@
 # bConfigurationValue 0->2 cycle forces USB re-enumeration of the Touch Bar so
 # appletbdrm rebinds (kernels >=6.12.31 won't rebind without it — the "8103
 # HID-only mode" failure). Device path is located by product id at runtime
-# because the VHCI bus number changes on every apple_bce reload.
+# because the VHCI bus number changes on every bridge-driver reload.
+#
+# linux-t2 >= 7.1 split apple_bce into t2bce_{dma,core,vhci,audio}; both name
+# sets are loaded, and the absent one is a `-`-prefixed no-op.
+#
+# NOTE: `$` MUST be written `$$` in ExecStart — systemd expands `${...}` itself
+# before bash ever sees it, which silently blanked the re-enumeration command
+# ("Invalid environment variable name evaluates to an empty string").
 [Unit]
 Description=Reload T2 modules after resume
 After=suspend.target
@@ -12,17 +19,21 @@ After=suspend.target
 Type=oneshot
 # WiFi first — it doesn't need the settle delays the Touch Bar does.
 ExecStart=-/usr/sbin/modprobe brcmfmac
+ExecStart=-/usr/sbin/modprobe brcmfmac_wcc
 ExecStart=/usr/bin/sleep 4
+# Bridge driver: 7.1+ split modules (deps pull in core + dma), then 7.0.x name.
+ExecStart=-/usr/sbin/modprobe t2bce_vhci
+ExecStart=-/usr/sbin/modprobe t2bce_audio
 ExecStart=-/usr/sbin/modprobe apple_bce
 ExecStart=/usr/bin/sleep 4
 ExecStart=-/usr/sbin/modprobe hid_appletb_bl
 ExecStart=/usr/bin/sleep 2
 ExecStart=-/usr/sbin/modprobe hid_appletb_kbd
 ExecStart=/usr/bin/sleep 2
-ExecStart=-/usr/bin/bash -c 'for d in /sys/bus/usb/devices/*/idProduct; do [ "$(cat "$d")" = 8302 ] || continue; p=${d%/idProduct}; echo 0 > "$p/bConfigurationValue"; sleep 1; echo 2 > "$p/bConfigurationValue"; break; done'
+ExecStart=-/usr/bin/bash -c 'p=$$(grep -lx 8302 /sys/bus/usb/devices/*/idProduct | head -1); p=$${p%/idProduct}; [ -n "$$p" ] || exit 0; echo 0 > "$$p/bConfigurationValue"; sleep 1; echo 2 > "$$p/bConfigurationValue"'
 ExecStart=/usr/bin/sleep 3
 ExecStart=-/usr/bin/systemctl restart tiny-dfr
-ExecStart=-/usr/bin/brightnessctl -rd :white:kbd_backlight -q
+ExecStart=-/usr/bin/brightnessctl -rd apple::kbd_backlight -q
 
 [Install]
 WantedBy=suspend.target

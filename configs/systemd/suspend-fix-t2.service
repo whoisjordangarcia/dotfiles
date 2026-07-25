@@ -2,6 +2,10 @@
 # off entering deep sleep. Paired with resume-fix-t2.service which reloads
 # everything after wake. https://github.com/basecamp/omarchy/discussions/5862
 # + https://wiki.t2linux.org/guides/postinstall/
+#
+# linux-t2 >= 7.1 split the monolithic apple_bce into t2bce_{dma,core,vhci,audio}.
+# Both name sets are listed so this works on either kernel — every ExecStart is
+# `-`-prefixed, so whichever set isn't present is a silent no-op.
 [Unit]
 Description=Unload T2 modules before suspend
 Before=sleep.target
@@ -11,17 +15,24 @@ StopWhenUnneeded=yes
 Type=oneshot
 RemainAfterExit=yes
 # Save + kill keyboard backlight so it doesn't burn battery asleep.
-ExecStart=-/usr/bin/brightnessctl -sd :white:kbd_backlight set 0 -q
+# The LED is `apple::kbd_backlight` — `:white:kbd_backlight` never existed here.
+ExecStart=-/usr/bin/brightnessctl -sd apple::kbd_backlight set 0 -q
 # WiFi: brcmfmac doesn't handle D3 correctly on T2 — unload before sleep.
 # (iwd/systemd-networkd reattach on their own when the interface returns.)
 ExecStart=-/usr/sbin/modprobe -r brcmfmac_wcc
 ExecStart=-/usr/sbin/modprobe -r brcmfmac
-# Touch Bar stack, leaves first: consumers before apple_bce.
+# Touch Bar stack, leaves first: consumers before the bridge driver.
 ExecStart=-/usr/bin/systemctl stop tiny-dfr
 ExecStart=-/usr/sbin/rmmod -f hid_appletb_kbd
 ExecStart=-/usr/sbin/rmmod -f hid_appletb_bl
 ExecStart=-/usr/sbin/rmmod -f appletbdrm
+# Bridge driver. 7.0.x: one module. 7.1+: four, in reverse-dependency order
+# (audio and vhci both hold t2bce_core, which holds t2bce_dma).
 ExecStart=-/usr/sbin/rmmod -f apple_bce
+ExecStart=-/usr/sbin/rmmod -f t2bce_audio
+ExecStart=-/usr/sbin/rmmod -f t2bce_vhci
+ExecStart=-/usr/sbin/rmmod -f t2bce_core
+ExecStart=-/usr/sbin/rmmod -f t2bce_dma
 
 [Install]
 WantedBy=sleep.target
