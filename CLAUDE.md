@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+It deliberately documents only what **cannot be recovered by reading the repo** — the traps that fail
+silently, the systems this repo doesn't control, and the checks that must be run. Anything derivable
+from the source (command flags, directory layout, the logging API, the symlink algorithm, the shape of
+a component `setup.sh`) is left to the source, which can't go stale.
+
 > [!IMPORTANT]
 > **NEVER commit secrets or sensitive information.** This is a public repository. Do not add private keys, API tokens, passwords, `.env` values, real IP addresses/hostnames, or any machine-specific credentials — not even temporarily. Before staging files, inspect any new/untracked file (especially anything with `600` permissions or in a config dir) for sensitive content. Use the template/`Include`/`source` patterns described in [Security — No Sensitive Data in This Repository](#security--no-sensitive-data-in-this-repository).
 
@@ -20,283 +25,36 @@ These dotfiles are actively used across four environments:
 | **Personal laptop** | Arch Linux (omarchy) | `linux_omarchy` / personal | Omarchy base + dotfiles CLI/dev layer (omarchy-safe subset — see Omarchy notes) |
 | **LXC containers** | Ubuntu/Debian (homelab) | `linux_server` | Lightweight — tmux, neovim, zsh, git only (no desktop/GUI components) |
 
+> [!IMPORTANT]
+> `script/` also carries `linux_fedora` and `linux_ubuntu` profiles. **Nothing runs them.** Don't infer
+> from their existence that they're supported, and don't spend effort keeping them current.
+
 When adding new features, consider which systems they apply to. Desktop-specific configs (Hyprland, VPN, fonts) only belong in the full Arch/mac profiles. Core CLI tools (tmux, nvim, zsh, git) should work across all profiles including the server/LXC setup.
 
-## Key Commands
+## Orientation
 
-### Installation & Setup
-```bash
-# Remote installation (YOLO method)
-curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/boot.sh | bash
+`boot.sh` (curl-able bootstrap) → `bin/dot` (CLI, system detection, `.dotconfig`) →
+`script/<system>_installation.sh` → `run_components` → `script/<component>/[<platform>/]setup.sh`.
+Configs live in `configs/<tool>/` and are symlinked home by `script/common/symlink.sh`.
+Run `./bin/dot -h` for the full command surface; read any `script/*/setup.sh` for the component pattern.
 
-# Interactive setup
-./bin/dot -i
+Two things about that flow that reading one file won't tell you:
 
-# Direct installation with explicit configuration
-./bin/dot --system mac --work          # Mac work environment
-./bin/dot --system linux_ubuntu --personal
-```
-
-### Management Commands
-```bash
-./bin/dot -l              # List available installation profiles
-./bin/dot -s              # Show system detection results
-./bin/dot -c              # Display current configuration
-./bin/dot --reset-config  # Clear configuration and start over
-./bin/dot --reconfigure   # Re-run interactive setup
-./bin/dot -e              # Open dotfiles in $EDITOR
-```
-
-### Component-Level Installation
-Individual components can be installed directly:
-```bash
-./script/zsh/setup.sh
-./script/tmux/setup.sh
-./script/lazygit/mac/setup.sh
-./script/apps/mac/setup.sh        # Homebrew package management
-./script/macos/setup.sh           # macOS system defaults + Touch ID sudo
-./script/neovim/mac/setup.sh
-```
-
-## Architecture
-
-### Entry Points & Installation Flow
-1. **Remote Bootstrap**: `boot.sh` - Clones repo, fetches updates, launches interactive setup
-2. **CLI Tool**: `bin/dot` - Shell management interface with system detection and configuration
-
-### Directory Structure
-```
-bin/dot                           # Shell CLI
-script/
-  ├── common/
-  │   ├── log.sh                 # Logging utilities (info, success, fail, etc.)
-  │   ├── symlink.sh             # Symlink creation with override/backup/skip prompts
-  │   │                          # Supports DOT_SYMLINK_MODE for non-interactive use
-  │   └── check_ssh.sh           # GitHub SSH preflight check
-  ├── {platform}_installation.sh # Platform installers (mac, linux_ubuntu, etc.)
-  └── {component}/{platform}/setup.sh  # Component-specific setup scripts
-configs/                          # Configuration files (symlinked to home)
-  ├── nvim/                      # Neovim with LazyVim
-  ├── tmux/                      # Tmux with TPM plugins
-  ├── zshrc/                     # Zsh configuration and modules
-  ├── git/                       # Git config templates (personal + work)
-  ├── ssh/                       # SSH config with Include for local hosts
-  ├── ghostty/                   # Ghostty terminal (macOS)
-  ├── starship/                  # Starship prompt
-  ├── hypr/                      # Hyprland (Arch)
-  ├── i3/, sway/                 # i3/Sway window managers (Linux)
-  ├── claude/, codex/, opencode/ # AI tool configs
-  ├── ai-rules/                  # AI assistant rules (Cursor)
-  ├── vpn-split/                 # AirVPN WireGuard split tunnel (Arch)
-  └── ...                        # ~40 total config dirs (lazygit, bat, btop, etc.)
-functions/
-  └── system-funcs.sh            # Shared shell functions
-.dotconfig                        # Generated config file (DOT_NAME, DOT_EMAIL, etc.)
-```
-
-### Configuration Management System
-
-**Persistent Configuration** (`.dotconfig`):
-```bash
-DOT_NAME="Jordan Garcia"           # User's full name
-DOT_EMAIL="user@example.com"       # Git email address
-DOT_ENVIRONMENT="work|personal"    # Environment type
-DOT_SYSTEM="mac|linux_ubuntu|..."  # Installation profile
-DOT_YUBIKEY="ABC123..."            # GPG key ID for git signing (optional)
-```
-
-**Environment Variables** (exported during installation):
-- `$WORK_ENV` - Set to "1" when `DOT_ENVIRONMENT="work"`
-- All `DOT_*` variables exported for component scripts
-
-**Environment Auto-Detection Logic**:
-1. Check git config email for `@nestgenomics.com` → work environment
-2. Check `WORK_ENV` or `--work` flag → work environment
-3. Default → personal environment
-
-### Platform Detection
-
-**System Detection** (`detect_system()` in `bin/dot`):
-- macOS: `$OSTYPE == "darwin"*` → `mac`
-- Linux: Parse `/etc/os-release` → `linux_ubuntu`, `linux_fedora`, `linux_arch`
-- Maps to installation scripts: `script/{detected}_installation.sh`
-
-**Auto-Selection Logic**:
-1. Exact match: `linux_ubuntu` → `script/linux_ubuntu_installation.sh`
-2. Partial match: `mac` → first `mac*` installation script
-
-Work vs. personal is **not** a separate installer — both use the same
-`<system>_installation.sh`; `WORK_ENV` (derived from `DOT_ENVIRONMENT`) drives the
-environment-specific config. A legacy `DOT_SYSTEM="mac_work"` in an old `.dotconfig`
-is normalized to `mac` on load.
-
-### Brewfile Management (macOS Only)
-
-`script/apps/mac/setup.sh` installs a single `Brewfile.base` (work/personal Brewfile splits were merged into it), then an optional `Brewfile.local` overlay if present — a **gitignored**, machine-specific package list (same pattern as `~/.ssh/hosts.local` / `.zshrc.sec`). After installing, it offers an optional `brew bundle cleanup --force` (default: no) that merges base + local so machine-local packages aren't flagged for removal.
-
-It also enables `brew autoupdate` (daily `brew upgrade` + cleanup in the background, via the `homebrew/autoupdate` tap).
-
-`Brewfile.lock.json` is generated by `brew bundle` and gitignored.
-
-**Work Environment Detection** (used by `bin/dot` to set `WORK_ENV` for the macOS install):
-- Email contains `@nestgenomics.com`
-- `--work` flag passed to `./bin/dot`
-- `WORK_ENV` environment variable set
-
-### Symlink Architecture
-
-**Core Principle**: Configs are symlinked (not copied) from `configs/` to their standard locations, enabling centralized version control.
-
-**Symlink Utility** (`script/common/symlink.sh`):
-```bash
-link_file "$SOURCE" "$TARGET"
-```
-
-**Conflict Resolution** (interactive prompts):
-- **[O]verride**: Remove existing file/symlink, create new symlink
-- **[B]ackup**: Rename to `{file}_YYYYMMDD.bak`, create new symlink
-- **[S]kip**: Keep existing file/symlink unchanged
-
-**Non-Interactive Mode**:
-```bash
-DOT_SYMLINK_MODE=override  # Auto-override all conflicts
-DOT_SYMLINK_MODE=backup    # Auto-backup existing files
-DOT_SYMLINK_MODE=skip      # Auto-skip conflicts
-DOT_SYMLINK_MODE=interactive # Prompt user (default)
-```
-
-**Common Symlink Patterns**:
-```bash
-# Direct file symlink (zsh, tmux)
-link_file "$SCRIPT_DIR/../../configs/zshrc/.zshrc" "$HOME/.zshrc"
-
-# Directory symlink (tmux scripts)
-link_file "$SCRIPT_DIR/../../configs/tmux/scripts" "$HOME/.tmux/scripts"
-```
-
-### Component Installation Pattern
-
-**Standard Structure** (all component setup scripts):
-```bash
-#!/bin/bash
-set -euo pipefail  # Strict error handling
-
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-
-# Source utilities
-source "$SCRIPT_DIR/../common/log.sh"       # Logging functions
-source "$SCRIPT_DIR/../common/symlink.sh"   # Symlink utility (if needed)
-
-# Install dependencies (check before installing)
-if ! command -v tool &>/dev/null; then
-    info "Installing tool..."
-    # Installation logic
-fi
-
-# Create symlinks
-link_file "$SOURCE" "$TARGET"
-
-# Post-installation tasks
-```
-
-**Platform-Specific Scripts**:
-- Location: `script/{component}/{platform}/setup.sh`
-- Platform: `mac/`, `linux/`, `fedora/`, `ubuntu/`, `arch/`
-- Example: `script/lazygit/mac/setup.sh`, `script/hypr/linux/setup.sh`
-
-**Installation Array Pattern** (all platforms):
-
-Every platform's component list lives in its own `script/<system>_components.sh`
-(e.g. `mac_components.sh`, `linux_arch_components.sh`) — a side-effect-free file that
-*only* defines the `component_installation` array. It's the single source of truth
-shared by the matching `<system>_installation.sh` and `bin/dot`'s module-selection
-menu (which `source`s it to read the array — no text-scraping). For an
-environment-specific component, append it inside a guard, e.g.
-`[[ "${WORK_ENV:-}" == "1" ]] && component_installation+=(some/work-only)`.
-
-```bash
-# script/mac_components.sh
-component_installation=(
-    apps/mac      # Homebrew packages
-    macos         # System defaults + Touch ID sudo
-    1password/mac
-    git
-    neovim/mac    # Platform-specific path
-    # ... more components
-)
-```
-
-Installers run each component as a **child process** via `run_components` (`script/common/run_components.sh`), so one script's `set -e`/env changes stay contained. Components only see *exported* variables (`DOT_*`, `WORK_ENV`, `DOT_SYMLINK_MODE`) — they cannot share shell state with each other (e.g. `claude`/`codex` load nvm themselves instead of inheriting it from the `node` component).
-
-```bash
-# script/mac_installation.sh
-source "$SCRIPT_DIR/common/run_components.sh"
-source "$SCRIPT_DIR/mac_components.sh"
-run_components "${component_installation[@]}"
-```
-
-All installers (macOS and Linux) follow this same shape — source the
-`<system>_components.sh` array, then `run_components`.
-
-### Logging System
-
-**Log Functions** (`script/common/log.sh`):
-```bash
-section "Installing Zsh"    # Major installation phase (blue ▶)
-step "Linking .zshrc"       # Individual component step (•)
-info "Message"              # General information
-success "Done!"             # Success message (green OK)
-fail "Error message"        # Error and exit (red FAIL)
-debug "Debug info"          # Debug output (respects LOG_LEVEL)
-prompt "Name: "             # Interactive prompt (blue ▶)
-header "Setup Complete"     # Section header (━━━)
-```
-
-**Log Level Control**:
-```bash
-export LOG_LEVEL=debug    # Show all messages (debug, info, warn, error)
-export LOG_LEVEL=info     # Default (info, warn, error)
-export LOG_LEVEL=error    # Only errors
-```
-
-## Development Patterns
-
-### Adding New Components
-
-1. **Create platform-specific setup script**:
-   ```bash
-   mkdir -p script/{component}/{platform}
-   touch script/{component}/{platform}/setup.sh
-   chmod +x script/{component}/{platform}/setup.sh
-   ```
-
-2. **Follow standard structure** (see Component Installation Pattern above)
-
-3. **Add to installation array** — for macOS in `script/mac_components.sh`, for Linux in `script/{platform}_installation.sh`:
-   ```bash
-   component_installation=(
-       # ... existing components
-       {component}/{platform}  # Add here
-   )
-   ```
-
-4. **Place configs** in `configs/{component}/` for symlinking
-
-### Supporting New Platforms
-
-1. **Add detection** to `bin/dot` `detect_system()` function
-2. **Create installer**: `script/{platform}_installation.sh`
-3. **Implement component scripts**: `script/{component}/{platform}/setup.sh`
-4. **Choose package manager**: brew (macOS), apt (Ubuntu), dnf (Fedora), pacman (Arch)
+- **Every platform's component list lives in its own `script/<system>_components.sh`** — a side-effect-free
+  file that *only* defines `component_installation`. It's the single source of truth shared by the matching
+  installer and `bin/dot`'s module-selection menu (which `source`s it). Edit the array there, never in an installer.
+- **Components run as child processes**, so one script's `set -e`/env changes stay contained — and they
+  only see *exported* variables (`DOT_*`, `WORK_ENV`, `DOT_SYMLINK_MODE`). They cannot share shell state
+  with each other, which is why `claude`/`codex` load nvm themselves instead of inheriting it from `node`.
 
 ### Script Guidelines
 
-- **Always source logging**: `source "$SCRIPT_DIR/../common/log.sh"`
-- **Use strict mode**: `set -euo pipefail` for safety
-- **Check before installing**: Detect if tools/files already exist
-- **Preserve permissions**: `chmod 600 ~/.zshrc` for sensitive configs
-- **Export for sub-scripts**: Configuration vars must be exported — components run as child processes and only see the exported environment
+Only the two that aren't obvious from reading a neighbouring script:
+
+- **Export for sub-scripts**: configuration vars must be exported — components run as child processes and only see the exported environment
 - **Don't clobber `SCRIPT_DIR` in sourced libs**: shared files that get sourced (like `symlink.sh`) must use a private dir var (e.g. `_SYMLINK_LIB_DIR`) so they don't overwrite the caller's `SCRIPT_DIR`
+
+## Checks That Must Be Run
 
 ### Claude Code Statusline
 
@@ -353,6 +111,8 @@ bash configs/claude/scripts/cmux_status_demo.sh    # (inside cmux) visually conf
 
 Add a test case for any new state mapping before considering the change complete.
 
+## Traps
+
 ### Touch ID Command Gate (macOS)
 
 AI-initiated sensitive Bash commands require biometric approval via a Claude Code `PreToolUse` hook:
@@ -361,6 +121,7 @@ AI-initiated sensitive Bash commands require biometric approval via a Claude Cod
 - `configs/claude/hooks/bioprompt.swift` — SwiftUI Liquid Glass approval dialog: the command rendered syntax-highlighted (colors parsed live from the Ghostty theme's dark variant) with Touch ID embedded inline via `LAAuthenticationView`. When biometrics are unavailable (clamshell mode) the same glass card shows Approve/Deny, and Approve opens a glass password card verified locally via OpenDirectory — every popup in the flow is glass. Built by `script/claude/setup.sh` into `~/Applications/BioPrompt.app` (`bioprompt-Info.plist`); `~/.local/bin/bioprompt` is an exec shim into the bundle so the hook keeps calling the same path.
 - **YubiKey approval**: a FIDO2 user-presence assertion (libfido2, in `Brewfile.base`) races the other auth paths — a key tap approves, fastest in clamshell mode where Touch ID is unavailable. One-time setup per machine: `bioprompt --enroll` (stores credential id + public key only, under `~/.config/bioprompt/`; each approval verifies a signature over a fresh challenge).
 - Wired in the dedicated `settings.{work,personal}.json` files under `hooks.PreToolUse`. **Bootstrap order matters**: the `~/.claude/hooks` symlink must exist before the hook entry is live, or every Bash call is blocked (claude/setup.sh links it).
+- This is a tripwire, not a sandbox — pattern matching can be evaded; Claude Code's permission system remains the enforcement layer.
 
 ### Claude Settings (dedicated work/personal files)
 
@@ -414,7 +175,6 @@ The two files are **independent** — a setting you want on both machines must b
 made in both (review `git diff configs/claude/settings.*.json`). `nest-*` skills
 in `configs/skills/` are similarly projected by `script/skills/setup.sh` only in
 work mode (and pruned elsewhere).
-- This is a tripwire, not a sandbox — pattern matching can be evaded; Claude Code's permission system remains the enforcement layer.
 
 ### Claude Instructions (CLAUDE.md work/personal split)
 
@@ -503,16 +263,6 @@ a new theme will look subtly off):
   linearly, so a pastel palette like Catppuccin can never reach that saturation.
   Chasing it inverts `Dimmed` and normal, collapsing the two into one shade.
 
-### Secrets: Lazy 1Password Fetch
-
-`.zshrc.sec` is rendered from an environment-specific template (`.zshrc.sec.work.tpl` / `.zshrc.sec.personal.tpl`, selected by `WORK_ENV` in `script/zsh/setup.sh`). Two patterns:
-
-- **Injected** (`{{ op://... }}`): resolved at setup by `op inject` — plaintext at rest; only for low-sensitivity values.
-- **Lazy** (recommended): templates export only `*_REF="op://..."` references; the `opsec` helper (`.zshrc.functions`) runs `op read` at use-time, so 1Password prompts Touch ID when the secret is actually used and nothing sensitive sits on disk:
-  ```bash
-  ELASTIC_STG_API_KEY=$(opsec "$ELASTIC_STG_API_KEY_REF") some-command
-  ```
-
 ### Agent Skills
 
 Shared agent skills live in `configs/skills/` (one directory per skill, each with a `SKILL.md` plus optional `references/`, `templates/`). `script/skills/setup.sh` projects each skill into every agent CLI (`~/.claude/skills/`, `~/.cursor/skills/`, `~/.codex/skills/`) via per-skill symlinks, so **every skill committed here is version-controlled and syncs to all machines** — including the LXC server, which needs no `npx`/Node to use them. (`configs/claude/skills` is itself a symlink to `../skills` for backward compatibility.)
@@ -530,112 +280,6 @@ git add configs/skills/<skill> && git commit
 
 Hand-authored skills are just a directory with a `SKILL.md`. Create one with `npx skills init <name>` inside `configs/skills/`, or by hand. Skills are public — never commit secrets, API keys, or real hostnames (see the Security section).
 
-### YubiKey Git Signing Setup
-
-GPG signing configuration for commits (optional):
-```bash
-# During interactive setup, provide YubiKey ID
-./bin/dot -i  # Will prompt for YubiKey ID
-
-# Or configure manually
-gpg --list-secret-keys --keyid-format=long  # Find your key ID
-git config --global user.signingkey YOUR_KEY_ID
-git config --global commit.gpgsign true
-```
-
-## Platform-Specific Notes
-
-### macOS
-- **Terminal**: Ghostty (replaces Alacritty/Kitty)
-- **Menu Bar**: SketchyBar (custom menu bar replacement)
-  - Restart if frozen: `brew services restart sketchybar`
-- **Brewfile**: Single `Brewfile.base` (`script/apps/mac/`), with optional prompted cleanup of unlisted packages
-- **System Tweaks**: All `defaults write` tweaks live in `script/macos/setup.sh` (key repeat, Finder, Dock, screenshots, Spotlight off, Touch ID for sudo via `/etc/pam.d/sudo_local`)
-- **Work variant**: no separate installer — `./bin/dot --system mac --work` runs `mac_installation.sh` with `WORK_ENV=1`/`DOT_ENVIRONMENT=work` exported, which only changes environment-specific config (work git email, etc.), not which components install
-
-### Arch Linux
-- **Window Manager**: Hyprland with HyDE theme
-- **Display**: Waybar panel, Rofi launcher (Wayland)
-- **VPN**: AirVPN with WireGuard split tunneling (see VPN Split Tunneling section)
-- **T2 MacBook Support**: Requires manual `apple-bce` driver installation
-- **Kernel**: Use `linux-t2` for MacBook hardware compatibility
-
-### Omarchy (personal Arch laptop)
-- **Detection**: `bin/dot` maps Arch + `~/.local/share/omarchy` → `linux_omarchy` profile (`script/linux_omarchy_installation.sh`)
-- Omarchy owns `~/.config` app configs as **copies** it maintains via `omarchy refresh`/migrations. Those use `cp -f`/`sed -i`, which **follow symlinks** — after `omarchy update`, run `git status` here: a migration can write through a dotfiles symlink into this repo.
-- **Excluded on purpose**: `hypr/linux` + `theming/linux` + `rofi/linux` + `btop/linux` (HyDE-specific; `configs/hypr/hyprland.conf` sources `~/.local/share/hyde/` which doesn't exist on omarchy and would break the desktop), `vpn/linux` + `ufw/linux` (omarchy manages DNS via systemd-resolved and its own ufw rules), `dolphin/linux`/`brave/linux`. Package-level: no `podman-docker` (pacman `conflicts=docker` — installing it removes omarchy's docker stack), no `dnsmasq`/`ufw`.
-- **Hyprland**: `hypr/omarchy` links only the override files omarchy's `hyprland.conf` sources last (`bindings/looknfeel/input/autostart.conf` + `gpu-perf-*.conf`) from `configs/hypr-omarchy/`. **Never symlink `hyprland.conf` or `monitors.conf`.** Private webapp URLs go in `~/.config/hypr/bindings.local.conf` (seeded by setup, untracked, sourced by `bindings.conf`).
-- **Theme system**: never link over `~/.config/mako/config` or `~/.config/btop/themes/current.theme` — omarchy-owned symlinks into `~/.config/omarchy/current/theme/`. The dotfiles ghostty config deliberately decouples ghostty from `omarchy theme set` (hardcodes Rose Pine instead of sourcing the theme file).
-
-### Fedora
-- **Window Manager**: i3wm
-- **Display**: Polybar panel
-
-### Ubuntu
-- **Desktop**: GNOME with extensions
-
-### Linux Server (LXC)
-- Lightweight profile: tmux, neovim, zsh, git only
-- Installation: `script/linux_server_installation.sh`
-
-## VPN Split Tunneling (AirVPN + WireGuard)
-
-Split-tunnel VPN that routes all traffic through AirVPN **except** configurable domains (streaming CDNs, etc.) which route directly.
-
-### How It Works
-
-The bypass chain: **dnsmasq** intercepts DNS queries → adds resolved IPs to an **nftables** dynamic set → nftables marks matching packets with `fwmark 0x2` → **ip rule** routes marked packets through the main table (direct) instead of the WireGuard tunnel. Set entries auto-expire after 1 hour.
-
-### Architecture
-
-```
-configs/vpn-split/
-  ├── cdn-bypass.nft                  # nftables rules (dynamic IP set + packet marking)
-  ├── exclude-domains.example.txt     # Template domain list (checked into repo)
-  ├── vpn-gen-config.sh               # Generates dnsmasq rules from domain list
-  ├── vpn-up.sh                       # Start VPN + load bypass rules
-  └── vpn-down.sh                     # Stop VPN + clean up
-script/vpn/linux/setup.sh            # Component setup (symlinks, dnsmasq/nftables config)
-~/.config/vpn-split/
-  ├── exclude-domains.txt             # LOCAL ONLY — user's domain list (never committed)
-  └── (symlinked scripts)             # vpn-up.sh, vpn-down.sh, vpn-gen-config.sh
-```
-
-### Setup (one-time)
-
-1. Run `script/vpn/linux/setup.sh` (or include `vpn/linux` in the Arch installation array)
-2. Generate a WireGuard config from https://airvpn.org/generator/ (select WireGuard protocol)
-3. Copy to `/etc/wireguard/airvpn.conf`
-4. Edit `~/.config/vpn-split/exclude-domains.txt` to customize bypassed domains
-
-### Shell Aliases
-
-| Alias | Action |
-|-------|--------|
-| `vpn-up` | Start VPN with CDN bypass |
-| `vpn-down` | Stop VPN and clean up routes |
-| `vpn-gen-config` | Regenerate dnsmasq rules after editing domain list |
-| `vpn-status` | Show WireGuard interface status |
-| `vpn-exclude` | Open domain exclude list in `$EDITOR` |
-
-### Important Notes
-
-- **Domain list is local only**: `~/.config/vpn-split/exclude-domains.txt` is never committed. The repo only contains `exclude-domains.example.txt` as a template.
-- **After editing domains**: Run `vpn-gen-config` then `sudo systemctl restart dnsmasq` (or just `vpn-down && vpn-up`)
-- **WireGuard config is not managed by dotfiles**: `/etc/wireguard/airvpn.conf` contains private keys and must be manually placed
-- **Dependencies**: `wireguard-tools` and `dnsmasq` are installed by `apps/arch` in the pacman package list
-
-## Post-Installation Manual Steps
-
-### Tmux Plugin Installation
-```bash
-# Reload tmux config
-tmux source ~/.tmux.conf
-
-# Install plugins (inside tmux)
-<prefix> + I    # Default prefix is Ctrl+b, then press I
-```
-
 ### Tmux Continuum Caveat
 
 **tmux-continuum auto-save relies on a `#(continuum_save.sh)` call embedded in `status-right`.**
@@ -649,15 +293,42 @@ at the start of your `status-right` value. It produces no visible output — it 
 - Manual save/restore: `<prefix> + S` (save) / `<prefix> + R` (restore)
 - Current auto-save interval: 1 minute (`@continuum-save-interval '1'`)
 
-### Shell Integration
-```bash
-# Add to .zshrc if not already present
-source <(fzf --zsh)    # FZF keybindings
-```
+### Secrets: Lazy 1Password Fetch
 
-### AI Rules
-AI assistant rules in `configs/ai-rules/`:
-- **Cursor**: `.mdc` format rules with file patterns
+`.zshrc.sec` is rendered from an environment-specific template (`.zshrc.sec.work.tpl` / `.zshrc.sec.personal.tpl`, selected by `WORK_ENV` in `script/zsh/setup.sh`). Two patterns:
+
+- **Injected** (`{{ op://... }}`): resolved at setup by `op inject` — plaintext at rest; only for low-sensitivity values.
+- **Lazy** (recommended): templates export only `*_REF="op://..."` references; the `opsec` helper (`.zshrc.functions`) runs `op read` at use-time, so 1Password prompts Touch ID when the secret is actually used and nothing sensitive sits on disk:
+  ```bash
+  ELASTIC_STG_API_KEY=$(opsec "$ELASTIC_STG_API_KEY_REF") some-command
+  ```
+
+## Platform-Specific Notes
+
+### macOS
+- **Menu Bar**: SketchyBar. Restart if frozen: `brew services restart sketchybar`
+- **Work variant**: no separate installer — `./bin/dot --system mac --work` runs `mac_installation.sh` with `WORK_ENV=1`/`DOT_ENVIRONMENT=work` exported, which only changes environment-specific config (work git email, etc.), not which components install
+
+### Arch Linux
+- **T2 MacBook Support**: requires manual `apple-bce` driver installation
+- **Kernel**: use `linux-t2` for MacBook hardware compatibility
+
+### Omarchy (personal Arch laptop)
+- **Detection**: `bin/dot` maps Arch + `~/.local/share/omarchy` → `linux_omarchy` profile
+- Omarchy owns `~/.config` app configs as **copies** it maintains via `omarchy refresh`/migrations. Those use `cp -f`/`sed -i`, which **follow symlinks** — after `omarchy update`, run `git status` here: a migration can write through a dotfiles symlink into this repo.
+- **Excluded on purpose** (see `script/linux_omarchy_components.sh` for the annotated list): `hypr/linux` + `theming/linux` + `rofi/linux` + `btop/linux` (HyDE-specific; `configs/hypr/hyprland.conf` sources `~/.local/share/hyde/` which doesn't exist on omarchy and would break the desktop), `vpn/linux` + `ufw/linux` (omarchy manages DNS via systemd-resolved and its own ufw rules), `dolphin/linux`/`brave/linux`. Package-level: no `podman-docker` (pacman `conflicts=docker` — installing it removes omarchy's docker stack), no `dnsmasq`/`ufw`.
+- **Hyprland**: `hypr/omarchy` links only the override files omarchy's `hyprland.conf` sources last (`bindings/looknfeel/input/autostart.conf` + `gpu-perf-*.conf`) from `configs/hypr-omarchy/`. **Never symlink `hyprland.conf` or `monitors.conf`.** Private webapp URLs go in `~/.config/hypr/bindings.local.conf` (seeded by setup, untracked, sourced by `bindings.conf`).
+- **Theme system**: never link over `~/.config/mako/config` or `~/.config/btop/themes/current.theme` — omarchy-owned symlinks into `~/.config/omarchy/current/theme/`. The dotfiles ghostty config deliberately decouples ghostty from `omarchy theme set` (hardcodes Rose Pine instead of sourcing the theme file).
+
+### VPN Split Tunneling (AirVPN + WireGuard)
+
+Split-tunnel VPN that routes all traffic through AirVPN **except** configurable domains (streaming CDNs, etc.) which route directly. Scripts and rules live in `configs/vpn-split/`; `script/vpn/linux/setup.sh` wires them up.
+
+The bypass chain: **dnsmasq** intercepts DNS queries → adds resolved IPs to an **nftables** dynamic set → nftables marks matching packets with `fwmark 0x2` → **ip rule** routes marked packets through the main table (direct) instead of the WireGuard tunnel. Set entries auto-expire after 1 hour.
+
+- **Domain list is local only**: `~/.config/vpn-split/exclude-domains.txt` is never committed. The repo only contains `exclude-domains.example.txt` as a template.
+- **WireGuard config is not managed by dotfiles**: `/etc/wireguard/airvpn.conf` contains private keys and must be manually placed. Generate at https://airvpn.org/generator/ (WireGuard protocol).
+- **After editing domains**: run `vpn-gen-config` then `sudo systemctl restart dnsmasq` (or just `vpn-down && vpn-up`).
 
 ## Security — No Sensitive Data in This Repository
 
