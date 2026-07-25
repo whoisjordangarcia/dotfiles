@@ -178,3 +178,7 @@ zmxk() { local n; n=$(_zmxpick "$1") || return; zmx kill "$n" && echo "killed $n
 
 # zmxt — tail (follow live output of) a session picked the same way.
 zmxt() { local n; n=$(_zmxpick "$1") || return; zmx tail "$n" }
+
+# mise — runtime version manager (node, python, ...). Owns its own PATH shims,
+# so no hardcoded install paths here. No-op on machines without it.
+command -v mise &>/dev/null && eval "$(mise activate zsh)"
