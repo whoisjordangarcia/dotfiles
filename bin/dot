@@ -34,7 +34,14 @@ detect_system() {
 			case "$ID" in
 			ubuntu) distro="ubuntu" ;;
 			fedora) distro="fedora" ;;
-			arch) distro="arch" ;;
+			arch)
+				# Omarchy is Arch under the hood (ID=arch) — detect its install dir
+				if [[ -d "$HOME/.local/share/omarchy" ]]; then
+					distro="omarchy"
+				else
+					distro="arch"
+				fi
+				;;
 			*) distro="unknown" ;;
 			esac
 		fi

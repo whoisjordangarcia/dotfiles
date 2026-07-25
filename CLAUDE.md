@@ -17,7 +17,7 @@ These dotfiles are actively used across four environments:
 |--------|----------|---------|----------|
 | **Main desktop** | Arch Linux | `linux_arch` / personal | Primary dev machine — full setup with Hyprland, VPN split tunnel, all tools |
 | **Work laptop** | macOS | `mac` / work | Work environment — work git email, rift WM + SketchyBar |
-| **Personal laptop** | Arch Linux (omarchy) | `linux_arch` / personal | Omarchy base + dotfiles customizations layered on top |
+| **Personal laptop** | Arch Linux (omarchy) | `linux_omarchy` / personal | Omarchy base + dotfiles CLI/dev layer (omarchy-safe subset — see Omarchy notes) |
 | **LXC containers** | Ubuntu/Debian (homelab) | `linux_server` | Lightweight — tmux, neovim, zsh, git only (no desktop/GUI components) |
 
 When adding new features, consider which systems they apply to. Desktop-specific configs (Hyprland, VPN, fonts) only belong in the full Arch/mac profiles. Core CLI tools (tmux, nvim, zsh, git) should work across all profiles including the server/LXC setup.
@@ -559,6 +559,13 @@ git config --global commit.gpgsign true
 - **VPN**: AirVPN with WireGuard split tunneling (see VPN Split Tunneling section)
 - **T2 MacBook Support**: Requires manual `apple-bce` driver installation
 - **Kernel**: Use `linux-t2` for MacBook hardware compatibility
+
+### Omarchy (personal Arch laptop)
+- **Detection**: `bin/dot` maps Arch + `~/.local/share/omarchy` → `linux_omarchy` profile (`script/linux_omarchy_installation.sh`)
+- Omarchy owns `~/.config` app configs as **copies** it maintains via `omarchy refresh`/migrations. Those use `cp -f`/`sed -i`, which **follow symlinks** — after `omarchy update`, run `git status` here: a migration can write through a dotfiles symlink into this repo.
+- **Excluded on purpose**: `hypr/linux` + `theming/linux` + `rofi/linux` + `btop/linux` (HyDE-specific; `configs/hypr/hyprland.conf` sources `~/.local/share/hyde/` which doesn't exist on omarchy and would break the desktop), `vpn/linux` + `ufw/linux` (omarchy manages DNS via systemd-resolved and its own ufw rules), `dolphin/linux`/`brave/linux`. Package-level: no `podman-docker` (pacman `conflicts=docker` — installing it removes omarchy's docker stack), no `dnsmasq`/`ufw`.
+- **Hyprland**: `hypr/omarchy` links only the override files omarchy's `hyprland.conf` sources last (`bindings/looknfeel/input/autostart.conf` + `gpu-perf-*.conf`) from `configs/hypr-omarchy/`. **Never symlink `hyprland.conf` or `monitors.conf`.** Private webapp URLs go in `~/.config/hypr/bindings.local.conf` (seeded by setup, untracked, sourced by `bindings.conf`).
+- **Theme system**: never link over `~/.config/mako/config` or `~/.config/btop/themes/current.theme` — omarchy-owned symlinks into `~/.config/omarchy/current/theme/`. The dotfiles ghostty config deliberately decouples ghostty from `omarchy theme set` (hardcodes Rose Pine instead of sourcing the theme file).
 
 ### Fedora
 - **Window Manager**: i3wm
