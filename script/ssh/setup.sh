@@ -93,17 +93,28 @@ else
 		info "Key already exists at $GITHUB_KEY"
 	fi
 
-	# Add to ssh-agent
-	eval "$(ssh-agent -s)" &>/dev/null || true
+	# Add to ssh-agent. Start one ONLY if none is reachable (`ssh-add -l` exits 2
+	# for "no agent", 1 for "agent, no keys"): eval'ing ssh-agent unconditionally
+	# leaks a fresh agent on every run and loads the key into that throwaway
+	# instead of the agent the user's shell talks to.
+	AGENT_STATE=0
+	ssh-add -l &>/dev/null || AGENT_STATE=$?
+	if [[ "$AGENT_STATE" -eq 2 ]]; then
+		eval "$(ssh-agent -s)" &>/dev/null || true
+	fi
 	if [[ "$(uname)" == "Darwin" ]]; then
 		ssh-add --apple-use-keychain "$GITHUB_KEY" 2>/dev/null || ssh-add "$GITHUB_KEY"
 	else
 		ssh-add "$GITHUB_KEY" 2>/dev/null || true
 	fi
 
-	# Ensure GitHub host entry exists in hosts.local
-	if ! grep -q "Host github.com" "$HOME/.ssh/hosts.local" 2>/dev/null && \
-	   ! grep -q "Host github.com" "$HOME/.ssh/config" 2>/dev/null; then
+	# Ensure the key we just generated is actually offered to GitHub.
+	# NOT "is there a `Host github.com` stanza?" — configs/ssh/config ships one
+	# (re-stating the default key), so that test is always true and this block
+	# would never run, leaving the new key unreferenced and auth still failing.
+	# IdentityFile is cumulative across matching blocks, so a second stanza here
+	# adds a candidate rather than replacing one.
+	if ! grep -q "$(basename "$GITHUB_KEY")" "$HOME/.ssh/hosts.local" 2>/dev/null; then
 		cat >> "$HOME/.ssh/hosts.local" <<EOF
 
 Host github.com

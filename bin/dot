@@ -192,6 +192,11 @@ load_config() {
 	if [[ -f "$configFile" ]]; then
 		source "$configFile"
 	fi
+	# Fresh machine: no .dotconfig yet. Default here — the one place every path
+	# (save_config, run_installation, -m, -c) routes through — so `set -u` can't
+	# kill a direct install (`dot --system mac --work`) on an unconfigured box.
+	# Empty, not DEFAULT_*: the `${DOT_NAME:-...}` fallbacks downstream still fire.
+	: "${DOT_NAME:=}" "${DOT_EMAIL:=}" "${DOT_ENVIRONMENT:=}" "${DOT_SYSTEM:=}" "${DOT_YUBIKEY:=}"
 	# Back-compat: the separate "<os>_work" installer was removed — WORK_ENV
 	# (derived from DOT_ENVIRONMENT) now drives work config. Normalize any
 	# stored "mac_work" etc. so old .dotconfig files keep resolving.

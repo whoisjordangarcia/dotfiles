@@ -13,8 +13,14 @@ if [ -d "$NOTES_DIR" ]; then
     info "Notes repo already exists at $NOTES_DIR, skipping clone"
 else
     info "Cloning notes repo to $NOTES_DIR..."
-    git clone "$NOTES_REPO" "$NOTES_DIR"
-    success "Cloned notes repo to $NOTES_DIR"
+    # Private repo over SSH. If the GitHub key isn't live yet, warn instead of
+    # failing — run_components treats a non-zero exit as fatal, and a vault clone
+    # isn't worth aborting the rest of the install for.
+    if git clone "$NOTES_REPO" "$NOTES_DIR"; then
+        success "Cloned notes repo to $NOTES_DIR"
+    else
+        warn "Could not clone $NOTES_REPO — re-run script/notes/setup.sh once 'ssh -T git@github.com' works"
+    fi
 fi
 
 # Enable the official Obsidian CLI.

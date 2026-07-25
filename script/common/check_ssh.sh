@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# check_github_ssh - Verifies SSH access to GitHub and prints fix steps if it fails.
+# check_github_ssh - Reports whether SSH access to GitHub works. Advisory only.
 # Source this file and call check_github_ssh from any setup script.
 
 check_github_ssh() {
@@ -12,15 +12,12 @@ check_github_ssh() {
         return 0
     fi
 
-    warn "GitHub SSH authentication failed"
-    info ""
-    info "To fix this, follow these steps:"
-    step "Check if a key is loaded:  ssh-add -l"
-    step "If no keys, add yours:     ssh-add ~/.ssh/id_ed25519"
-    step "If no key exists, create:  ssh-keygen -t ed25519 -C \"your@email.com\""
-    step "Add public key to GitHub:  cat ~/.ssh/id_ed25519.pub"
-    step "                           https://github.com/settings/keys"
-    step "Verify connection:         ssh -T git@github.com"
-    info ""
-    fail "SSH check failed — fix GitHub SSH access and re-run"
+    # Deliberately NOT fatal. boot.sh clones over HTTPS precisely so a fresh,
+    # keyless machine can bootstrap, and the `ssh` component — ordered before
+    # every component that needs SSH (e.g. `notes`) — generates the key and walks
+    # you through adding it to GitHub. Aborting here deadlocked a new machine:
+    # the install refused to run the one thing that fixes its own precondition.
+    warn "GitHub SSH not working yet — the 'ssh' component will set up a key"
+    step "Verify afterwards:  ssh -T git@github.com"
+    return 0
 }

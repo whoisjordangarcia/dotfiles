@@ -26,3 +26,30 @@ else
 	echo "$output"
 	exit 1
 fi
+
+# Fresh machine: no .dotconfig at all. Every DOT_* read must survive `set -u`,
+# so the failure must be the missing installer — not "unbound variable".
+rm -f "$FIXTURE/.dotconfig"
+output=$(cd "$FIXTURE" && ./bin/dot --system linux_ubuntu --personal 2>&1) || true
+if [[ "$output" == *"unbound variable"* ]]; then
+	echo "✗ direct install on an unconfigured machine tripped set -u"
+	echo "$output"
+	exit 1
+fi
+if grep -qx 'DOT_SYSTEM="linux_ubuntu"' "$FIXTURE/.dotconfig"; then
+	echo "✓ direct install works with no .dotconfig present"
+else
+	echo "✗ no .dotconfig was written on a fresh direct install"
+	echo "$output"
+	exit 1
+fi
+
+# `dot -m` reads DOT_SYSTEM straight out of the (absent) config too.
+rm -f "$FIXTURE/.dotconfig"
+output=$(cd "$FIXTURE" && ./bin/dot -m </dev/null 2>&1) || true
+if [[ "$output" == *"unbound variable"* ]]; then
+	echo "✗ dot -m on an unconfigured machine tripped set -u"
+	echo "$output"
+	exit 1
+fi
+echo "✓ dot -m works with no .dotconfig present"
