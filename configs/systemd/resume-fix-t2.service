@@ -1,0 +1,28 @@
+# T2 MacBook: reload the modules suspend-fix-t2.service unloaded before sleep.
+# The sleeps give the T2 bridge time to re-enumerate between stages; the
+# bConfigurationValue 0->2 cycle forces USB re-enumeration of the Touch Bar so
+# appletbdrm rebinds (kernels >=6.12.31 won't rebind without it — the "8103
+# HID-only mode" failure). Device path is located by product id at runtime
+# because the VHCI bus number changes on every apple_bce reload.
+[Unit]
+Description=Reload T2 modules after resume
+After=suspend.target
+
+[Service]
+Type=oneshot
+# WiFi first — it doesn't need the settle delays the Touch Bar does.
+ExecStart=-/usr/sbin/modprobe brcmfmac
+ExecStart=/usr/bin/sleep 4
+ExecStart=-/usr/sbin/modprobe apple_bce
+ExecStart=/usr/bin/sleep 4
+ExecStart=-/usr/sbin/modprobe hid_appletb_bl
+ExecStart=/usr/bin/sleep 2
+ExecStart=-/usr/sbin/modprobe hid_appletb_kbd
+ExecStart=/usr/bin/sleep 2
+ExecStart=-/usr/bin/bash -c 'for d in /sys/bus/usb/devices/*/idProduct; do [ "$(cat "$d")" = 8302 ] || continue; p=${d%/idProduct}; echo 0 > "$p/bConfigurationValue"; sleep 1; echo 2 > "$p/bConfigurationValue"; break; done'
+ExecStart=/usr/bin/sleep 3
+ExecStart=-/usr/bin/systemctl restart tiny-dfr
+ExecStart=-/usr/bin/brightnessctl -rd :white:kbd_backlight -q
+
+[Install]
+WantedBy=suspend.target

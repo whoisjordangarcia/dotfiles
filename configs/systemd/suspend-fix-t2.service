@@ -1,0 +1,27 @@
+# T2 MacBook: unload T2 modules before suspend, or the machine hangs/powers
+# off entering deep sleep. Paired with resume-fix-t2.service which reloads
+# everything after wake. https://github.com/basecamp/omarchy/discussions/5862
+# + https://wiki.t2linux.org/guides/postinstall/
+[Unit]
+Description=Unload T2 modules before suspend
+Before=sleep.target
+StopWhenUnneeded=yes
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# Save + kill keyboard backlight so it doesn't burn battery asleep.
+ExecStart=-/usr/bin/brightnessctl -sd :white:kbd_backlight set 0 -q
+# WiFi: brcmfmac doesn't handle D3 correctly on T2 — unload before sleep.
+# (iwd/systemd-networkd reattach on their own when the interface returns.)
+ExecStart=-/usr/sbin/modprobe -r brcmfmac_wcc
+ExecStart=-/usr/sbin/modprobe -r brcmfmac
+# Touch Bar stack, leaves first: consumers before apple_bce.
+ExecStart=-/usr/bin/systemctl stop tiny-dfr
+ExecStart=-/usr/sbin/rmmod -f hid_appletb_kbd
+ExecStart=-/usr/sbin/rmmod -f hid_appletb_bl
+ExecStart=-/usr/sbin/rmmod -f appletbdrm
+ExecStart=-/usr/sbin/rmmod -f apple_bce
+
+[Install]
+WantedBy=sleep.target

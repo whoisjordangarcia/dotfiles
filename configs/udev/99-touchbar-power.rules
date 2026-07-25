@@ -1,0 +1,3 @@
+# Touch Bar (05ac:8302): keep USB power on, never autosuspend — autosuspend
+# power-cycles the bar into the unrecoverable HID-only (8103) mode.
+SUBSYSTEM=="usb", ATTR{idVendor}=="05ac", ATTR{idProduct}=="8302", ATTR{power/control}="on", ATTR{power/autosuspend_delay_ms}="-1"

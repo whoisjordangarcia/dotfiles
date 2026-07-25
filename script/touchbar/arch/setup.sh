@@ -17,23 +17,49 @@ if ! systemctl list-unit-files tiny-dfr.service &>/dev/null; then
     exit 0
 fi
 
-DROPIN_SRC="$SCRIPT_DIR/../../../configs/systemd/tiny-dfr.service.d/override.conf"
-DROPIN_DST=/etc/systemd/system/tiny-dfr.service.d/override.conf
+# Since tiny-dfr v0.3.7 the package ships t2-intel.conf (clears the
+# Apple-Silicon BindsTo= and installs under graphical.target) — the fix our
+# old local override.conf used to apply. A leftover local override with
+# WantedBy=multi-user.target creates an ordering cycle that silently drops
+# the unit at boot, so remove it and rebuild the wants symlinks.
+if [[ ! -f /usr/lib/systemd/system/tiny-dfr.service.d/t2-intel.conf ]]; then
+    warn "Package t2-intel.conf drop-in missing — tiny-dfr too old? Update the package. Skipping."
+    exit 0
+fi
 
-step "Installing tiny-dfr drop-in (clears Apple-Silicon BindsTo + fixes boot ordering cycle)"
-sudo install -Dm644 "$DROPIN_SRC" "$DROPIN_DST"
+STALE=/etc/systemd/system/tiny-dfr.service.d/override.conf
+if [[ -f $STALE ]]; then
+    step "Removing stale local override (superseded by package t2-intel.conf)"
+    sudo rm "$STALE"
+    sudo rmdir --ignore-fail-on-non-empty /etc/systemd/system/tiny-dfr.service.d
+fi
 
-step "Reloading systemd and re-enabling tiny-dfr under graphical.target"
+step "Installing T2 suspend/resume module fix (deep sleep hangs with T2 modules loaded)"
+CFG="$SCRIPT_DIR/../../../configs"
+sudo install -m644 "$CFG/systemd/suspend-fix-t2.service" "$CFG/systemd/resume-fix-t2.service" /etc/systemd/system/
+sudo install -Dm644 "$CFG/systemd/sleep.conf.d/t2-no-hibernate.conf" /etc/systemd/sleep.conf.d/t2-no-hibernate.conf
+sudo install -m644 "$CFG/udev/99-touchbar-power.rules" /etc/udev/rules.d/
+sudo udevadm control --reload-rules
+
+# Superseded by the suspend/resume pair (it unloaded modules but never
+# reloaded them, leaving the machine without input/WiFi after wake).
+if systemctl list-unit-files suspend-wifi-unload.service &>/dev/null; then
+    step "Removing old suspend-wifi-unload.service (no resume half — superseded)"
+    sudo systemctl disable suspend-wifi-unload.service 2>/dev/null || true
+    sudo rm -f /etc/systemd/system/suspend-wifi-unload.service
+fi
+
+step "Reloading systemd and enabling tiny-dfr + suspend/resume services"
 sudo systemctl daemon-reload
-# reenable rebuilds the wants symlinks from [Install], clearing any stale
-# multi-user.target.wants/tiny-dfr.service link that caused the ordering cycle.
 sudo systemctl reenable tiny-dfr.service
+sudo systemctl enable suspend-fix-t2.service resume-fix-t2.service
 
-# Verify the BindsTo clearing actually took (the bug was a missing daemon-reload).
-if systemctl show tiny-dfr -p BindsTo | grep -q '^BindsTo=$'; then
-    success "tiny-dfr BindsTo cleared — daemon can start on boot."
+# Verify: BindsTo cleared and no multi-user wants link (the ordering-cycle bug).
+if systemctl show tiny-dfr -p BindsTo | grep -q '^BindsTo=$' \
+    && [[ ! -e /etc/systemd/system/multi-user.target.wants/tiny-dfr.service ]]; then
+    success "tiny-dfr enabled under graphical.target — starts on boot."
 else
-    warn "tiny-dfr still reports: $(systemctl show tiny-dfr -p BindsTo). Check drop-ins under /etc/systemd/system/tiny-dfr.service.d/."
+    warn "tiny-dfr still misconfigured: $(systemctl show tiny-dfr -p BindsTo); check /etc/systemd/system/*.wants/tiny-dfr.service."
 fi
 
 info "Touch Bar comes up on the next clean boot. If it's blank after suspend, run: fix-touchbar"
