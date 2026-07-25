@@ -12,6 +12,16 @@
 #
 Include ~/.ssh/hosts.local
 
+# ── GitHub ─────────────────────────────────────────────────────────
+# Naming any IdentityFile *suppresses* ssh's built-in defaults rather than
+# adding to them, so a machine-local `Host github.com` block in
+# hosts.local pointing at a key GitHub doesn't have leaves no fallback and
+# auth fails outright. IdentityFile is cumulative across directives, so
+# re-stating the default key here keeps it a candidate no matter what
+# hosts.local names. Skipped silently on machines where it doesn't exist.
+Host github.com
+    IdentityFile ~/.ssh/id_ed25519
+
 # ── Global defaults ────────────────────────────────────────────────
 Host *
     # Keep connections alive (prevents SSH timeout on idle)
