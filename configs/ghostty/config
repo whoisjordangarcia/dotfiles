@@ -10,7 +10,10 @@ confirm-close-surface = false
 #font-family = JetBrainsMono Nerd Font
 #font-family = JetBrainsMono Nerd Font Mono
 #font-family = Terminess Nerd Font Mono
-font-family = GohuFont 14 Nerd Font Mono
+#font-family = GohuFont 14 Nerd Font Mono
+# Ioskeley Mono = free Iosevka build shaped like Berkeley Mono (github.com/ahatem/IoskeleyMono).
+# "Term" variant: spacing=term, required by Ghostty or arrows/box-drawing overflow the cell.
+font-family = IoskeleyMonoTerm Nerd Font
 font-size = 16
 
 # Platform-specific overrides (only loaded if file exists)
