@@ -253,13 +253,6 @@ Feature-rich file manager for Arch Linux:
 #### Claude Code (`configs/claude/`)
 Claude Code IDE settings and configuration.
 
-#### AI Rules (`configs/ai-rules/`)
-Context rules for AI coding assistants:
-
-| Directory | Tool | Contents |
-|-----------|------|----------|
-| `cursor-rules/` | Cursor IDE | cursor_rules.mdc, dev_workflow.mdc, nextjs.mdc, taskmaster.mdc |
-
 ---
 
 ### Additional Configs
@@ -358,7 +351,6 @@ dotfiles/
 │   ├── ghostty/              # Terminal emulator
 │   ├── starship/             # Shell prompt
 │   ├── lazygit/              # Git TUI
-│   ├── ai-rules/             # AI assistant rules
 │   └── ...
 └── .dotconfig                 # User preferences (auto-generated)
 ```
