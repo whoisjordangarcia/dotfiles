@@ -79,8 +79,6 @@ CLAUDE_TARGET="$HOME/.claude/CLAUDE.md"
 success "Generated $CLAUDE_TARGET (CLAUDE.${CLAUDE_ENV}.md overlay)"
 
 link_file "$SCRIPT_DIR/../../configs/claude/hooks/" "$HOME/.claude/hooks"
-# cmux sidebar hook scripts (workspace title, PR-approval pill, task progress bar)
-link_file "$SCRIPT_DIR/../../configs/claude/scripts/" "$HOME/.claude/scripts" "directory"
 
 # Touch ID command gate (macOS): build BioPrompt.app — the SwiftUI approval
 # dialog used by the touchid-gate.py PreToolUse hook to biometric-gate

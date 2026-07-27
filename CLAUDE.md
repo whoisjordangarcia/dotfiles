@@ -83,34 +83,6 @@ bash configs/tmux/scripts/claude_status_test.sh       # must end with "All N tes
 
 `claude_status.sh` renders the Claude state dot in `status-left` (amber ● waiting / green ● churning / dim ○ idle); its `--classify`/`--render` flags test the mapping without a tmux server.
 
-### cmux Sidebar Hooks (macOS)
-
-`configs/claude/scripts/` holds Claude Code hook scripts that drive the cmux
-sidebar (symlinked to `~/.claude/scripts` by `script/claude/setup.sh`; wired in
-the dedicated `settings.{work,personal}.json` files). Shared identity/guard logic lives in
-`cmux_common.py` — `resolve_workspace()` maps this session to its workspace UUID,
-and `alive()` makes every script a cheap no-op when cmux isn't running (it
-short-circuits on socket existence, so a closed cmux or a non-macOS box spawns no
-subprocess).
-
-- `cmux-title.py` — workspace title (`NES-#### · <topic>`)
-- `cmux-pr.py` — `✓ Approved #<n>` status pill when the branch's PR is approved
-  (CI is left to cmux's native PR watcher); `SessionStart`/`Stop`/post-push
-- `cmux-progress.py` — sidebar progress bar from `TodoWrite` (`completed/total`);
-  `PostToolUse(TodoWrite)` sets it, `SessionStart` clears it
-
-Each pill/bar script exposes a pure mapping function plus a hidden `--emit` mode
-so the logic is unit-testable without cmux or the network. **When modifying
-`cmux-pr.py` or `cmux-progress.py`, run:**
-
-```bash
-bash configs/claude/scripts/cmux_pr_test.sh        # must end with "All N tests passed"
-bash configs/claude/scripts/cmux_progress_test.sh  # must end with "All N tests passed"
-bash configs/claude/scripts/cmux_status_demo.sh    # (inside cmux) visually confirm each pill/bar
-```
-
-Add a test case for any new state mapping before considering the change complete.
-
 ## Traps
 
 ### Touch ID Command Gate (macOS)

@@ -59,7 +59,7 @@ configs/codex/config.toml
 bin/nxps
 nxps
 
-# Python bytecode cache (e.g. from configs/claude/scripts)
+# Python bytecode cache
 __pycache__/
 *.pyc
 
