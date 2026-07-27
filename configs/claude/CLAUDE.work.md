@@ -15,7 +15,7 @@
 ## Production (AWS) — Hard Rule
 
 - **NEVER touch production.** No writes, mutations, deploys, deletes, or reindexing against any prod resource — ever.
-- **ALWAYS ask first before even *reading* prod** (CloudWatch logs, ES, DB, S3, etc.). Do not query the `prd-account-administrator-role` / prod profiles without explicit per-instance approval. Default to lower environments (stg/tst/dev) for investigation.
+- **ALWAYS ask first before even _reading_ prod** (CloudWatch logs, ES, DB, S3, etc.). Do not query the `prd-account-administrator-role` / prod profiles without explicit per-instance approval. Default to lower environments (stg/tst/dev) for investigation.
 
 ## Git Workflow
 
@@ -23,7 +23,7 @@
 - PR titles must use conventional commit format with the ticket number in parentheses: `feat(NES-1234): description`, `fix(NES-1234): description`, `docs(NES-1234): description`, `chore(NES-1234): description`, etc.
 - When auto-merging PRs on the Nest repo, always use `--merge` (not `--squash`). The repo does not allow squash merging.
 - **NEVER use `--no-verify` to bypass pre-commit hooks.** If a hook fails, fix the underlying issue instead.
-- **Always open a draft PR first.** When starting any new branch or worktree, create the PR as a draft (`gh pr create --draft`) *before* doing the work; mark it ready for review only once the work is done and CI is green. For a worktree, the first step after the branch exists is the draft PR, so CI runs against it from the start.
+- **Always open a draft PR first.** When starting any new branch or worktree, create the PR as a draft (`gh pr create --draft`) _before_ doing the work; mark it ready for review only once the work is done and CI is green. For a worktree, the first step after the branch exists is the draft PR, so CI runs against it from the start.
 - **Do feature work in worktrees branched off the latest `release/*`, never on `main`.** Keep the main working copy on the current active `release/X.Y.Z`.
 - **Keep the open PR and Linear ticket in sync as scope grows.** When new commits/tasks/findings land and a PR is open, ask whether to update the PR (title/description/body) and the Linear ticket (comment or description) so neither drifts behind what's actually on the branch.
 
@@ -42,7 +42,3 @@
   Call the binary `~/.nest/bin/wt` directly (the `wt` shell function only `cd`s your interactive shell, which doesn't persist from a tool call). Pass both `name` and a `release/X.Y.Z` base-ref (never `main`). Default setup is full and slow — background it and tail the log, or use `--setup install` for just deps + husky.
 - **Cap lint/test concurrency at 3** so the machine stays responsive: `turbo run lint --concurrency=3 --filter=<app>` / `turbo run test --concurrency=3 --filter=<app>`.
 - **When running client-api, auto-check seed + index first.** Before (or right after) bringing up `serve:client-api` for an instance, check whether the instance DB has been seeded and the ES indexes built, and run them automatically if not — don't wait to be asked. Cheap checks against the instance's shared infra (Postgres 5432 / ES 9244): a seeded DB has rows in `nestclientapi."Patient"` (e.g. `psql … -tAc 'SELECT count(*) FROM nestclientapi."Patient"'` > 0); indexes exist when the instance's ES prefix (`dev-<instance>-patients-v1` etc.) returns docs. If either is empty, run `pnpm run seed` then `pnpm run index-all-records` with the instance env (shared-infra port overrides, same recipe as serving the API). It's a once-off per instance — seed/index persist in the shared Postgres/ES, so skip when already populated.
-
-## Code Style
-
-- No magic values — always use existing utils/constants. If none exist, hoist the value to a constant at the top of the file or in the appropriate constants module.
