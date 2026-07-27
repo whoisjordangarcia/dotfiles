@@ -1,15 +1,4 @@
 # ── Local host aliases (machine-specific, not in git) ──────────────
-# Create ~/.ssh/hosts.local with your Host entries, e.g.:
-#
-#   Host proxmox
-#       HostName 192.168.1.100
-#       User root
-#
-#   Host lxc-media
-#       HostName 192.168.1.201
-#       User jordan
-#       ProxyJump proxmox
-#
 Include ~/.ssh/hosts.local
 
 # ── GitHub ─────────────────────────────────────────────────────────
