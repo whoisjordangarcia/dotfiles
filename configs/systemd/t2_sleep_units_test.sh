@@ -64,7 +64,27 @@ for m in $(grep -hoE '(rmmod -f|modprobe(  *-r)?) [a-z0-9_]+' "$SUSPEND" "$RESUM
 	check "named module exists in some installed kernel: $m" "$found"
 done
 
-# --- 3. systemd can parse them ---------------------------------------------
+# --- 3. teardown and restore are triggered symmetrically --------------------
+# suspend-fix-t2 runs off sleep.target (always reached — it's the entry to
+# sleep), resume-fix-t2 off suspend.target (only reached after a *completed*
+# cycle). Without the OnFailure drop-in an aborted suspend unloads the T2 stack
+# and never reloads it: no WiFi, no input, machine awake and hot with the lid
+# shut. Assert the failure path is covered, in the repo and on this machine.
+DROPIN="$DIR/systemd-suspend.service.d/resume-fix-on-failure.conf"
+grep -qE '^OnFailure=resume-fix-t2\.service$' "$DROPIN" 2>/dev/null
+check "drop-in restores the T2 stack when suspend FAILS" $?
+
+if command -v systemctl >/dev/null 2>&1; then
+	systemctl show systemd-suspend.service -p OnFailure 2>/dev/null |
+		grep -q 'resume-fix-t2\.service'
+	check "installed systemd-suspend.service has OnFailure=resume-fix-t2" $?
+
+	# The old nmcli-based unit raced resume-fix-t2 modprobing the same modules.
+	systemctl list-unit-files resume-wifi-reload.service &>/dev/null
+	check "stale resume-wifi-reload.service is gone" "$([ $? -ne 0 ] && echo 0 || echo 1)"
+fi
+
+# --- 4. systemd can parse them ---------------------------------------------
 if command -v systemd-analyze >/dev/null 2>&1; then
 	out=$(systemd-analyze verify "$SUSPEND" "$RESUME" 2>&1 | grep -vE 'Unit .* not found|command .* is not executable' )
 	check "systemd-analyze verify clean${out:+ ($out)}" "$([ -z "$out" ] && echo 0 || echo 1)"

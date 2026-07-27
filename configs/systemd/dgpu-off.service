@@ -1,0 +1,19 @@
+# Power off the discrete GPU via gmux whenever the iGPU is the active one.
+# See bin/dgpu-off for the full rationale (no runtime PM on this machine, and a
+# ~2-in-3 SMU firmware reload failure on S3 resume that bricks suspend).
+[Unit]
+Description=Power off the discrete GPU via gmux when running on the iGPU
+ConditionPathExists=/sys/kernel/debug/vgaswitcheroo/switch
+After=suspend.target
+
+[Service]
+# No RemainAfterExit: it must fall back to inactive after boot, or the
+# suspend.target job on resume would see it already active and skip it.
+Type=oneshot
+ExecStart=/usr/local/bin/dgpu-off
+
+# Also on resume: whether gmux keeps the dGPU unpowered across S3 is not
+# documented anywhere I could find, and the script is a no-op when it's already
+# off — so re-asserting costs nothing and covers the case where it isn't.
+[Install]
+WantedBy=multi-user.target suspend.target

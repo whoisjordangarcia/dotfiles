@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# dgpu-off - cut power to the discrete GPU via gmux when the iGPU is driving
+# the display. Run at boot (and after resume) by dgpu-off.service.
+#
+# Why this exists: amdgpu logs "Runtime PM not available" on this MacBook.
+# It enables runtime PM only via ATPX or an ACPI _PR3 power resource, and Apple
+# ships neither — power is gmux's job. `vga_switcheroo` shows the same fact from
+# the other side: the dGPU registers as plain `Pwr`, not `DynPwr`, i.e. no
+# driver-level power control. Two consequences, both bad:
+#
+#   1. It can never autosuspend, so it idles at ~7.1W / 65C forever.
+#   2. It takes the full S3 suspend/resume path on every sleep, and its SMU
+#      firmware reload there fails roughly two times in three:
+#           amdgpu: SMU load firmware failed
+#           amdgpu_device_ip_resume failed (-22)
+#        -> ring sdma0 timeout -> GPU reset also fails (it needs the SMU it just
+#           lost) -> every DRM client blocks forever in dma_fence_wait -> D state
+#        -> "Freezing user space processes failed" -> the machine can never
+#           suspend again until it is rebooted, and sits awake cooking in a
+#           closed lid. See configs/systemd/suspend-fix-t2.service.
+#
+# Manual `OFF` is the mechanism for exactly this case: it bypasses the absent
+# driver-level power control and cuts power through the gmux handler instead,
+# which removes the dGPU from the S3 path entirely.
+#
+# To get the dGPU back without rebooting (external displays are wired to it):
+#     sudo sh -c 'echo ON > /sys/kernel/debug/vgaswitcheroo/switch'
+# To get it back permanently: gpu-switch --dedicated, then reboot.
+set -uo pipefail
+
+# Overridable so dgpu_off_test.sh can drive it with fixture switch files.
+SW=${DGPU_OFF_SWITCH:-/sys/kernel/debug/vgaswitcheroo/switch}
+
+# amdgpu registers with vga_switcheroo at probe, a few seconds into boot, so
+# ordering against a systemd target isn't enough — wait for the client instead.
+# ponytail: fixed 30x1s poll; make it a flag if a slower boot ever needs more.
+retries=${DGPU_OFF_RETRIES:-30}
+
+for _ in $(seq "$retries"); do
+	# ':IGD:+:' — the `+` marks the ACTIVE client. Only ever act when the
+	# integrated GPU is active, so this can't power off the GPU currently
+	# driving the display. In the dedicated profile this simply no-ops.
+	if [ -r "$SW" ] && grep -qF ':IGD:+:' "$SW"; then
+		# `DIS-Audio` is a separate client and matches ':DIS-Audio:', not this.
+		if grep -qF ':DIS: :Off:' "$SW"; then
+			echo "dgpu-off: discrete GPU already off"
+			exit 0
+		fi
+		echo OFF >"$SW" || exit 1
+		echo "dgpu-off: discrete GPU powered off via gmux"
+		exit 0
+	fi
+	sleep 1
+done
+
+echo "dgpu-off: no active iGPU client in $SW after ${retries}s — nothing to do" >&2
+exit 0
