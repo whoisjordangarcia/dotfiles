@@ -288,6 +288,25 @@ effort_display=""
 # No leading glyph — the accent-colored level word is the indicator on its own.
 [ -n "$effort_level" ] && effort_display="${COLOR_ACCENT}${effort_level}${COLOR_RESET}"
 
+# ─── SSH host indicator ──────────────────────────────────────────────
+# SSH_CONNECTION is "client_ip client_port server_ip server_port" — field 3 is
+# the machine this session is running ON, which is the useful "where am I".
+# Inside tmux the var is frozen at server-start, so a re-attached session shows
+# a stale/missing value; tmux's own copy is refreshed on every attach by
+# `update-environment` (.tmux.conf). An unset var prints as "-SSH_CONNECTION",
+# which correctly reads as "local".
+ssh_display=""
+ssh_conn="${SSH_CONNECTION:-}"
+if [ -z "$ssh_conn" ] && [ -n "${TMUX:-}" ]; then
+  ssh_conn=$(tmux show-environment SSH_CONNECTION 2>/dev/null)
+  ssh_conn="${ssh_conn#SSH_CONNECTION=}"
+  [[ "$ssh_conn" == -* ]] && ssh_conn=""
+fi
+if [ -n "$ssh_conn" ]; then
+  read -r _ _ ssh_host _ <<<"$ssh_conn"
+  [ -n "$ssh_host" ] && ssh_display="${COLOR_ACCENT}⇢ ${ssh_host}${COLOR_RESET}"
+fi
+
 # ─── Session cost ────────────────────────────────────────────────────
 cost_display=$(printf '$%.2f' "$cost")
 
@@ -625,6 +644,7 @@ build_line1() {
   [ -n "$l" ] && l+="${sep}"
   l+="${COLOR_COST}${cost_display}${COLOR_RESET}"
   [ -n "$model_segment" ] && l="${model_segment}${sep}${l}"
+  [ -n "$ssh_display" ] && l="${ssh_display}${sep}${l}"
   [ "$inc_rate" = 1 ] && [ -n "$cost_rate_display" ] && l+="${cost_rate_display}"
   l+="${sep}${context_bar}"
   [ "$inc_tok" = 1 ] && l+="${tokens_display}"
@@ -827,7 +847,7 @@ visible_width() {
 char_display_width() {
   case "$1" in
     [$'\x20'-$'\x7e']) printf 1 ;;
-    '·' | '←' | '↑' | '↓' | '◦' | '●' | '⎇' | '…' | '█' | '░' | '▏' | '▎' | '▍' | '▌' | '▋' | '▊' | '▉') printf 1 ;;
+    '·' | '←' | '↑' | '↓' | '⇢' | '◦' | '●' | '⎇' | '…' | '█' | '░' | '▏' | '▎' | '▍' | '▌' | '▋' | '▊' | '▉') printf 1 ;;
     *)
       local w
       w=$(zsh -c 'print -rn -- ${(m)#1}' _ "$1")  # wcwidth; see visible_width

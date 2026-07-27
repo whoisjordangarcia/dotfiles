@@ -404,5 +404,17 @@ run_cols 40 "$WIDTH_JSON"
 expect "24 cols (tiny) — even essentials overflow → hard clamp with …"
 run_cols 24 "$WIDTH_JSON"
 
+# ─── 36. SSH session — host indicator ───────────────────────────
+# SSH_CONNECTION = "client_ip client_port server_ip server_port"; the indicator
+# shows field 3 (the box the session runs on). run() doesn't unset it, so
+# exporting it in a subshell is enough to drive the scenario.
+clear_caches
+header "36. SSH session — server IP rides at the far left of line 1"
+expect "L1: ⇢ 192.168.1.50 · tmp · \$0.40 · [bar] 12%  (client 10.0.0.9 NOT shown)"
+(
+  export SSH_CONNECTION="10.0.0.9 51234 192.168.1.50 22"
+  run '{"model":{"display_name":"Claude Opus 4.8 (1M context)"},"cost":{"total_cost_usd":0.40,"total_duration_ms":180000},"session_id":"demo-36","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":12}}'
+)
+
 printf '\033[38;5;141m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
-printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 32
+printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 33

@@ -32,7 +32,9 @@ run_statusline() {
   # link assertions don't depend on where the suite runs (inside tmux the
   # script asks `tmux display` for the client termname, which is empty in
   # detached/agent contexts and would silently disable links).
-  echo "$1" | env -u CLAUDE_EFFORT -u TMUX TERM_PROGRAM=ghostty bash "$STATUSLINE" 2>/dev/null
+  # -u SSH_CONNECTION: the suite may itself run over SSH; the host indicator
+  # has its own section below and must not leak into every other assertion.
+  echo "$1" | env -u CLAUDE_EFFORT -u TMUX -u SSH_CONNECTION TERM_PROGRAM=ghostty bash "$STATUSLINE" 2>/dev/null
 }
 
 run_statusline_plain() {
@@ -496,6 +498,43 @@ out=$(run_statusline_plain "$INPUT_PR")
 assert_contains "merged PR shows merged suffix" "$out" "#4567 merged"
 assert_not_contains "merged PR hides stale CI glyph" "$out" "⏳"
 rm -rf "$PR_REPO"
+
+printf "\n\033[38;5;141m━━━ SSH Host Indicator ━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+
+run_ssh() {
+  echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u TMUX SSH_CONNECTION="$1" \
+    bash "$STATUSLINE" 2>/dev/null | strip_ansi
+}
+
+# Field 3 of SSH_CONNECTION is the server (this machine), not the client
+out=$(run_ssh "10.0.0.9 51234 192.168.1.50 22")
+assert_contains "SSH session shows server IP" "$out" "⇢ 192.168.1.50"
+assert_not_contains "SSH indicator ignores client IP" "$out" "10.0.0.9"
+
+out=$(run_ssh "fd00::1 51234 fd00::beef 22")
+assert_contains "SSH indicator handles IPv6" "$out" "⇢ fd00::beef"
+
+out=$(run_statusline_plain "$INPUT_FULL")
+assert_not_contains "local session shows no host indicator" "$out" "⇢"
+
+# Inside tmux the pane's own SSH_CONNECTION is frozen at server start, so the
+# fallback asks tmux (which refreshes it on attach via update-environment).
+# A fake tmux on PATH stands in for a live server.
+SSH_FAKE_BIN=$(mktemp -d "/tmp/statusline-test-tmux-XXXXXX")
+run_tmux_ssh() {
+  printf '#!/bin/bash\nprintf "%%s\\n" %q\n' "$1" >"$SSH_FAKE_BIN/tmux"
+  chmod +x "$SSH_FAKE_BIN/tmux"
+  echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u SSH_CONNECTION TMUX=fake \
+    PATH="$SSH_FAKE_BIN:$PATH" bash "$STATUSLINE" 2>/dev/null | strip_ansi
+}
+
+out=$(run_tmux_ssh "SSH_CONNECTION=10.0.0.9 51234 192.168.1.77 22")
+assert_contains "stale pane env falls back to tmux copy" "$out" "⇢ 192.168.1.77"
+
+# An unset var reads back as "-SSH_CONNECTION" — that means local, not a host
+out=$(run_tmux_ssh "-SSH_CONNECTION")
+assert_not_contains "tmux reporting unset SSH_CONNECTION reads as local" "$out" "⇢"
+rm -rf "$SSH_FAKE_BIN"
 
 printf "\n\033[38;5;141m━━━ One-Line Mode ━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
