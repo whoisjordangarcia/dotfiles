@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.codex/hooks/touchid-gate.py\"",
+            "timeout": 120,
+            "statusMessage": "Touch ID gate: checking sensitive command"
+          }
+        ]
+      }
+    ]
+  }
+}

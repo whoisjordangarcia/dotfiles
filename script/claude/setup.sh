@@ -8,6 +8,7 @@ REPO_DIR=$(cd -- "$SCRIPT_DIR/../.." &>/dev/null && pwd)
 source "$SCRIPT_DIR/../common/log.sh"
 source "$SCRIPT_DIR/../common/symlink.sh"
 source "$SCRIPT_DIR/../common/dot_env.sh"
+source "$SCRIPT_DIR/../common/bioprompt.sh"
 
 # Resolve the environment ONCE for everything below: settings.json, CLAUDE.md,
 # and the sourced skills/setup.sh (which reads the exports this sets). See
@@ -82,32 +83,10 @@ link_file "$SCRIPT_DIR/../../configs/claude/hooks/" "$HOME/.claude/hooks"
 
 # Touch ID command gate (macOS): build BioPrompt.app — the SwiftUI approval
 # dialog used by the touchid-gate.py PreToolUse hook to biometric-gate
-# sensitive Bash commands. ~/.local/bin/bioprompt is a shim that execs the
-# bundled binary (running it at its bundle path is what gives it app identity
-# in the system auth UI).
-if [[ "$OSTYPE" == darwin* ]] && command -v swiftc &>/dev/null; then
-	BIOPROMPT_SRC="$SCRIPT_DIR/../../configs/claude/hooks/bioprompt.swift"
-	BIOPROMPT_PLIST="$SCRIPT_DIR/../../configs/claude/hooks/bioprompt-Info.plist"
-	BIOPROMPT_APP="$HOME/Applications/BioPrompt.app"
-	BIOPROMPT_BIN="$BIOPROMPT_APP/Contents/MacOS/bioprompt"
-	BIOPROMPT_SHIM="$HOME/.local/bin/bioprompt"
-	if [[ ! -x "$BIOPROMPT_BIN" || "$BIOPROMPT_SRC" -nt "$BIOPROMPT_BIN" || "$BIOPROMPT_PLIST" -nt "$BIOPROMPT_APP/Contents/Info.plist" ]]; then
-		step "Building BioPrompt.app (Touch ID helper)..."
-		mkdir -p "$BIOPROMPT_APP/Contents/MacOS" "$(dirname "$BIOPROMPT_SHIM")"
-		cp "$BIOPROMPT_PLIST" "$BIOPROMPT_APP/Contents/Info.plist"
-		swiftc -O "$BIOPROMPT_SRC" -o "$BIOPROMPT_BIN"
-		printf '#!/bin/sh\nexec "%s" "$@"\n' "$BIOPROMPT_BIN" >"$BIOPROMPT_SHIM"
-		chmod +x "$BIOPROMPT_SHIM"
-		success "BioPrompt.app built at $BIOPROMPT_APP (shim: $BIOPROMPT_SHIM)"
-	else
-		debug "BioPrompt.app already built and up to date. Skipping."
-	fi
-	# YubiKey tap-to-approve is enrolled per machine (credential lives in
-	# ~/.config/bioprompt, never in this public repo).
-	if [[ -x "$BIOPROMPT_BIN" && ! -f "$HOME/.config/bioprompt/cred.id" ]]; then
-		info "YubiKey tap-to-approve not enrolled on this machine — run: bioprompt --enroll"
-	fi
-fi
+# sensitive Bash commands. Shared with Codex (see script/common/bioprompt.sh);
+# ~/.local/bin/bioprompt is a shim that execs the bundled binary (running it at
+# its bundle path is what gives it app identity in the system auth UI).
+build_bioprompt
 
 # Skills live in configs/skills and are projected into each agent CLI.
 source "$SCRIPT_DIR/../skills/setup.sh"

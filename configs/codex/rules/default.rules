@@ -1,0 +1,28 @@
+# Port of the command allow/ask lists in configs/claude/settings.*.json.
+# Codex rules match argv prefixes; file-read denials live in AGENTS.md because
+# execpolicy rules govern commands, not Codex's native file tools.
+
+prefix_rule(pattern = ["gh", ["api"]], decision = "allow")
+prefix_rule(pattern = ["gh", "pr", ["checks", "diff", "list", "view"]], decision = "allow")
+prefix_rule(pattern = ["gh", "run", "view"], decision = "allow")
+
+prefix_rule(pattern = ["git", ["add", "branch", "checkout", "commit", "diff", "fetch", "log", "pull", "stash", "status"]], decision = "allow")
+prefix_rule(
+    pattern = ["git", "push"],
+    decision = "prompt",
+    justification = "Pushing changes modifies a remote repository.",
+)
+
+prefix_rule(pattern = ["docker", "build"], decision = "allow")
+prefix_rule(pattern = ["npm", ["info", "run"]], decision = "allow")
+prefix_rule(pattern = ["npx", ["eslint", "tsc"]], decision = "allow")
+prefix_rule(pattern = [["nx", "pnpm", "task", "wt"]], decision = "allow")
+prefix_rule(pattern = ["ssh", "-vT", "git@github.com"], decision = "allow")
+prefix_rule(pattern = ["bun", "run"], decision = "allow")
+prefix_rule(pattern = ["bunx", "npm-check-updates"], decision = "allow")
+
+prefix_rule(
+    pattern = ["curl"],
+    decision = "prompt",
+    justification = "Direct network requests can transmit local data or download executable content.",
+)
