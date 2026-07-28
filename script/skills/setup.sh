@@ -35,20 +35,29 @@ ensure_skill_dir() {
 		info "Replaced legacy whole-dir symlink with real dir: $target_dir"
 	fi
 
-	mkdir -p "$target_dir"
-
-	# Belt-and-braces: never operate on a target that resolves into the repo.
-	local resolved
-	resolved=$(realpath "$target_dir" 2>/dev/null || echo "$target_dir")
-	if [[ "$resolved" == "$SKILLS_SOURCE" || "$resolved" == "$SKILLS_SOURCE"/* ]]; then
-		fail "Refusing to link skills: $target_dir resolves into $SKILLS_SOURCE"
+	# Belt-and-braces: never operate on a target that resolves anywhere into
+	# this repo. Checked BEFORE mkdir -p, and against the whole REPO_ROOT, not
+	# just SKILLS_SOURCE: ~/.agents is a symlink to configs/agents, so the old
+	# SKILLS_SOURCE-only test waved it through and mkdir created a bogus
+	# configs/agents/skills/ full of links pointing back at configs/skills.
+	# Returns non-zero (caller skips) rather than `fail`ing — one repo-resolving
+	# target must not abort the projection into the other agent CLIs.
+	local probe resolved
+	probe=$([ -e "$target_dir" ] && echo "$target_dir" || dirname "$target_dir")
+	resolved=$(realpath "$probe" 2>/dev/null || echo "$probe")
+	if [[ "$resolved" == "$REPO_ROOT" || "$resolved" == "$REPO_ROOT"/* ]]; then
+		info "Skipping skills projection: $target_dir resolves into the repo ($resolved)"
+		return 1
 	fi
+
+	mkdir -p "$target_dir"
 }
 
 link_shared_skills() {
 	local target_dir="$1"
 
-	ensure_skill_dir "$target_dir"
+	# Guard rejected this target (resolves into the repo) — skip it, don't abort.
+	ensure_skill_dir "$target_dir" || return 0
 
 	local skill_dir skill_name
 	for skill_dir in "$SKILLS_SOURCE"/*; do

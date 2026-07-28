@@ -72,7 +72,12 @@ link_file() {
 			# Relative path - make it absolute relative to target directory
 			local full_path="$(dirname "$target")/$link_dest"
 			if command -v realpath >/dev/null 2>&1; then
-				resolved_link=$(realpath "$full_path" 2>/dev/null)
+				# `|| true` matters: realpath exits non-zero on a DANGLING link,
+				# and under `set -e` a failing substitution in an assignment
+				# aborts the caller mid-run (a stale relative symlink in
+				# ~/.codex/skills silently killed skills/setup.sh this way).
+				# The python fallback below is what handles the empty result.
+				resolved_link=$(realpath "$full_path" 2>/dev/null || true)
 				if [ -z "$resolved_link" ]; then
 					resolved_link=$(python3 -c "import os.path; print(os.path.abspath('$full_path'))" 2>/dev/null || echo "$full_path")
 				fi
@@ -112,12 +117,20 @@ link_file() {
 
 	# Check if target exists as a regular file/directory
 	if [ -e "$target" ]; then
-		# Check if source and target are the same (shouldn't happen but safety check)
+		# Check if source and target are the same. NOT a theoretical case: ~/.agents
+		# is a symlink to configs/agents, so agents/setup.sh links that dir's
+		# .skill-lock.json onto itself — and the Override branch below would
+		# `rm -rf` the real file and leave a self-referential symlink.
+		#
+		# No `-m`: macOS ships BSD realpath (/bin/realpath), which rejects it, so
+		# both lookups fell through to the raw unresolved strings, never matched,
+		# and the guard silently never fired on macOS. Both paths exist here
+		# (we're inside `[ -e "$target" ]`), so plain realpath is enough.
 		local resolved_source="$source"
 		local resolved_target="$target"
 		if command -v realpath >/dev/null 2>&1; then
-			resolved_source=$(realpath -m "$source" 2>/dev/null || echo "$source")
-			resolved_target=$(realpath -m "$target" 2>/dev/null || echo "$target")
+			resolved_source=$(realpath "$source" 2>/dev/null || echo "$source")
+			resolved_target=$(realpath "$target" 2>/dev/null || echo "$target")
 		fi
 
 		if [[ "$resolved_source" == "$resolved_target" ]]; then
