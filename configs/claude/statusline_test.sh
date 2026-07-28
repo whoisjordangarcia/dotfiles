@@ -17,6 +17,12 @@ export STATUSLINE_COLS="${STATUSLINE_COLS:-300}"
 # key tap and fail headless). Statusline git calls are read-only, unaffected.
 export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
 
+# Running the suite from inside a zmx session would prepend "zmx <name>" to
+# line 2 and break every line-2 assertion. Unset here (not per-`env -u` call)
+# so all ~8 bespoke `env` invocations below inherit the clean state; the zmx
+# tests re-inject ZMX_SESSION explicitly.
+unset ZMX_SESSION
+
 passed=0
 failed=0
 errors=""
@@ -248,6 +254,29 @@ printf "\n\033[38;5;141m━━━ Fallback CWD (no git) ━━━━━━━━
 
 out=$(run_statusline_plain "$INPUT_FULL")
 assert_contains "shows project name when no git" "$out" "tmp"
+
+printf "\n\033[38;5;141m━━━ zmx Session (line 2) ━━━━━━━━━━━━━━━━━━━\033[0m\n"
+
+run_zmx() { echo "$2" | env -u CLAUDE_EFFORT -u TMUX TERM_PROGRAM=ghostty \
+  ZMX_SESSION="$1" bash "$STATUSLINE" 2>/dev/null | strip_ansi; }
+
+out=$(run_zmx "kyoto" "$INPUT_FULL")
+assert_contains "shows zmx session name" "$out" "zmx kyoto"
+
+# /tmp has no git, so line 2 is the cwd fallback — the session must lead it.
+line2_zmx=$(echo "$out" | sed -n 2p)
+assert_contains "session leads line 2" "$line2_zmx" "zmx kyoto"
+
+out=$(run_statusline_plain "$INPUT_FULL")
+assert_not_contains "hides zmx segment outside a session" "$out" "zmx "
+
+# Empty ZMX_SESSION (zmx also exports ZMX_PROMPT_SESSION="" ) must not render.
+out=$(run_zmx "" "$INPUT_FULL")
+assert_not_contains "hides zmx segment when var is empty" "$out" "zmx "
+
+out=$(run_zmx "a-very-long-zmx-session-name-that-overflows" "$INPUT_FULL")
+assert_contains "truncates long session names" "$out" "…"
+assert_not_contains "long session name is cut at 24 chars" "$out" "that-overflows"
 
 printf "\n\033[38;5;141m━━━ Rate Limits ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 

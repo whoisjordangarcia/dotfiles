@@ -41,6 +41,11 @@ set_pr_cache() {
   if [ -n "$ci" ]; then printf '%s' "$ci" >"$dir/${key}_ci"; fi
 }
 
+# Running the demo from inside a zmx session would prepend "zmx <name>" to
+# line 2 of EVERY scenario. Unset here so only the dedicated zmx scenarios
+# (which re-inject it) show the segment.
+unset ZMX_SESSION
+
 # ─── Helper: clear git caches so each demo is fresh ─────────────
 clear_caches() {
   rm -rf /tmp/claude-statusline-git-cache
@@ -318,6 +323,22 @@ clear_caches
 header "29. Opus 4.8 1M hidden, but effort still rides at the far left when set"
 expect "L1: xhigh · tmp · \$0.20 · ... (no \"Opus\")"
 run '{"model":{"display_name":"Claude Opus 4.8 (1M context)"},"cost":{"total_cost_usd":0.20,"total_duration_ms":90000},"session_id":"demo-29","cwd":"/tmp","context_window":{"used_percentage":8},"effortLevel":"xhigh"}'
+
+# ─── 29b. Inside a zmx session ───────────────────────────────────
+# ZMX_SESSION is exported by `zmx attach` and inherited by Claude Code, so the
+# demo injects it directly. Two scenarios: with git (session leads the branch)
+# and without (session leads the cwd fallback).
+run_zmx() { ZMX_SESSION="$1" run "$2"; }
+
+clear_caches
+header "29b. Inside a zmx session — name leads line 2, before the branch"
+expect "L2: zmx kyoto · 🌿 main"
+run_zmx "kyoto" '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.31,"total_duration_ms":120000},"session_id":"demo-29b","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":22,"current_usage":{"input_tokens":40000,"cache_creation_input_tokens":2000,"cache_read_input_tokens":8000}}}'
+
+clear_caches
+header "29c. zmx session with no git — name leads the cwd fallback, long name truncates"
+expect "L2: zmx a-very-long-zmx-session-… · /tmp"
+run_zmx "a-very-long-zmx-session-name" '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.12,"total_duration_ms":60000},"session_id":"demo-29c","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":14}}'
 
 # ─── 30. Rate limit reset countdown ──────────────────────────────
 clear_caches

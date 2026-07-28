@@ -269,5 +269,21 @@
   "autoCompactEnabled": false,
   "skipAutoPermissionPrompt": true,
   "useAutoModeDuringPlan": true,
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "mcpServers": {
+    "chrome-devtools": {
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--no-usage-statistics",
+        "--no-performance-crux",
+        "--executablePath",
+        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+      ],
+      "command": "npx",
+      "env": {
+        "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1"
+      }
+    }
+  }
 }

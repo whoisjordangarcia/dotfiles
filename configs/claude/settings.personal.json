@@ -170,6 +170,7 @@
   },
   "enabledPlugins": {
     "claude-md-management@claude-plugins-official": false,
+    "claude-mem@thedotmack": false,
     "code-review@claude-plugins-official": false,
     "code-simplifier@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": false,
@@ -180,7 +181,8 @@
     "swift-lsp@claude-plugins-official": false,
     "typescript-lsp@claude-plugins-official": false,
     "infracost@infracost": false,
-    "ponytail@ponytail": true
+    "ponytail@ponytail": true,
+    "claude-security@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -228,7 +230,6 @@
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
-  "theme": "custom:catppuccin-mocha",
   "verbose": true,
   "preferredNotifChannel": "ghostty",
   "autoCompactEnabled": false,
@@ -236,6 +237,20 @@
   "useAutoModeDuringPlan": true,
   "voiceEnabled": true,
   "mcpServers": {
+    "chrome-devtools": {
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--no-usage-statistics",
+        "--no-performance-crux",
+        "--executablePath",
+        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+      ],
+      "command": "npx",
+      "env": {
+        "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1"
+      }
+    },
     "tavily": {
       "command": "npx",
       "args": [

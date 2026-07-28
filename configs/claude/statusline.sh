@@ -726,6 +726,23 @@ fi
   line2+="${commit_age_display}"
 }
 
+# ─── zmx session name (leads line 2) ────────────────────────────────
+# `zmx attach` exports ZMX_SESSION into the session shell, and Claude Code
+# inherits it — so this is a free env read, no subprocess. Rendered as a
+# labelled segment rather than a glyph: the session name is arbitrary user
+# text, and a bare name at the head of line 2 reads like a branch.
+# Leads line 2 because "which session" outranks "which branch" when you're
+# hunting for the pane you left something running in.
+zmx_display=""
+if [ -n "${ZMX_SESSION:-}" ]; then
+  zmx_display="${COLOR_DIM}zmx${COLOR_RESET} ${COLOR_WHITE}$(truncate_str "$ZMX_SESSION" 24)${COLOR_RESET}"
+  if [ -n "$line2" ]; then
+    line2="${zmx_display}${sep}${line2}"
+  else
+    line2="$zmx_display"
+  fi
+fi
+
 # ─── Node app detection (line 3) ───────────────────────────────────
 # Nest frontend dev servers run https on custom hostnames (mkcert certs,
 # see each app's dev.server.js); everything else falls back to localhost.
