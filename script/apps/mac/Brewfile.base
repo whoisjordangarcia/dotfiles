@@ -37,6 +37,7 @@ brew 'nvm'
 brew 'lazygit'
 brew 'tmuxinator'
 brew 'go'
+brew 'agent-browser' # native Rust CLI; brew (not npm -g) so it survives nvm version bumps
 
 # Security / YubiKey
 brew 'gnupg'

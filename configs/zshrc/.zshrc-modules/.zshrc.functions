@@ -276,8 +276,16 @@ zma() {
   while true; do
     display=$(zmx list 2>/dev/null | _zma_format "$show_all")
 
+    # --nth=1 scopes MATCHING to the session name (field 1); the whole row is
+    # still displayed. Without it fzf fuzzy-matches the entire line — including
+    # `clients:N` and the start_dir — so typing a new name like "notes" matched
+    # every session living in ~/dev/notes and enter attached to one of them
+    # instead of creating. Nearly any plausible new name collides with some
+    # row's path, which made "attach/create" effectively create-proof.
+    # (--nth scopes matching only; the preview's {1} still resolves to field 1.)
     output=$({ [[ -n "$display" ]] && echo "$display"; } | fzf \
       --print-query \
+      --nth=1 \
       --expect=ctrl-n,ctrl-x \
       --height=95% \
       --reverse \
@@ -311,6 +319,81 @@ zma() {
     # picker either way; esc is the way out to a plain shell.
     zmx attach "$session_name"
   done
+}
+
+# qbt-add — add a magnet link (or .torrent file) to the qBittorrent WebUI at
+# $TORRENT_URL via the REST API. Auth uses TORRENT_URL / TORRENT_USERNAME /
+# TORRENT_PASSWORD (set in .zshrc.sec). Optional second arg sets the save
+# path (defaults to qBittorrent's configured path). No magnet arg = read
+# from stdin or the clipboard (pbpaste/wl-paste/xclip).
+#   qbt-add "magnet:?xt=urn:btih:..."              # default save path
+#   qbt-add "magnet:?..." /downloads/other         # custom save path
+#   qbt-add ~/Downloads/foo.torrent                # .torrent file
+#   echo "$magnet" | qbt-add                      # stdin
+#   pbpaste | qbt-add                             # clipboard
+#   pbpaste | qbt-add /downloads/other            # clipboard + save path
+qbt-add() {
+  local url="$TORRENT_URL"
+  local magnet="" savepath="$2" torrent_file=""
+
+  if [[ -n "$1" && -f "$1" && -r "$1" ]]; then
+    # first arg is an existing, readable file → upload it as a .torrent file
+    torrent_file="$1"
+  elif [[ "$1" == /* || -z "$1" ]]; then
+    # first arg looks like a path (or empty) → magnet comes from stdin/clipboard
+    [[ "$1" == /* ]] && savepath="$1"
+    if [[ -t 0 ]]; then
+      if command -v pbpaste >/dev/null 2>&1; then
+        magnet=$(pbpaste 2>/dev/null)
+      elif command -v wl-paste >/dev/null 2>&1; then
+        magnet=$(wl-paste 2>/dev/null)
+      elif command -v xclip >/dev/null 2>&1; then
+        magnet=$(xclip -selection clipboard -o 2>/dev/null)
+      fi
+    else
+      magnet=$(cat)
+    fi
+  else
+    magnet="$1"
+  fi
+
+  if [[ -z "$torrent_file" && -z "$magnet" ]]; then
+    echo "qbt-add: no magnet provided (pass an arg, pipe stdin, or copy to clipboard)" >&2
+    return 1
+  fi
+  if [[ -z "$TORRENT_URL" || -z "$TORRENT_USERNAME" || -z "$TORRENT_PASSWORD" ]]; then
+    echo "qbt-add: TORRENT_URL / TORRENT_USERNAME / TORRENT_PASSWORD not set (see .zshrc.sec)" >&2
+    return 1
+  fi
+
+  local tmp; tmp=$(mktemp)
+  local code
+  code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 30 -X POST "$url/api/v2/auth/login" \
+    --data-urlencode "username=$TORRENT_USERNAME" \
+    --data-urlencode "password=$TORRENT_PASSWORD" \
+    -c "$tmp" 2>/dev/null)
+  if [[ "$code" != "200" ]]; then
+    echo "qbt-add: login failed (HTTP $code)" >&2; rm -f "$tmp"; return 1
+  fi
+
+  local -a add_args
+  if [[ -n "$torrent_file" ]]; then
+    add_args=(--form "torrents=@$torrent_file")
+    [[ -n "$savepath" ]] && add_args+=(--form "savepath=$savepath")
+  else
+    add_args=(--data-urlencode "urls=$magnet")
+    [[ -n "$savepath" ]] && add_args+=(--data-urlencode "savepath=$savepath")
+  fi
+  local resp
+  resp=$(curl -s -X POST --connect-timeout 5 --max-time 30 "$url/api/v2/torrents/add" \
+    -b "$tmp" "${add_args[@]}" 2>/dev/null)
+  rm -f "$tmp"
+
+  if [[ "$resp" == "Ok." ]]; then
+    echo "qbt-add: added${savepath:+ → $savepath}"
+  else
+    echo "qbt-add: failed — $resp" >&2; return 1
+  fi
 }
 
 # _zma_format — turn `zmx list` key=value lines into aligned picker rows

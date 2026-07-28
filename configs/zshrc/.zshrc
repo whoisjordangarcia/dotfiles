@@ -182,3 +182,9 @@ zmxt() { local n; n=$(_zmxpick "$1") || return; zmx tail "$n" }
 # mise — runtime version manager (node, python, ...). Owns its own PATH shims,
 # so no hardcoded install paths here. No-op on machines without it.
 command -v mise &>/dev/null && eval "$(mise activate zsh)"
+
+# >>> grok installer >>>
+export PATH="$HOME/.grok/bin:$PATH"
+fpath=(~/.grok/completions/zsh $fpath)
+autoload -Uz compinit && compinit -C
+# <<< grok installer <<<
