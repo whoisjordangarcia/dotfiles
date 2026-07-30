@@ -35,10 +35,22 @@
 ## Nest Local Dev (worktrees, hooks, tests)
 
 - **Run `pnpm exec husky` before your first commit in a new worktree.** `core.hooksPath` points at `.husky/_/`, which is gitignored and not created automatically in new worktrees; when it's missing, git silently skips all hooks (lint-staged, prettier, eslint) and unformatted code lands on the branch and breaks CI. It's idempotent and also runs via `pnpm i` / `nx run doctor`. Verify with `ls "$(git config --get core.hooksPath)/pre-commit"`.
-- **Creating a worktree non-interactively (`wt create`):** `wt` is an Ink TUI that needs raw mode on a TTY, so under the agent `Bash` tool / CI / piped stdin it dies with `Raw mode is not supported`. There's no `--headless` for `create`; allocate a pty with `script` and pass both args so the form is skipped:
+- **Creating a worktree non-interactively (`wt create`): use `--headless`, never `script`.** `wt create` has an Ink-free headless path, taken on explicit `--headless` or whenever either stdin or stderr is not a TTY — so it already works under the agent `Bash` tool / CI / piped stdin:
   ```bash
-  script -q /tmp/wt-create.log ~/.nest/bin/wt create NES-1234-my-fix release/X.Y.Z
+  ~/.nest/bin/wt create --headless NES-1234-my-fix release/X.Y.Z --setup install
   ```
-  Call the binary `~/.nest/bin/wt` directly (the `wt` shell function only `cd`s your interactive shell, which doesn't persist from a tool call). Pass both `name` and a `release/X.Y.Z` base-ref (never `main`). Default setup is full and slow — background it and tail the log, or use `--setup install` for just deps + husky.
+  > [!IMPORTANT]
+  > **Never wrap `wt` in `script -q` to "give it a pty".** The gate is
+  > `stdin.isTTY && stderr.isTTY → run the TUI`, and a pty makes *both* true —
+  > so `script` defeats the headless path and forces the TUI back on. On any
+  > failure the TUI then parks on `Press any key to exit` waiting for a keypress
+  > that can never arrive, and the `zsh` + `script` pair survives the session as
+  > immortal orphans (reparented to launchd) until killed by hand. It also hides
+  > the real error behind that prompt. Adding `< /dev/null` does **not** fix it:
+  > that redirects `script`'s own stdin while the child still inherits the pty
+  > slave, so `isTTY` stays true. Drop `script` entirely.
+
+  Call the binary `~/.nest/bin/wt` directly (the `wt` shell function only `cd`s your interactive shell, which doesn't persist from a tool call). Headless **requires both** `name` and a `release/X.Y.Z` base-ref (never `main`) — it exits 1 with a usage error if either is missing, rather than prompting. The created path goes to stdout, terse progress to stderr. Default setup is full and slow — background it and tail the log, or use `--setup install` for just deps + husky. Verify a run exited rather than parked: `timeout 600 … ; echo "exit=$?"` (124 = hung, which should now be impossible).
+- **`wt remove` and `wt prune` have the same `--headless` flag** and the same non-TTY auto-detection — same rules apply.
 - **Cap lint/test concurrency at 3** so the machine stays responsive: `turbo run lint --concurrency=3 --filter=<app>` / `turbo run test --concurrency=3 --filter=<app>`.
 - **When running client-api, auto-check seed + index first.** Before (or right after) bringing up `serve:client-api` for an instance, check whether the instance DB has been seeded and the ES indexes built, and run them automatically if not — don't wait to be asked. Cheap checks against the instance's shared infra (Postgres 5432 / ES 9244): a seeded DB has rows in `nestclientapi."Patient"` (e.g. `psql … -tAc 'SELECT count(*) FROM nestclientapi."Patient"'` > 0); indexes exist when the instance's ES prefix (`dev-<instance>-patients-v1` etc.) returns docs. If either is empty, run `pnpm run seed` then `pnpm run index-all-records` with the instance env (shared-infra port overrides, same recipe as serving the API). It's a once-off per instance — seed/index persist in the shared Postgres/ES, so skip when already populated.
