@@ -34,6 +34,7 @@ component_installation=(
 	fastfetch
 	ssh
 	codex
+	pi
 	claude
 	agents
 	# T2 MacBook Touch Bar (no-ops on non-T2 hardware)

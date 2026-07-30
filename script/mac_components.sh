@@ -30,6 +30,7 @@ component_installation=(
   claude
   agents
   codex
+  pi
   fastfetch
   opencode
   # music

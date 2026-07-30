@@ -29,6 +29,7 @@ component_installation=(
 	fastfetch
 	ssh
 	codex
+	pi
 	claude
 	agents
 	dolphin/linux
