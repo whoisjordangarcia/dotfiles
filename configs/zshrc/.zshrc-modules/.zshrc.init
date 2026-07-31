@@ -33,6 +33,36 @@ export STARSHIP_LOG=error # scan_timeout bails are intentional; don't warn
 # `zsh -i -c ...` fast and avoids ZLE/TERM=dumb errors in scripted invocations.
 if [[ -t 1 && "$TERM" != "dumb" ]]; then
   _cached_init starship init zsh
+
+  # Build the PR hyperlink here, not in prompt_info.sh: starship's zsh escaper
+  # mis-parses OSC 8 and closes its %{…%} region mid-URL, so the URL tail gets
+  # counted as visible width and the prompt math (wrapping, redraw) breaks.
+  # prompt_info.sh emits \001<url>\002 … \003 sentinels; we swap in the escapes
+  # with correct zero-width markers.
+  #
+  # This wraps starship's PROMPT rather than rewriting it in a precmd hook:
+  # under promptsubst starship sets PROMPT to a *deferred* '$(starship prompt
+  # …)' substitution that zsh re-evaluates on each redraw, so at precmd time
+  # there is no rendered string to patch. ${(e)…} evaluates the stashed
+  # substitution verbatim, which keeps starship's own (upgrade-prone) argument
+  # list out of this file.
+  #
+  # STARSHIP_PR_LINK tells prompt_info.sh the sentinels will actually be
+  # rewritten; without it the bare URL would render as visible prompt text
+  # (e.g. a shell started before this existed), so it falls back to a plain,
+  # unlinked "●#1234".
+  export STARSHIP_PR_LINK=1
+  _starship_pr_prompt_raw=$PROMPT
+  _starship_pr_prompt() {
+    local p=${(e)_starship_pr_prompt_raw}
+    if [[ $p == *$'\001'* ]]; then
+      p=${p//$'\001'/$'%{\e]8;;'}
+      p=${p//$'\002'/$'\e\\%}'}
+      p=${p//$'\003'/$'%{\e]8;;\e\\%}'}
+    fi
+    print -rn -- $p
+  }
+  PROMPT='$(_starship_pr_prompt)'
 fi
 
 # Load zoxide (cached)

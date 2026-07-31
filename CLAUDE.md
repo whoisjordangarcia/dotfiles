@@ -72,6 +72,38 @@ bash configs/claude/statusline_demo.sh   # visually confirm each variation still
 
 If you add a new field, branch/PR/worktree case, or line-3 indicator, add a corresponding test in `statusline_test.sh` and a scenario in `statusline_demo.sh` before considering the change complete. The demo doubles as living documentation for every supported rendering.
 
+### Starship Prompt Info
+
+`configs/starship/prompt_info.sh` renders the repo/branch segment plus a GitHub PR
+indicator. **When modifying it, run:**
+
+```bash
+bash configs/starship/prompt_info_test.sh   # must end with "All N tests passed"
+```
+
+Two non-obvious constraints the tests pin:
+
+- **The PR hyperlink must be assembled in zsh, not in this script.** Starship's zsh
+  escaper mis-parses OSC 8 and closes its `%{…%}` region *mid-URL*, so the URL tail
+  gets counted as visible prompt width and wrecks wrapping/redraw. `prompt_info.sh`
+  emits `\001<url>\002 … \003` sentinels; `_starship_pr_prompt` in
+  `.zshrc-modules/.zshrc.init` swaps in the escapes with correct zero-width markers,
+  and exports `STARSHIP_PR_LINK` so a shell without it degrades to an unlinked
+  `●#1234` rather than a bare URL. (CSI colour codes are fine — only OSC is affected.)
+- **That rewrite must wrap starship's `PROMPT`, not run in a `precmd` hook.** Under
+  `promptsubst` starship sets `PROMPT='$(starship prompt …)'` — a *deferred*
+  substitution zsh re-evaluates on every redraw — and `prompt_starship_precmd` only
+  stashes `$?`/duration/jobs. A precmd hook therefore sees the literal `$(…)` string
+  and never the sentinels, silently doing nothing. `_starship_pr_prompt` stashes the
+  original `PROMPT` and evaluates it with `${(e)…}`, which also keeps starship's
+  upgrade-prone argument list out of this repo.
+- **The background `gh` refresh must have stdout on `/dev/null`.** Starship reads the
+  script's stdout until EOF, so a background job inheriting that pipe holds it open
+  for the whole network round-trip — turning the async refresh into a hard stall.
+
+Cache lives in `${XDG_CACHE_HOME:-~/.cache}/starship-pr/`, one file per repo+branch,
+300s TTL. The prompt only ever reads it.
+
 ### Tmux Scripts
 
 Statusline/window-name scripts in `configs/tmux/scripts/` follow the same pattern: pure logic exposed via test hooks, with assertion-based tests alongside. **When modifying `smart_window_name.sh` or `claude_status.sh`, run:**

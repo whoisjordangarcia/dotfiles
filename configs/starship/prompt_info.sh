@@ -51,6 +51,69 @@ read_branch() {
   esac
 }
 
+# GitHub PR indicator. `gh pr view` is a network round-trip an order of
+# magnitude over starship's command_timeout, so the prompt only ever reads a
+# cache file and kicks off a detached refresh when it goes stale.
+PR_TTL=300
+PR_CACHE_DIR=${XDG_CACHE_HOME:-$HOME/.cache}/starship-pr
+
+pr_part() {
+  local branch=$1 root=$2
+  local file="$PR_CACHE_DIR/${root//\//_}__${branch//\//_}"
+  local now=${EPOCHSECONDS:-$(date +%s)}
+  local stamp='' state='' num='' url='' stale=1
+
+  [ -r "$file" ] && IFS=$'\t' read -r stamp state num url < "$file"
+
+  case "$stamp" in
+    '' | *[!0-9]*) stale=1 ;;
+    *) [ $((now - stamp)) -ge "$PR_TTL" ] && stale=1 || stale=0 ;;
+  esac
+
+  if [ "$stale" = 1 ]; then
+    [ -d "$PR_CACHE_DIR" ] || mkdir -p "$PR_CACHE_DIR"
+    # Bump the clock *before* forking so a burst of prompts doesn't fan out
+    # one `gh` process each.
+    printf '%s\t%s\t%s\t%s\n' "$now" "$state" "$num" "$url" > "$file"
+    # stdout MUST be detached: starship reads this script's stdout until EOF,
+    # and a background job inheriting the pipe would hold it open for the whole
+    # gh round-trip — turning the "async" refresh into a synchronous stall.
+    (
+      info=$(gh pr view --json state,isDraft,number,url \
+        --jq '(if .isDraft then "DRAFT" else .state end) + "\t" + (.number|tostring) + "\t" + .url' 2>/dev/null) ||
+        info=$'NONE\t\t'
+      printf '%s\t%s\n' "$now" "$info" > "$file"
+    ) > /dev/null 2>&1 &
+  fi
+
+  [ -n "$num" ] || return 0
+
+  local color glyph
+  case "$state" in
+    OPEN) color=32 glyph='●' ;;
+    DRAFT) color=90 glyph='○' ;;
+    MERGED) color=35 glyph='⬥' ;;
+    CLOSED) color=31 glyph='✕' ;;
+    *) return 0 ;;
+  esac
+
+  # Trailing \033[1;36m restores the module's `bold cyan` for the branch text.
+  #
+  # \001<url>\002 … \003 are rewritten into an OSC 8 hyperlink by
+  # _starship_pr_hyperlink (.zshrc.init), which also exports STARSHIP_PR_LINK.
+  # Emitting OSC 8 here instead would be mangled: starship's zsh escaper closes
+  # its %{…%} region mid-URL, leaking the URL tail into zsh's visible-width
+  # count. Without the hook the sentinels are invisible control chars and the
+  # bare URL would render as prompt text, so only emit them when it's live.
+  if [ -n "${STARSHIP_PR_LINK:-}" ]; then
+    printf '\001%s\002\033[%sm%s#%s\033[1;36m\003 ' "$url" "$color" "$glyph" "$num"
+  else
+    printf '\033[%sm%s#%s\033[1;36m ' "$color" "$glyph" "$num"
+  fi
+}
+
+[ -n "${PROMPT_INFO_LIB:-}" ] && return 0
+
 if root=$(find_git_root); then
   gitdir=$(resolve_gitdir "$root")
   prefix=${PWD#"$root"}
@@ -69,6 +132,7 @@ if root=$(find_git_root); then
   fi
 
   if branch=$(read_branch "$gitdir"); then
+    pr_part "$branch" "$root"
     norm_name=${name//\//-}
     norm_br=${branch//\//-}
     # Worktree dirs are slugified branch names (slashes -> dashes, often
