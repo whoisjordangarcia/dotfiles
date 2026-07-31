@@ -25,6 +25,15 @@
 - **NEVER use `--no-verify` to bypass pre-commit hooks.** If a hook fails, fix the underlying issue instead.
 - **Always open a draft PR first.** When starting any new branch or worktree, create the PR as a draft (`gh pr create --draft`) _before_ doing the work; mark it ready for review only once the work is done and CI is green. For a worktree, the first step after the branch exists is the draft PR, so CI runs against it from the start.
 - **Do feature work in worktrees branched off the latest `release/*`, never on `main`.** Keep the main working copy on the current active `release/X.Y.Z`.
+- **Consider a stack of PRs (`gh stack`) during research — propose it, never start one unprompted.** While researching/planning a ticket, judge whether the work has more than one reviewable layer (schema → API → UI, refactor → feature, etc.). If it does, the proposed stack is **part of the plan**: name the layers, their order, and the branch per layer, then **ask** whether to split it that way. One PR is the default; only run `gh stack` after the user says yes.
+  **Raise it mid-flight too:** if a branch is growing large and now contains chunks a teammate could review on their own (a self-contained refactor, a schema/migration, a shared util), say so and ask whether to split it into a stack — same rule, ask first. Never silently convert an in-flight branch into a stack.
+  ```bash
+  gh stack init                      # start a stack off the release branch
+  gh stack add jordan/NES-1234-api   # each further piece, in order
+  gh stack submit                    # push all branches + create/update the PRs
+  gh stack sync                      # after a base merges — auto-rebases + retargets
+  ```
+  Once approved: still one draft PR per layer up front, `jordan/` branch prefix and `type(NES-1234): …` titles on every layer, and the stack is created inside the worktree off the latest `release/X.Y.Z`. Merging a layer lands every unmerged layer below it, so merge bottom-up unless you intend to land the whole stack; branch protections and required checks apply per layer as usual. `gh stack view` shows the current chain.
 - **Keep the open PR and Linear ticket in sync as scope grows.** When new commits/tasks/findings land and a PR is open, ask whether to update the PR (title/description/body) and the Linear ticket (comment or description) so neither drifts behind what's actually on the branch.
 
 ## Linear
