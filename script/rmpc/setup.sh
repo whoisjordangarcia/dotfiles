@@ -42,4 +42,51 @@ else
 	info "NAS_SMB_URL not set — uncomment it in ~/.zshrc-sec to enable rmpc"
 fi
 
+# macOS only: keep mpd's CoreAudio output pointed at the current default device.
+# The plist is generated rather than checked in because it needs an absolute
+# $HOME, which can't live in this public repo.
+if [ "$(uname -s)" != "Darwin" ]; then
+	: # nothing to do — CoreAudio is macOS-only
+elif ! command -v SwitchAudioSource >/dev/null 2>&1; then
+	# switchaudio-osx is in Brewfile.base, but component order isn't guaranteed
+	# and this script is a documented standalone entry point. Skipping beats
+	# bootstrapping a KeepAlive agent that can only fail.
+	info "switchaudio-osx not installed — skipping mpd default-output watcher"
+else
+	WATCHER="$SCRIPT_DIR/../../configs/mpd/follow-default-output.sh"
+	LABEL="com.jordangarcia.mpd-follow-output"
+	PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+
+	mkdir -p "$HOME/Library/LaunchAgents" "$HOME/Library/Logs"
+	cat >"$PLIST" <<-PLIST_EOF
+		<?xml version="1.0" encoding="UTF-8"?>
+		<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+		<plist version="1.0">
+		<dict>
+		  <key>Label</key><string>$LABEL</string>
+		  <key>ProgramArguments</key>
+		  <array>
+		    <string>/bin/sh</string>
+		    <string>$(cd "$(dirname "$WATCHER")" && pwd)/$(basename "$WATCHER")</string>
+		  </array>
+		  <key>RunAtLoad</key><true/>
+		  <key>KeepAlive</key><true/>
+		  <key>StandardOutPath</key><string>$HOME/Library/Logs/$LABEL.log</string>
+		  <key>StandardErrorPath</key><string>$HOME/Library/Logs/$LABEL.err</string>
+		</dict>
+		</plist>
+	PLIST_EOF
+
+	# `|| warn`, never bare: this script is `set -e` and run_components.sh turns a
+	# non-zero exit into fail(), which exits the whole `dot` run. bootstrap can
+	# return EIO(5) right after a bootout (see script/rift/mac/setup.sh), and an
+	# optional music watcher must not get veto power over provisioning.
+	launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
+	if launchctl bootstrap "gui/$(id -u)" "$PLIST"; then
+		info "mpd default-output watcher loaded ($LABEL)"
+	else
+		warn "bootstrap failed — retry: launchctl bootstrap gui/$(id -u) $PLIST"
+	fi
+fi
+
 info "rmpc setup done"
