@@ -1,0 +1,5 @@
+# macOS-specific overrides.
+# Native window frame + titlebar. The base config is borderless for Hyprland,
+# where the compositor draws the border and CSD would just be a wasted bar.
+window-decoration = auto
+macos-titlebar-style = tabs

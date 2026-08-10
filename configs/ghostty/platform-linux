@@ -1,2 +1,6 @@
-# Linux-specific overrides (4K display)
-font-size = 11
+# Linux-specific overrides.
+# Empty on purpose: this file was never actually linked next to `config` until
+# the platform includes were fixed, so its old `font-size = 11` (added for a 4K
+# display) had never once rendered. Linking it would have silently shrunk the
+# font on both Linux machines. Add real Linux-only overrides here as needed —
+# `font-size = 16` from the base config is what those machines actually run.

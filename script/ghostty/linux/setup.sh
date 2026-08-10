@@ -14,3 +14,6 @@ if [ ! -f "$HOME/.config/ghostty" ]; then
 fi
 
 link_file "$GHOSTTY_SOURCE" "$GHOSTTY_TARGET"
+# Ghostty resolves `config-file = ?platform-linux` next to the symlink, not next
+# to the link's target, so the override has to be linked here too.
+link_file "${GHOSTTY_SOURCE%/config}/platform-linux" "${GHOSTTY_TARGET%/config}/platform-linux"

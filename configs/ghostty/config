@@ -16,10 +16,6 @@ confirm-close-surface = false
 font-family = IoskeleyMonoTerm Nerd Font
 font-size = 16
 
-# Platform-specific overrides (only loaded if file exists)
-config-file = ?platform-linux
-config-file = ?platform-macos
-macos-titlebar-style = hidden
 mouse-hide-while-typing = true
 
 #theme = dark:Catppuccin Mocha,light:Catppuccin Frappe
@@ -59,5 +55,14 @@ shell-integration = zsh
 term = ghostty
 
 # Fix general slowness on Hyprland
-async-backend = epoll  
+async-backend = epoll
+
+# Platform-specific overrides (only loaded if the file exists). Ghostty applies
+# `config-file` includes *after* parsing this entire file, so a platform file
+# always wins over the base no matter where the directive sits — position here is
+# for readability only. (Between two includes the later one wins.)
+# The path is resolved relative to the *symlinked* config's dir, not this repo,
+# so script/ghostty/*/setup.sh links the platform file alongside `config`.
+config-file = ?platform-linux
+config-file = ?platform-macos
 

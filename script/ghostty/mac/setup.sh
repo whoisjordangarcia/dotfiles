@@ -11,3 +11,6 @@ GHOSTTY_TARGET="$HOME/Library/Application Support/com.mitchellh.ghostty/config"
 
 mkdir -p "$(dirname "$GHOSTTY_TARGET")"
 link_file "$GHOSTTY_SOURCE" "$GHOSTTY_TARGET"
+# Ghostty resolves `config-file = ?platform-macos` next to the symlink, not next
+# to the link's target, so the override has to be linked here too.
+link_file "${GHOSTTY_SOURCE%/config}/platform-macos" "${GHOSTTY_TARGET%/config}/platform-macos"
