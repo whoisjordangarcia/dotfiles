@@ -19,6 +19,26 @@ if [[ -n "$GHOSTTY_BIN_DIR" && ! -x "$GHOSTTY_BIN_DIR/ghostty" ]]; then
   unset _ghostty_feats
 fi
 
+# Claude Code marks the shells it spawns with CLAUDE_CODE_CHILD_SESSION so a
+# nested `claude` knows not to persist a transcript over its parent's. Any
+# long-lived daemon started from inside the Bash tool — GhostMux, a zmx or tmux
+# server — captures that marker in its own env and hands it to every pane it
+# opens from then on, so unrelated shells inherit it and every `claude` launched
+# from one silently runs with saving off ("Transcript saving is off — inherited
+# CLAUDE_CODE_CHILD_SESSION marker"). zsh reads this file only for interactive
+# shells, and the Bash tool runs a *non*-interactive `zsh -c` against a snapshot,
+# so in practice the marker is stale by the time we get here. Strip it once at
+# the choke point rather than per-multiplexer: wrapping `zmx` missed this exact
+# bug, because the poison was in GhostMux.
+#
+# SESSION_ID goes too — a stale id would mis-attribute a new session's events to
+# the dead parent. Accepted cost: a deliberately nested interactive session (say
+# `zsh -i` straight from the Bash tool) loses the marker that would have stopped
+# it clobbering its parent's transcript. Rare enough to trade for this, and the
+# alternative (CLAUDE_CODE_FORCE_SESSION_PERSISTENCE=1) forces persistence for
+# genuinely nested runs too, which is the bug pointed the other way.
+unset CLAUDE_CODE_CHILD_SESSION CLAUDE_CODE_SESSION_ID
+
 # Keep $PATH entries unique so re-sourcing this file (e.g. `reload`) is
 # idempotent — without this, every prepend in .zshrc.{envvars,paths} stacks
 # another duplicate copy onto PATH.
