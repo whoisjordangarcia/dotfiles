@@ -13,8 +13,9 @@
   format = ssh
 
 [gpg "ssh"]
-  # Stock /usr/bin/ssh-keygen on macOS has no FIDO middleware — brew openssh required
-  program = /opt/homebrew/bin/ssh-keygen
+  # 1Password signs via its SSH agent, so the private key never sits on disk.
+  # script/git/setup.sh rewrites this to plain ssh-keygen on non-macOS.
+  program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
   allowedSignersFile = ~/.ssh/allowed_signers
 
 [init]

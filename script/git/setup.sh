@@ -77,9 +77,10 @@ if [[ -f "$GITCONFIG_TEMPLATE" ]]; then
 		info "No YubiKey provided - removed signing configuration"
 	fi
 
-	# Linux ssh-keygen has FIDO support built in — only macOS needs the brew one
+	# op-ssh-sign lives inside the macOS app bundle; elsewhere fall back to
+	# ssh-keygen (Linux builds have FIDO support compiled in).
 	if [[ "$(uname)" != "Darwin" ]]; then
-		"${SED_INLINE[@]}" 's|program = /opt/homebrew/bin/ssh-keygen|program = ssh-keygen|' "$GITCONFIG_TARGET"
+		"${SED_INLINE[@]}" 's|program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign|program = ssh-keygen|' "$GITCONFIG_TARGET"
 	fi
 
 	DOT_DISPLAY_NAME=${DOT_NAME:-Unknown}
