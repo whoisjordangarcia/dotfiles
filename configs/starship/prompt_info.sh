@@ -106,9 +106,9 @@ pr_part() {
   # count. Without the hook the sentinels are invisible control chars and the
   # bare URL would render as prompt text, so only emit them when it's live.
   if [ -n "${STARSHIP_PR_LINK:-}" ]; then
-    printf '\001%s\002\033[%sm%s#%s\033[1;36m\003 ' "$url" "$color" "$glyph" "$num"
+    printf '\001%s\002\033[%sm%s #%s\033[1;36m\003 ' "$url" "$color" "$glyph" "$num"
   else
-    printf '\033[%sm%s#%s\033[1;36m ' "$color" "$glyph" "$num"
+    printf '\033[%sm%s #%s\033[1;36m ' "$color" "$glyph" "$num"
   fi
 }
 

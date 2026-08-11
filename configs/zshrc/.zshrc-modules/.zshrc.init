@@ -50,7 +50,7 @@ if [[ -t 1 && "$TERM" != "dumb" ]]; then
   # STARSHIP_PR_LINK tells prompt_info.sh the sentinels will actually be
   # rewritten; without it the bare URL would render as visible prompt text
   # (e.g. a shell started before this existed), so it falls back to a plain,
-  # unlinked "●#1234".
+  # unlinked "● #1234".
   export STARSHIP_PR_LINK=1
   _starship_pr_prompt_raw=$PROMPT
   _starship_pr_prompt() {

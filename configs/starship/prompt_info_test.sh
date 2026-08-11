@@ -64,22 +64,22 @@ settle() {
 
 seed "$now" OPEN 1234 https://x/pull/1234
 check "open PR renders green ● + number, url in sentinels" \
-  $'\001https://x/pull/1234\002'"${esc}[32m●#1234${esc}[1;36m"$'\003 ' \
+  $'\001https://x/pull/1234\002'"${esc}[32m● #1234${esc}[1;36m"$'\003 ' \
   "$(render)"
 
 seed "$now" DRAFT 7 https://x/pull/7
 check "draft renders dim ○" \
-  $'\001https://x/pull/7\002'"${esc}[90m○#7${esc}[1;36m"$'\003 ' \
+  $'\001https://x/pull/7\002'"${esc}[90m○ #7${esc}[1;36m"$'\003 ' \
   "$(render)"
 
 seed "$now" MERGED 7 https://x/pull/7
 check "merged renders magenta ⬥" \
-  $'\001https://x/pull/7\002'"${esc}[35m⬥#7${esc}[1;36m"$'\003 ' \
+  $'\001https://x/pull/7\002'"${esc}[35m⬥ #7${esc}[1;36m"$'\003 ' \
   "$(render)"
 
 seed "$now" CLOSED 7 https://x/pull/7
 check "closed renders red ✕" \
-  $'\001https://x/pull/7\002'"${esc}[31m✕#7${esc}[1;36m"$'\003 ' \
+  $'\001https://x/pull/7\002'"${esc}[31m✕ #7${esc}[1;36m"$'\003 ' \
   "$(render)"
 
 seed "$now" NONE '' ''
@@ -89,7 +89,7 @@ check "no PR renders nothing" "" "$(render)"
 # leak the bare URL as visible prompt text.
 seed "$now" OPEN 1234 https://x/pull/1234
 check "no hook -> unlinked indicator, no sentinels, no URL" \
-  "${esc}[32m●#1234${esc}[1;36m " \
+  "${esc}[32m● #1234${esc}[1;36m " \
   "$(STARSHIP_PR_LINK= render)"
 
 # Fresh cache must not fork gh — that is the whole point of the cache.
@@ -105,7 +105,7 @@ seed "$((now - PR_TTL - 1))" OPEN 1 https://x/pull/1
 out=$(render)
 settle
 check "stale cache still renders the cached PR" \
-  $'\001https://x/pull/1\002'"${esc}[32m●#1${esc}[1;36m"$'\003 ' "$out"
+  $'\001https://x/pull/1\002'"${esc}[32m● #1${esc}[1;36m"$'\003 ' "$out"
 check "stale cache runs gh" "ran" "$(< "$GH_STUB_LOG")"
 # gh having *logged* doesn't mean it has written the cache yet.
 i=0
@@ -143,7 +143,7 @@ check "unknown branch queues a refresh" "ran" "$(< "$GH_STUB_LOG")"
 # the literal substitution and never the sentinels.
 if command -v zsh > /dev/null; then
   zsh_src='
-    _raw='"'"'$(printf '"'"'"'"'"'"'"'"'\001https://x/pull/1\002\033[32m●#1\033[1;36m\003 '"'"'"'"'"'"'"'"')'"'"'
+    _raw='"'"'$(printf '"'"'"'"'"'"'"'"'\001https://x/pull/1\002\033[32m● #1\033[1;36m\003 '"'"'"'"'"'"'"'"')'"'"'
     _render() {
       local p=${(e)_raw}
       if [[ $p == *$'"'"'\001'"'"'* ]]; then
@@ -157,7 +157,7 @@ if command -v zsh > /dev/null; then
   # Rendered: only the glyph + number may remain visible.
   zout=$(zsh -f -c "$zsh_src"'; print -rn -- ${(%)$(_render)}' | sed -e 's/\x1b/E/g')
   check "zsh wrapper builds a valid OSC 8 hyperlink" \
-    'E]8;;https://x/pull/1E\E[32m●#1E[1;36mE]8;;E\' "$zout"
+    'E]8;;https://x/pull/1E\E[32m● #1E[1;36mE]8;;E\' "$zout"
 
   # Everything outside the %{…%} regions is what zsh counts for prompt width.
   # Strip the %{…%} regions (what zsh treats as zero-width) plus bare CSI colour
@@ -165,7 +165,7 @@ if command -v zsh > /dev/null; then
   # this fixture stands in for starship's output without them.
   zvis=$(zsh -f -c "$zsh_src"'; print -rn -- $(_render)' \
     | sed -e 's/%{[^%]*%}//g' -e 's/'$'\x1b''\[[0-9;]*m//g')
-  check "no URL or escape leaks into zsh's visible-width count" '●#1' "$zvis"
+  check "no URL or escape leaks into zsh's visible-width count" '● #1' "$zvis"
 fi
 
 printf '\n'

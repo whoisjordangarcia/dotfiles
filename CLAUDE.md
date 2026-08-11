@@ -89,7 +89,7 @@ Two non-obvious constraints the tests pin:
   emits `\001<url>\002 … \003` sentinels; `_starship_pr_prompt` in
   `.zshrc-modules/.zshrc.init` swaps in the escapes with correct zero-width markers,
   and exports `STARSHIP_PR_LINK` so a shell without it degrades to an unlinked
-  `●#1234` rather than a bare URL. (CSI colour codes are fine — only OSC is affected.)
+  `● #1234` rather than a bare URL. (CSI colour codes are fine — only OSC is affected.)
 - **That rewrite must wrap starship's `PROMPT`, not run in a `precmd` hook.** Under
   `promptsubst` starship sets `PROMPT='$(starship prompt …)'` — a *deferred*
   substitution zsh re-evaluates on every redraw — and `prompt_starship_precmd` only
