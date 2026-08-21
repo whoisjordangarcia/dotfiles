@@ -2,12 +2,34 @@
 #  Work-specific Configuration (Nest)
 # ==============================================================================
 
+# Route package installs through Socket Firewall (blocks malicious packages).
+# Guarded: if sfw isn't installed yet, npm/pnpm stay usable rather than breaking.
+if (( $+commands[sfw] )); then
+    alias npm='sfw npm'
+    alias pnpm='sfw pnpm'
+fi
+
 #export NEST_WT_EDITOR="zed"
 export NEST_REPO_ROOT="$HOME/projects/nest"
 export WT_BRANCH_PREFIX="jordan"
 
 # Rancher Desktop CLI tools (docker, kubectl, nerdctl, ...)
 [ -d "$HOME/.rd/bin" ] && export PATH="$HOME/.rd/bin:$PATH"
+
+# AWS SSO — one login per account. Requires SEPARATE [sso-session] blocks in
+# ~/.aws/config (nest-tst / nest-prd) so a tst login grants no prd access.
+# dev + tst share the "nest" session, so either call refreshes both.
+alias nestaws-dev='aws sso login --profile dev-account-administrator-role'
+alias nestaws-tst='aws sso login --profile tst-account-administrator-role'
+
+# Deliberate friction: prd is opt-in, never muscle memory.
+# Keeps "--profile prd-..." literal so touchid-gate.py still matches it.
+nestaws-prd() {
+    print -P "%F{red}%B⚠️  PRODUCTION%b%f — prd-account-administrator-role"
+    read -q "?Continue? [y/N] " || { print; return 1; }
+    print
+    aws sso login --profile prd-account-administrator-role
+}
 
 # ------------------------------------------------------------------------------
 #  GitHub CLI Aliases & Functions
