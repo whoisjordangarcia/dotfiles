@@ -321,6 +321,15 @@ zma() {
   done
 }
 
+# zmt — make zmx sessions visible to tmux-only clients (each becomes tmux
+# session zmx-<name>). Manual trigger for the same script the
+# com.jordangarcia.zmx-tmux-bridge launchd agent runs on every session
+# create/destroy, so you rarely need this — see the script header for details.
+#   zmt          bridge every zmx session
+#   zmt -a       ...including Supacode's supa-<uuid> sessions
+#   zmt demo     bridge just one
+zmt() { ~/.tmux/scripts/zmx_bridge.sh "$@"; }
+
 # qbt-add — add a magnet link (or .torrent file) to the qBittorrent WebUI at
 # $TORRENT_URL via the REST API. Auth uses TORRENT_URL / TORRENT_USERNAME /
 # TORRENT_PASSWORD (set in .zshrc.sec). Optional second arg sets the save
