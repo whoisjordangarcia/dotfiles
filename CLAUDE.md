@@ -133,14 +133,32 @@ one prefs reset in the browser makes `brave-sync` silently rewrite the repo to
 the reset state, committing the damage as intent. Remove a pref by editing
 `configs/brave/prefs.txt`, not by syncing.
 
+### Touch ID Gate Patterns
+
+**When editing `configs/claude/hooks/gate_patterns.py` or `touchid-gate.py`, run:**
+
+```bash
+bash configs/claude/hooks/gate_test.sh   # must end with "All N tests passed"
+```
+
+It pins which commands trip the tripwire, each one's approval mode, the
+per-project scope resolution, and the force-push preview (against a throwaway
+diverged repo). Pure logic: bioprompt is never launched, so it's headless-safe.
+`configs/codex/hooks/touchid-gate.py` imports the same list — change the tuple
+shape and you must update both hooks.
+
 ## Traps
 
 ### Touch ID Command Gate (macOS)
 
 AI-initiated sensitive Bash commands require biometric approval via a Claude Code `PreToolUse` hook:
 
-- `configs/claude/hooks/touchid-gate.py` — pattern-matches sensitive commands (sudo, force push, prod AWS profiles, 1Password/keychain access, `curl | sh`, secrets-file reads) and pops an approval dialog. Approved → `allow`; denied → `deny`; biometrics unavailable → falls back to the normal permission prompt (`ask`).
-- `configs/claude/hooks/bioprompt.swift` — SwiftUI Liquid Glass approval dialog: the command rendered syntax-highlighted (colors parsed live from the Ghostty theme's dark variant) with Touch ID embedded inline via `LAAuthenticationView`. When biometrics are unavailable (clamshell mode) the same glass card shows Approve/Deny, and Approve opens a glass password card verified locally via OpenDirectory — every popup in the flow is glass. Built by `script/claude/setup.sh` into `~/Applications/BioPrompt.app` (`bioprompt-Info.plist`); `~/.local/bin/bioprompt` is an exec shim into the bundle so the hook keeps calling the same path.
+- `configs/claude/hooks/touchid-gate.py` — pattern-matches sensitive commands (sudo, force push, prod AWS profiles, 1Password/keychain access, `curl | sh`, secrets-file reads) and pops an approval dialog. Approved → `allow`; denied → `deny`; biometrics unavailable → falls back to the normal permission prompt (`ask`). For a force push it also renders `git log` of the commits being pushed **and the ones the remote would lose** — the second list is the reason to look before approving.
+- `configs/claude/hooks/bioprompt.swift` — SwiftUI Liquid Glass approval dialog: the command rendered syntax-highlighted (colors parsed live from the Ghostty theme's dark variant) with Touch ID embedded inline via `LAAuthenticationView`. When biometrics are unavailable (clamshell mode) the same glass card shows Approve/Deny and the click approves outright — **no password step**, deliberately: the gate exists to catch unattended AI actions, and whoever is at the keyboard already has the shell. Built by `script/claude/setup.sh` into `~/Applications/BioPrompt.app` (`bioprompt-Info.plist`); `~/.local/bin/bioprompt` is an exec shim into the bundle so the hook keeps calling the same path.
+- **Two approval modes.** Each entry in `gate_patterns.py` is `(regex, label, mode)`. `"bio"` demands a Touch ID press or YubiKey tap; `"confirm"` shows the same dialog but the Approve button answers it (`bioprompt --confirm`, which skips the `LAContext` path entirely). Prod AWS is `confirm` — the point there is *seeing* the command, not proving who saw it.
+- **Per-project scopes.** `GLOBAL_PATTERNS` fire in every directory; `SCOPED_PATTERNS` are opted into per project by `configs/bioprompt/projects.conf` (symlinked to `~/.config/bioprompt/projects.conf` by `build_bioprompt`), keyed on the hook payload's `cwd`. Currently one scope, `git-write`, which gates `git commit`/`git push` in `~/projects/nest` and `~/dev/dotfiles`.
+  > [!IMPORTANT]
+  > Scoping only ever **adds**. A missing, unreadable, or typo'd config yields no extra scopes and leaves the global tripwires untouched — deliberately, so the failure mode is prompt fatigue rather than silent loss of the prod-AWS/secrets guards. Prefixes match on a path boundary (`~/dev/dot` ≠ `~/dev/dotfiles`), and globals are matched first so a `git push --force` inside a `git-write` project still gets the force-push label and its commit preview.
 - **YubiKey approval**: a FIDO2 user-presence assertion (libfido2, in `Brewfile.base`) races the other auth paths — a key tap approves, fastest in clamshell mode where Touch ID is unavailable. One-time setup per machine: `bioprompt --enroll` (stores credential id + public key only, under `~/.config/bioprompt/`; each approval verifies a signature over a fresh challenge).
 - Wired in the dedicated `settings.{work,personal}.json` files under `hooks.PreToolUse`. **Bootstrap order matters**: the `~/.claude/hooks` symlink must exist before the hook entry is live, or every Bash call is blocked (claude/setup.sh links it).
 - This is a tripwire, not a sandbox — pattern matching can be evaded; Claude Code's permission system remains the enforcement layer.

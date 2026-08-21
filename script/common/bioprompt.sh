@@ -9,6 +9,7 @@
 _BIOPROMPT_LIB_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 source "$_BIOPROMPT_LIB_DIR/log.sh"
+source "$_BIOPROMPT_LIB_DIR/symlink.sh"
 
 # Build (or rebuild if stale) ~/Applications/BioPrompt.app and its
 # ~/.local/bin/bioprompt shim. No-op off macOS or when swiftc is unavailable.
@@ -17,6 +18,13 @@ source "$_BIOPROMPT_LIB_DIR/log.sh"
 build_bioprompt() {
 	[[ "$OSTYPE" == darwin* ]] || return 0
 	command -v swiftc &>/dev/null || return 0
+
+	# Per-project gate scopes, read by both hooks. Linked (not copied) so a repo
+	# pull updates every machine; the YubiKey credential in the same dir stays
+	# local. link_file doesn't create parents, and this dir won't exist until
+	# the first enrollment.
+	mkdir -p "$HOME/.config/bioprompt"
+	link_file "$_BIOPROMPT_LIB_DIR/../../configs/bioprompt/projects.conf" "$HOME/.config/bioprompt/projects.conf"
 
 	local bioprompt_src="$_BIOPROMPT_LIB_DIR/../../configs/claude/hooks/bioprompt.swift"
 	local bioprompt_plist="$_BIOPROMPT_LIB_DIR/../../configs/claude/hooks/bioprompt-Info.plist"

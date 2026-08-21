@@ -12,6 +12,7 @@
     "commit": "",
     "pr": ""
   },
+  "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
       "Bash(gh api *)",
@@ -67,10 +68,7 @@
       "Read(~/.zshrc-modules/.zshrc.sec)",
       "Read(~/.zshrc-sec)"
     ],
-    "ask": [
-      "Bash(git push *)",
-      "Bash(curl *)"
-    ],
+    "ask": [],
     "defaultMode": "auto"
   },
   "hooks": {
