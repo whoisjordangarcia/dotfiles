@@ -33,6 +33,7 @@ component_installation=(
   pi
   fastfetch
   opencode
+  herdr
   # music
   sonic-tui
   rmpc
