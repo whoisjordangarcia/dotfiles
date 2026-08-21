@@ -175,7 +175,8 @@ struct MediaNotchView: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding(.top, topInset) // clear the physical camera notch; 0 → flush-centered on external displays
+        // Black shape starts at the top bezel so it butts against the physical notch
+        // (no desktop sliver); content clears the camera via the blob's own top inset.
         .coordinateSpace(.named("win"))
         .opacity(model.active ? 1 : 0)
         // Gooey emerge: stretch down from the bezel (y leads x), anchored at the top so it
@@ -233,7 +234,7 @@ struct MediaNotchView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, expanded ? 12 : 7)
+        .padding(.top, (expanded ? 12 : 7) + topInset) // topInset pushes content below the camera; black already reaches the bezel
         .padding(.bottom, expanded ? 15 : 7)
         .frame(width: expanded ? 320 : 236, alignment: .top) // fixed widths per state → spring interpolates two numbers, no measurement jitter
         .background(shape.fill(Color.black))
@@ -336,29 +337,35 @@ final class PassthroughHostingView: NSHostingView<MediaNotchView> {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var window: NSWindow?
     private let model = MusicModel()
+    private let hit = HitProxy()
+    private var hosting: PassthroughHostingView?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        guard let screen = NSScreen.main else { NSApp.terminate(nil); return }
-        let topInset = screen.safeAreaInsets.top // notch height on built-in display; 0 on external
-        let width: CGFloat = 380, height: CGFloat = topInset + 210
-        let vf = screen.frame
-        let rect = NSRect(x: vf.midX - width / 2, y: vf.maxY - height, width: width, height: height)
+        guard NSScreen.main != nil else { NSApp.terminate(nil); return }
 
-        let win = NSWindow(contentRect: rect, styleMask: [.borderless], backing: .buffered, defer: false)
+        let win = NSWindow(contentRect: .zero, styleMask: [.borderless], backing: .buffered, defer: false)
         win.isOpaque = false
         win.backgroundColor = .clear
         win.hasShadow = false // SwiftUI draws the shaped shadow
         win.level = NSWindow.Level(rawValue: Int(CGShieldingWindowLevel())) // above menu bar/notch
         win.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         win.ignoresMouseEvents = true // starts hidden (no track) → whole window is click-through
-        let hit = HitProxy()
-        let hosting = PassthroughHostingView(rootView: MediaNotchView(model: model, topInset: topInset, hit: hit))
+        let hosting = PassthroughHostingView(rootView: MediaNotchView(model: model, topInset: 0, hit: hit))
         hosting.hit = hit
         hosting.safeAreaRegions = []   // we position manually via topInset
         win.contentView = hosting
         window = win
+        self.hosting = hosting
 
         NSApp.setActivationPolicy(.accessory) // no Dock icon
+
+        reposition() // place on the current main screen; recomputes topInset too
+
+        // Displays change (plug/unplug, rearrange, resolution) → the window's rect and
+        // notch inset go stale, stranding the blob off-screen. Recompute on every change.
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(reposition),
+            name: NSApplication.didChangeScreenParametersNotification, object: nil)
 
         // Window stays ordered front; SwiftUI animates the notch in/out via
         // opacity + offset, and the hit test passes clicks through while hidden.
@@ -369,6 +376,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.onActive = { [weak win] active in win?.ignoresMouseEvents = !active }
 
         model.start()
+    }
+
+    // Pin the window top-center on the main screen and refresh the notch inset.
+    @objc private func reposition() {
+        guard let screen = NSScreen.main, let window, let hosting else { return }
+        let topInset = screen.safeAreaInsets.top // notch height on built-in display; 0 on external
+        let width: CGFloat = 380, height: CGFloat = topInset + 210
+        let vf = screen.frame
+        window.setFrame(NSRect(x: vf.midX - width / 2, y: vf.maxY - height, width: width, height: height),
+                        display: true)
+        hosting.rootView = MediaNotchView(model: model, topInset: topInset, hit: hit)
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool { true }
