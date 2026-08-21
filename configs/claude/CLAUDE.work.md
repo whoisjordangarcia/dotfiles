@@ -12,6 +12,14 @@
 
 # User Preferences
 
+## Working Style — Reach for Subagents When Asks Stack Up
+
+- **When I start firing off several small fixes in a row, stop and consider subagents.** If unaddressed asks are queuing faster than they're being completed — typically 3+ outstanding, or new ones arriving mid-task — pause, review the queue, and dispatch subagents rather than grinding through them serially.
+- **Check for file overlap before parallelising.** Two agents editing the same file will clobber each other. Group the asks by the files they touch: disjoint sets run in parallel (one message, multiple tool calls); overlapping sets run sequentially. Say which you chose and why.
+- **Give each subagent the full brief**, since it starts with no context: repo/worktree path, where the relevant code lives, the conventions that apply (test framework and location, no ticket numbers in comments, comment style), the exact verify commands to run, and an explicit "do not commit / do not disturb other uncommitted work" guard.
+- **Require evidence.** Each subagent must actually run the type-check and tests and paste real output; relay what matters, since I never see their report.
+- Small, genuinely trivial edits are still fine to do inline — this is about avoiding a growing backlog, not about delegating everything.
+
 ## Production (AWS) — Hard Rule
 
 - **NEVER touch production.** No writes, mutations, deploys, deletes, or reindexing against any prod resource — ever.
