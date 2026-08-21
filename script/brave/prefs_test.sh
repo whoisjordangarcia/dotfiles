@@ -50,4 +50,18 @@ assert "pin unions with existing (keeps 'myown', adds both), order-preserved" \
 assert "pin propagates to a profile with no prior pins" \
 	"json.load(open(F+'/Profile 1/Preferences'))['extensions']['pinned_extensions'] == ['onepass','claude']"
 
-if [ "$fails" -eq 0 ]; then echo "All 6 tests passed"; else echo "$fails failed"; exit 1; fi
+# Merge: re-syncing against a profile that LOST a tracked pref (Brave reset it)
+# must keep the tracked line, while a key still present in the browser wins.
+prev="$FIX/prev.txt"
+cat >"$prev" <<'TXT'
+# header comment
+session.restore_on_startup = 1
+bookmark_bar.show_on_all_tabs = false
+TXT
+python3 "$SCRIPT_DIR/brave_prefs.py" snapshot "$FIX/Default/Preferences" "$prev" >"$FIX/merged.txt"
+assert "snapshot keeps a tracked key the browser no longer has" \
+	"'session.restore_on_startup = 1' in open(F+'/merged.txt').read()"
+assert "live value wins over the tracked one when the key is present" \
+	"'bookmark_bar.show_on_all_tabs = true' in open(F+'/merged.txt').read()"
+
+if [ "$fails" -eq 0 ]; then echo "All 8 tests passed"; else echo "$fails failed"; exit 1; fi

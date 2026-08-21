@@ -35,6 +35,8 @@ PREF_KEYS = [
     "brave.new_tab_page.show_brave_talk",
     "brave.new_tab_page.shortcuts_visible",
     "brave.new_tab_page.hide_all_widgets",
+    # Startup (1 = continue where you left off — a forced relaunch keeps the tabs)
+    "session.restore_on_startup",
     # UI / appearance
     "bookmark_bar.show_on_all_tabs",
     "brave.always_show_bookmark_bar_on_ntp",
@@ -154,7 +156,16 @@ def parse_map(path):
 
 if __name__ == "__main__":
     if sys.argv[1] == "snapshot":
-        for key, val in snapshot(sys.argv[2]).items():
+        live = snapshot(sys.argv[2])
+        # A missing key means "Brave is on the default", NOT "the user deleted
+        # this". Without the merge below, one prefs reset in the browser makes
+        # brave-sync silently erase the tracked line — the repo then records the
+        # reset state as intent. So keep whatever the file already tracks for any
+        # allowlisted key the live profile no longer carries; live always wins
+        # when the key IS present. Drop a line by editing prefs.txt, not by sync.
+        prev = parse_map(sys.argv[3]) if len(sys.argv) > 3 and os.path.exists(sys.argv[3]) else {}
+        merged = {k: live.get(k, prev.get(k)) for k in PREF_KEYS if k in live or k in prev}
+        for key, val in merged.items():
             print(f"{key} = {json.dumps(val)}")
     elif sys.argv[1] == "apply":
         for sub, n in apply(sys.argv[2], parse_map(sys.argv[3])):
