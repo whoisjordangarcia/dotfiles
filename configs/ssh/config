@@ -13,14 +13,24 @@ Host github.com
 
 # ── Global defaults ────────────────────────────────────────────────
 Host *
-    # Keep connections alive (prevents SSH timeout on idle)
+    # Keep connections alive (prevents SSH timeout on idle). 60s probes x 60
+    # is an hour of grace: a lid close, a Wi-Fi hop, or a VPN blip no longer
+    # kills a long-lived session (the old CountMax 3 gave up after 3 minutes,
+    # which is why ssh inside a persisted zmx pane came back dead).
     ServerAliveInterval 60
-    ServerAliveCountMax 3
+    ServerAliveCountMax 60
 
-    # Reuse connections (faster subsequent SSH/SCP to same host)
+    # Let the ssh-level probes above be the only liveness judge. TCPKeepAlive
+    # rides on the TCP socket, so a transient drop tears down a connection the
+    # probes would have ridden out.
+    TCPKeepAlive no
+
+    # Reuse connections (faster subsequent SSH/SCP to same host). ControlPersist
+    # matches the hour above so the shared master doesn't expire out from under
+    # a session that's still within its grace window.
     ControlMaster auto
     ControlPath ~/.ssh/sockets/%r@%h-%p
-    ControlPersist 600
+    ControlPersist 3600
 
     # Add keys to ssh-agent automatically on first use
     AddKeysToAgent yes
