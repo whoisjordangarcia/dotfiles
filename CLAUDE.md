@@ -115,6 +115,24 @@ bash configs/tmux/scripts/claude_status_test.sh       # must end with "All N tes
 
 `claude_status.sh` renders the Claude state dot in `status-left` (amber ● waiting / green ● churning / dim ○ idle); its `--classify`/`--render` flags test the mapping without a tmux server.
 
+### Brave Config
+
+`script/brave/` splits into a **read** half (`sync.sh` → `brave-sync`, safe while
+Brave runs) and a **write** half (`theme.sh` → `brave-theme`, which refuses while
+Brave runs — Brave rewrites Preferences on exit and would eat the edits).
+**When modifying anything under `script/brave/`, run:**
+
+```bash
+for t in script/brave/*_test.sh; do bash "$t"; done   # each must end with "All N tests passed"
+```
+
+The non-obvious rule: **a pref missing from the browser means "Brave is on the
+default", never "the user deleted it"** — so `snapshot` merges the tracked
+`prefs.txt` over the live read (live wins where the key exists). Without that,
+one prefs reset in the browser makes `brave-sync` silently rewrite the repo to
+the reset state, committing the damage as intent. Remove a pref by editing
+`configs/brave/prefs.txt`, not by syncing.
+
 ## Traps
 
 ### Touch ID Command Gate (macOS)
@@ -213,6 +231,29 @@ registers as `custom:catppuccin-mocha`; `name` is only the label shown in
 `/theme`. Select via `/theme`, or set `"theme": "custom:<slug>"` in **both**
 `settings.work.json` and `settings.personal.json` (they're independent files).
 
+> [!IMPORTANT]
+> **Selecting a custom theme silently disables `"theme": "auto"`.** They are
+> mutually exclusive by construction — the resolver is
+> `base = custom ? custom.base : (theme === "auto" ? detected : theme)`, so a
+> custom theme's `base` short-circuits detection and pins light-or-dark forever.
+> There is no `auto` value for `base` (the six listed below are the whole set),
+> and no `auto-ansi` theme. Both settings files therefore ship **`"theme": "auto"`**
+> — automatic light/dark is worth more day to day than a fixed palette, and
+> `custom:catppuccin-mocha` stays available via `/theme` when you want to pin one.
+>
+> `auto` resolves in three steps: an **OSC 11** query of the terminal's real
+> background color (`rgb:RRRR/GGGG/BBBB`), scored by relative luminance
+> (`0.2126r + 0.7152g + 0.0722b > 0.5` → light); then `COLORFGBG`'s last field
+> (`≤6` or `8` → dark); then `dark`. The OSC 11 path is why this works in Ghostty
+> and tmux, where `COLORFGBG` is unset — do not "fix" auto by exporting
+> `COLORFGBG`, and note that `statusline.sh` deliberately does no such detection
+> at all (it emits only theme-owned ANSI slots).
+>
+> Auto picks between the **built-in** `dark`/`light` — never the `*-ansi`
+> variants. So it adapts to light-vs-dark, not to your terminal's specific
+> palette. If you'd rather inherit that palette exactly, set `"theme":
+> "dark-ansi"` / `"light-ansi"`, at the cost of choosing the mode by hand.
+
 ```json
 {"name": "Catppuccin Mocha", "base": "dark", "overrides": {"claude": "#fab387"}}
 ```
@@ -283,6 +324,79 @@ git add configs/skills/<skill> && git commit
 > **Never `npx skills add` without `--copy`.** A bare install symlinks the skill into `~/.claude/skills/<name>` pointing at the machine-local CLI store `~/.agents/skills/` (untracked). That commits a **broken symlink** that dangles on every other machine. `--copy` writes real files instead. (This is exactly how `prd/SKILL.md` ended up a dangling absolute symlink — `find -L configs/skills -type l` lists such breakage on both macOS and Linux.)
 
 Hand-authored skills are just a directory with a `SKILL.md`. Create one with `npx skills init <name>` inside `configs/skills/`, or by hand. Skills are public — never commit secrets, API keys, or real hostnames (see the Security section).
+
+### SD Card Backup (macOS, `StartOnMount`)
+
+`configs/sd-backup/sd-backup.sh` runs from a launchd agent
+(`com.nest.sd-backup`) and offers to copy photos off a camera card to
+`/Volumes/tank01/Photos and Videos/Camera Imports/YYYY/YYYY-MM/`, dated from
+each file's mtime. Nothing new on the card → no prompt at all. After a
+successful copy it opens the newest month in Finder, then offers to clear the
+card (Open card / Keep / Erase card); erasing also ejects, because "safe to
+remove" is only true once the volume is unmounted.
+**When modifying it, run:**
+
+```bash
+bash configs/sd-backup/sd_backup_test.sh   # must end with "All N tests passed"
+```
+
+The script exposes `--plan CARD DST` (print the `src<TAB>dst` copy plan) and
+`--copy PLANFILE CARD` (execute one) so the tests drive the real logic — and
+real rsync — without a card, a NAS, or launchd.
+
+Six things that are not recoverable from reading the source:
+
+- **A launchd agent may not read a removable volume, and is never prompted for
+  permission.** This is the reason the component has two halves. TCC blocks
+  `readdir` while still allowing `stat`, so the agent can *detect* a card it
+  cannot *read*; and because background jobs have no UI context, macOS denies
+  silently and permanently instead of asking. Measured from one agent, same
+  card, same second: a direct read returns `Operation not permitted` while a
+  read through the app bundle succeeds.
+- **An app bundle is what fixes it, because TCC keys on bundle identity** — the
+  removable-volume table lists `com.mitchellh.ghostty`, `dev.jordan.ghostmux`
+  and friends. A shell script can never be more than "bash". So `setup.sh`
+  builds `~/Applications/SDBackup.app` (`dev.jordan.sd-backup`) with
+  `osacompile`, which emits a real signed bundle with no Xcode; the agent
+  `open`s it, and the applet re-enters the script with `--run`. A child process
+  inherits the TCC identity of the app responsible for it, which is what buys
+  the access. **`osacompile` does not write a `CFBundleIdentifier`** — without
+  the PlistBuddy step there is no identity for TCC to key on.
+- **`StartOnMount` fires on *every* mount, and the job mounts a volume itself.**
+  launchd passes no argument saying *what* mounted, so the script scans
+  `/Volumes/*` for a `DCIM/` dir. Mounting tank01 to write the backup re-fires
+  the agent — `mkdir /tmp/sd-backup.lock` (atomic test-and-set) is what stops
+  it recursing, not politeness.
+- **launchd jobs don't get `NAS_SMB_URL`** — it's an interactive-zsh export from
+  `~/.zshrc-sec` (this repo is public and bans real IPs). The script `sed`s it
+  out of that file. No `~/.zshrc-sec` → it can't mount the NAS and says so.
+  `ensure_dest` waits for the **share**, then `mkdir -p`s the destination:
+  testing for the destination folder instead reports "could not mount" on a
+  perfectly mounted share, forever, because nothing ever creates that folder.
+- **Idempotency is the destination path, not an rsync flag.** Verified by test:
+  `--ignore-existing` *silently drops* a rolled-over `DSCF0648.JPG` holding a
+  different photo, and without it rsync *overwrites* the original — data loss
+  in both directions. (`Photos and Videos/_fujifilm-collisions-20260807` on the
+  NAS is what that failure looks like in practice.) So the bash plan pass owns
+  the decision (same name + different size → `-N` suffix) and rsync only ever
+  receives files it should copy. `--modify-window=2` is still required: the card
+  is FAT32 (2-second mtime granularity), which otherwise reads as "changed"
+  against SMB on every run.
+- **Dating comes from mtime, not EXIF** — there's no `exiftool` on these
+  machines. Fine for the Fuji, which sets mtime to capture time.
+- **The erase gate is a second `plan` run coming back empty**, not a separate
+  verifier. `plan` emits a file only when it is missing from the destination or
+  differs in size, so an empty plan *is* the proof that every media file on the
+  card is on the NAS at full size. Reusing it means the check can never drift
+  from the copier — do not replace it with a bespoke comparison. Erase only ever
+  deletes what `media_files` matches, so `.CTG` catalogs, `FFDB` and the `DCIM`
+  folders survive for the camera; the dialog's default button is the
+  non-destructive one so a stray Return cannot wipe a card.
+
+Both halves log to `/tmp/sd-backup.log`; the `--run` half `exec`s onto it
+because the applet captures stdout rather than showing it. `dbg` writes to
+**stderr** so that logging inside a function can't be swallowed by a `$(...)`
+capture of that function — which is how the closing Finder-open broke once.
 
 ### Tmux Continuum Caveat
 
