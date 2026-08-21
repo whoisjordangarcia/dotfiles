@@ -15,7 +15,7 @@ local brightness = sbar.add("item", "widgets.brightness", {
       style = settings.font.style_map["Regular"],
       size = 13.0,
     },
-    color = colors.with_alpha(colors.yellow, 0.7),
+    color = colors.chrome.icon,
     padding_right = 2,
   },
   label = {
@@ -23,7 +23,7 @@ local brightness = sbar.add("item", "widgets.brightness", {
       family = settings.font.numbers,
       size = 11.0,
     },
-    color = colors.with_alpha(colors.white, 0.8),
+    color = colors.chrome.label,
     string = "—%",
   },
   background = { drawing = false },
@@ -37,17 +37,15 @@ brightness:subscribe("brightness_update", function(env)
   local val = tonumber(env.brightness) or 0
   local visible = val > 0
   local icon = "󰃟"
-  local color = colors.with_alpha(colors.yellow, 0.7)
+  -- Flat chrome; the level shows in the glyph, not the tint.
+  local color = colors.chrome.icon
 
   if val <= 25 then
     icon = "󰃞"
-    color = colors.with_alpha(colors.yellow, 0.4)
   elseif val <= 60 then
     icon = "󰃟"
-    color = colors.with_alpha(colors.yellow, 0.6)
   else
     icon = "󰃠"
-    color = colors.with_alpha(colors.yellow, 0.8)
   end
 
   brightness:set({

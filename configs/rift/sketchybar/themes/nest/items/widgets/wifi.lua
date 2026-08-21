@@ -52,7 +52,7 @@ local wifi_up = sbar.add("item", "widgets.wifi1", {
 			style = settings.font.style_map["Bold"],
 			size = 9.0,
 		},
-		color = colors.red,
+		color = colors.chrome.label,
 		string = "??? Bps",
 	},
 	y_offset = 4,
@@ -75,7 +75,7 @@ local wifi_down = sbar.add("item", "widgets.wifi2", {
 			style = settings.font.style_map["Bold"],
 			size = 9.0,
 		},
-		color = colors.blue,
+		color = colors.chrome.label,
 		string = "??? Bps",
 	},
 	y_offset = -4,
@@ -89,7 +89,7 @@ local wifi = sbar.add("item", "widgets.wifi", {
 			style = settings.font.style_map["Regular"],
 			size = 13.0,
 		},
-		color = colors.with_alpha(colors.text, 0.5),
+		color = colors.chrome.icon,
 		padding_right = 4,
 	},
 	label = {
@@ -97,7 +97,7 @@ local wifi = sbar.add("item", "widgets.wifi", {
 			family = settings.font.numbers,
 			size = 11.0,
 		},
-		color = colors.with_alpha(colors.white, 0.8),
+		color = colors.chrome.label,
 		string = "—%",
 	},
 })
@@ -124,8 +124,8 @@ local hostname = style.row(wifi_bracket.name, "󰇄", "Host")
 sbar.add("item", { position = "right", width = settings.group_paddings })
 
 wifi_up:subscribe("network_update", function(env)
-	local up_color = (env.upload == "000 Bps") and colors.grey or colors.red
-	local down_color = (env.download == "000 Bps") and colors.grey or colors.blue
+	local up_color = colors.chrome.label
+	local down_color = colors.chrome.label
 	wifi_up:set({
 		icon = { color = up_color },
 		label = {
@@ -163,16 +163,8 @@ wifi:subscribe("wifi_signal_update", function(env)
 	local bars = signal_bars(rssi)
 	local connected = bars > 0
 
-	local color
-	if not connected then
-		color = colors.with_alpha(colors.text, 0.3)
-	elseif bars <= 1 then
-		color = colors.red
-	elseif bars == 2 then
-		color = colors.orange
-	else
-		color = colors.with_alpha(colors.text, 0.7)
-	end
+	-- Flat chrome; strength shows in the glyph. Only "no link" dims.
+	local color = connected and colors.chrome.icon or colors.with_alpha(colors.text, 0.3)
 
 	-- Map RSSI to a 0-100% quality figure (linear over -100..-50 dBm).
 	local pct = math.max(0, math.min(100, 2 * (rssi + 100)))

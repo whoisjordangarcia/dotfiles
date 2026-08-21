@@ -16,13 +16,59 @@ local battery = sbar.add("item", "widgets.battery", {
 			family = settings.font.numbers,
 			size = 11.0,
 		},
-		color = colors.with_alpha(colors.white, 0.8),
+		color = colors.chrome.label,
 	},
 	background = { drawing = false },
 	update_freq = 120,
 	padding_left = 4,
 	padding_right = 4,
 })
+
+-- `ioreg -a` (plist) reports InstantAmperage as a *signed* integer. The default
+-- text form prints negative current as an unsigned 64-bit value, and Lua's
+-- doubles can't round-trip that back (ULP near 2^64 is 2048, so -777 becomes 0).
+-- One ioreg call, two cheap plutil extracts; prints "<mA>\n<mV>".
+local POWER_QUERY = 'p=$(ioreg -arn AppleSmartBattery -w0); '
+	.. [[printf '%s' "$p" | plutil -extract 0.InstantAmperage raw -o - - 2>/dev/null; ]]
+	.. [[printf '%s' "$p" | plutil -extract 0.Voltage raw -o - - 2>/dev/null]]
+
+-- ponytail: battery flow (draw when discharging, charge rate on AC), not total
+-- SoC package power — that needs `sudo powermetrics`, unusable from the bar.
+local power = sbar.add("item", "widgets.battery.power", {
+	position = "right",
+	icon = { drawing = false },
+	label = {
+		font = {
+			family = settings.font.numbers,
+			size = 11.0,
+		},
+		color = colors.chrome.label,
+	},
+	background = { drawing = false },
+	update_freq = 15,
+	padding_left = 4,
+	padding_right = 2,
+})
+
+power:subscribe({ "routine", "power_source_change", "system_woke" }, function()
+	sbar.exec(POWER_QUERY, function(out)
+		local milliamps, millivolts = out:match("(-?%d+)%s+(%d+)")
+		-- No battery (desktop) or an unreadable gauge: both extracts print nothing.
+		if not milliamps then
+			power:set({ drawing = false })
+			return
+		end
+
+		local amps = tonumber(milliamps)
+		power:set({
+			drawing = true,
+			label = {
+				string = string.format("%.1fW", math.abs(amps) * tonumber(millivolts) / 1e6),
+				color = amps > 0 and colors.green or colors.chrome.label,
+			},
+		})
+	end)
+end)
 
 local battery_spacer = sbar.add("item", "widgets.battery.spacer", { position = "right", width = 4 })
 
@@ -44,7 +90,7 @@ battery:subscribe({ "routine", "power_source_change", "system_woke" }, function(
 			label = string.format("%02d", charge) .. "%"
 		end
 
-		local color = colors.white
+		local color = colors.chrome.icon
 		local charging = batt_info:find("AC Power")
 
 		if charging then

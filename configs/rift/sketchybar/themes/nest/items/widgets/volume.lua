@@ -10,7 +10,7 @@ local volume = sbar.add("item", "widgets.volume", {
 			style = settings.font.style_map["Regular"],
 			size = 11.0,
 		},
-		color = colors.with_alpha(colors.white, 0.7),
+		color = colors.chrome.icon,
 		padding_right = 2,
 	},
 	label = {
@@ -18,7 +18,7 @@ local volume = sbar.add("item", "widgets.volume", {
 			family = settings.font.numbers,
 			size = 11.0,
 		},
-		color = colors.with_alpha(colors.white, 0.8),
+		color = colors.chrome.label,
 	},
 	background = { drawing = false },
 	padding_left = 4,

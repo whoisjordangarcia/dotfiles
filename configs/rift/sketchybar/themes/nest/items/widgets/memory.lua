@@ -12,7 +12,7 @@ local memory = sbar.add("item", "widgets.memory", {
 			style = settings.font.style_map["Regular"],
 			size = 11.0,
 		},
-		color = colors.with_alpha(colors.white, 0.7),
+		color = colors.chrome.icon,
 		padding_right = 2,
 	},
 	label = {
@@ -20,7 +20,7 @@ local memory = sbar.add("item", "widgets.memory", {
 			family = settings.font.numbers,
 			size = 11.0,
 		},
-		color = colors.with_alpha(colors.white, 0.8),
+		color = colors.chrome.label,
 	},
 	background = { drawing = false },
 	update_freq = 10,
@@ -35,14 +35,8 @@ memory:subscribe({ "routine", "forced" }, function()
 		if found then
 			local free = tonumber(pct)
 			local used = 100 - free
-			local color = colors.with_alpha(colors.white, 0.8)
-			if used > 80 then
-				color = colors.red
-			elseif used > 60 then
-				color = colors.orange
-			end
 			memory:set({
-				label = { string = string.format("%02d", used) .. "%", color = color },
+				label = { string = string.format("%02d", used) .. "%", color = colors.chrome.label },
 			})
 		end
 	end)
@@ -70,4 +64,4 @@ proc_popup.attach(memory, {
 	end,
 })
 
-sbar.add("item", { position = "right", width = 4 })
+sbar.add("item", "widgets.memory.spacer", { position = "right", width = 4 })

@@ -31,6 +31,12 @@ return {
     bg = 0xd0181825,
     border = 0xff45475a,
   },
+  -- Uniform bar chrome -- see colors_light.lua. `text` at 70%/80% alpha.
+  chrome = {
+    icon = 0xb2cdd6f4,
+    label = 0xcccdd6f4,
+  },
+
   bg1 = 0x40585b70,
   bg2 = 0x30585b70,
 

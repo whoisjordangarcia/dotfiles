@@ -20,7 +20,7 @@ local temp = sbar.add("item", "widgets.temp", {
       style = settings.font.style_map["Regular"],
       size = 13.0,
     },
-    color = colors.with_alpha(colors.text, 0.5),
+    color = colors.chrome.icon,
     padding_right = 4,
   },
   label = {
@@ -28,7 +28,7 @@ local temp = sbar.add("item", "widgets.temp", {
       family = settings.font.numbers,
       size = 11.0,
     },
-    color = colors.subtext,
+    color = colors.chrome.label,
     string = "—°",
   },
   background = { drawing = false },
@@ -51,9 +51,10 @@ local popup_gpu = style.row(temp_bracket.name, "󰢮", "GPU")
 local popup_fan0 = style.row(temp_bracket.name, "󰈐", "Fan 1")
 local popup_fan1 = style.row(temp_bracket.name, "󰈐", "Fan 2")
 
-sbar.add("item", { position = "right", width = 4 })
+sbar.add("item", "widgets.temp.spacer", { position = "right", width = 4 })
 
--- Color based on temperature
+-- Color based on temperature. Used by the popup rows, where a red/orange/yellow
+-- legend earns its place.
 local function temp_color(t)
   if t >= 90 then return colors.red
   elseif t >= 75 then return colors.orange
@@ -61,6 +62,9 @@ local function temp_color(t)
   else return colors.subtext
   end
 end
+
+-- The bar item is flat chrome: no severity tint. The popup rows above keep the
+-- red/orange/yellow ramp for when you actually open them.
 
 -- Subscribe to temp_update events
 temp:subscribe("temp_update", function(env)
@@ -71,12 +75,12 @@ temp:subscribe("temp_update", function(env)
   local fan1_rpm = env.fan1_rpm or "0"
   local fan_count = tonumber(env.fan_count) or 0
 
-  local color = temp_color(cpu_temp)
+  local color = colors.chrome.label
 
   -- Update bar item
   temp:set({
     label = { string = cpu_int .. "°", color = color },
-    icon = { color = color },
+    icon = { color = colors.chrome.icon },
   })
 
   -- Update popup details

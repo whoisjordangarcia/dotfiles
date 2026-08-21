@@ -34,6 +34,14 @@ return {
   bg1 = 0x40acb0be,
   bg2 = 0x30acb0be,
 
+  -- Uniform bar chrome. Every widget icon/label uses these so the row reads as
+  -- one strip rather than eight independently-tinted ones. Derived from `text`
+  -- at 70%/80% alpha -- the pair volume.lua and memory.lua already used.
+  chrome = {
+    icon = 0xb24c4f69,
+    label = 0xcc4c4f69,
+  },
+
   with_alpha = function(color, alpha)
     if alpha > 1.0 or alpha < 0.0 then return color end
     return (color & 0x00ffffff) | (math.floor(alpha * 255.0) << 24)

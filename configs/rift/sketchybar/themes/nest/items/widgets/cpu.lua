@@ -18,7 +18,7 @@ local cpu = sbar.add("item", "widgets.cpu", {
 			style = settings.font.style_map["Regular"],
 			size = 11.0,
 		},
-		color = colors.with_alpha(colors.text, 0.5),
+		color = colors.chrome.icon,
 		padding_right = 4,
 	},
 	label = {
@@ -26,7 +26,7 @@ local cpu = sbar.add("item", "widgets.cpu", {
 			family = settings.font.numbers,
 			size = 11.0,
 		},
-		color = colors.subtext,
+		color = colors.chrome.label,
 	},
 	background = { drawing = false },
 	padding_left = 4,
@@ -34,18 +34,8 @@ local cpu = sbar.add("item", "widgets.cpu", {
 })
 
 cpu:subscribe("cpu_update", function(env)
-	local load = tonumber(env.total_load)
-	local color = colors.subtext
-	if load > 80 then
-		color = colors.red
-	elseif load > 60 then
-		color = colors.orange
-	elseif load > 40 then
-		color = colors.yellow
-	end
-
 	cpu:set({
-		label = { string = env.total_load .. "%", color = color },
+		label = { string = env.total_load .. "%", color = colors.chrome.label },
 	})
 end)
 
@@ -62,4 +52,4 @@ proc_popup.attach(cpu, {
 	end,
 })
 
-sbar.add("item", { position = "right", width = 4 })
+sbar.add("item", "widgets.cpu.spacer", { position = "right", width = 4 })
