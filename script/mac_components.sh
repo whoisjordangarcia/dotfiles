@@ -40,4 +40,5 @@ component_installation=(
   brave/mac
   sunshine/mac
   appearance-watcher/mac
+  sd-backup/mac
 )

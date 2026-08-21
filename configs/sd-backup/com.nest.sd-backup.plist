@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.nest.sd-backup</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>$HOME/dev/dotfiles/configs/sd-backup/sd-backup.sh</string>
+    </array>
+    <key>StartOnMount</key>
+    <true/>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>StandardOutPath</key>
+    <string>/tmp/sd-backup.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/sd-backup.log</string>
+</dict>
+</plist>
