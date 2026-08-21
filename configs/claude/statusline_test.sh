@@ -27,6 +27,13 @@ passed=0
 failed=0
 errors=""
 
+# The width assertions below pin exact rendered content, so the suite must not
+# inherit segments from the shell that runs it. An SSH session prepends
+# "⇢ <host>" to line 1 and eats columns the narrow-pane cases budgeted for
+# (and inside tmux the statusline recovers the var from the tmux environment,
+# so unsetting it alone isn't enough — TMUX has to go too).
+unset SSH_CONNECTION TMUX
+
 # ─── Helpers ────────────────────────────────────────────────────────
 # Strips SGR color codes AND OSC 8 hyperlink wrappers (\e]8;;url\a … \e]8;;\a)
 strip_ansi() { sed $'s/\033\[[0-9;]*m//g; s/\033]8;;[^\007]*\007//g'; }
@@ -51,11 +58,11 @@ assert_contains() {
   local test_name="$1" output="$2" expected="$3"
   if echo "$output" | grep -qF -- "$expected"; then
     passed=$((passed + 1))
-    printf "  \033[38;5;114m✓\033[0m %s\n" "$test_name"
+    printf "  \033[0;32m✓\033[0m %s\n" "$test_name"
   else
     failed=$((failed + 1))
     errors+="  FAIL: $test_name — expected to contain: '$expected'\n"
-    printf "  \033[38;5;203m✗\033[0m %s\n" "$test_name"
+    printf "  \033[0;31m✗\033[0m %s\n" "$test_name"
     printf "    expected to contain: %s\n" "$expected"
     printf "    got: %s\n" "$output"
   fi
@@ -65,11 +72,11 @@ assert_not_contains() {
   local test_name="$1" output="$2" unexpected="$3"
   if ! echo "$output" | grep -qF -- "$unexpected"; then
     passed=$((passed + 1))
-    printf "  \033[38;5;114m✓\033[0m %s\n" "$test_name"
+    printf "  \033[0;32m✓\033[0m %s\n" "$test_name"
   else
     failed=$((failed + 1))
     errors+="  FAIL: $test_name — expected NOT to contain: '$unexpected'\n"
-    printf "  \033[38;5;203m✗\033[0m %s\n" "$test_name"
+    printf "  \033[0;31m✗\033[0m %s\n" "$test_name"
     printf "    expected NOT to contain: %s\n" "$unexpected"
   fi
 }
@@ -91,11 +98,11 @@ assert_exit_code() {
   actual_code=$?
   if [ "$actual_code" -eq "$expected_code" ]; then
     passed=$((passed + 1))
-    printf "  \033[38;5;114m✓\033[0m %s\n" "$test_name"
+    printf "  \033[0;32m✓\033[0m %s\n" "$test_name"
   else
     failed=$((failed + 1))
     errors+="  FAIL: $test_name — expected exit $expected_code, got $actual_code\n"
-    printf "  \033[38;5;203m✗\033[0m %s (expected %d, got %d)\n" "$test_name" "$expected_code" "$actual_code"
+    printf "  \033[0;31m✗\033[0m %s (expected %d, got %d)\n" "$test_name" "$expected_code" "$actual_code"
   fi
 }
 
@@ -137,14 +144,14 @@ INPUT_SESSION_NAME='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_c
 INPUT_EMPTY='{}'
 
 # ─── Tests ──────────────────────────────────────────────────────────
-printf "\n\033[38;5;141m━━━ Exit Code ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Exit Code ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 assert_exit_code "exits 0 with minimal input" "$INPUT_MINIMAL" 0
 assert_exit_code "exits 0 with full input" "$INPUT_FULL" 0
 assert_exit_code "exits 0 with empty JSON" "$INPUT_EMPTY" 0
 assert_exit_code "exits 0 with non-git cwd" "$INPUT_NO_LINES" 0
 
-printf "\n\033[38;5;141m━━━ Cost Display ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Cost Display ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 out=$(run_statusline_plain "$INPUT_MINIMAL")
 assert_contains "shows zero cost" "$out" '$0.00'
@@ -152,7 +159,7 @@ assert_contains "shows zero cost" "$out" '$0.00'
 out=$(run_statusline_plain "$INPUT_FULL")
 assert_contains "shows formatted cost" "$out" '$1.23'
 
-printf "\n\033[38;5;141m━━━ Model Name ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Model Name ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 out=$(run_statusline_plain "$INPUT_MINIMAL")
 assert_not_contains "hides default Opus 4.8 1M model name" "$out" "Opus"
@@ -175,7 +182,7 @@ INPUT_MODEL_EFFORT='{"model":{"display_name":"Claude Opus 4.7"},"cost":{"total_c
 out_line1=$(run_statusline_plain "$INPUT_MODEL_EFFORT" | head -1)
 assert_contains "effort level sits to the right of the model name" "$out_line1" "Opus 4.7 high"
 
-printf "\n\033[38;5;141m━━━ Context Bar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Context Bar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 out=$(run_statusline_plain "$INPUT_MINIMAL")
 assert_contains "shows context percentage" "$out" "0%"
@@ -201,7 +208,7 @@ assert_contains "shows token count next to context pct" "$out" "70% (140k)"
 out=$(run_statusline_plain "$INPUT_MINIMAL")
 assert_not_contains "hides token count when usage is zero" "$out" "(0"
 
-printf "\n\033[38;5;141m━━━ Uncommitted Lines (git diff vs HEAD) ━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Uncommitted Lines (git diff vs HEAD) ━━━\033[0m\n"
 
 # +/- now mirrors `git diff --shortstat HEAD` (uncommitted tracked changes),
 # NOT the session edit counter — so it resets on commit. The high session
@@ -241,7 +248,7 @@ assert_not_contains "hides lines on clean tree (deleted)" "$out" "-20"
 
 rm -rf "$LINES_ADD_REPO" "$LINES_DEL_REPO" "$LINES_CLEAN_REPO"
 
-printf "\n\033[38;5;141m━━━ Cache Hit Rate ━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Cache Hit Rate ━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 out=$(run_statusline_plain "$INPUT_FULL")
 # 50000 cache_read / 140000 total = 35% — below 80%, so it shows
@@ -250,12 +257,12 @@ assert_contains "shows cache rate when below 80%" "$out" "⚡"
 out=$(run_statusline_plain "$INPUT_NO_LINES")
 assert_not_contains "hides cache when zero reads" "$out" "⚡"
 
-printf "\n\033[38;5;141m━━━ Fallback CWD (no git) ━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Fallback CWD (no git) ━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 out=$(run_statusline_plain "$INPUT_FULL")
 assert_contains "shows project name when no git" "$out" "tmp"
 
-printf "\n\033[38;5;141m━━━ zmx Session (line 2) ━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ zmx Session (line 2) ━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 run_zmx() { echo "$2" | env -u CLAUDE_EFFORT -u TMUX TERM_PROGRAM=ghostty \
   ZMX_SESSION="$1" bash "$STATUSLINE" 2>/dev/null | strip_ansi; }
@@ -278,7 +285,7 @@ out=$(run_zmx "a-very-long-zmx-session-name-that-overflows" "$INPUT_FULL")
 assert_contains "truncates long session names" "$out" "…"
 assert_not_contains "long session name is cut at 24 chars" "$out" "that-overflows"
 
-printf "\n\033[38;5;141m━━━ Rate Limits ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Rate Limits ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 out=$(run_statusline_plain "$INPUT_RATE_HIGH")
 assert_contains "shows 5h rate at ≥70%" "$out" "5h:85%"
@@ -292,7 +299,7 @@ out=$(run_statusline_plain "$INPUT_NO_RATE")
 assert_not_contains "hides rate limits when absent" "$out" "5h:"
 assert_not_contains "hides 7d when absent" "$out" "7d:"
 
-printf "\n\033[38;5;141m━━━ Rate Limit Reset Countdown ━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Rate Limit Reset Countdown ━━━━━━━━━━━━━\033[0m\n"
 
 # resets_at is documented as Unix epoch seconds; values are computed relative
 # to now with a ~30s margin so a few seconds of test runtime can't flip them.
@@ -314,7 +321,7 @@ assert_exit_code "exits 0 with non-numeric resets_at" "$INPUT_RATE_RESET_BAD" 0
 out=$(run_statusline_plain "$INPUT_RATE_RESET_BAD")
 assert_contains "still shows rate pct when resets_at is malformed" "$out" "5h:85%"
 
-printf "\n\033[38;5;141m━━━ Session Name ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Session Name ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 # Session name should be ignored — line 1 always shows project/repo/cwd basename
 out=$(run_statusline_plain "$INPUT_SESSION_NAME")
@@ -329,7 +336,7 @@ out_line1=$(run_statusline_plain "$INPUT_SESSION_NAME_GIT" | head -1)
 assert_not_contains "session name does not replace project on line 1" "$out_line1" "refactor-auth"
 assert_contains "cwd basename shown on line 1 even when session name set" "$out_line1" "$REPO_BASE"
 
-printf "\n\033[38;5;141m━━━ Reasoning Effort ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Reasoning Effort ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 # Primary source: .effort.level (real Claude Code payload field, ≥2.1.133)
 INPUT_EFFORT_REAL='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.00,"total_duration_ms":60000},"session_id":"test-eff-real","cwd":"/tmp","context_window":{"used_percentage":10},"effort":{"level":"high"}}'
@@ -344,7 +351,7 @@ assert_contains "shows effortLevel when set" "$out" "xhigh"
 # the whole indicator. Guard against reintroducing the old ◯ dot.
 assert_not_contains "effort shows no ◯ glyph" "$out" "◯"
 out_raw=$(run_statusline "$INPUT_EFFORT")
-assert_contains "effort level is accent-colored" "$out_raw" $'\033[38;5;141mxhigh'
+assert_contains "effort level is accent-colored" "$out_raw" $'\033[0;35mxhigh'
 
 # $CLAUDE_EFFORT env var fallback when the JSON carries no effort field
 out=$(echo "$INPUT_FULL" | env CLAUDE_EFFORT=low bash "$STATUSLINE" 2>/dev/null | strip_ansi)
@@ -354,31 +361,35 @@ assert_contains "falls back to CLAUDE_EFFORT env var" "$out" "low"
 out=$(run_statusline_plain "$INPUT_FULL")
 assert_not_contains "hides effort when key absent" "$out" "low"
 
-printf "\n\033[38;5;141m━━━ Light/Dark Background (COLORFGBG) ━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Theme Adaptivity (terminal palette only) ━\033[0m\n"
 
-# Background detection swaps key-data + warning colors. We assert on the raw
-# (un-stripped) ANSI so we can see which palette was chosen.
-INPUT_BG='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.00,"total_duration_ms":60000},"session_id":"test-bg","cwd":"/tmp","context_window":{"used_percentage":10}}'
-
-# Light bg (bg field = 15 → white background): key data is near-black (235)
-out=$(echo "$INPUT_BG" | COLORFGBG="0;15" bash "$STATUSLINE" 2>/dev/null)
-assert_contains "light bg uses near-black key data (235)" "$out" "38;5;235"
-assert_not_contains "light bg drops near-white key data (255)" "$out" "38;5;255"
-
-# bg field = 7 (silver) also counts as light
-out=$(echo "$INPUT_BG" | COLORFGBG="0;7" bash "$STATUSLINE" 2>/dev/null)
-assert_contains "silver bg (7) treated as light" "$out" "38;5;235"
-
-# Dark bg (bg field = 0 → black background): key data stays near-white (255)
-out=$(echo "$INPUT_BG" | COLORFGBG="15;0" bash "$STATUSLINE" 2>/dev/null)
-assert_contains "dark bg keeps near-white key data (255)" "$out" "38;5;255"
-assert_not_contains "dark bg avoids near-black key data (235)" "$out" "38;5;235"
-
-# Unset COLORFGBG defaults to the dark palette
+# The statusline must emit ONLY semantic ANSI slots the terminal theme owns, so
+# it recolors itself under any theme and stays legible on light and dark
+# backgrounds with no detection. Any absolute color (256-index or truecolor)
+# would pin a value the theme can't override — that's the regression to catch.
+# Asserts on the raw (un-stripped) output.
+INPUT_BG='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.00,"total_duration_ms":60000},"session_id":"test-bg","cwd":"/tmp","context_window":{"used_percentage":10},"effortLevel":"high"}'
 out=$(echo "$INPUT_BG" | env -u COLORFGBG bash "$STATUSLINE" 2>/dev/null)
-assert_contains "unset COLORFGBG defaults to dark (255)" "$out" "38;5;255"
 
-printf "\n\033[38;5;141m━━━ Worktree/Branch Dedup ━━━━━━━━━━━━━━━━━━\033[0m\n"
+assert_not_contains "emits no 256-color indices (38;5;N)" "$out" "38;5;"
+assert_not_contains "emits no truecolor (38;2;R;G;B)" "$out" "38;2;"
+assert_not_contains "sets no background color" "$out" $'\033[4'
+# Key data rides the terminal's DEFAULT foreground (39) — the only color
+# guaranteed to contrast, whichever way the theme leans.
+assert_contains "key data uses default fg (39)" "$out" $'\033[0;39m'
+# Secondary text is faint-over-default, not a hardcoded grey.
+assert_contains "secondary text uses faint (2;39)" "$out" $'\033[0;2;39m'
+# Accents come from the theme's non-bright slots (bright ones wash out on light).
+assert_contains "accent uses theme magenta (35)" "$out" $'\033[0;35m'
+assert_not_contains "no bright-slot accents (90-97)" "$out" $'\033[0;9'
+
+# Same input under a light-reporting terminal must render identically — there
+# is no palette branch left to diverge.
+out_light=$(echo "$INPUT_BG" | COLORFGBG="0;15" bash "$STATUSLINE" 2>/dev/null)
+assert_contains "light and dark backgrounds render identically" \
+  "$([ "$out" = "$out_light" ] && echo same || echo differ)" "same"
+
+printf "\n\033[0;35m━━━ Worktree/Branch Dedup ━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 # Fresh worktree repo where wt dir name matches branch (slash → dash)
 WT_REPO=$(mktemp -d -t statusline-wt.XXXXXX)
@@ -409,7 +420,7 @@ assert_contains "shows branch alongside ⎇ label" "$out" "feature/big-refactor"
 
 rm -rf "$WT_REPO" "$WT_REPO2"
 
-printf "\n\033[38;5;141m━━━ Long Name Truncation ━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Long Name Truncation ━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 # Non-worktree long cwd: line 2 shows the path (trailing-truncated at 50 chars).
 LONG_NAME="jordan-nes-3984-workflows-add-genetic-testing-decision-to-patient-list-and"
@@ -443,7 +454,7 @@ assert_not_contains "line 2 drops path prefix on the left" "$line2" "$LONG_WT_RO
 assert_contains "line 2 truncates long worktree name" "$line2" "…"
 rm -rf "$LONG_WT_ROOT"
 
-printf "\n\033[38;5;141m━━━ Worktree False-Positive ━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Worktree False-Positive ━━━━━━━━━━━━━━━━\033[0m\n"
 
 # A plain (non-worktree) repo root must NOT be misflagged as a worktree.
 # Regression: --git-dir returns relative ".git", which never equals the
@@ -457,7 +468,7 @@ assert_not_contains "plain repo is not misflagged as a worktree" "$out" "⎇"
 assert_contains "plain repo shows its branch" "$out" "main"
 rm -rf "$PLAIN_REPO"
 
-printf "\n\033[38;5;141m━━━ Base Branch Detection ━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Base Branch Detection ━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 # Nearest-base heuristic: the base whose merge-base is fewest commits behind
 # HEAD wins. Remote-tracking refs are simulated with git update-ref.
@@ -493,7 +504,7 @@ out=$(run_statusline_plain "$INPUT_BASE_REL")
 assert_contains "branch cut from release shows release as base" "$out" "← release/2.16.0"
 rm -rf "$BASE_REPO2"
 
-printf "\n\033[38;5;141m━━━ PR Badge + CI Glyph ━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ PR Badge + CI Glyph ━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 PR_REPO=$(mktemp -d -t statusline-pr.XXXXXX)
 (cd "$PR_REPO" && git init -q -b jordan/pr-test \
@@ -528,7 +539,7 @@ assert_contains "merged PR shows merged suffix" "$out" "#4567 merged"
 assert_not_contains "merged PR hides stale CI glyph" "$out" "⏳"
 rm -rf "$PR_REPO"
 
-printf "\n\033[38;5;141m━━━ SSH Host Indicator ━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ SSH Host Indicator ━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 run_ssh() {
   echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u TMUX SSH_CONNECTION="$1" \
@@ -565,18 +576,18 @@ out=$(run_tmux_ssh "-SSH_CONNECTION")
 assert_not_contains "tmux reporting unset SSH_CONNECTION reads as local" "$out" "⇢"
 rm -rf "$SSH_FAKE_BIN"
 
-printf "\n\033[38;5;141m━━━ One-Line Mode ━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ One-Line Mode ━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 # Wide terminal: everything joins onto a single line
 out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT STATUSLINE_ONE_LINE=1 STATUSLINE_COLS=300 bash "$STATUSLINE" 2>/dev/null | strip_ansi)
 line_count=$(echo "$out" | wc -l | tr -d ' ')
 if [ "$line_count" -eq 1 ]; then
   passed=$((passed + 1))
-  printf "  \033[38;5;114m✓\033[0m one-line mode joins output when terminal is wide\n"
+  printf "  \033[0;32m✓\033[0m one-line mode joins output when terminal is wide\n"
 else
   failed=$((failed + 1))
   errors+="  FAIL: one-line mode joins output when terminal is wide — got $line_count lines\n"
-  printf "  \033[38;5;203m✗\033[0m one-line mode joins output when terminal is wide (got %s lines)\n" "$line_count"
+  printf "  \033[0;31m✗\033[0m one-line mode joins output when terminal is wide (got %s lines)\n" "$line_count"
 fi
 # Project name ("tmp") is line-2 content; its presence proves line 2 was joined in.
 assert_contains "one-line output keeps line-2 content" "$out" 'tmp'
@@ -586,11 +597,11 @@ out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT STATUSLINE_ONE_LINE=1 STATUSLINE
 line_count=$(echo "$out" | wc -l | tr -d ' ')
 if [ "$line_count" -gt 1 ]; then
   passed=$((passed + 1))
-  printf "  \033[38;5;114m✓\033[0m one-line mode falls back to multi-line when too wide\n"
+  printf "  \033[0;32m✓\033[0m one-line mode falls back to multi-line when too wide\n"
 else
   failed=$((failed + 1))
   errors+="  FAIL: one-line mode falls back to multi-line when too wide — got $line_count line\n"
-  printf "  \033[38;5;203m✗\033[0m one-line mode falls back to multi-line when too wide (got %s line)\n" "$line_count"
+  printf "  \033[0;31m✗\033[0m one-line mode falls back to multi-line when too wide (got %s line)\n" "$line_count"
 fi
 
 # Unknown width (no override, no COLUMNS, no tty in test env): stays one-line
@@ -598,11 +609,11 @@ out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u COLUMNS -u STATUSLINE_COLS ST
 line_count=$(echo "$out" | wc -l | tr -d ' ')
 if [ "$line_count" -eq 1 ]; then
   passed=$((passed + 1))
-  printf "  \033[38;5;114m✓\033[0m one-line mode kept when terminal width is unknown\n"
+  printf "  \033[0;32m✓\033[0m one-line mode kept when terminal width is unknown\n"
 else
   failed=$((failed + 1))
   errors+="  FAIL: one-line mode kept when terminal width is unknown — got $line_count lines\n"
-  printf "  \033[38;5;203m✗\033[0m one-line mode kept when terminal width is unknown (got %s lines)\n" "$line_count"
+  printf "  \033[0;31m✗\033[0m one-line mode kept when terminal width is unknown (got %s lines)\n" "$line_count"
 fi
 
 # Mode off: multi-line output unchanged
@@ -610,14 +621,14 @@ out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u STATUSLINE_ONE_LINE bash "$ST
 line_count=$(echo "$out" | wc -l | tr -d ' ')
 if [ "$line_count" -gt 1 ]; then
   passed=$((passed + 1))
-  printf "  \033[38;5;114m✓\033[0m default multi-line output unaffected by one-line code\n"
+  printf "  \033[0;32m✓\033[0m default multi-line output unaffected by one-line code\n"
 else
   failed=$((failed + 1))
   errors+="  FAIL: default multi-line output unaffected — got $line_count line\n"
-  printf "  \033[38;5;203m✗\033[0m default multi-line output unaffected (got %s line)\n" "$line_count"
+  printf "  \033[0;31m✗\033[0m default multi-line output unaffected (got %s line)\n" "$line_count"
 fi
 
-printf "\n\033[38;5;141m━━━ Node Apps (line 3) ━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Node Apps (line 3) ━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 # Cache stores plain "name:port" entries; the statusline wraps each in an
 # OSC 8 link at display time — Nest frontend apps map to their https dev
@@ -646,7 +657,7 @@ assert_contains "unsupported terminal still shows app:port text" "$(printf '%s' 
 
 rm -rf "$NODE_TEST_CWD" "/tmp/claude-statusline-node-cache/${node_test_key}_node"
 
-printf "\n\033[38;5;141m━━━ Width Fit (no-wrap / anti double-render) ━\033[0m\n"
+printf "\n\033[0;35m━━━ Width Fit (no-wrap / anti double-render) ━\033[0m\n"
 
 # A line wider than the pane wraps onto an extra terminal row Claude Code didn't
 # reserve — the tmux-over-SSH double render. Every emitted line must fit COLUMNS.
@@ -665,11 +676,11 @@ assert_within_cols() {
   w=$(disp_width "$line")
   if [ "$w" -le "$cols" ]; then
     passed=$((passed + 1))
-    printf "  \033[38;5;114m✓\033[0m %s (%s ≤ %s)\n" "$test_name" "$w" "$cols"
+    printf "  \033[0;32m✓\033[0m %s (%s ≤ %s)\n" "$test_name" "$w" "$cols"
   else
     failed=$((failed + 1))
     errors+="  FAIL: $test_name — line width $w > $cols cols (would wrap)\n"
-    printf "  \033[38;5;203m✗\033[0m %s (%s > %s cols)\n" "$test_name" "$w" "$cols"
+    printf "  \033[0;31m✗\033[0m %s (%s > %s cols)\n" "$test_name" "$w" "$cols"
   fi
 }
 
@@ -728,33 +739,33 @@ assert_within_cols "line 3 node apps fit a 40-col pane" "$line3_raw" 40
 assert_contains "clamped line 3 closes the OSC 8 link" "$line3_raw" $']8;;\007'
 rm -rf "$NODE_W_CWD" "/tmp/claude-statusline-node-cache/${node_w_key}_node"
 
-printf "\n\033[38;5;141m━━━ Output Structure ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Output Structure ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 line_count=$(run_statusline_plain "$INPUT_FULL" | wc -l | tr -d ' ')
 if [ "$line_count" -ge 1 ] && [ "$line_count" -le 3 ]; then
   passed=$((passed + 1))
-  printf "  \033[38;5;114m✓\033[0m outputs 1-3 lines (got %s)\n" "$line_count"
+  printf "  \033[0;32m✓\033[0m outputs 1-3 lines (got %s)\n" "$line_count"
 else
   failed=$((failed + 1))
-  printf "  \033[38;5;203m✗\033[0m outputs 1-3 lines (got %s)\n" "$line_count"
+  printf "  \033[0;31m✗\033[0m outputs 1-3 lines (got %s)\n" "$line_count"
 fi
 
 out_empty=$(run_statusline_plain "$INPUT_EMPTY")
 if [ -n "$out_empty" ]; then
   passed=$((passed + 1))
-  printf "  \033[38;5;114m✓\033[0m produces output even with empty JSON\n"
+  printf "  \033[0;32m✓\033[0m produces output even with empty JSON\n"
 else
   failed=$((failed + 1))
-  printf "  \033[38;5;203m✗\033[0m produces output even with empty JSON\n"
+  printf "  \033[0;31m✗\033[0m produces output even with empty JSON\n"
 fi
 
 # ─── Summary ────────────────────────────────────────────────────────
 total=$((passed + failed))
-printf "\n\033[38;5;141m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 if [ "$failed" -eq 0 ]; then
-  printf "\033[38;5;114m✓ All %d tests passed\033[0m\n\n" "$total"
+  printf "\033[0;32m✓ All %d tests passed\033[0m\n\n" "$total"
 else
-  printf "\033[38;5;203m✗ %d/%d tests failed\033[0m\n" "$failed" "$total"
+  printf "\033[0;31m✗ %d/%d tests failed\033[0m\n" "$failed" "$total"
   printf "\n%b\n" "$errors"
   exit 1
 fi

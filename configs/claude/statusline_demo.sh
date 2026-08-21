@@ -15,10 +15,10 @@ export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
 cleanup() { rm -rf "$DEMO_DIR" /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache /tmp/claude-statusline-node-cache; }
 trap cleanup EXIT
 
-sep=" \033[38;5;245m·\033[0m "
-header() { printf '\n\033[38;5;141m━━━ %s ━━━\033[0m\n\n' "$1"; }
-expect() { printf '\033[38;5;245m   expect │ %s\033[0m\n' "$1"; }
-actual_prefix() { printf '\033[38;5;255m   actual │ \033[0m'; }
+sep=" \033[0;2;39m·\033[0m "
+header() { printf '\n\033[0;35m━━━ %s ━━━\033[0m\n\n' "$1"; }
+expect() { printf '\033[0;2;39m   expect │ %s\033[0m\n' "$1"; }
+actual_prefix() { printf '\033[0;39m   actual │ \033[0m'; }
 
 # ─── Helper: create a git repo with a commit ────────────────────
 make_repo() {
@@ -70,16 +70,16 @@ run() {
   local first=true
   while IFS= read -r line; do
     if [ "$first" = true ]; then
-      printf '\033[38;5;255m   actual │ \033[0m%b\n' "$line"
+      printf '\033[0;39m   actual │ \033[0m%b\n' "$line"
       first=false
     else
-      printf '          \033[38;5;245m│\033[0m %b\n' "$line"
+      printf '          \033[0;2;39m│\033[0m %b\n' "$line"
     fi
   done <<<"$output"
   echo ""
 }
 # ═════════════════════════════════════════════════════════════════
-printf '\n\033[38;5;255;1m  Statusline Variation Demo\033[0m\n'
+printf '\n\033[0;1;39m  Statusline Variation Demo\033[0m\n'
 # ═════════════════════════════════════════════════════════════════
 
 # ─── 1. Normal repo ─────────────────────────────────────────────
@@ -120,7 +120,7 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.45,"
 
 # ─── 4. Worktree with open PR ───────────────────────────────────
 clear_caches
-set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[38;5;114m✓\033[0m' "APPROVED"
+set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[0;32m✓\033[0m' "APPROVED"
 
 header "4. Worktree with open PR #4567, approved + CI pass"
 expect "L2: ⎇ #4567 approved ✓ jordan/preview-pr"
@@ -128,7 +128,7 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":2.31,"
 
 # ─── 5. Worktree with draft PR ──────────────────────────────────
 clear_caches
-set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "true" $'\033[38;5;221m⏳\033[0m'
+set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "true" $'\033[0;33m⏳\033[0m'
 
 header "5. Worktree with draft PR #4567 + CI pending"
 expect "L2: ⎇ #4567 draft ⏳ jordan/preview-pr"
@@ -184,7 +184,7 @@ node_key=$(printf '%s' "$WT1" | md5 -q 2>/dev/null || printf '%s' "$WT1" | md5su
 # (yoda → dev.yoda…, patient-navigator → dev.app…, provider-portal →
 # dev.portal…), anything else links to http://localhost:<port>.
 printf 'client-api:3000 provider-portal:4200' >"/tmp/claude-statusline-node-cache/${node_key}_node"
-set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[38;5;114m✓\033[0m'
+set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[0;32m✓\033[0m'
 
 header "11. Worktree with running Node apps (line 3)"
 expect "L2: ⎇ #4567 ✓ jordan/preview-pr"
@@ -196,9 +196,9 @@ clear_caches
 mkdir -p /tmp/claude-statusline-git-cache
 dirty_key=$(printf '%s' "$REPO1" | md5 -q 2>/dev/null || printf '%s' "$REPO1" | md5sum | cut -d' ' -f1)
 # Fake dirty status: 2 staged, 3 modified, 1 new
-printf '\033[38;5;114m● 2 staged\033[0m \033[38;5;255m◦ 3 modified\033[0m \033[38;5;245m+1 new\033[0m' >"/tmp/claude-statusline-git-cache/${dirty_key}_dirty"
+printf '\033[0;32m● 2 staged\033[0m \033[0;39m◦ 3 modified\033[0m \033[0;2;39m+1 new\033[0m' >"/tmp/claude-statusline-git-cache/${dirty_key}_dirty"
 # Fake sync: 2 ahead, 1 behind
-printf '\033[38;5;255m↑2\033[0m \033[38;5;255m↓1\033[0m' >"/tmp/claude-statusline-git-cache/${dirty_key}_sync"
+printf '\033[0;39m↑2\033[0m \033[0;39m↓1\033[0m' >"/tmp/claude-statusline-git-cache/${dirty_key}_sync"
 
 header "14. Dirty tree with sync status"
 expect "main · ↑2 ↓1 · ● 2 staged ◦ 3 modified +1 new"
@@ -206,7 +206,7 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.45,"
 
 # ─── 15. CI failure on open PR ───────────────────────────────────
 clear_caches
-set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[38;5;203m✗\033[0m'
+set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[0;31m✗\033[0m'
 
 header "15. Open PR with CI failure"
 expect "L2: ⎇ #4567 ✗ jordan/preview-pr"
@@ -348,7 +348,7 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":6.00,"
 
 # ─── 31. Open PR — changes requested + CI failure ────────────────
 clear_caches
-set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[38;5;203m✗\033[0m' "CHANGES_REQUESTED"
+set_pr_cache "$WT1" "jordan/preview-pr" "https://github.com/Nest-Genomics/nest/pull/4567" "OPEN" "false" $'\033[0;31m✗\033[0m' "CHANGES_REQUESTED"
 header "31. Open PR — changes requested (yellow) + CI failure"
 expect "L2: ⎇ #4567 changes ✗ jordan/preview-pr"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.40,"total_duration_ms":540000},"session_id":"demo-31","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":38,"current_usage":{"input_tokens":60000,"cache_creation_input_tokens":4000,"cache_read_input_tokens":12000}}}'
@@ -363,10 +363,10 @@ run_one_line() {
   local first=true
   while IFS= read -r line; do
     if [ "$first" = true ]; then
-      printf '\033[38;5;255m   actual │ \033[0m%b\n' "$line"
+      printf '\033[0;39m   actual │ \033[0m%b\n' "$line"
       first=false
     else
-      printf '          \033[38;5;245m│\033[0m %b\n' "$line"
+      printf '          \033[0;2;39m│\033[0m %b\n' "$line"
     fi
   done <<<"$output"
   echo ""
@@ -384,14 +384,20 @@ header "33. One-line mode but terminal too narrow (60 cols) — falls back to mu
 expect "Same content as #32 but split across lines (no overflow)"
 run_one_line 60 '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000,"total_lines_added":42,"total_lines_removed":7},"session_id":"demo-33","cwd":"'"$REPO_DIRTY"'","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
 
-# ─── 34. Light vs dark terminal background (COLORFGBG) ──────────
+# ─── 34. Theme adaptivity (terminal palette only) ───────────────
+# Switch your terminal theme (or flip it light/dark) and re-run this section:
+# every color below should follow the new theme, because none of them are
+# absolute — they're the theme's own slots plus its default foreground.
 clear_caches
 BG_JSON='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.25,"total_duration_ms":60000},"session_id":"demo-34","cwd":"/tmp","context_window":{"used_percentage":12},"effort":{"level":"high"}}'
-header "34. Background detection — same input, dark vs light palette"
-expect "dark  (COLORFGBG=15;0): key data near-white (255)"
+header "34. Theme adaptivity — identical render regardless of reported background"
+expect "dark  (COLORFGBG=15;0): key data = theme default fg, accent = theme magenta"
 COLORFGBG="15;0" run "$BG_JSON"
-expect "light (COLORFGBG=0;15): key data near-black (235); warnings become amber (130)"
+expect "light (COLORFGBG=0;15): byte-for-byte the same — no palette branch remains"
 COLORFGBG="0;15" run "$BG_JSON"
+printf '\n'
+expect "palette swatches — each should recolor with your terminal theme"
+printf '   actual │ \033[0;39mdefault-fg (key data)\033[0m \033[0;2;39mfaint (secondary)\033[0m \033[0;35mmagenta (accent)\033[0m \033[0;32mgreen\033[0m \033[0;33myellow\033[0m \033[0;31mred\033[0m\n'
 
 # ─── 35. Responsive width fit (anti-wrap / anti double-render) ──
 # A line wider than the pane wraps onto an extra terminal row, which reads as a
@@ -406,7 +412,7 @@ run_cols() {
   output=$(echo "$input" | env -u CLAUDE_EFFORT -u TMUX TERM_PROGRAM=ghostty STATUSLINE_COLS="$cols" bash "$STATUSLINE" 2>/dev/null)
   while IFS= read -r line; do
     vw=$(printf '%s' "$line" | sed $'s/\033\[[0-9;]*m//g; s/\033]8;;[^\007]*\007//g' | wc -L | tr -d ' ')
-    printf '          \033[38;5;245m│ [w=%2s]\033[0m %b\n' "$vw" "$line"
+    printf '          \033[0;2;39m│ [w=%2s]\033[0m %b\n' "$vw" "$line"
   done <<<"$output"
   echo ""
 }
@@ -437,5 +443,5 @@ expect "L1: ⇢ 192.168.1.50 · tmp · \$0.40 · [bar] 12%  (client 10.0.0.9 NOT
   run '{"model":{"display_name":"Claude Opus 4.8 (1M context)"},"cost":{"total_cost_usd":0.40,"total_duration_ms":180000},"session_id":"demo-36","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":12}}'
 )
 
-printf '\033[38;5;141m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
-printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 33
+printf '\033[0;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
+printf '\033[0;32m✓ Demo complete — %d variations shown\033[0m\n\n' 33

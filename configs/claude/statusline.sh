@@ -2,26 +2,28 @@
 
 input=$(cat)
 
-# ─── Terminal background detection (COLORFGBG: "fg;bg", bg is last) ───
-# Light backgrounds report 7 (silver) or 15 (white); anything else (or an
-# unset var, common in Ghostty/tmux) falls back to the dark palette.
-_LIGHT_BG=0
-case "${COLORFGBG##*;}" in
-  7 | 15) _LIGHT_BG=1 ;;
-esac
-
-# ─── Colors (soft purple theme) ──────────────────────────────────────
-COLOR_ACCENT=$'\033[38;5;141m' # Soft purple — primary accent (reads on both)
-if [ "$_LIGHT_BG" = 1 ]; then
-  COLOR_WHITE=$'\033[38;5;235m' # Near-black — key data on light bg
-  COLOR_WARN=$'\033[38;5;130m'  # Dark amber — warnings on light bg
-else
-  COLOR_WHITE=$'\033[38;5;255m' # White — key data on dark bg
-  COLOR_WARN=$'\033[38;5;221m'  # Yellow — warnings, stale on dark bg
-fi
-COLOR_DIM=$'\033[38;5;245m' # Medium gray — secondary info (reads on both)
-COLOR_ADD=$'\033[38;5;114m' # Green — positive (additions, pass, fresh)
-COLOR_DEL=$'\033[38;5;203m' # Red — negative (deletions, fail, critical)
+# ─── Colors (theme-adaptive: the terminal's own 16-color palette) ────
+# Nothing here is an absolute color. Every value is a *semantic slot* the
+# terminal theme defines and tunes for its own background, so the statusline
+# recolors itself with whatever theme is loaded and is legible in light mode
+# and dark mode without any detection. Rules:
+#   • Key data uses SGR 39 (DEFAULT foreground) — by definition the one color
+#     guaranteed to contrast with the background. Never "white": white is
+#     invisible on a light theme, and the old COLORFGBG sniffing that worked
+#     around that is unset in Ghostty/tmux (i.e. it silently failed there).
+#   • Secondary text uses SGR 2 (faint) over the default fg, not a fixed grey.
+#     A fixed grey collides with light backgrounds; faint is relative to the
+#     theme's own fg. Terminals lacking faint render normal fg — still legible.
+#   • Accents use the NON-bright slots 31–36. Bright variants are tuned for
+#     dark backgrounds and wash out on light ones.
+# Each starts with `0;` to clear any lingering attribute (notably faint), so
+# switching colors mid-string can't leak dimness into the next segment.
+COLOR_ACCENT=$'\033[0;35m' # Magenta — primary accent (theme's purple)
+COLOR_WHITE=$'\033[0;39m'  # Default foreground — key data, max contrast
+COLOR_WARN=$'\033[0;33m'   # Yellow — warnings, stale
+COLOR_DIM=$'\033[0;2;39m'  # Faint default fg — secondary info
+COLOR_ADD=$'\033[0;32m'    # Green — positive (additions, pass, fresh)
+COLOR_DEL=$'\033[0;31m'    # Red — negative (deletions, fail, critical)
 COLOR_RESET=$'\033[0m'
 
 # Aliases (semantic mapping to palette)
@@ -38,7 +40,7 @@ COLOR_GIT="$COLOR_ACCENT"
 COLOR_WORKTREE="$COLOR_DIM"
 COLOR_PR_OPEN="$COLOR_ADD"
 COLOR_PR_DRAFT="$COLOR_DIM"
-COLOR_PR_MERGED=$'\033[38;5;141m'
+COLOR_PR_MERGED="$COLOR_ACCENT"
 COLOR_SYNC_AHEAD="$COLOR_WHITE"
 COLOR_SYNC_BEHIND="$COLOR_WHITE"
 COLOR_CACHE="$COLOR_DIM"
