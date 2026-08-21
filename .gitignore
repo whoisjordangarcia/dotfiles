@@ -50,6 +50,13 @@ Brewfile.local
 # Claude Code local settings
 .claude/settings.local.json
 
+# `npx skills` project-local store. Shared skills belong in configs/skills/,
+# which script/skills/setup.sh projects into every agent CLI; this is just the
+# CLI's own cache plus symlinks into it.
+.agents/
+.claude/skills/
+skills-lock.json
+
 # Git worktrees
 .worktrees/
 
