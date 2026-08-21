@@ -477,6 +477,10 @@ rmpc() {
     local i=0
     until [[ -d /Volumes/tank01/Music-clean ]] || (( i++ > 20 )); do sleep 0.5; done
   fi
+  # mpd indexes one directory only -> point it at a symlink farm of both folders
+  mkdir -p ~/.config/mpd/library
+  ln -sfn /Volumes/tank01/Music-clean ~/.config/mpd/library/Music-clean
+  ln -sfn /Volumes/tank01/Music ~/.config/mpd/library/Music
   pgrep -x mpd >/dev/null || mpd ~/.config/mpd/mpd.conf
   command rmpc "$@"
 }
