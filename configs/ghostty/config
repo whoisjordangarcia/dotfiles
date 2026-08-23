@@ -13,7 +13,9 @@ confirm-close-surface = false
 #font-family = GohuFont 14 Nerd Font Mono
 # Ioskeley Mono = free Iosevka build shaped like Berkeley Mono (github.com/ahatem/IoskeleyMono).
 # "Term" variant: spacing=term, required by Ghostty or arrows/box-drawing overflow the cell.
-font-family = IoskeleyMonoTerm Nerd Font
+# Quotes are load-bearing: `omarchy font set` rewrites this line with a sed regex
+# that requires a double-quoted value; unquoted, ghostty is silently skipped.
+font-family = "IoskeleyMonoTerm Nerd Font"
 font-size = 16
 
 mouse-hide-while-typing = true
@@ -56,6 +58,12 @@ term = ghostty
 
 # Fix general slowness on Hyprland
 async-backend = epoll
+
+# Colors from the active omarchy theme, rewritten by `omarchy theme set`.
+# Absent on non-omarchy boxes (`?` = optional), where the `theme =` line above
+# stays in charge. Listed before the platform includes so a platform file can
+# still override it.
+config-file = ?"~/.config/omarchy/current/theme/ghostty.conf"
 
 # Platform-specific overrides (only loaded if the file exists). Ghostty applies
 # `config-file` includes *after* parsing this entire file, so a platform file
