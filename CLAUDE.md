@@ -398,6 +398,56 @@ because the applet captures stdout rather than showing it. `dbg` writes to
 **stderr** so that logging inside a function can't be swallowed by a `$(...)`
 capture of that function — which is how the closing Finder-open broke once.
 
+### T2 dGPU Power-Off — Deliberately Disabled, Do Not Re-Enable
+
+**The ~7.1W / 65C idle draw of the discrete GPU on the MacBookPro15,1 is a known,
+accepted cost. It is not an oversight waiting to be optimised.** `bin/dgpu-off`
+works — that is the problem. Powering the dGPU down through gmux hard-crashes the
+machine on the next S3 suspend, and `script/gpu-switch/linux/setup.sh` now *tears
+down* any previous install rather than creating one.
+
+> [!IMPORTANT]
+> This trap is specifically shaped to fool an agent. The repo contains a working
+> `bin/dgpu-off`, a ready `configs/systemd/dgpu-off.service`, and a dGPU that
+> `lspci` shows powered on driving zero connected outputs. Every surface signal
+> says "free battery, finish wiring this up". Re-enabling it costs a reboot and
+> a wedged suspend path. Read `bin/dgpu-off`'s header before touching anything
+> in `script/gpu-switch/`.
+
+Why it cannot work as written: cutting power via gmux does **not** remove the dGPU
+from the suspend path, because `amdgpu` stays bound and its PM callbacks still run.
+`amdgpu_pmops_suspend()` does honour `DRM_SWITCH_POWER_OFF` and bails early, but
+`amdgpu_pmops_suspend_noirq()` does not — it consults
+`amdgpu_acpi_should_gpu_reset()` (true for any non-APU on deep S3) and resets the
+ASIC regardless. Every config read on a depowered GPU returns `0xffffffff`, so the
+reset fails `-EINVAL` **in the noirq phase, which cannot be unwound**. `xhci_hcd`
+then fails to resume `-19`, taking the T2 bridge — keyboard, trackpad, Touch Bar —
+down with it, and the machine reboots.
+
+- **The failure does not look like a crash.** logind re-suspends on the next boot
+  with the lid still shut, so it presents as a plain lock screen. The only tell is
+  a fresh-boot signature (`ACPI: ... Battery Slot [BAT0] (battery present)`) in
+  `journalctl` seconds before a `PM: suspend entry`. Do not diagnose this from the
+  desktop; diagnose it from the journal.
+- **`DGPU_OFF_I_KNOW=1` is the guard**, added because the header alone did not stop
+  the script being run by hand once (2026-07-26). Unset, `bin/dgpu-off` refuses and
+  writes nothing. `dgpu_off_test.sh` pins that refusal.
+- **`configs/systemd/dgpu-off.service` is retained but installed by nothing.** It
+  exists only for the untested revisit plan in `bin/dgpu-off`'s header (assert `ON`
+  from `suspend-fix-t2.service` `Before=sleep.target` so the noirq reset finds a
+  live device, re-assert `OFF` `After=suspend.target`). Do not `systemctl enable`
+  it speculatively.
+- **`suspend-fix-t2.service` must stay enabled** — it is the recovery net that
+  restores the T2 stack after a failed suspend, and is independent of all the above.
+
+**When touching `bin/dgpu-off`, `script/gpu-switch/`, or anything under
+`configs/systemd/` for T2 sleep, run both:**
+
+```bash
+bash bin/dgpu_off_test.sh                    # must end with "All N tests passed"
+bash configs/systemd/t2_sleep_units_test.sh  # must end with "All N tests passed"
+```
+
 ### Tmux Continuum Caveat
 
 **tmux-continuum auto-save relies on a `#(continuum_save.sh)` call embedded in `status-right`.**
@@ -436,7 +486,7 @@ at the start of your `status-right` value. It produces no visible output — it 
 - Omarchy owns `~/.config` app configs as **copies** it maintains via `omarchy refresh`/migrations. Those use `cp -f`/`sed -i`, which **follow symlinks** — after `omarchy update`, run `git status` here: a migration can write through a dotfiles symlink into this repo.
 - **Excluded on purpose** (see `script/linux_omarchy_components.sh` for the annotated list): `hypr/linux` + `theming/linux` + `rofi/linux` + `btop/linux` (HyDE-specific; `configs/hypr/hyprland.conf` sources `~/.local/share/hyde/` which doesn't exist on omarchy and would break the desktop), `vpn/linux` + `ufw/linux` (omarchy manages DNS via systemd-resolved and its own ufw rules), `dolphin/linux`/`brave/linux`. Package-level: no `podman-docker` (pacman `conflicts=docker` — installing it removes omarchy's docker stack), no `dnsmasq`/`ufw`.
 - **Hyprland**: `hypr/omarchy` links only the override files omarchy's `hyprland.conf` sources last (`bindings/looknfeel/input/autostart.conf` + `gpu-perf-*.conf`) from `configs/hypr-omarchy/`. **Never symlink `hyprland.conf` or `monitors.conf`.** Private webapp URLs go in `~/.config/hypr/bindings.local.conf` (seeded by setup, untracked, sourced by `bindings.conf`).
-- **Theme system**: never link over `~/.config/mako/config` or `~/.config/btop/themes/current.theme` — omarchy-owned symlinks into `~/.config/omarchy/current/theme/`. The dotfiles ghostty config deliberately decouples ghostty from `omarchy theme set` (hardcodes Rose Pine instead of sourcing the theme file).
+- **Theme system**: never link over `~/.config/mako/config` or `~/.config/btop/themes/current.theme` — omarchy-owned symlinks into `~/.config/omarchy/current/theme/`. The ghostty config *does* follow `omarchy theme set`, via an optional `config-file = ?"~/.config/omarchy/current/theme/ghostty.conf"`. Two non-obvious parts: includes are applied after the whole parent file is parsed, so that line beats the `theme = dark:Rose Pine…` fallback no matter where it sits — and the fallback is what non-omarchy boxes (the Mac) still use, since `?` skips a missing file. `omarchy font set` is a `sed` over `~/.config/ghostty/config` whose regex only matches a **double-quoted** `font-family` value; leave the quotes on or ghostty is silently skipped while every other app changes font. `omarchy font current` reads its answer back out of `~/.config/waybar/style.css`, which is therefore the de-facto store of the current system font.
 
 ### VPN Split Tunneling (AirVPN + WireGuard)
 

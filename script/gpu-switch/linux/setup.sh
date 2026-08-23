@@ -22,26 +22,17 @@ else
 	success "gpu-switch installed to $GPU_SWITCH_DST"
 fi
 
-# dGPU power-off (T2 MacBooks only — needs gmux/vga_switcheroo). Without it the
-# discrete GPU idles at ~7W and its SMU firmware reload fails on most S3 resumes,
-# which permanently breaks suspend for the session. See bin/dgpu-off.
-if [ -e /sys/kernel/debug/vgaswitcheroo/switch ] || [ -d /sys/module/apple_gmux ]; then
-	DGPU_OFF_SRC="$DOTFILES_ROOT/bin/dgpu-off"
-	DGPU_OFF_DST="/usr/local/bin/dgpu-off"
-
-	if [ -L "$DGPU_OFF_DST" ] && [ "$(readlink "$DGPU_OFF_DST")" = "$DGPU_OFF_SRC" ]; then
-		debug "dgpu-off already symlinked to $DGPU_OFF_DST"
-	else
-		info "Symlinking dgpu-off to $DGPU_OFF_DST (requires sudo)"
-		sudo ln -sf "$DGPU_OFF_SRC" "$DGPU_OFF_DST"
-		success "dgpu-off installed to $DGPU_OFF_DST"
-	fi
-
-	info "Installing dgpu-off.service (boot + resume)"
-	sudo install -m644 "$DOTFILES_ROOT/configs/systemd/dgpu-off.service" /etc/systemd/system/
+# dgpu-off is NOT installed — it hard-crashes suspend. Powering the dGPU down via
+# gmux leaves amdgpu bound, and amdgpu_pmops_suspend_noirq() ignores
+# DRM_SWITCH_POWER_OFF and resets the ASIC anyway; on a depowered GPU that returns
+# -EINVAL, failing suspend in the noirq phase, which can't unwind — xhci_hcd and
+# the T2 bridge go down with it and the machine reboots (2026-07-26). Full
+# write-up and the untested fix in bin/dgpu-off's header. Tear down any install
+# left over from before that date.
+if [ -e /etc/systemd/system/dgpu-off.service ] || [ -L /usr/local/bin/dgpu-off ]; then
+	info "Removing dgpu-off (breaks S3 suspend — see bin/dgpu-off)"
+	sudo systemctl disable --now dgpu-off.service 2>/dev/null || true
+	sudo rm -f /etc/systemd/system/dgpu-off.service /usr/local/bin/dgpu-off
 	sudo systemctl daemon-reload
-	sudo systemctl enable dgpu-off.service
-	success "dgpu-off.service enabled"
-else
-	debug "No gmux/vga_switcheroo — skipping dgpu-off (not a dual-GPU MacBook)"
+	success "dgpu-off removed"
 fi

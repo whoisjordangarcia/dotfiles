@@ -1,6 +1,15 @@
 # Power off the discrete GPU via gmux whenever the iGPU is the active one.
-# See bin/dgpu-off for the full rationale (no runtime PM on this machine, and a
-# ~2-in-3 SMU firmware reload failure on S3 resume that bricks suspend).
+#
+# NOT INSTALLED, AND NOT SAFE TO ENABLE — 2026-07-26. Powering the dGPU off
+# crashes the next S3 suspend in the noirq phase, which takes the T2 bridge
+# (keyboard/trackpad/Touch Bar) down and reboots the machine. setup.sh removes
+# this unit rather than installing it; bin/dgpu-off refuses to run without
+# DGPU_OFF_I_KNOW=1. Full analysis in bin/dgpu-off's header.
+#
+# Kept only for the untested revisit plan described there: assert ON from
+# suspend-fix-t2.service (Before=sleep.target) so the noirq reset finds a live
+# device, then let this unit re-assert OFF After=suspend.target. Verify with a
+# real lid close before trusting it.
 [Unit]
 Description=Power off the discrete GPU via gmux when running on the iGPU
 ConditionPathExists=/sys/kernel/debug/vgaswitcheroo/switch

@@ -28,7 +28,7 @@ check() { # check <description> <condition-exit-code>
 run() {
 	local f="$TMP/switch"
 	printf '%s\n' "$1" >"$f"
-	DGPU_OFF_SWITCH="$f" DGPU_OFF_RETRIES=1 bash "$SUT" >/dev/null 2>&1
+	DGPU_OFF_I_KNOW=1 DGPU_OFF_SWITCH="$f" DGPU_OFF_RETRIES=1 bash "$SUT" >/dev/null 2>&1
 	cat "$f"
 }
 
@@ -70,8 +70,16 @@ check "DIS-Audio DynOff not misread as the GPU being off" $?
 
 # Missing/unreadable switch file (not a dual-GPU machine) must exit clean, not
 # hang or fail the boot unit.
-DGPU_OFF_SWITCH="$TMP/nope" DGPU_OFF_RETRIES=1 bash "$SUT" >/dev/null 2>&1
+DGPU_OFF_I_KNOW=1 DGPU_OFF_SWITCH="$TMP/nope" DGPU_OFF_RETRIES=1 bash "$SUT" >/dev/null 2>&1
 check "absent switch file -> exits 0 (no-op, unit stays green)" $?
+
+# The crash guard. Powering the dGPU off breaks S3 suspend (see the header), so
+# an unguarded invocation must refuse and leave the switch file untouched.
+f="$TMP/guarded"
+printf '%s\n' "$IGD_ACTIVE" >"$f"
+DGPU_OFF_SWITCH="$f" DGPU_OFF_RETRIES=1 bash "$SUT" >/dev/null 2>&1
+[ $? -ne 0 ] && [ "$(cat "$f")" != "OFF" ]
+check "no DGPU_OFF_I_KNOW -> refuses and writes nothing" $?
 
 echo
 if [ "$fail" -eq 0 ]; then

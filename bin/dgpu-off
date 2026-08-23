@@ -1,32 +1,47 @@
 #!/usr/bin/env bash
 # dgpu-off - cut power to the discrete GPU via gmux when the iGPU is driving
-# the display. Run at boot (and after resume) by dgpu-off.service.
+# the display.
 #
-# Why this exists: amdgpu logs "Runtime PM not available" on this MacBook.
-# It enables runtime PM only via ATPX or an ACPI _PR3 power resource, and Apple
-# ships neither — power is gmux's job. `vga_switcheroo` shows the same fact from
-# the other side: the dGPU registers as plain `Pwr`, not `DynPwr`, i.e. no
-# driver-level power control. Two consequences, both bad:
+# DISABLED 2026-07-26 — DO NOT RUN. It hard-crashes suspend. No longer installed
+# or enabled by script/gpu-switch/linux/setup.sh. Set DGPU_OFF_I_KNOW=1 to
+# override (dgpu_off_test.sh does).
 #
-#   1. It can never autosuspend, so it idles at ~7.1W / 65C forever.
-#   2. It takes the full S3 suspend/resume path on every sleep, and its SMU
-#      firmware reload there fails roughly two times in three:
-#           amdgpu: SMU load firmware failed
-#           amdgpu_device_ip_resume failed (-22)
-#        -> ring sdma0 timeout -> GPU reset also fails (it needs the SMU it just
-#           lost) -> every DRM client blocks forever in dma_fence_wait -> D state
-#        -> "Freezing user space processes failed" -> the machine can never
-#           suspend again until it is rebooted, and sits awake cooking in a
-#           closed lid. See configs/systemd/suspend-fix-t2.service.
+# The original premise was that cutting power through gmux "removes the dGPU
+# from the S3 path entirely". It does not. amdgpu stays bound, so its PM
+# callbacks still run. amdgpu_pmops_suspend() does honour DRM_SWITCH_POWER_OFF
+# and bails early — but amdgpu_pmops_suspend_noirq() does not. It asks
+# amdgpu_acpi_should_gpu_reset() (true for any non-APU on deep S3) and resets
+# the ASIC anyway. Every config read on a depowered GPU returns 0xffffffff:
+#       amdgpu 0000:01:00.0: PCI CONFIG reset
+#       pci_pm_suspend_noirq(): amdgpu_pmops_suspend_noirq returns -22
+#       PM: noirq suspend of devices failed
+# A noirq failure cannot be unwound. xhci_hcd then fails to resume (-19), which
+# takes the T2 bridge — keyboard, trackpad, Touch Bar — with it, and the machine
+# reboots. Observed 2026-07-26 20:18:52, 45 min after this script was run by
+# hand; logind re-suspended on the next boot with the lid still shut, so it
+# looked like a plain lock screen.
 #
-# Manual `OFF` is the mechanism for exactly this case: it bypasses the absent
-# driver-level power control and cuts power through the gmux handler instead,
-# which removes the dGPU from the S3 path entirely.
+# What stays true: amdgpu has no runtime PM here (no ATPX, no ACPI _PR3 —
+# vga_switcheroo reports plain `Pwr`, not `DynPwr`), so the ~7.1W / 65C idle
+# draw is real and remains unfixed. But the SMU-reload-fails-on-resume failure
+# this was written to dodge did not occur in any of the 13 suspend cycles the
+# journal still retains (~2 days), all with the dGPU powered on.
+#
+# If revisiting: pair it with `echo ON > vgaswitcheroo/switch` from
+# suspend-fix-t2.service (Before=sleep.target) so the noirq reset finds a live
+# device, and let dgpu-off.service (After=suspend.target) re-assert OFF on
+# resume. Untested — verify with a real lid close before trusting it.
 #
 # To get the dGPU back without rebooting (external displays are wired to it):
 #     sudo sh -c 'echo ON > /sys/kernel/debug/vgaswitcheroo/switch'
 # To get it back permanently: gpu-switch --dedicated, then reboot.
 set -uo pipefail
+
+# The header alone didn't stop this being run by hand once. Make it explicit.
+if [ "${DGPU_OFF_I_KNOW:-}" != 1 ]; then
+	echo "dgpu-off: refusing — powering the dGPU off breaks S3 suspend (see header)" >&2
+	exit 1
+fi
 
 # Overridable so dgpu_off_test.sh can drive it with fixture switch files.
 SW=${DGPU_OFF_SWITCH:-/sys/kernel/debug/vgaswitcheroo/switch}
