@@ -11,6 +11,9 @@ source "$COMPONENT_ROOT/../common/symlink.sh"
 debug "Ensuring $HOME/.config/fastfetch exists"
 mkdir -p "$HOME/.config/fastfetch"
 
+# Compact Arch mark used by the full personal greeting (config.jsonc)
+link_file "$DOTFILES_ROOT/configs/fastfetch/logo-arch-small.txt" "$HOME/.config/fastfetch/logo-arch-small.txt"
+
 # NEST GENOMICS logo + work-mode greeting config (logo stacked above info)
 link_file "$DOTFILES_ROOT/configs/fastfetch/logo-nest.txt" "$HOME/.config/fastfetch/logo-nest.txt"
 link_file "$DOTFILES_ROOT/configs/fastfetch/config-nest.jsonc" "$HOME/.config/fastfetch/config-nest.jsonc"

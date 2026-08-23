@@ -16,7 +16,7 @@
     @import "/home/jordan/.local/share/waybar/styles/defaults.css";
 
     /* Imports wallbash colors */
-    @import "/home/jordan/.cache/hyde/wallbash/gtk.css";
+    /*  wallbash gtk.css not found   */
 
     /* Colors and theme configuration is generated through the `theme.css` file */
     @import "theme.css";

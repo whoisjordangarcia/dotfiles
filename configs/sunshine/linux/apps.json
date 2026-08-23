@@ -6,7 +6,7 @@
             "elevated": false,
             "exclude-global-prep-cmd": false,
             "exit-timeout": 5,
-            "image-path": "/home/jordan/mounts/vault-single/Gaming/Sunshine Files/desktop.png",
+            "image-path": "/home/jordan/.config/sunshine/box-art/desktop.png",
             "name": "Desktop (default)",
             "output": "MOONLIGHT",
             "prep-cmd": [
@@ -23,7 +23,7 @@
             "elevated": false,
             "exclude-global-prep-cmd": false,
             "exit-timeout": 5,
-            "image-path": "/home/jordan/mounts/vault-single/Gaming/Sunshine Files/macbook.png",
+            "image-path": "/home/jordan/.config/sunshine/box-art/macbook.png",
             "name": "Desktop Macbook Pro",
             "output": "HDMI-A-1",
             "prep-cmd": [
@@ -38,7 +38,7 @@
             "auto-detach": true,
             "exclude-global-prep-cmd": false,
             "exit-timeout": 5,
-            "image-path": "/home/jordan/mounts/vault-single/Gaming/Sunshine Files/ipad-2.png",
+            "image-path": "/home/jordan/.config/sunshine/box-art/ipad-2.png",
             "name": "Desktop iPad",
             "output": "MOONLIGHT",
             "prep-cmd": [
@@ -55,13 +55,30 @@
             "elevated": false,
             "exclude-global-prep-cmd": false,
             "exit-timeout": 5,
-            "image-path": "/home/jordan/mounts/vault-single/Gaming/Sunshine Files/ipgone.png",
-            "name": "Desktop iPhone / Odin 2 Portal",
-            "output": "MOONLIGHT",
+            "image-path": "/home/jordan/.config/sunshine/box-art/ipgone.png",
+            "name": "Desktop iPhone",
+            "output": "MAIN",
             "prep-cmd": [
                 {
                     "do": "/home/jordan/.config/sunshine/scripts/iphone_screenOFF.sh",
                     "undo": "/home/jordan/.config/sunshine/scripts/iphone_screenON.sh"
+                }
+            ],
+            "wait-all": true
+        },
+        {
+            "auto-detach": true,
+            "cmd": [],
+            "elevated": false,
+            "exclude-global-prep-cmd": false,
+            "exit-timeout": 5,
+            "image-path": "/home/jordan/.config/sunshine/box-art/iphone-odin2.png",
+            "name": "Desktop Odin 2",
+            "output": "MAIN",
+            "prep-cmd": [
+                {
+                    "do": "/home/jordan/.config/sunshine/scripts/odin2_screenOFF.sh",
+                    "undo": "/home/jordan/.config/sunshine/scripts/odin2_screenON.sh"
                 }
             ],
             "wait-all": true
@@ -73,7 +90,7 @@
             ],
             "exclude-global-prep-cmd": false,
             "exit-timeout": 5,
-            "image-path": "/home/jordan/mounts/vault-single/Gaming/Sunshine Files/ipad.png",
+            "image-path": "/home/jordan/.config/sunshine/box-art/ipad.png",
             "name": "Steam Big Picture iPad",
             "output": "MOONLIGHT",
             "prep-cmd": [
@@ -93,13 +110,33 @@
             "elevated": false,
             "exclude-global-prep-cmd": false,
             "exit-timeout": 5,
-            "image-path": "/home/jordan/mounts/vault-single/Gaming/Sunshine Files/iphone-odin2.png",
-            "name": "Steam Big Picture iPhone / Odin2 Portal",
-            "output": "MOONLIGHT",
+            "image-path": "/home/jordan/.config/sunshine/box-art/iphone-odin2.png",
+            "name": "Steam Big Picture iPhone",
+            "output": "MAIN",
             "prep-cmd": [
                 {
                     "do": "/home/jordan/.config/sunshine/scripts/iphone_screenOFF.sh",
                     "undo": "/home/jordan/.config/sunshine/scripts/iphone_screenON.sh"
+                }
+            ],
+            "wait-all": true
+        },
+        {
+            "auto-detach": true,
+            "cmd": [],
+            "detached": [
+                "setsid steam steam://open/bigpicture"
+            ],
+            "elevated": false,
+            "exclude-global-prep-cmd": false,
+            "exit-timeout": 5,
+            "image-path": "/home/jordan/.config/sunshine/box-art/iphone-odin2.png",
+            "name": "Steam Big Picture Odin 2",
+            "output": "MAIN",
+            "prep-cmd": [
+                {
+                    "do": "/home/jordan/.config/sunshine/scripts/odin2_screenOFF.sh",
+                    "undo": "/home/jordan/.config/sunshine/scripts/odin2_screenON.sh"
                 }
             ],
             "wait-all": true

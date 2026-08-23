@@ -228,6 +228,30 @@ assert_not_contains "hides lines on clean tree (deleted)" "$out" "-20"
 
 rm -rf "$LINES_ADD_REPO" "$LINES_DEL_REPO" "$LINES_CLEAN_REPO"
 
+printf "\n\033[38;5;141m━━━ Stash Count ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+
+# Repo with stashed work → dim "≡N" on line 2 so stashes aren't forgotten
+STASH_REPO=$(mktemp -d -t statusline-stash.XXXXXX)
+(cd "$STASH_REPO" && git init -q -b main && printf 'a\n' >f.txt \
+  && git add f.txt && git -c user.email=t@t -c user.name=t commit -q -m init \
+  && printf 'b\n' >>f.txt && git -c user.email=t@t -c user.name=t stash -q \
+  && printf 'c\n' >>f.txt && git -c user.email=t@t -c user.name=t stash -q) >/dev/null
+rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
+STASH_INPUT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.1,"total_duration_ms":1000},"session_id":"stash","cwd":"'"$STASH_REPO"'","context_window":{"used_percentage":10}}'
+out=$(run_statusline_plain "$STASH_INPUT")
+assert_contains "shows stash count when stashes exist" "$out" "≡2"
+
+# No stashes → no ≡ glyph at all
+NOSTASH_REPO=$(mktemp -d -t statusline-stash.XXXXXX)
+(cd "$NOSTASH_REPO" && git init -q -b main && printf 'a\n' >f.txt \
+  && git add f.txt && git -c user.email=t@t -c user.name=t commit -q -m init) >/dev/null
+rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
+NOSTASH_INPUT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.1,"total_duration_ms":1000},"session_id":"nostash","cwd":"'"$NOSTASH_REPO"'","context_window":{"used_percentage":10}}'
+out=$(run_statusline_plain "$NOSTASH_INPUT")
+assert_not_contains "hides stash glyph when no stashes" "$out" "≡"
+
+rm -rf "$STASH_REPO" "$NOSTASH_REPO"
+
 printf "\n\033[38;5;141m━━━ Cache Hit Rate ━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 out=$(run_statusline_plain "$INPUT_FULL")

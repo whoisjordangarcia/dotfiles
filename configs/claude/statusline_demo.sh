@@ -399,5 +399,16 @@ run_cols 40 "$WIDTH_JSON"
 expect "24 cols (tiny) — even essentials overflow → hard clamp with …"
 run_cols 24 "$WIDTH_JSON"
 
+# ─── 36. Stashed work (dim ≡N on line 2) ─────────────────────────
+clear_caches
+REPO_STASH="$DEMO_DIR/stashed"
+make_repo "$REPO_STASH"
+(cd "$REPO_STASH" && printf 'a\n' >w.txt && git add w.txt && git commit -q -m base \
+  && printf 'b\n' >>w.txt && git stash -q \
+  && printf 'c\n' >>w.txt && git stash -q)
+header "36. Stashed work — dim ≡2 after sync/dirty so stashes aren't forgotten"
+expect "stashed · 🌿 main · ≡2"
+run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.42,"total_duration_ms":90000},"session_id":"demo-36","cwd":"'"$REPO_STASH"'","context_window":{"context_window_size":200000,"used_percentage":15,"current_usage":{"input_tokens":25000,"cache_creation_input_tokens":1000,"cache_read_input_tokens":4000}}}'
+
 printf '\033[38;5;141m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
-printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 32
+printf '\033[38;5;114m✓ Demo complete — %d variations shown\033[0m\n\n' 36

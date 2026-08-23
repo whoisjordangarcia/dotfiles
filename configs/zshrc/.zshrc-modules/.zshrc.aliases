@@ -1,4 +1,6 @@
-alias reload="source ~/.zshrc"
+# ZDOTDIR (set by HyDE on Arch) relocates the live rc to ~/.config/zsh/.zshrc;
+# on machines without it (mac), this still resolves to ~/.zshrc.
+alias reload='source "${ZDOTDIR:-$HOME}/.zshrc"'
 alias ls="eza --icons"
 alias cat="bat"
 alias top="btop"
@@ -62,3 +64,8 @@ alias gpo="git pull origin"
 alias gc='git checkout'
 alias grm="git pull --rebase origin main"
 alias gpf="git push --force-with-lease"
+
+# ⚠️ reboot guard (2026-08-01): wedged nvidia (comfyui CUDA + vfio unbind) → D-state libvirtd
+# → shutdown hangs forever → hard power-off. Check GPU state before rebooting.
+alias sudo='sudo '   # let aliases expand after sudo, so "sudo reboot" is caught too
+alias reboot='echo "⚠️  BLOCKED: reboot can HANG on archbtw (wedged nvidia -> unkillable libvirtd -> hard power-off). Check: fuser -v /dev/nvidia* and stop comfyui first. If clean, reboot with: systemctl reboot  (vault: 2026-08-01 note)"'

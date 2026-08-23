@@ -1,0 +1,21 @@
+name: tests
+
+# Runs every assertion-based suite in the repo. These tests failed silently
+# for a month once (the OSC 8 gate landed without updating the suite) —
+# CI is the enforcement point that keeps that from recurring.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  statusline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Statusline regression tests
+        run: bash configs/claude/statusline_test.sh
+      - name: cmux PR pill tests
+        run: bash configs/claude/scripts/cmux_pr_test.sh
+      - name: cmux progress bar tests
+        run: bash configs/claude/scripts/cmux_progress_test.sh

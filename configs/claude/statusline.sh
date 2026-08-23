@@ -363,6 +363,7 @@ is_worktree=false
 wt_name=""
 sync_display=""
 dirty_display=""
+stash_display=""
 git_lines_display=""
 commit_age_display=""
 base_branch_display=""
@@ -438,6 +439,18 @@ if [ -n "$cwd" ] && [ -d "$cwd" ] && { [ -d "$cwd/.git" ] || [ -f "$cwd/.git" ];
       }
     fi
     cache_write "$dirty_cache" "$dirty_display"
+  fi
+
+  # Stash count (cached) — a dim "≡N" so stashed work isn't forgotten.
+  # Collapses to nothing when the stash is empty.
+  stash_cache="$GIT_CACHE_DIR/${cache_key}_stash"
+  if cache_fresh "$stash_cache" "$GIT_CACHE_TTL"; then
+    stash_display=$(cat "$stash_cache")
+  else
+    stash_display=""
+    stash_count=$(cd "$cwd" 2>/dev/null && git stash list 2>/dev/null | wc -l | tr -d ' ')
+    [ "$stash_count" -gt 0 ] 2>/dev/null && stash_display="${COLOR_DIM}≡${stash_count}${COLOR_RESET}"
+    cache_write "$stash_cache" "$stash_display"
   fi
 
   # Uncommitted line changes vs HEAD (cached) — "+added -deleted" of tracked
@@ -657,7 +670,7 @@ if [ "$rate_7d_int" -ge 80 ] 2>/dev/null; then
   rate_display+="${COLOR_DEL}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
 fi
 
-# Line 2: worktree · branch · sync · dirty · lines · commit age
+# Line 2: worktree · branch · sync · dirty · stash · lines · commit age
 line2=""
 
 if [ -n "$branch" ]; then
@@ -677,12 +690,17 @@ if [ -n "$branch" ]; then
       [ -n "$line2" ] && line2+="${sep}"
       line2+="${dirty_display}"
     }
+    [ -n "$stash_display" ] && {
+      [ -n "$line2" ] && line2+="${sep}"
+      line2+="${stash_display}"
+    }
   else
     line2+="${COLOR_GIT}$(truncate_str "$branch" 45)${COLOR_RESET}"
     [ -n "$wt_pr_display" ] && line2+=" ${wt_pr_display}"
     [ -n "$base_branch_display" ] && line2+=" ${base_branch_display}"
     [ -n "$sync_display" ] && line2+="${sep}${sync_display}"
     [ -n "$dirty_display" ] && line2+="${sep}${dirty_display}"
+    [ -n "$stash_display" ] && line2+="${sep}${stash_display}"
   fi
 fi
 
@@ -825,7 +843,7 @@ visible_width() {
 char_display_width() {
   case "$1" in
     [$'\x20'-$'\x7e']) printf 1 ;;
-    '·' | '←' | '↑' | '↓' | '◦' | '●' | '⎇' | '…' | '█' | '░' | '▏' | '▎' | '▍' | '▌' | '▋' | '▊' | '▉') printf 1 ;;
+    '·' | '←' | '↑' | '↓' | '◦' | '●' | '≡' | '⎇' | '…' | '█' | '░' | '▏' | '▎' | '▍' | '▌' | '▋' | '▊' | '▉') printf 1 ;;
     *)
       local w
       w=$(printf '%s' "$1" | wc -L | tr -d ' ')
