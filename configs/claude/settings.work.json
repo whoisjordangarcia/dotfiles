@@ -170,6 +170,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/nest/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "Stop": [
@@ -225,7 +235,7 @@
     "explanatory-output-style@claude-plugins-official": true,
     "impeccable@impeccable": true,
     "nest-ehr-research@nest-genomics-skills": false,
-    "nest-factory@nest-genomics-skills": true,
+    "nest-factory@nest-genomics-skills": false,
     "nest-gpt-code-review@nest-genomics-skills": true,
     "nest-gpt-validate-plan@nest-genomics-skills": false,
     "nest-linear@nest-genomics-skills": true,
@@ -298,6 +308,7 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
+  "autoCompactWindow": 600000,
   "autoUpdatesChannel": "latest",
   "tui": "fullscreen",
   "showThinkingSummaries": true,
@@ -324,6 +335,5 @@
         "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1"
       }
     }
-  },
-  "autoCompactWindow": 600000
+  }
 }
