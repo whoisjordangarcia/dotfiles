@@ -1,73 +1,55 @@
-<!--
-  Work-environment Claude instructions (overlay).
+# User preferences (work)
 
-  This file is the WORK overlay for ~/.claude/CLAUDE.md. script/claude/setup.sh
-  appends it to the shared base (configs/claude/CLAUDE.md) when WORK_ENV=1 /
-  DOT_ENVIRONMENT=work, producing the single ~/.claude/CLAUDE.md that Claude
-  reads. Edit it here OR edit ~/.claude/CLAUDE.md live and run `claude-sync`
-  (script/claude/sync-claude.sh) to write your edits back here.
+## Working style — reach for subagents when asks stack up
 
-  Add work-machine-only instructions below this comment.
--->
+- **When unaddressed asks queue faster than they complete** — roughly 3+ outstanding, or new ones arriving mid-task — stop, review the queue, and dispatch subagents instead of grinding through serially. Genuinely trivial edits stay inline.
+- **Check file overlap before parallelising.** Group asks by the files they touch: disjoint sets run in parallel (one message, multiple tool calls), overlapping sets run sequentially. Say which you chose and why.
+- **Give each subagent the full brief** — it starts with no context: worktree path, where the code lives, test framework and location, comment conventions, no ticket numbers in comments, the exact verify commands, and an explicit "do not commit, do not disturb other uncommitted work".
+- **Require evidence.** Each subagent runs the type-check and tests and pastes real output. Relay what matters — I never see their report.
 
-# User Preferences
+## Production (AWS) — hard rule
 
-## Working Style — Reach for Subagents When Asks Stack Up
+- **NEVER touch production.** No writes, mutations, deploys, deletes, or reindexing against any prod resource, ever.
+- **Ask before even *reading* prod** (CloudWatch, ES, DB, S3). `prd-account-administrator-role` and prod profiles need explicit per-instance approval. Investigate in stg/tst/dev by default.
 
-- **When I start firing off several small fixes in a row, stop and consider subagents.** If unaddressed asks are queuing faster than they're being completed — typically 3+ outstanding, or new ones arriving mid-task — pause, review the queue, and dispatch subagents rather than grinding through them serially.
-- **Check for file overlap before parallelising.** Two agents editing the same file will clobber each other. Group the asks by the files they touch: disjoint sets run in parallel (one message, multiple tool calls); overlapping sets run sequentially. Say which you chose and why.
-- **Give each subagent the full brief**, since it starts with no context: repo/worktree path, where the relevant code lives, the conventions that apply (test framework and location, no ticket numbers in comments, comment style), the exact verify commands to run, and an explicit "do not commit / do not disturb other uncommitted work" guard.
-- **Require evidence.** Each subagent must actually run the type-check and tests and paste real output; relay what matters, since I never see their report.
-- Small, genuinely trivial edits are still fine to do inline — this is about avoiding a growing backlog, not about delegating everything.
+## Git workflow
 
-## Production (AWS) — Hard Rule
+- Branch prefix `jordan/` (e.g. `jordan/NES-1234-description`).
+- PR titles use conventional commit format with the ticket in parentheses: `feat(NES-1234): description`, `fix(…)`, `docs(…)`, `chore(…)`.
+- **Feature work happens in worktrees off the latest `release/*`, never `main`.** Keep the main working copy on the current active `release/X.Y.Z`.
+- **Open a draft PR first** (`gh pr create --draft`), before doing the work, so CI runs against it from the start. Mark ready for review once the work is done and CI is green.
+- Auto-merging on the Nest repo uses `--merge`; the repo rejects squash merges.
+- **A failing pre-commit hook means fix the underlying issue.** Never `--no-verify`.
+- **Keep the open PR and Linear ticket in sync as scope grows.** When new commits or findings land on a branch with an open PR, ask whether to update the PR title/body and the Linear ticket.
 
-- **NEVER touch production.** No writes, mutations, deploys, deletes, or reindexing against any prod resource — ever.
-- **ALWAYS ask first before even _reading_ prod** (CloudWatch logs, ES, DB, S3, etc.). Do not query the `prd-account-administrator-role` / prod profiles without explicit per-instance approval. Default to lower environments (stg/tst/dev) for investigation.
+### Reporting on a PR
 
-## Git Workflow
+Always four things — clickable PR link, title, clickable Linear link, base branch. Never a bare `#4291`; that hides what it is and which train it ships on.
 
-- When creating a new branch, always use the prefix `jordan/` (e.g., `jordan/NES-1234-description`)
-- PR titles must use conventional commit format with the ticket number in parentheses: `feat(NES-1234): description`, `fix(NES-1234): description`, `docs(NES-1234): description`, `chore(NES-1234): description`, etc.
-- When auto-merging PRs on the Nest repo, always use `--merge` (not `--squash`). The repo does not allow squash merging.
-- **NEVER use `--no-verify` to bypass pre-commit hooks.** If a hook fails, fix the underlying issue instead.
-- **Always open a draft PR first.** When starting any new branch or worktree, create the PR as a draft (`gh pr create --draft`) _before_ doing the work; mark it ready for review only once the work is done and CI is green. For a worktree, the first step after the branch exists is the draft PR, so CI runs against it from the start.
-- **Do feature work in worktrees branched off the latest `release/*`, never on `main`.** Keep the main working copy on the current active `release/X.Y.Z`.
-- **Consider a stack of PRs (`gh stack`) during research — propose it, never start one unprompted.** While researching/planning a ticket, judge whether the work has more than one reviewable layer (schema → API → UI, refactor → feature, etc.). If it does, the proposed stack is **part of the plan**: name the layers, their order, and the branch per layer, then **ask** whether to split it that way. One PR is the default; only run `gh stack` after the user says yes.
-  **Raise it mid-flight too:** if a branch is growing large and now contains chunks a teammate could review on their own (a self-contained refactor, a schema/migration, a shared util), say so and ask whether to split it into a stack — same rule, ask first. Never silently convert an in-flight branch into a stack.
-  ```bash
-  gh stack init                      # start a stack off the release branch
-  gh stack add jordan/NES-1234-api   # each further piece, in order
-  gh stack submit                    # push all branches + create/update the PRs
-  gh stack sync                      # after a base merges — auto-rebases + retargets
-  ```
-  Once approved: still one draft PR per layer up front, `jordan/` branch prefix and `type(NES-1234): …` titles on every layer, and the stack is created inside the worktree off the latest `release/X.Y.Z`. Merging a layer lands every unmerged layer below it, so merge bottom-up unless you intend to land the whole stack; branch protections and required checks apply per layer as usual. `gh stack view` shows the current chain.
-- **Keep the open PR and Linear ticket in sync as scope grows.** When new commits/tasks/findings land and a PR is open, ask whether to update the PR (title/description/body) and the Linear ticket (comment or description) so neither drifts behind what's actually on the branch.
+| PR                                                       | Title                                                      | Ticket                                                      | Targets          |
+| -------------------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------- | ---------------- |
+| [#4291](https://github.com/Nest-Genomics/nest/pull/4291) | chore(NES-5796): drain knip unlisted + unused dependencies | [NES-5796](https://linear.app/nest-genomics/issue/NES-5796) | `release/2.40.0` |
+
+- PR link: `https://github.com/Nest-Genomics/nest/pull/<number>`
+- Linear link: `https://linear.app/nest-genomics/issue/NES-<id>`, id taken from the title's conventional-commit scope.
+- Scope with no real ticket (`ci`, `deps`, `portal`, `NES-QA`): write `—` rather than guessing a link.
+
+Applies everywhere PRs are listed — status tables, triage summaries, progress updates, questions, final reports. Truncate a long title if the table needs it; keep both links and the base.
+
+### Stacked PRs
+
+**One PR is the default. Propose a stack, never start one unprompted.**
+
+While researching a ticket, judge whether the work has more than one reviewable layer (schema → API → UI, refactor → feature). If it does, the proposed stack is *part of the plan*: name the layers, their order, and the branch per layer, then ask. Raise it mid-flight too — if a branch grows to contain a self-contained refactor, migration, or shared util a teammate could review alone, say so and ask. Never silently convert an in-flight branch into a stack.
+
+Once approved: use the `gh-stack` skill for mechanics. Still a draft PR per layer up front, `jordan/` prefix and `type(NES-1234): …` titles on every layer, created inside the worktree off the latest `release/X.Y.Z`. Merge bottom-up — merging a layer lands every unmerged layer below it.
 
 ## Linear
 
-- When creating Linear tickets, always default assignee to Jordan (ID: `f1ba83f4-dd6c-40f9-9d87-e6a77e52b91b`)
-- **Move new tickets to `Backlog`, never leave them in `Triage`.** Set the status to `Backlog` as part of creation. Exception: if a ticket is genuinely critical and needs to be raised with the team first, it may stay in `Triage` — but say so and confirm with the user rather than silently leaving it there.
+- Default assignee Jordan (`f1ba83f4-dd6c-40f9-9d87-e6a77e52b91b`).
+- **Set new tickets to `Backlog` as part of creation.** A genuinely critical ticket may stay in `Triage`, but say so and confirm rather than leaving it there silently.
 
-## Nest Local Dev (worktrees, hooks, tests)
+## Nest local dev
 
-- **Run `pnpm exec husky` before your first commit in a new worktree.** `core.hooksPath` points at `.husky/_/`, which is gitignored and not created automatically in new worktrees; when it's missing, git silently skips all hooks (lint-staged, prettier, eslint) and unformatted code lands on the branch and breaks CI. It's idempotent and also runs via `pnpm i` / `nx run doctor`. Verify with `ls "$(git config --get core.hooksPath)/pre-commit"`.
-- **Creating a worktree non-interactively (`wt create`): use `--headless`, never `script`.** `wt create` has an Ink-free headless path, taken on explicit `--headless` or whenever either stdin or stderr is not a TTY — so it already works under the agent `Bash` tool / CI / piped stdin:
-  ```bash
-  ~/.nest/bin/wt create --headless NES-1234-my-fix release/X.Y.Z --setup install
-  ```
-  > [!IMPORTANT]
-  > **Never wrap `wt` in `script -q` to "give it a pty".** The gate is
-  > `stdin.isTTY && stderr.isTTY → run the TUI`, and a pty makes *both* true —
-  > so `script` defeats the headless path and forces the TUI back on. On any
-  > failure the TUI then parks on `Press any key to exit` waiting for a keypress
-  > that can never arrive, and the `zsh` + `script` pair survives the session as
-  > immortal orphans (reparented to launchd) until killed by hand. It also hides
-  > the real error behind that prompt. Adding `< /dev/null` does **not** fix it:
-  > that redirects `script`'s own stdin while the child still inherits the pty
-  > slave, so `isTTY` stays true. Drop `script` entirely.
-
-  Call the binary `~/.nest/bin/wt` directly (the `wt` shell function only `cd`s your interactive shell, which doesn't persist from a tool call). Headless **requires both** `name` and a `release/X.Y.Z` base-ref (never `main`) — it exits 1 with a usage error if either is missing, rather than prompting. The created path goes to stdout, terse progress to stderr. Default setup is full and slow — background it and tail the log, or use `--setup install` for just deps + husky. Verify a run exited rather than parked: `timeout 600 … ; echo "exit=$?"` (124 = hung, which should now be impossible).
-- **`wt remove` and `wt prune` have the same `--headless` flag** and the same non-TTY auto-detection — same rules apply.
-- **Cap lint/test concurrency at 3** so the machine stays responsive: `turbo run lint --concurrency=3 --filter=<app>` / `turbo run test --concurrency=3 --filter=<app>`.
-- **When running client-api, auto-check seed + index first.** Before (or right after) bringing up `serve:client-api` for an instance, check whether the instance DB has been seeded and the ES indexes built, and run them automatically if not — don't wait to be asked. Cheap checks against the instance's shared infra (Postgres 5432 / ES 9244): a seeded DB has rows in `nestclientapi."Patient"` (e.g. `psql … -tAc 'SELECT count(*) FROM nestclientapi."Patient"'` > 0); indexes exist when the instance's ES prefix (`dev-<instance>-patients-v1` etc.) returns docs. If either is empty, run `pnpm run seed` then `pnpm run index-all-records` with the instance env (shared-infra port overrides, same recipe as serving the API). It's a once-off per instance — seed/index persist in the shared Postgres/ES, so skip when already populated.
+- **Worktrees, `wt create`, husky hooks, lint/test concurrency** → read `~/.claude/docs/nest-worktrees.md` before running `wt`.
+- **Serving `client-api`** → read `~/.claude/docs/nest-client-api.md` before `serve:client-api`; it covers the seed and index check to run automatically.
