@@ -262,7 +262,7 @@ printf "\n\033[0;35m━━━ Fallback CWD (no git) ━━━━━━━━━�
 out=$(run_statusline_plain "$INPUT_FULL")
 assert_contains "shows project name when no git" "$out" "tmp"
 
-printf "\n\033[0;35m━━━ zmx Session (line 2) ━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Session Name (line 2) ━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 run_zmx() { echo "$2" | env -u CLAUDE_EFFORT -u TMUX TERM_PROGRAM=ghostty \
   ZMX_SESSION="$1" bash "$STATUSLINE" 2>/dev/null | strip_ansi; }
@@ -284,6 +284,24 @@ assert_not_contains "hides zmx segment when var is empty" "$out" "zmx "
 out=$(run_zmx "a-very-long-zmx-session-name-that-overflows" "$INPUT_FULL")
 assert_contains "truncates long session names" "$out" "…"
 assert_not_contains "long session name is cut at 24 chars" "$out" "that-overflows"
+
+# `/rename` sets .session_name in the statusline JSON — a per-conversation name
+# that must outrank ZMX_SESSION's per-pane one, and share its single slot.
+with_name() { echo "$INPUT_FULL" | jq -c --arg n "$1" '.session_name = $n'; }
+
+out=$(run_statusline_plain "$(with_name "refactor-auth")")
+assert_contains "shows /rename session name" "$out" "name refactor-auth"
+
+out=$(run_zmx "kyoto" "$(with_name "refactor-auth")")
+assert_contains "/rename name outranks zmx" "$out" "name refactor-auth"
+assert_not_contains "only one session segment renders" "$out" "zmx kyoto"
+
+out=$(run_zmx "kyoto" "$(with_name "")")
+assert_contains "empty session_name falls back to zmx" "$out" "zmx kyoto"
+
+out=$(run_statusline_plain "$(with_name "a-very-long-renamed-session-that-overflows")")
+assert_contains "truncates long /rename names" "$out" "…"
+assert_not_contains "long /rename name is cut at 24 chars" "$out" "that-overflows"
 
 printf "\n\033[0;35m━━━ Rate Limits ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
@@ -321,11 +339,12 @@ assert_exit_code "exits 0 with non-numeric resets_at" "$INPUT_RATE_RESET_BAD" 0
 out=$(run_statusline_plain "$INPUT_RATE_RESET_BAD")
 assert_contains "still shows rate pct when resets_at is malformed" "$out" "5h:85%"
 
-printf "\n\033[0;35m━━━ Session Name ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Session Name (line 1 guard) ━━━━━━━━━━━━━\033[0m\n"
 
-# Session name should be ignored — line 1 always shows project/repo/cwd basename
-out=$(run_statusline_plain "$INPUT_SESSION_NAME")
-assert_not_contains "session name does not appear in output" "$out" "refactor-auth"
+# Line 1 always shows project/repo/cwd basename. The name renders on line 2
+# (see "Session Name (line 2)") — it must never displace the project segment.
+out_line1=$(run_statusline_plain "$INPUT_SESSION_NAME" | head -1)
+assert_not_contains "session name does not appear on line 1" "$out_line1" "refactor-auth"
 
 # Pin cwd to the repo root (derived from this file's location, not $(pwd))
 # so the suite passes no matter which directory it's invoked from.

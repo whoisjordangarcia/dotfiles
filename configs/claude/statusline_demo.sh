@@ -340,6 +340,20 @@ header "29c. zmx session with no git — name leads the cwd fallback, long name 
 expect "L2: zmx a-very-long-zmx-session-… · /tmp"
 run_zmx "a-very-long-zmx-session-name" '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.12,"total_duration_ms":60000},"session_id":"demo-29c","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":14}}'
 
+# ─── 29d/29e. Session renamed with /rename ───────────────────────
+# `/rename` puts .session_name in the statusline JSON. It takes the same slot
+# as zmx and wins it: you typed it for this conversation, the zmx name labels
+# the whole pane.
+clear_caches
+header "29d. Renamed with /rename — 'name' label leads line 2, before the branch"
+expect "L2: name refactor-auth · 🌿 main"
+run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.31,"total_duration_ms":120000},"session_id":"demo-29d","session_name":"refactor-auth","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":22}}'
+
+clear_caches
+header "29e. /rename inside a zmx session — the typed name wins, zmx yields"
+expect "L2: name refactor-auth · 🌿 main   (no 'zmx kyoto')"
+run_zmx "kyoto" '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.31,"total_duration_ms":120000},"session_id":"demo-29e","session_name":"refactor-auth","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":22}}'
+
 # ─── 30. Rate limit reset countdown ──────────────────────────────
 clear_caches
 header "30. Rate limit reset countdown (5h critical, resets in ~1h15m)"

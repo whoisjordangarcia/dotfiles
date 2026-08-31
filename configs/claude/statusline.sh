@@ -268,10 +268,11 @@ read_data=$(echo "$input" | jq -r '[
 	(.rate_limits.five_hour.resets_at // "" | tostring),
 	(.rate_limits.seven_day.resets_at // "" | tostring),
 	(.cost.total_duration_ms // 0 | tostring),
-	(.effort.level // .effortLevel // .reasoning_effort // .model.reasoning_effort // .output_style.effortLevel // "")
+	(.effort.level // .effortLevel // .reasoning_effort // .model.reasoning_effort // .output_style.effortLevel // ""),
+	(.session_name // "")
 ] | join("\u001f")')
 
-IFS=$'\x1f' read -r model_full cost lines_added lines_removed session_id cwd ctx_pct ctx_current ctx_cache_read rate_5h rate_7d rate_5h_resets rate_7d_resets duration_ms effort_level <<<"$read_data"
+IFS=$'\x1f' read -r model_full cost lines_added lines_removed session_id cwd ctx_pct ctx_current ctx_cache_read rate_5h rate_7d rate_5h_resets rate_7d_resets duration_ms effort_level session_name <<<"$read_data"
 
 # ─── Model name (shorten "Claude Opus 4.6" → "Opus 4.6") ────────────
 if [[ "$model_full" =~ Claude\ ([0-9.]+\ )?(.+) ]]; then
@@ -728,20 +729,28 @@ fi
   line2+="${commit_age_display}"
 }
 
-# ─── zmx session name (leads line 2) ────────────────────────────────
-# `zmx attach` exports ZMX_SESSION into the session shell, and Claude Code
-# inherits it — so this is a free env read, no subprocess. Rendered as a
-# labelled segment rather than a glyph: the session name is arbitrary user
-# text, and a bare name at the head of line 2 reads like a branch.
+# ─── Session name (leads line 2) ────────────────────────────────────
+# Two sources, most-specific first. `/rename` sets .session_name in the
+# statusline JSON — you typed it for *this* conversation, so it outranks
+# ZMX_SESSION, which `zmx attach` exports and Claude Code inherits (a free env
+# read, no subprocess) and which labels the whole pane. Only one renders: they
+# answer the same "which one is this" question, and both would just cost width.
+# Rendered as a labelled segment rather than a glyph: the name is arbitrary
+# user text, and a bare name at the head of line 2 reads like a branch.
 # Leads line 2 because "which session" outranks "which branch" when you're
 # hunting for the pane you left something running in.
-zmx_display=""
-if [ -n "${ZMX_SESSION:-}" ]; then
-  zmx_display="${COLOR_DIM}zmx${COLOR_RESET} ${COLOR_WHITE}$(truncate_str "$ZMX_SESSION" 24)${COLOR_RESET}"
+sess_label="" sess_value=""
+if [ -n "$session_name" ]; then
+  sess_label="name" sess_value="$session_name"
+elif [ -n "${ZMX_SESSION:-}" ]; then
+  sess_label="zmx" sess_value="$ZMX_SESSION"
+fi
+if [ -n "$sess_value" ]; then
+  sess_display="${COLOR_DIM}${sess_label}${COLOR_RESET} ${COLOR_WHITE}$(truncate_str "$sess_value" 24)${COLOR_RESET}"
   if [ -n "$line2" ]; then
-    line2="${zmx_display}${sep}${line2}"
+    line2="${sess_display}${sep}${line2}"
   else
-    line2="$zmx_display"
+    line2="$sess_display"
   fi
 fi
 
