@@ -65,3 +65,4 @@ CLAUDE.local.md
 AGENTS.local.md
 
 **/.claude/settings.local.json
+.claude/local/
