@@ -560,18 +560,27 @@ rm -rf "$PR_REPO"
 
 printf "\n\033[0;35m━━━ SSH Host Indicator ━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
+# bash preserves an inherited $HOSTNAME, so injecting it here keeps the
+# assertions independent of whatever machine runs the suite.
 run_ssh() {
   echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u TMUX SSH_CONNECTION="$1" \
-    bash "$STATUSLINE" 2>/dev/null | strip_ansi
+    HOSTNAME="${2-testbox}" bash "$STATUSLINE" 2>/dev/null | strip_ansi
 }
 
-# Field 3 of SSH_CONNECTION is the server (this machine), not the client
+# The label is this machine's name; SSH_CONNECTION only says "you're remote"
 out=$(run_ssh "10.0.0.9 51234 192.168.1.50 22")
-assert_contains "SSH session shows server IP" "$out" "⇢ 192.168.1.50"
+assert_contains "SSH session shows machine name" "$out" "⇢ testbox"
 assert_not_contains "SSH indicator ignores client IP" "$out" "10.0.0.9"
+assert_not_contains "SSH indicator prefers name over server IP" "$out" "192.168.1.50"
 
-out=$(run_ssh "fd00::1 51234 fd00::beef 22")
-assert_contains "SSH indicator handles IPv6" "$out" "⇢ fd00::beef"
+# FQDN is trimmed to the short name
+out=$(run_ssh "10.0.0.9 51234 192.168.1.50 22" "lxc01.home.arpa")
+assert_contains "SSH indicator strips the domain" "$out" "⇢ lxc01"
+assert_not_contains "SSH indicator drops FQDN tail" "$out" "home.arpa"
+
+# No $HOSTNAME → fall back to field 3 of SSH_CONNECTION (the server)
+out=$(run_ssh "fd00::1 51234 fd00::beef 22" "")
+assert_contains "SSH indicator falls back to server IP" "$out" "⇢ fd00::beef"
 
 out=$(run_statusline_plain "$INPUT_FULL")
 assert_not_contains "local session shows no host indicator" "$out" "⇢"
@@ -584,11 +593,11 @@ run_tmux_ssh() {
   printf '#!/bin/bash\nprintf "%%s\\n" %q\n' "$1" >"$SSH_FAKE_BIN/tmux"
   chmod +x "$SSH_FAKE_BIN/tmux"
   echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u SSH_CONNECTION TMUX=fake \
-    PATH="$SSH_FAKE_BIN:$PATH" bash "$STATUSLINE" 2>/dev/null | strip_ansi
+    HOSTNAME=testbox PATH="$SSH_FAKE_BIN:$PATH" bash "$STATUSLINE" 2>/dev/null | strip_ansi
 }
 
 out=$(run_tmux_ssh "SSH_CONNECTION=10.0.0.9 51234 192.168.1.77 22")
-assert_contains "stale pane env falls back to tmux copy" "$out" "⇢ 192.168.1.77"
+assert_contains "stale pane env falls back to tmux copy" "$out" "⇢ testbox"
 
 # An unset var reads back as "-SSH_CONNECTION" — that means local, not a host
 out=$(run_tmux_ssh "-SSH_CONNECTION")

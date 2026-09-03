@@ -292,8 +292,10 @@ effort_display=""
 [ -n "$effort_level" ] && effort_display="${COLOR_ACCENT}${effort_level}${COLOR_RESET}"
 
 # ─── SSH host indicator ──────────────────────────────────────────────
-# SSH_CONNECTION is "client_ip client_port server_ip server_port" — field 3 is
-# the machine this session is running ON, which is the useful "where am I".
+# SSH_CONNECTION ("client_ip client_port server_ip server_port") is only used as
+# the "am I remote?" flag — the label is this machine's short hostname, which is
+# what you actually recognise. Field 3 (the server IP) is the fallback for the
+# rare shell with no $HOSTNAME.
 # Inside tmux the var is frozen at server-start, so a re-attached session shows
 # a stale/missing value; tmux's own copy is refreshed on every attach by
 # `update-environment` (.tmux.conf). An unset var prints as "-SSH_CONNECTION",
@@ -306,8 +308,9 @@ if [ -z "$ssh_conn" ] && [ -n "${TMUX:-}" ]; then
   [[ "$ssh_conn" == -* ]] && ssh_conn=""
 fi
 if [ -n "$ssh_conn" ]; then
-  read -r _ _ ssh_host _ <<<"$ssh_conn"
-  [ -n "$ssh_host" ] && ssh_display="${COLOR_ACCENT}⇢ ${ssh_host}${COLOR_RESET}"
+  ssh_host="${HOSTNAME%%.*}"
+  [ -z "$ssh_host" ] && read -r _ _ ssh_host _ <<<"$ssh_conn"
+  [ -n "$ssh_host" ] && ssh_display="${COLOR_ACCENT}⇢ $(truncate_str "$ssh_host" 20)${COLOR_RESET}"
 fi
 
 # ─── Session cost ────────────────────────────────────────────────────
