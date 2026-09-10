@@ -16,6 +16,8 @@
     "allow": [
       "Bash(bun run:*)",
       "Bash(bunx npm-check-updates:*)",
+      "Bash(curl *localhost:*)",
+      "Bash(curl *127.0.0.1:*)",
       "Bash(docker build *)",
       "Bash(gh api *)",
       "Bash(gh pr checks *)",
@@ -98,6 +100,17 @@
       }
     ],
     "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(curl *)",
+            "command": "python3 ~/.claude/hooks/curl-ask-nonlocal.py",
+            "timeout": 5
+          }
+        ]
+      },
       {
         "matcher": "",
         "hooks": [
