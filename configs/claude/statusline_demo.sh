@@ -88,7 +88,7 @@ REPO1="$DEMO_DIR/dotfiles"
 make_repo "$REPO1"
 
 header "1. Normal repo (no worktree)"
-expect "dotfiles · 🌿 main"
+expect "dotfiles·🌿 main  (repo leads L2, not L1)"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.23,"total_duration_ms":120000},"session_id":"demo-1","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":25,"current_usage":{"input_tokens":40000,"cache_creation_input_tokens":2000,"cache_read_input_tokens":8000}}}'
 
 # ─── 2. Repo with uncommitted changes (+/- = git diff vs HEAD) ──
@@ -100,7 +100,7 @@ make_repo "$REPO_DIRTY"
 (cd "$REPO_DIRTY" && printf '1\n2\n3\n4\n5\n' >work.txt && git add work.txt \
   && git commit -q -m base && printf '1\n2\n3\nA\nB\nC\nD\n' >work.txt)
 header "2. Repo with uncommitted changes (+/- mirrors git diff, resets on commit)"
-expect "webapp · 🌿 main · +4 -2"
+expect "webapp·🌿 main·+4 -2"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000,"total_lines_added":42,"total_lines_removed":7},"session_id":"demo-2","cwd":"'"$REPO_DIRTY"'","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
 
 # ─── 3. Worktree, name ≈ branch (slash/dash) ────────────────────
@@ -115,7 +115,7 @@ git worktree add -q "$REPO2/.claude/worktrees/jordan-preview-pr" jordan/preview-
 WT1="$REPO2/.claude/worktrees/jordan-preview-pr"
 
 header "3. Worktree, no PR, name ≈ branch (slash→dash)"
-expect "nest · 🌿 jordan/preview-pr"
+expect "nest·🌿 jordan/preview-pr"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.45,"total_duration_ms":480000},"session_id":"demo-3","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":43,"current_usage":{"input_tokens":60000,"cache_creation_input_tokens":5000,"cache_read_input_tokens":20000}}}'
 
 # ─── 4. Worktree with open PR ───────────────────────────────────
@@ -154,19 +154,19 @@ WT2="$REPO3/.claude/worktrees/quick-test"
 set_pr_cache "$WT2" "feature/big-refactor" "" "" ""
 
 header "7. Worktree, no PR, name differs from branch"
-expect "nest2 · ⎇ quick-test · 🌿 feature/big-refactor"
+expect "nest2·⎇ quick-test·🌿 feature/big-refactor"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.05,"total_duration_ms":60000},"session_id":"demo-6","cwd":"'"$WT2"'","context_window":{"context_window_size":200000,"used_percentage":7,"current_usage":{"input_tokens":10000,"cache_creation_input_tokens":1000,"cache_read_input_tokens":2000}}}'
 
 # ─── 8. Non-git directory ────────────────────────────────────────
 clear_caches
 header "8. Non-git directory (/tmp)"
-expect "tmp"
+expect "L1 only — no git, so no line 2 (cwd path and project name are both gone)"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.10,"total_duration_ms":30000},"session_id":"demo-8","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":3,"current_usage":{"input_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
 
 # ─── 9. Sonnet model + high context ─────────────────────────────
 clear_caches
 header "9. Sonnet model + high context (92%) + warning"
-expect "Sonnet 3.7 · \$5.00 · ... · [█████████▏] 92% (185k) ⚠️"
+expect "s3.7 · \$5.00 · ... · [█████████▏] 92% (185k) ⚠️"
 run '{"model":{"display_name":"Claude 3.7 Sonnet"},"cost":{"total_cost_usd":5.00,"total_duration_ms":1800000},"session_id":"demo-9","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":92,"current_usage":{"input_tokens":170000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":5000}}}'
 
 # ─── 10. Medium context (yellow zone) ────────────────────────────
@@ -223,8 +223,8 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.30,"
 # ─── 17. Cost rate (long session, >5min) ─────────────────────────
 clear_caches
 
-header "17. Long session with cost rate"
-expect "\$4.50 (\$6.00/hr) · 45m"
+header "17. Long session (no \$/hr burn rate any more)"
+expect "\$4.50 with no (\$/hr) suffix"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":4.50,"total_duration_ms":2700000},"session_id":"demo-17","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":85,"current_usage":{"input_tokens":150000,"cache_creation_input_tokens":12000,"cache_read_input_tokens":60000}}}'
 
 # ─── 18. Long branch name truncation ────────────────────────────
@@ -256,8 +256,8 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":12.00,
 
 # ─── 22. Session name ──────────────────────────────────────────
 clear_caches
-header "22. Session name (ignored — cwd basename always wins)"
-expect "tmp on L1, no refactor-auth anywhere"
+header "22. Session name (/rename) is not rendered"
+expect "no refactor-auth anywhere"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.75,"total_duration_ms":180000},"session_id":"demo-22","session_name":"refactor-auth","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":20}}'
 
 # ─── 23. No rate limits (API key user) ─────────────────────────
@@ -277,14 +277,14 @@ git worktree add -q "$REPO5/.claude/worktrees/jordan-nes-4331-bug-yoda-deep-link
 WT3="$REPO5/.claude/worktrees/jordan-nes-4331-bug-yoda-deep-links-ignore-url-account-and-redirect-to-first"
 
 header "19. Long worktree name (branch == dir → ⎇ deduped, branch truncated at 45 chars)"
-expect "L1: nest3 · \$0.00 · 0s · [░░░░░░░░░░] 0%"
-expect "L2: jordan-nes-4331-bug-yoda-deep-links-ignore-ur… · just now"
+expect "L1: \$0.00 · 0s · [░░░░░░░░░░] 0%"
+expect "L2: nest3·jordan-nes-4331-bug-yoda-deep-links-ignore-ur…·just now"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},"session_id":"demo-19","cwd":"'"$WT3"'","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
 
 # ─── 24. Reasoning effort indicator ─────────────────────────────
 clear_caches
 header "24. Reasoning effort (.effort.level from statusline JSON)"
-expect "L1: xhigh · tmp · \$0.25 · ..."
+expect "L1: (xh) · \$0.25 · ..."
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.25,"total_duration_ms":60000},"session_id":"demo-24","cwd":"/tmp","context_window":{"used_percentage":12},"effort":{"level":"xhigh"}}'
 
 # ─── 25. Long project name + cwd path truncation ────────────────
@@ -292,9 +292,8 @@ clear_caches
 LONG_NAME_DEMO="jordan-nes-3984-workflows-add-genetic-testing-decision-to-patient-list-and"
 LONG_DIR_DEMO="$DEMO_DIR/$LONG_NAME_DEMO"
 mkdir -p "$LONG_DIR_DEMO"
-header "25. Long project name (30-char cap) + non-worktree cwd path (50-char trailing …)"
-expect "L1: jordan-nes-3984-workflows-add-… · \$0.00 · 0s · [░░░░░░░░░░] 0%"
-expect "L2: <prefix>/jordan-nes-3984-workflows-add-genetic-testing-…"
+header "25. Long non-worktree cwd, no git — the path renders nowhere"
+expect "L1: \$0.00 · [░░░░░░░░░░] 0%   (no L2)"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},"session_id":"demo-25","cwd":"'"$LONG_DIR_DEMO"'","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
 
 # ─── 26. Worktree path (git detection failed) — ⎇ icon ──────────
@@ -302,57 +301,27 @@ clear_caches
 WT_PATH_DEMO="$DEMO_DIR/nest/.worktrees/$LONG_NAME_DEMO"
 mkdir -p "$WT_PATH_DEMO"
 header "26. cwd is inside .worktrees/<name> (no git) — line 2 becomes ⎇ NAME (45-char cap)"
-expect "L1: nest · \$0.00 · ..."
+expect "L1: \$0.00 · ...  (no inferred repo name)"
 expect "L2: ⎇ jordan-nes-3984-workflows-add-genetic-testing…"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},"session_id":"demo-26","cwd":"'"$WT_PATH_DEMO"'","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
 
 # ─── 27. Default model hidden (Opus 4.8 1M context) ─────────────
 clear_caches
 header "27. Opus 4.8 1M context is the default — model name is hidden on line 1"
-expect "L1 starts with the project (tmp), NO \"Opus\" shown"
+expect "L1 starts with the cost, NO \"Opus\"/\"o4.8\" shown"
 run '{"model":{"display_name":"Claude Opus 4.8 (1M context)"},"cost":{"total_cost_usd":0.62,"total_duration_ms":240000},"session_id":"demo-27","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":6}}'
 
 # ─── 28. Non-default model + effort to its right ────────────────
 clear_caches
 header "28. Non-default model shows, with reasoning effort to the RIGHT of it"
-expect "L1: Opus 4.7 high · tmp · \$0.30 · ..."
+expect "L1: o4.7 (h) · \$0.30 · ..."
 run '{"model":{"display_name":"Claude Opus 4.7"},"cost":{"total_cost_usd":0.30,"total_duration_ms":120000},"session_id":"demo-28","cwd":"/tmp","context_window":{"used_percentage":15},"effortLevel":"high"}'
 
 # ─── 29. Default model hidden but effort still shows alone ───────
 clear_caches
 header "29. Opus 4.8 1M hidden, but effort still rides at the far left when set"
-expect "L1: xhigh · tmp · \$0.20 · ... (no \"Opus\")"
+expect "L1: (xh) · \$0.20 · ... (no \"Opus\")"
 run '{"model":{"display_name":"Claude Opus 4.8 (1M context)"},"cost":{"total_cost_usd":0.20,"total_duration_ms":90000},"session_id":"demo-29","cwd":"/tmp","context_window":{"used_percentage":8},"effortLevel":"xhigh"}'
-
-# ─── 29b. Inside a zmx session ───────────────────────────────────
-# ZMX_SESSION is exported by `zmx attach` and inherited by Claude Code, so the
-# demo injects it directly. Two scenarios: with git (session leads the branch)
-# and without (session leads the cwd fallback).
-run_zmx() { ZMX_SESSION="$1" run "$2"; }
-
-clear_caches
-header "29b. Inside a zmx session — name leads line 2, before the branch"
-expect "L2: zmx kyoto · 🌿 main"
-run_zmx "kyoto" '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.31,"total_duration_ms":120000},"session_id":"demo-29b","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":22,"current_usage":{"input_tokens":40000,"cache_creation_input_tokens":2000,"cache_read_input_tokens":8000}}}'
-
-clear_caches
-header "29c. zmx session with no git — name leads the cwd fallback, long name truncates"
-expect "L2: zmx a-very-long-zmx-session-… · /tmp"
-run_zmx "a-very-long-zmx-session-name" '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.12,"total_duration_ms":60000},"session_id":"demo-29c","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":14}}'
-
-# ─── 29d/29e. Session renamed with /rename ───────────────────────
-# `/rename` puts .session_name in the statusline JSON. It takes the same slot
-# as zmx and wins it: you typed it for this conversation, the zmx name labels
-# the whole pane.
-clear_caches
-header "29d. Renamed with /rename — 'name' label leads line 2, before the branch"
-expect "L2: name refactor-auth · 🌿 main"
-run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.31,"total_duration_ms":120000},"session_id":"demo-29d","session_name":"refactor-auth","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":22}}'
-
-clear_caches
-header "29e. /rename inside a zmx session — the typed name wins, zmx yields"
-expect "L2: name refactor-auth · 🌿 main   (no 'zmx kyoto')"
-run_zmx "kyoto" '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.31,"total_duration_ms":120000},"session_id":"demo-29e","session_name":"refactor-auth","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":22}}'
 
 # ─── 30. Rate limit reset countdown ──────────────────────────────
 clear_caches
@@ -389,7 +358,7 @@ run_one_line() {
 # ─── 32. One-line mode, wide terminal ────────────────────────────
 clear_caches
 header "32. One-line mode (codex style), wide terminal — everything joins with ·"
-expect "webapp · \$1.23 ... [bar] 70% (140k) · 🌿 main · +4 -2  — all on ONE line"
+expect "\$1.23 ... [bar] 70% (140k) · webapp · 🌿 main · +4 -2  — all on ONE line"
 run_one_line 300 '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000,"total_lines_added":42,"total_lines_removed":7},"session_id":"demo-32","cwd":"'"$REPO_DIRTY"'","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
 
 # ─── 33. One-line mode, narrow terminal → multi-line fallback ────
@@ -434,29 +403,16 @@ run_cols() {
 clear_caches
 WIDTH_JSON='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":4.87,"total_duration_ms":5400000},"session_id":"demo-35","cwd":"/tmp","context_window":{"context_window_size":1000000,"used_percentage":62,"current_usage":{"input_tokens":180000,"cache_creation_input_tokens":20000,"cache_read_input_tokens":420000}},"effort":{"level":"high"}}'
 header "35. Same session rendered at shrinking pane widths (no line exceeds w=cols)"
-expect "120 cols — full line 1: effort · project · cost (\$/hr) · [bar] % (tokens) ⚡cache"
+expect "120 cols — full line 1: effort · cost · [bar] % (tokens) ⚡cache"
 run_cols 120 "$WIDTH_JSON"
 expect "60 cols — sheds cache % (⚡67%)"
 run_cols 60 "$WIDTH_JSON"
-expect "50 cols — also sheds cost-rate (\$3.25/hr)"
+expect "50 cols — still fits (no cost-rate to shed)"
 run_cols 50 "$WIDTH_JSON"
 expect "40 cols (phone) — also sheds token count (620k) → essentials only"
 run_cols 40 "$WIDTH_JSON"
 expect "24 cols (tiny) — even essentials overflow → hard clamp with …"
 run_cols 24 "$WIDTH_JSON"
 
-# ─── 36. SSH session — host indicator ───────────────────────────
-# SSH_CONNECTION only flags "this session is remote"; the label is this box's
-# short $HOSTNAME (field 3, the server IP, is the fallback). run() doesn't unset
-# either, so exporting them in a subshell is enough to drive the scenario.
-clear_caches
-header "36. SSH session — machine name rides at the far left of line 1"
-expect "L1: ⇢ lxc01 · tmp · \$0.40 · [bar] 12%  (no IPs shown)"
-(
-  export HOSTNAME="lxc01.home.arpa"
-  export SSH_CONNECTION="10.0.0.9 51234 192.168.1.50 22"
-  run '{"model":{"display_name":"Claude Opus 4.8 (1M context)"},"cost":{"total_cost_usd":0.40,"total_duration_ms":180000},"session_id":"demo-36","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":12}}'
-)
-
 printf '\033[0;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
-printf '\033[0;32m✓ Demo complete — %d variations shown\033[0m\n\n' 33
+printf '\033[0;32m✓ Demo complete — %d variations shown\033[0m\n\n' 28

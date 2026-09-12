@@ -267,12 +267,10 @@ read_data=$(echo "$input" | jq -r '[
 	(.rate_limits.seven_day.used_percentage // -1 | tostring),
 	(.rate_limits.five_hour.resets_at // "" | tostring),
 	(.rate_limits.seven_day.resets_at // "" | tostring),
-	(.cost.total_duration_ms // 0 | tostring),
-	(.effort.level // .effortLevel // .reasoning_effort // .model.reasoning_effort // .output_style.effortLevel // ""),
-	(.session_name // "")
+	(.effort.level // .effortLevel // .reasoning_effort // .model.reasoning_effort // .output_style.effortLevel // "")
 ] | join("\u001f")')
 
-IFS=$'\x1f' read -r model_full cost lines_added lines_removed session_id cwd ctx_pct ctx_current ctx_cache_read rate_5h rate_7d rate_5h_resets rate_7d_resets duration_ms effort_level session_name <<<"$read_data"
+IFS=$'\x1f' read -r model_full cost lines_added lines_removed session_id cwd ctx_pct ctx_current ctx_cache_read rate_5h rate_7d rate_5h_resets rate_7d_resets effort_level <<<"$read_data"
 
 # ─── Model name (shorten "Claude Opus 4.6" → "Opus 4.6") ────────────
 if [[ "$model_full" =~ Claude\ ([0-9.]+\ )?(.+) ]]; then
@@ -282,54 +280,32 @@ if [[ "$model_full" =~ Claude\ ([0-9.]+\ )?(.+) ]]; then
 else
   model_short="$model_full"
 fi
+# Drop the "(1M context)" suffix — the context bar already says how big the
+# window is — then compact "Opus 5" → "o5", "Fable 5.1" → "f5.1". The family
+# initial is unambiguous across the current lineup (Opus/Sonnet/Haiku/Fable).
+# hide_model_regex below matches on the untouched $model_full.
+model_short="${model_short% (1M context)}"
+if [[ "$model_short" =~ ^([A-Za-z])[A-Za-z]*\ ([0-9.]+)$ ]]; then
+  model_short="${BASH_REMATCH[1],,}${BASH_REMATCH[2]}"
+fi
 
 # ─── Reasoning effort display ────────────────────────────────────────
 # Primary source is .effort.level in the statusline JSON (Claude Code
 # ≥2.1.133); $CLAUDE_EFFORT is the documented env-var equivalent fallback.
 [ -z "$effort_level" ] && effort_level="${CLAUDE_EFFORT:-}"
 effort_display=""
-# No leading glyph — the accent-colored level word is the indicator on its own.
-[ -n "$effort_level" ] && effort_display="${COLOR_ACCENT}${effort_level}${COLOR_RESET}"
-
-# ─── SSH host indicator ──────────────────────────────────────────────
-# SSH_CONNECTION ("client_ip client_port server_ip server_port") is only used as
-# the "am I remote?" flag — the label is this machine's short hostname, which is
-# what you actually recognise. Field 3 (the server IP) is the fallback for the
-# rare shell with no $HOSTNAME.
-# Inside tmux the var is frozen at server-start, so a re-attached session shows
-# a stale/missing value; tmux's own copy is refreshed on every attach by
-# `update-environment` (.tmux.conf). An unset var prints as "-SSH_CONNECTION",
-# which correctly reads as "local".
-ssh_display=""
-ssh_conn="${SSH_CONNECTION:-}"
-if [ -z "$ssh_conn" ] && [ -n "${TMUX:-}" ]; then
-  ssh_conn=$(tmux show-environment SSH_CONNECTION 2>/dev/null)
-  ssh_conn="${ssh_conn#SSH_CONNECTION=}"
-  [[ "$ssh_conn" == -* ]] && ssh_conn=""
-fi
-if [ -n "$ssh_conn" ]; then
-  ssh_host="${HOSTNAME%%.*}"
-  [ -z "$ssh_host" ] && read -r _ _ ssh_host _ <<<"$ssh_conn"
-  [ -n "$ssh_host" ] && ssh_display="${COLOR_ACCENT}⇢ $(truncate_str "$ssh_host" 20)${COLOR_RESET}"
-fi
+# Compact "(m)" / "(h)" form — one letter is enough to tell the levels apart,
+# except xhigh/max which would both collapse onto another letter.
+case "$effort_level" in
+  "") ;;
+  xhigh) effort_display="(xh)" ;;
+  max)   effort_display="(max)" ;;
+  *)     effort_display="(${effort_level:0:1})" ;;
+esac
+[ -n "$effort_display" ] && effort_display="${COLOR_ACCENT}${effort_display}${COLOR_RESET}"
 
 # ─── Session cost ────────────────────────────────────────────────────
 cost_display=$(printf '$%.2f' "$cost")
-
-# ─── Session burn rate (from Claude's total_duration_ms) ────────────
-# Elapsed duration is no longer displayed on its own; total_duration_ms is
-# still used to derive the $/hr burn rate once past a 5-minute warm-up.
-duration_seconds=0
-cost_rate_display=""
-
-if [ "$duration_ms" -gt 0 ] 2>/dev/null; then
-  duration_seconds=$((duration_ms / 1000))
-
-  if [ "$duration_seconds" -gt 300 ] 2>/dev/null; then
-    rate=$(awk "BEGIN { printf \"%.2f\", $cost / $duration_seconds * 3600 }")
-    cost_rate_display=" ${COLOR_DIM}(${COLOR_COST}\$${rate}/hr${COLOR_DIM})${COLOR_RESET}"
-  fi
-fi
 
 # ─── Context usage bar ───────────────────────────────────────────────
 pct=$(printf '%.0f' "$ctx_pct" 2>/dev/null || echo "0")
@@ -589,21 +565,9 @@ fi
 lines_display="$git_lines_display"
 
 # ─── Assemble output ─────────────────────────────────────────────────
-sep=" ${COLOR_DIM}·${COLOR_RESET} "
-
-# Project name: main repo name for worktrees, else cwd basename
-project_name=""
-if [ "$is_worktree" = true ] && [ -n "$git_common" ]; then
-  main_repo="${git_common%/.git}"
-  [ -n "$main_repo" ] && project_name="${main_repo##*/}"
-elif [ "$is_worktree" = true ] && [ -n "$wt_main_repo" ]; then
-  project_name="${wt_main_repo##*/}"
-elif [ -n "$cwd" ]; then
-  project_name="${cwd##*/}"
-fi
-
-# Truncate overlong project names (worktree folders can run 60+ chars)
-project_name=$(truncate_str "$project_name" 30)
+# Unpadded: a faint · alone is enough of a break, and 1 col instead of 3 per
+# segment is what lets the whole thing fit on one line.
+sep="${COLOR_DIM}·${COLOR_RESET}"
 
 # Worktree/PR indicator (rendered on line 2)
 wt_pr_display=""
@@ -624,14 +588,15 @@ if [ -n "$branch" ]; then
   fi
 fi
 
-# Line 1: model + effort · project · cost · session vitals
+# Line 1: model + effort · cost · session vitals (no project name — the
+# tmux window title already carries it)
 # Model segment (far left of line 1). Hide the default model (Opus 4.8 1M —
 # showing it is noise); show anything else. Override per-machine with
 # STATUSLINE_HIDE_MODEL_REGEX instead of editing this file.
 # Reasoning effort rides to the right of the model — or stands alone when the model is hidden.
 hide_model_regex="${STATUSLINE_HIDE_MODEL_REGEX:-Opus 4\.8.*1M}"
 model_segment=""
-if [[ ! "$model_short" =~ $hide_model_regex ]]; then
+if [[ ! "$model_full" =~ $hide_model_regex ]]; then
   model_segment="${COLOR_MODEL}${model_short}${COLOR_RESET}"
 fi
 if [ -n "$effort_display" ]; then
@@ -640,25 +605,21 @@ if [ -n "$effort_display" ]; then
 fi
 
 # Assemble line 1 with a selectable set of optional segments. On a narrow pane
-# the print section rebuilds with fewer of them (cache % → cost-rate → token
-# count) so the line shrinks to fit instead of wrapping. The essentials —
-# model/effort · project · cost · context bar % — always render.
-# Args (1/0): include cost-rate, token count, cache %.
+# the print section rebuilds with fewer of them (cache % → token count) so the
+# line shrinks to fit instead of wrapping. The essentials —
+# model/effort · cost · context bar % — always render.
+# Args (1/0): include token count, cache %.
 build_line1() {
-  local inc_rate="$1" inc_tok="$2" inc_cache="$3" l=""
-  [ -n "$project_name" ] && l+="${COLOR_WHITE}${project_name}${COLOR_RESET}"
-  [ -n "$l" ] && l+="${sep}"
+  local inc_tok="$1" inc_cache="$2" l=""
   l+="${COLOR_COST}${cost_display}${COLOR_RESET}"
   [ -n "$model_segment" ] && l="${model_segment}${sep}${l}"
-  [ -n "$ssh_display" ] && l="${ssh_display}${sep}${l}"
-  [ "$inc_rate" = 1 ] && [ -n "$cost_rate_display" ] && l+="${cost_rate_display}"
   l+="${sep}${context_bar}"
   [ "$inc_tok" = 1 ] && l+="${tokens_display}"
   l+="${warn}"
   [ "$inc_cache" = 1 ] && l+="${cache_display}"
   printf '%s' "$l"
 }
-line1=$(build_line1 1 1 1)
+line1=$(build_line1 1 1)
 # Rate limits: hide when low; show 5h at ≥70% and 7d at ≥80%
 rate_display=""
 rate_5h_int=0
@@ -683,8 +644,20 @@ if [ "$rate_7d_int" -ge 80 ] 2>/dev/null; then
   rate_display+="${COLOR_DEL}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
 fi
 
-# Line 2: worktree · branch · sync · dirty · lines · commit age
+# Line 2: repo · worktree · branch · sync · dirty · lines · commit age
 line2=""
+
+# Repo name leads line 2 (main repo name for worktrees, else cwd basename).
+# Only inside git — a bare directory name outside a repo is just the path again.
+repo_name=""
+if [ -n "$branch" ]; then
+  if [ "$is_worktree" = true ] && [ -n "$git_common" ]; then
+    main_repo="${git_common%/.git}"
+    repo_name="${main_repo##*/}"
+  else
+    repo_name="${cwd##*/}"
+  fi
+fi
 
 if [ -n "$branch" ]; then
   if [ "$is_worktree" = true ]; then
@@ -710,15 +683,15 @@ if [ -n "$branch" ]; then
     [ -n "$sync_display" ] && line2+="${sep}${sync_display}"
     [ -n "$dirty_display" ] && line2+="${sep}${dirty_display}"
   fi
+  [ -n "$repo_name" ] && line2="${COLOR_WHITE}$(truncate_str "$repo_name" 30)${COLOR_RESET}${sep}${line2}"
 fi
 
 if [ -z "$line2" ] && [ "$is_worktree" = true ] && [ -n "$wt_name" ]; then
   # Worktree detected but no branch (git read failed) — show ⎇ NAME instead of the raw path
   line2="${COLOR_WORKTREE}⎇ $(truncate_str "$wt_name" 45)${COLOR_RESET}"
-elif [ -z "$line2" ] && [ -n "$cwd" ] && [ "$is_worktree" != true ]; then
-  # No git (and not a worktree) — show full path with ~ shorthand
-  line2="${COLOR_WHITE}$(truncate_str "${cwd/#$HOME/~}" 50)${COLOR_RESET}"
 fi
+# No git and not a worktree → line 2 stays empty (the cwd path used to render
+# here; it was long and the tmux window title already names the directory).
 
 # Lines changed on line 2
 [ -n "$lines_display" ] && {
@@ -731,31 +704,6 @@ fi
   [ -n "$line2" ] && line2+="${sep}"
   line2+="${commit_age_display}"
 }
-
-# ─── Session name (leads line 2) ────────────────────────────────────
-# Two sources, most-specific first. `/rename` sets .session_name in the
-# statusline JSON — you typed it for *this* conversation, so it outranks
-# ZMX_SESSION, which `zmx attach` exports and Claude Code inherits (a free env
-# read, no subprocess) and which labels the whole pane. Only one renders: they
-# answer the same "which one is this" question, and both would just cost width.
-# Rendered as a labelled segment rather than a glyph: the name is arbitrary
-# user text, and a bare name at the head of line 2 reads like a branch.
-# Leads line 2 because "which session" outranks "which branch" when you're
-# hunting for the pane you left something running in.
-sess_label="" sess_value=""
-if [ -n "$session_name" ]; then
-  sess_label="name" sess_value="$session_name"
-elif [ -n "${ZMX_SESSION:-}" ]; then
-  sess_label="zmx" sess_value="$ZMX_SESSION"
-fi
-if [ -n "$sess_value" ]; then
-  sess_display="${COLOR_DIM}${sess_label}${COLOR_RESET} ${COLOR_WHITE}$(truncate_str "$sess_value" 24)${COLOR_RESET}"
-  if [ -n "$line2" ]; then
-    line2="${sess_display}${sep}${line2}"
-  else
-    line2="$sess_display"
-  fi
-fi
 
 # ─── Node app detection (line 3) ───────────────────────────────────
 # Nest frontend dev servers run https on custom hostnames (mkcert certs,
@@ -979,10 +927,10 @@ else
   # Fit every line to the pane so none wrap — a wrapped line takes an extra
   # terminal row the renderer didn't reserve, which reads as a double-render
   # in tmux over SSH. Line 1 first sheds its low-value optional segments
-  # (cache % → cost-rate → token count); then all lines are hard-clamped as a
-  # final guarantee. cols unknown → leave everything as-is.
+  # (cache % → token count); then all lines are hard-clamped as a final
+  # guarantee. cols unknown → leave everything as-is.
   if [ "$cols" -gt 0 ] 2>/dev/null; then
-    for combo in "1 1 1" "1 1 0" "0 1 0" "0 0 0"; do
+    for combo in "1 1" "1 0" "0 0"; do
       line1=$(build_line1 $combo)
       [ "$(visible_width "$line1")" -le "$cols" ] && break
     done

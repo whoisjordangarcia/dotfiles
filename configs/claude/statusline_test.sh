@@ -165,22 +165,29 @@ out=$(run_statusline_plain "$INPUT_MINIMAL")
 assert_not_contains "hides default Opus 4.8 1M model name" "$out" "Opus"
 
 out=$(run_statusline_plain "$INPUT_SONNET")
-assert_contains "shows non-default model name" "$out" "Sonnet"
+assert_contains "shows non-default model name, compacted" "$out" "s3.7"
+assert_not_contains "model name is abbreviated to its initial" "$out" "Sonnet"
 
 # Non-default Opus variants now show (only Opus 4.8 1M is hidden)
 INPUT_OPUS_47='{"model":{"display_name":"Claude Opus 4.7"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"context_window":{"context_window_size":200000,"used_percentage":0}}'
 out=$(run_statusline_plain "$INPUT_OPUS_47")
-assert_contains "shows Opus 4.7 (not the hidden 1M default)" "$out" "Opus 4.7"
+assert_contains "shows Opus 4.7 as o4.7 (not the hidden 1M default)" "$out" "o4.7"
 
 # Fable 5 is NOT a hidden default — only Opus 4.8 1M is hidden
 INPUT_FABLE='{"model":{"display_name":"Claude Fable 5"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"context_window":{"context_window_size":200000,"used_percentage":0}}'
 out=$(run_statusline_plain "$INPUT_FABLE")
-assert_contains "shows Fable 5 (not a hidden default)" "$out" "Fable 5"
+assert_contains "shows Fable 5 as f5 (not a hidden default)" "$out" "f5"
+
+# "(1M context)" suffix is dropped — the context bar already conveys window size
+INPUT_OPUS5_1M='{"model":{"display_name":"Claude Opus 5 (1M context)"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"context_window":{"context_window_size":1000000,"used_percentage":0}}'
+out=$(run_statusline_plain "$INPUT_OPUS5_1M")
+assert_contains "Opus 5 1M shows as o5" "$out" "o5"
+assert_not_contains "1M context suffix is dropped" "$out" "1M context"
 
 # Effort rides to the right of a shown model name
 INPUT_MODEL_EFFORT='{"model":{"display_name":"Claude Opus 4.7"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"context_window":{"used_percentage":0},"effortLevel":"high"}'
 out_line1=$(run_statusline_plain "$INPUT_MODEL_EFFORT" | head -1)
-assert_contains "effort level sits to the right of the model name" "$out_line1" "Opus 4.7 high"
+assert_contains "effort level sits to the right of the model name" "$out_line1" "o4.7 (h)"
 
 printf "\n\033[0;35m━━━ Context Bar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
@@ -260,48 +267,21 @@ assert_not_contains "hides cache when zero reads" "$out" "⚡"
 printf "\n\033[0;35m━━━ Fallback CWD (no git) ━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 out=$(run_statusline_plain "$INPUT_FULL")
-assert_contains "shows project name when no git" "$out" "tmp"
+assert_not_contains "no cwd path when no git" "$out" "/tmp"
+assert_not_contains "no bare cwd basename when no git" "$out" "tmp"
 
-printf "\n\033[0;35m━━━ Session Name (line 2) ━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Session Name (not rendered) ━━━━━━━━━━━━━\033[0m\n"
 
+# Neither `/rename`'s .session_name nor ZMX_SESSION render anywhere — the
+# segment was dropped to keep line 2 short.
 run_zmx() { echo "$2" | env -u CLAUDE_EFFORT -u TMUX TERM_PROGRAM=ghostty \
   ZMX_SESSION="$1" bash "$STATUSLINE" 2>/dev/null | strip_ansi; }
 
 out=$(run_zmx "kyoto" "$INPUT_FULL")
-assert_contains "shows zmx session name" "$out" "zmx kyoto"
+assert_not_contains "zmx session name is not rendered" "$out" "kyoto"
 
-# /tmp has no git, so line 2 is the cwd fallback — the session must lead it.
-line2_zmx=$(echo "$out" | sed -n 2p)
-assert_contains "session leads line 2" "$line2_zmx" "zmx kyoto"
-
-out=$(run_statusline_plain "$INPUT_FULL")
-assert_not_contains "hides zmx segment outside a session" "$out" "zmx "
-
-# Empty ZMX_SESSION (zmx also exports ZMX_PROMPT_SESSION="" ) must not render.
-out=$(run_zmx "" "$INPUT_FULL")
-assert_not_contains "hides zmx segment when var is empty" "$out" "zmx "
-
-out=$(run_zmx "a-very-long-zmx-session-name-that-overflows" "$INPUT_FULL")
-assert_contains "truncates long session names" "$out" "…"
-assert_not_contains "long session name is cut at 24 chars" "$out" "that-overflows"
-
-# `/rename` sets .session_name in the statusline JSON — a per-conversation name
-# that must outrank ZMX_SESSION's per-pane one, and share its single slot.
-with_name() { echo "$INPUT_FULL" | jq -c --arg n "$1" '.session_name = $n'; }
-
-out=$(run_statusline_plain "$(with_name "refactor-auth")")
-assert_contains "shows /rename session name" "$out" "name refactor-auth"
-
-out=$(run_zmx "kyoto" "$(with_name "refactor-auth")")
-assert_contains "/rename name outranks zmx" "$out" "name refactor-auth"
-assert_not_contains "only one session segment renders" "$out" "zmx kyoto"
-
-out=$(run_zmx "kyoto" "$(with_name "")")
-assert_contains "empty session_name falls back to zmx" "$out" "zmx kyoto"
-
-out=$(run_statusline_plain "$(with_name "a-very-long-renamed-session-that-overflows")")
-assert_contains "truncates long /rename names" "$out" "…"
-assert_not_contains "long /rename name is cut at 24 chars" "$out" "that-overflows"
+out=$(run_statusline_plain "$INPUT_SESSION_NAME")
+assert_not_contains "/rename session name is not rendered" "$out" "refactor-auth"
 
 printf "\n\033[0;35m━━━ Rate Limits ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
@@ -339,46 +319,53 @@ assert_exit_code "exits 0 with non-numeric resets_at" "$INPUT_RATE_RESET_BAD" 0
 out=$(run_statusline_plain "$INPUT_RATE_RESET_BAD")
 assert_contains "still shows rate pct when resets_at is malformed" "$out" "5h:85%"
 
-printf "\n\033[0;35m━━━ Session Name (line 1 guard) ━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ Repo Name (leads line 2) ━━━━━━━━━━━━━━━━\033[0m\n"
 
-# Line 1 always shows project/repo/cwd basename. The name renders on line 2
-# (see "Session Name (line 2)") — it must never displace the project segment.
-out_line1=$(run_statusline_plain "$INPUT_SESSION_NAME" | head -1)
-assert_not_contains "session name does not appear on line 1" "$out_line1" "refactor-auth"
-
-# Pin cwd to the repo root (derived from this file's location, not $(pwd))
-# so the suite passes no matter which directory it's invoked from.
+# The repo name moved from line 1 to the head of line 2, before the branch.
+# Pin cwd to the repo root (derived from this file's location, not $(pwd)) so
+# the suite passes from any directory.
 REPO_ROOT=$(cd -- "$SCRIPT_DIR/../.." && pwd)
 REPO_BASE=$(basename "$REPO_ROOT")
-INPUT_SESSION_NAME_GIT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.75,"total_duration_ms":180000},"session_id":"test-named-git","session_name":"refactor-auth","cwd":"'"$REPO_ROOT"'","context_window":{"context_window_size":200000,"used_percentage":20}}'
-out_line1=$(run_statusline_plain "$INPUT_SESSION_NAME_GIT" | head -1)
-assert_not_contains "session name does not replace project on line 1" "$out_line1" "refactor-auth"
-assert_contains "cwd basename shown on line 1 even when session name set" "$out_line1" "$REPO_BASE"
+INPUT_REPO='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.75,"total_duration_ms":180000},"session_id":"test-repo","cwd":"'"$REPO_ROOT"'","context_window":{"context_window_size":200000,"used_percentage":20}}'
+out=$(run_statusline_plain "$INPUT_REPO")
+out_line1=$(echo "$out" | head -1)
+out_line2=$(echo "$out" | sed -n 2p)
+assert_not_contains "repo name is not shown on line 1" "$out_line1" "$REPO_BASE"
+assert_contains "line 1 still leads with cost" "$out_line1" '$0.75'
+assert_contains "repo name leads line 2, before the branch" "$out_line2" "${REPO_BASE}·"
+[[ "$out_line2" == "$REPO_BASE"* ]] && passed=$((passed + 1)) && printf "  \033[0;32m✓\033[0m repo name is the first segment of line 2\n" \
+  || { failed=$((failed + 1)); errors+="  FAIL: repo name is the first segment of line 2\n"; printf "  \033[0;31m✗\033[0m repo name is the first segment of line 2\n"; }
 
 printf "\n\033[0;35m━━━ Reasoning Effort ━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 # Primary source: .effort.level (real Claude Code payload field, ≥2.1.133)
 INPUT_EFFORT_REAL='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.00,"total_duration_ms":60000},"session_id":"test-eff-real","cwd":"/tmp","context_window":{"used_percentage":10},"effort":{"level":"high"}}'
 out=$(run_statusline_plain "$INPUT_EFFORT_REAL")
-assert_contains "shows effort.level (real payload field)" "$out" "high"
+assert_contains "shows effort.level (real payload field) as (h)" "$out" "(h)"
 
 # Legacy fallback key still honored
 INPUT_EFFORT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.00,"total_duration_ms":60000},"session_id":"test-eff","cwd":"/tmp","context_window":{"used_percentage":10},"effortLevel":"xhigh"}'
 out=$(run_statusline_plain "$INPUT_EFFORT")
-assert_contains "shows effortLevel when set" "$out" "xhigh"
+assert_contains "shows effortLevel when set — xhigh is (xh)" "$out" "(xh)"
 # Effort now renders with no leading glyph — the level word in accent color is
 # the whole indicator. Guard against reintroducing the old ◯ dot.
 assert_not_contains "effort shows no ◯ glyph" "$out" "◯"
 out_raw=$(run_statusline "$INPUT_EFFORT")
-assert_contains "effort level is accent-colored" "$out_raw" $'\033[0;35mxhigh'
+assert_contains "effort level is accent-colored" "$out_raw" $'\033[0;35m(xh)'
+
+# The other levels: one letter each, max spelled out so it can't collide with medium
+for lvl in low:l medium:m max:max; do
+  out=$(run_statusline_plain "$(echo "$INPUT_EFFORT" | jq -c --arg l "${lvl%%:*}" '.effortLevel = $l')")
+  assert_contains "effort ${lvl%%:*} renders as (${lvl#*:})" "$out" "(${lvl#*:})"
+done
 
 # $CLAUDE_EFFORT env var fallback when the JSON carries no effort field
 out=$(echo "$INPUT_FULL" | env CLAUDE_EFFORT=low bash "$STATUSLINE" 2>/dev/null | strip_ansi)
-assert_contains "falls back to CLAUDE_EFFORT env var" "$out" "low"
+assert_contains "falls back to CLAUDE_EFFORT env var" "$out" "(l)"
 
 # INPUT_FULL carries no effort field/env → no effort level word appears
 out=$(run_statusline_plain "$INPUT_FULL")
-assert_not_contains "hides effort when key absent" "$out" "low"
+assert_not_contains "hides effort when key absent" "$out" "(l)"
 
 printf "\n\033[0;35m━━━ Theme Adaptivity (terminal palette only) ━\033[0m\n"
 
@@ -435,13 +422,14 @@ rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
 WT_DIFF_INPUT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.1,"total_duration_ms":1000},"session_id":"wt-diff","cwd":"'"$WT_REPO2"'/.claude/worktrees/quick-test","context_window":{"used_percentage":10}}'
 out=$(run_statusline_plain "$WT_DIFF_INPUT")
 assert_contains "shows ⎇ label when wt name differs" "$out" "⎇ quick-test"
+assert_contains "worktree line 2 leads with the MAIN repo name" "$out" "$(basename "$WT_REPO2")·⎇ quick-test"
 assert_contains "shows branch alongside ⎇ label" "$out" "feature/big-refactor"
 
 rm -rf "$WT_REPO" "$WT_REPO2"
 
 printf "\n\033[0;35m━━━ Long Name Truncation ━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
-# Non-worktree long cwd: line 2 shows the path (trailing-truncated at 50 chars).
+# Non-worktree long cwd with no git: neither line carries the path any more.
 LONG_NAME="jordan-nes-3984-workflows-add-genetic-testing-decision-to-patient-list-and"
 LONG_DIR=$(mktemp -d -t "statusline-longXXXXXX")
 mkdir -p "$LONG_DIR/$LONG_NAME"
@@ -450,11 +438,9 @@ INPUT_LONG_NAME='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost
 out=$(run_statusline_plain "$INPUT_LONG_NAME")
 line1=$(echo "$out" | head -1)
 line2=$(echo "$out" | sed -n '2p')
-assert_contains "truncates long project name at 30 chars" "$line1" "jordan-nes-3984-workflows-add-…"
 assert_not_contains "full long name not present on line 1" "$line1" "$LONG_NAME"
-assert_contains "truncates long cwd path fallback with trailing ellipsis" "$line2" "…"
 assert_not_contains "full long path not present on line 2" "$line2" "$LONG_NAME"
-assert_not_contains "cwd path keeps prefix (no leading ellipsis)" "$line2" "…-add-genetic"
+assert_not_contains "no cwd path fallback on line 2" "$line2" "$LONG_DIR"
 rm -rf "$LONG_DIR"
 
 # Worktree cwd WITHOUT git detection: path contains .worktrees/<name>, so line 2
@@ -466,7 +452,7 @@ INPUT_LONG_WT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_u
 out=$(run_statusline_plain "$INPUT_LONG_WT")
 line1=$(echo "$out" | head -1)
 line2=$(echo "$out" | sed -n '2p')
-assert_contains "line 1 shows inferred main repo name (nest)" "$line1" "nest"
+assert_not_contains "line 1 does not show the inferred repo name" "$line1" "nest"
 assert_contains "line 2 shows worktree icon" "$line2" "⎇"
 assert_not_contains "line 2 drops .worktrees/ path segment" "$line2" ".worktrees"
 assert_not_contains "line 2 drops path prefix on the left" "$line2" "$LONG_WT_ROOT"
@@ -558,56 +544,20 @@ assert_contains "merged PR shows merged suffix" "$out" "#4567 merged"
 assert_not_contains "merged PR hides stale CI glyph" "$out" "⏳"
 rm -rf "$PR_REPO"
 
-printf "\n\033[0;35m━━━ SSH Host Indicator ━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
+printf "\n\033[0;35m━━━ SSH Host Indicator (removed) ━━━━━━━━━━━━\033[0m\n"
 
-# bash preserves an inherited $HOSTNAME, so injecting it here keeps the
-# assertions independent of whatever machine runs the suite.
-run_ssh() {
-  echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u TMUX SSH_CONNECTION="$1" \
-    HOSTNAME="${2-testbox}" bash "$STATUSLINE" 2>/dev/null | strip_ansi
-}
-
-# The label is this machine's name; SSH_CONNECTION only says "you're remote"
-out=$(run_ssh "10.0.0.9 51234 192.168.1.50 22")
-assert_contains "SSH session shows machine name" "$out" "⇢ testbox"
-assert_not_contains "SSH indicator ignores client IP" "$out" "10.0.0.9"
-assert_not_contains "SSH indicator prefers name over server IP" "$out" "192.168.1.50"
-
-# FQDN is trimmed to the short name
-out=$(run_ssh "10.0.0.9 51234 192.168.1.50 22" "lxc01.home.arpa")
-assert_contains "SSH indicator strips the domain" "$out" "⇢ lxc01"
-assert_not_contains "SSH indicator drops FQDN tail" "$out" "home.arpa"
-
-# No $HOSTNAME → fall back to field 3 of SSH_CONNECTION (the server)
-out=$(run_ssh "fd00::1 51234 fd00::beef 22" "")
-assert_contains "SSH indicator falls back to server IP" "$out" "⇢ fd00::beef"
-
-out=$(run_statusline_plain "$INPUT_FULL")
-assert_not_contains "local session shows no host indicator" "$out" "⇢"
-
-# Inside tmux the pane's own SSH_CONNECTION is frozen at server start, so the
-# fallback asks tmux (which refreshes it on attach via update-environment).
-# A fake tmux on PATH stands in for a live server.
-SSH_FAKE_BIN=$(mktemp -d "/tmp/statusline-test-tmux-XXXXXX")
-run_tmux_ssh() {
-  printf '#!/bin/bash\nprintf "%%s\\n" %q\n' "$1" >"$SSH_FAKE_BIN/tmux"
-  chmod +x "$SSH_FAKE_BIN/tmux"
-  echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u SSH_CONNECTION TMUX=fake \
-    HOSTNAME=testbox PATH="$SSH_FAKE_BIN:$PATH" bash "$STATUSLINE" 2>/dev/null | strip_ansi
-}
-
-out=$(run_tmux_ssh "SSH_CONNECTION=10.0.0.9 51234 192.168.1.77 22")
-assert_contains "stale pane env falls back to tmux copy" "$out" "⇢ testbox"
-
-# An unset var reads back as "-SSH_CONNECTION" — that means local, not a host
-out=$(run_tmux_ssh "-SSH_CONNECTION")
-assert_not_contains "tmux reporting unset SSH_CONNECTION reads as local" "$out" "⇢"
-rm -rf "$SSH_FAKE_BIN"
+# The ⇢ host segment was dropped; SSH_CONNECTION must not resurrect it.
+out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u TMUX SSH_CONNECTION="10.0.0.9 51234 192.168.1.50 22" \
+  HOSTNAME=testbox bash "$STATUSLINE" 2>/dev/null | strip_ansi)
+assert_not_contains "SSH session shows no host indicator" "$out" "⇢"
+assert_not_contains "SSH session shows no hostname" "$out" "testbox"
 
 printf "\n\033[0;35m━━━ One-Line Mode ━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
-# Wide terminal: everything joins onto a single line
-out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT STATUSLINE_ONE_LINE=1 STATUSLINE_COLS=300 bash "$STATUSLINE" 2>/dev/null | strip_ansi)
+# Wide terminal: everything joins onto a single line. /tmp has no git, so
+# INPUT_FULL is single-line already — use the rate-limit input, whose 5h/7d
+# indicators render on a later line.
+out=$(echo "$INPUT_RATE_HIGH" | env -u CLAUDE_EFFORT STATUSLINE_ONE_LINE=1 STATUSLINE_COLS=300 bash "$STATUSLINE" 2>/dev/null | strip_ansi)
 line_count=$(echo "$out" | wc -l | tr -d ' ')
 if [ "$line_count" -eq 1 ]; then
   passed=$((passed + 1))
@@ -617,11 +567,11 @@ else
   errors+="  FAIL: one-line mode joins output when terminal is wide — got $line_count lines\n"
   printf "  \033[0;31m✗\033[0m one-line mode joins output when terminal is wide (got %s lines)\n" "$line_count"
 fi
-# Project name ("tmp") is line-2 content; its presence proves line 2 was joined in.
-assert_contains "one-line output keeps line-2 content" "$out" 'tmp'
+# The rate-limit indicator is later-line content; its presence proves it was joined in.
+assert_contains "one-line output keeps later-line content" "$out" '5h:85%'
 
 # Narrow terminal: falls back to multi-line instead of overflowing
-out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT STATUSLINE_ONE_LINE=1 STATUSLINE_COLS=40 bash "$STATUSLINE" 2>/dev/null | strip_ansi)
+out=$(echo "$INPUT_RATE_HIGH" | env -u CLAUDE_EFFORT STATUSLINE_ONE_LINE=1 STATUSLINE_COLS=40 bash "$STATUSLINE" 2>/dev/null | strip_ansi)
 line_count=$(echo "$out" | wc -l | tr -d ' ')
 if [ "$line_count" -gt 1 ]; then
   passed=$((passed + 1))
@@ -645,7 +595,7 @@ else
 fi
 
 # Mode off: multi-line output unchanged
-out=$(echo "$INPUT_FULL" | env -u CLAUDE_EFFORT -u STATUSLINE_ONE_LINE bash "$STATUSLINE" 2>/dev/null | strip_ansi)
+out=$(echo "$INPUT_RATE_HIGH" | env -u CLAUDE_EFFORT -u STATUSLINE_ONE_LINE bash "$STATUSLINE" 2>/dev/null | strip_ansi)
 line_count=$(echo "$out" | wc -l | tr -d ' ')
 if [ "$line_count" -gt 1 ]; then
   passed=$((passed + 1))
@@ -716,20 +666,20 @@ run_cols() { echo "$1" | env -u CLAUDE_EFFORT STATUSLINE_COLS="$2" bash "$STATUS
 
 # Moderate narrowing: line 1 sheds the cache badge (⚡) first but keeps the
 # token count + essentials, and no longer overflows.
-out=$(run_cols "$INPUT_FULL" 50 | strip_ansi)
+out=$(run_cols "$INPUT_FULL" 36 | strip_ansi)
 line1=$(echo "$out" | head -1)
-assert_within_cols "line 1 fits a 50-col pane" "$line1" 50
+assert_within_cols "line 1 fits a 36-col pane" "$line1" 36
 assert_not_contains "sheds cache badge first when narrow" "$line1" "⚡"
-assert_contains "keeps token count at 50 cols" "$line1" "(140k)"
+assert_contains "keeps token count at 36 cols" "$line1" "(140k)"
 assert_contains "keeps cost when narrow" "$line1" '$1.23'
 assert_contains "keeps context pct when narrow" "$line1" "70%"
 
 # Narrower: also sheds the token count, still within the pane.
-out=$(run_cols "$INPUT_FULL" 44 | strip_ansi)
+out=$(run_cols "$INPUT_FULL" 32 | strip_ansi)
 line1=$(echo "$out" | head -1)
-assert_within_cols "line 1 fits a 44-col pane" "$line1" 44
+assert_within_cols "line 1 fits a 32-col pane" "$line1" 32
 assert_not_contains "sheds token count when narrower" "$line1" "(140k)"
-assert_contains "keeps context pct at 44 cols" "$line1" "70%"
+assert_contains "keeps context pct at 32 cols" "$line1" "70%"
 
 # Phone-width: even the essentials don't fit, so line 1 is hard-clamped with an
 # ellipsis rather than wrapping.
