@@ -310,14 +310,15 @@ cost_display=$(printf '$%.2f' "$cost")
 # ─── Context usage bar ───────────────────────────────────────────────
 pct=$(printf '%.0f' "$ctx_pct" 2>/dev/null || echo "0")
 
-# Smooth bar: eighth-block characters give sub-cell resolution, so the bar
-# creeps instead of jumping in 10% steps.
-bar_len=10
-eighths=$((pct * bar_len * 8 / 100))
-filled=$((eighths / 8))
-part=$((eighths % 8))
-partial_blocks=("" "▏" "▎" "▍" "▌" "▋" "▊" "▉")
-empty=$((bar_len - filled - (part > 0 ? 1 : 0)))
+# meter <pct 0-100> <fill color> → 10-slot ▰▱ bar
+meter() {
+  local filled=$((($1 * 10 + 50) / 100)) i out="$2"
+  [ "$filled" -gt 10 ] && filled=10
+  for ((i = 0; i < filled; i++)); do out+="▰"; done
+  out+="$COLOR_BAR_EMPTY"
+  for ((i = filled; i < 10; i++)); do out+="▱"; done
+  printf '%s' "${out}${COLOR_RESET}"
+}
 
 if [ "$pct" -ge 80 ]; then
   bar_color="$COLOR_BAR_CRITICAL"
@@ -333,12 +334,6 @@ else
   warn=""
 fi
 
-filled_bar=""
-empty_bar=""
-for ((i = 0; i < filled; i++)); do filled_bar+="█"; done
-filled_bar+="${partial_blocks[$part]}"
-for ((i = 0; i < empty; i++)); do empty_bar+="░"; done
-
 # Absolute token count next to the % — 42% means different things in a
 # 200k window vs a 1M one.
 tokens_display=""
@@ -347,7 +342,7 @@ if [ "$ctx_current" -gt 0 ] 2>/dev/null; then
 fi
 # tokens_display and warn are kept OUT of context_bar so line-1 assembly can
 # drop the token count independently on a narrow pane (build_line1 below).
-context_bar="${COLOR_DIM}[${COLOR_RESET}${bar_color}${filled_bar}${COLOR_BAR_EMPTY}${empty_bar}${COLOR_DIM}]${COLOR_RESET} ${pct_color}${pct}%${COLOR_RESET}"
+context_bar="$(meter "$pct" "$bar_color") ${pct_color}${pct}%${COLOR_RESET}"
 
 # ─── Cache hit rate ──────────────────────────────────────────────────
 cache_display=""
@@ -565,9 +560,7 @@ fi
 lines_display="$git_lines_display"
 
 # ─── Assemble output ─────────────────────────────────────────────────
-# Unpadded: a faint · alone is enough of a break, and 1 col instead of 3 per
-# segment is what lets the whole thing fit on one line.
-sep="${COLOR_DIM}·${COLOR_RESET}"
+sep="${COLOR_DIM} ⋮ ${COLOR_RESET}"
 
 # Worktree/PR indicator (rendered on line 2)
 wt_pr_display=""
@@ -620,29 +613,19 @@ build_line1() {
   printf '%s' "$l"
 }
 line1=$(build_line1 1 1)
-# Rate limits: hide when low; show 5h at ≥70% and 7d at ≥80%
+# Plan limits: S (5-hour session) and W (7-day weekly) meters, hidden below 80%.
 rate_display=""
-rate_5h_int=0
-rate_7d_int=0
-[ "$rate_5h" != "-1" ] 2>/dev/null && rate_5h_int=$(printf '%.0f' "$rate_5h" 2>/dev/null || echo "0")
-[ "$rate_7d" != "-1" ] 2>/dev/null && rate_7d_int=$(printf '%.0f' "$rate_7d" 2>/dev/null || echo "0")
-
-if [ "$rate_5h_int" -ge 70 ] 2>/dev/null; then
-  reset_label=""
-  [ -n "$rate_5h_resets" ] && [ "$rate_5h_resets" != "null" ] && reset_label=" $(format_reset "$rate_5h_resets")"
-  if [ "$rate_5h_int" -ge 80 ] 2>/dev/null; then
-    rate_display+="${COLOR_DEL}5h:${rate_5h_int}%${reset_label}${COLOR_RESET}"
-  else
-    rate_display+="${COLOR_WARN}5h:${rate_5h_int}%${reset_label}${COLOR_RESET}"
-  fi
-fi
-
-if [ "$rate_7d_int" -ge 80 ] 2>/dev/null; then
-  reset_label=""
-  [ -n "$rate_7d_resets" ] && [ "$rate_7d_resets" != "null" ] && reset_label=" $(format_reset "$rate_7d_resets")"
-  [ -n "$rate_display" ] && rate_display+=" "
-  rate_display+="${COLOR_DEL}7d:${rate_7d_int}%${reset_label}${COLOR_RESET}"
-fi
+limit_meter() {
+  local label=$1 raw=$2 resets=$3 p reset_label=""
+  [ "$raw" = "-1" ] && return
+  p=$(printf '%.0f' "$raw" 2>/dev/null) || return
+  [ "$p" -ge 80 ] 2>/dev/null || return
+  [ -n "$resets" ] && [ "$resets" != "null" ] && reset_label=" ${COLOR_DIM}↻$(format_reset "$resets")${COLOR_RESET}"
+  [ -n "$rate_display" ] && rate_display+="$sep"
+  rate_display+="${COLOR_DIM}${label}${COLOR_RESET} $(meter "$p" "$COLOR_BAR_CRITICAL") ${COLOR_DEL}${p}%${COLOR_RESET}${reset_label}"
+}
+limit_meter S "$rate_5h" "$rate_5h_resets"
+limit_meter W "$rate_7d" "$rate_7d_resets"
 
 # Line 2: repo · worktree · branch · sync · dirty · lines · commit age
 line2=""
@@ -826,7 +809,7 @@ visible_width() {
 char_display_width() {
   case "$1" in
     [$'\x20'-$'\x7e']) printf 1 ;;
-    '·' | '←' | '↑' | '↓' | '⇢' | '◦' | '●' | '⎇' | '…' | '█' | '░' | '▏' | '▎' | '▍' | '▌' | '▋' | '▊' | '▉') printf 1 ;;
+    '·' | '⋮' | '←' | '↑' | '↓' | '⇢' | '◦' | '●' | '⎇' | '…' | '▰' | '▱') printf 1 ;;
     *)
       local w
       w=$(zsh -c 'print -rn -- ${(m)#1}' _ "$1")  # wcwidth; see visible_width

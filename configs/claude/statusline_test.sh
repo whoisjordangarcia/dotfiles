@@ -128,7 +128,7 @@ INPUT_NO_LINES='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_
 # Sonnet with session_id (for field alignment)
 INPUT_SONNET_FULL='{"model":{"display_name":"Claude 3.7 Sonnet"},"cost":{"total_cost_usd":0.50,"total_duration_ms":60000},"session_id":"test-son","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":3,"current_usage":{"input_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
 
-# Rate limits — critical (5h ≥ 70% and 7d ≥ 80% both surface)
+# Rate limits — critical (5h and 7d ≥ 80% both surface)
 INPUT_RATE_HIGH='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":8.00,"total_duration_ms":3600000},"session_id":"test-rate-hi","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3},"seven_day":{"used_percentage":88.0}}}'
 
 # Rate limits — low usage (both below thresholds; statusline should stay quiet)
@@ -193,7 +193,7 @@ printf "\n\033[0;35m━━━ Context Bar ━━━━━━━━━━━━�
 
 out=$(run_statusline_plain "$INPUT_MINIMAL")
 assert_contains "shows context percentage" "$out" "0%"
-assert_contains "shows bar brackets" "$out" "["
+assert_contains "shows context meter" "$out" "▱▱▱▱▱▱▱▱▱▱ 0%"
 
 out=$(run_statusline_plain "$INPUT_HIGH_CTX")
 assert_contains "shows high context %" "$out" "92%"
@@ -203,10 +203,10 @@ out=$(run_statusline_plain "$INPUT_MED_CTX")
 assert_contains "shows medium context %" "$out" "62%"
 assert_not_contains "no warning emoji at 50-80%" "$out" "⚠️"
 
-# Smooth bar: eighth-blocks give sub-cell resolution (25% → 2 full + half block)
+# 10-slot meter rounds to the nearest slot (25% → 3 filled)
 INPUT_QTR_CTX='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.50,"total_duration_ms":60000},"session_id":"test-qtr","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":25}}'
 out=$(run_statusline_plain "$INPUT_QTR_CTX")
-assert_contains "smooth bar renders partial block at 25%" "$out" "[██▌░░░░░░░] 25%"
+assert_contains "meter rounds 25% to 3 slots" "$out" " ⋮ ▰▰▰▱▱▱▱▱▱▱ 25%"
 
 # Absolute token count next to the % (from current_usage totals)
 out=$(run_statusline_plain "$INPUT_FULL")
@@ -286,16 +286,16 @@ assert_not_contains "/rename session name is not rendered" "$out" "refactor-auth
 printf "\n\033[0;35m━━━ Rate Limits ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 out=$(run_statusline_plain "$INPUT_RATE_HIGH")
-assert_contains "shows 5h rate at ≥70%" "$out" "5h:85%"
-assert_contains "shows 7d rate at ≥80%" "$out" "7d:88%"
+assert_contains "shows session meter at ≥80%" "$out" "S ▰▰▰▰▰▰▰▰▰▱ 85%"
+assert_contains "shows weekly meter at ≥80%" "$out" "W ▰▰▰▰▰▰▰▰▰▱ 88%"
 
 out=$(run_statusline_plain "$INPUT_RATE_LOW")
-assert_not_contains "hides 5h rate below 70%" "$out" "5h:"
-assert_not_contains "hides 7d rate below 80%" "$out" "7d:"
+assert_not_contains "hides session meter below 80%" "$out" "S ▰"
+assert_not_contains "hides weekly meter below 80%" "$out" "W ▰"
 
 out=$(run_statusline_plain "$INPUT_NO_RATE")
-assert_not_contains "hides rate limits when absent" "$out" "5h:"
-assert_not_contains "hides 7d when absent" "$out" "7d:"
+assert_not_contains "hides session meter when absent" "$out" "S ▰"
+assert_not_contains "hides weekly meter when absent" "$out" "W ▰"
 
 printf "\n\033[0;35m━━━ Rate Limit Reset Countdown ━━━━━━━━━━━━━\033[0m\n"
 
@@ -304,20 +304,20 @@ printf "\n\033[0;35m━━━ Rate Limit Reset Countdown ━━━━━━━�
 now_epoch=$(date +%s)
 INPUT_RATE_RESET_HM='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":6.00,"total_duration_ms":3600000},"session_id":"test-reset-hm","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3,"resets_at":'$((now_epoch + 4530))'},"seven_day":{"used_percentage":50}}}'
 out=$(run_statusline_plain "$INPUT_RATE_RESET_HM")
-assert_contains "shows reset countdown in h+m" "$out" "5h:85% 1h15m"
+assert_contains "shows reset countdown in h+m" "$out" "85% ↻1h15m"
 
 INPUT_RATE_RESET_M='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":6.00,"total_duration_ms":3600000},"session_id":"test-reset-m","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3,"resets_at":'$((now_epoch + 1830))'},"seven_day":{"used_percentage":50}}}'
 out=$(run_statusline_plain "$INPUT_RATE_RESET_M")
-assert_contains "shows reset countdown in minutes" "$out" "5h:85% 30m"
+assert_contains "shows reset countdown in minutes" "$out" "85% ↻30m"
 
 INPUT_RATE_RESET_NOW='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":6.00,"total_duration_ms":3600000},"session_id":"test-reset-now","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3,"resets_at":'$((now_epoch - 10))'},"seven_day":{"used_percentage":50}}}'
 out=$(run_statusline_plain "$INPUT_RATE_RESET_NOW")
-assert_contains "shows 'now' for past reset time" "$out" "5h:85% now"
+assert_contains "shows 'now' for past reset time" "$out" "85% ↻now"
 
 INPUT_RATE_RESET_BAD='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":6.00,"total_duration_ms":3600000},"session_id":"test-reset-bad","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3,"resets_at":"soon"},"seven_day":{"used_percentage":50}}}'
 assert_exit_code "exits 0 with non-numeric resets_at" "$INPUT_RATE_RESET_BAD" 0
 out=$(run_statusline_plain "$INPUT_RATE_RESET_BAD")
-assert_contains "still shows rate pct when resets_at is malformed" "$out" "5h:85%"
+assert_contains "still shows rate pct when resets_at is malformed" "$out" "S ▰▰▰▰▰▰▰▰▰▱ 85%"
 
 printf "\n\033[0;35m━━━ Repo Name (leads line 2) ━━━━━━━━━━━━━━━━\033[0m\n"
 
@@ -332,7 +332,7 @@ out_line1=$(echo "$out" | head -1)
 out_line2=$(echo "$out" | sed -n 2p)
 assert_not_contains "repo name is not shown on line 1" "$out_line1" "$REPO_BASE"
 assert_contains "line 1 still leads with cost" "$out_line1" '$0.75'
-assert_contains "repo name leads line 2, before the branch" "$out_line2" "${REPO_BASE}·"
+assert_contains "repo name leads line 2, before the branch" "$out_line2" "${REPO_BASE} ⋮ "
 [[ "$out_line2" == "$REPO_BASE"* ]] && passed=$((passed + 1)) && printf "  \033[0;32m✓\033[0m repo name is the first segment of line 2\n" \
   || { failed=$((failed + 1)); errors+="  FAIL: repo name is the first segment of line 2\n"; printf "  \033[0;31m✗\033[0m repo name is the first segment of line 2\n"; }
 
@@ -422,7 +422,7 @@ rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
 WT_DIFF_INPUT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.1,"total_duration_ms":1000},"session_id":"wt-diff","cwd":"'"$WT_REPO2"'/.claude/worktrees/quick-test","context_window":{"used_percentage":10}}'
 out=$(run_statusline_plain "$WT_DIFF_INPUT")
 assert_contains "shows ⎇ label when wt name differs" "$out" "⎇ quick-test"
-assert_contains "worktree line 2 leads with the MAIN repo name" "$out" "$(basename "$WT_REPO2")·⎇ quick-test"
+assert_contains "worktree line 2 leads with the MAIN repo name" "$out" "$(basename "$WT_REPO2") ⋮ ⎇ quick-test"
 assert_contains "shows branch alongside ⎇ label" "$out" "feature/big-refactor"
 
 rm -rf "$WT_REPO" "$WT_REPO2"
@@ -568,7 +568,7 @@ else
   printf "  \033[0;31m✗\033[0m one-line mode joins output when terminal is wide (got %s lines)\n" "$line_count"
 fi
 # The rate-limit indicator is later-line content; its presence proves it was joined in.
-assert_contains "one-line output keeps later-line content" "$out" '5h:85%'
+assert_contains "one-line output keeps later-line content" "$out" 'S ▰▰▰▰▰▰▰▰▰▱ 85%'
 
 # Narrow terminal: falls back to multi-line instead of overflowing
 out=$(echo "$INPUT_RATE_HIGH" | env -u CLAUDE_EFFORT STATUSLINE_ONE_LINE=1 STATUSLINE_COLS=40 bash "$STATUSLINE" 2>/dev/null | strip_ansi)
@@ -675,9 +675,9 @@ assert_contains "keeps cost when narrow" "$line1" '$1.23'
 assert_contains "keeps context pct when narrow" "$line1" "70%"
 
 # Narrower: also sheds the token count, still within the pane.
-out=$(run_cols "$INPUT_FULL" 32 | strip_ansi)
+out=$(run_cols "$INPUT_FULL" 30 | strip_ansi)
 line1=$(echo "$out" | head -1)
-assert_within_cols "line 1 fits a 32-col pane" "$line1" 32
+assert_within_cols "line 1 fits a 30-col pane" "$line1" 30
 assert_not_contains "sheds token count when narrower" "$line1" "(140k)"
 assert_contains "keeps context pct at 32 cols" "$line1" "70%"
 
