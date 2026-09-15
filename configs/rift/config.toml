@@ -55,7 +55,10 @@ alignment = "center"
 focus_navigation_style = "niri"
 
 [settings.layout.gaps.outer]
-top = 40
+# Must clear SketchyBar, which rift can't see: y_offset + height (8 + 42, both
+# after sketchybar/scale.lua) plus 4px of breathing room. Re-derive it whenever
+# the bar's height or SKETCHYBAR_SCALE changes.
+top = 54
 left = 10
 bottom = 10
 right = 10

@@ -1,6 +1,9 @@
 -- Require the sketchybar module
 sbar = require("sketchybar")
 
+-- Must run before the themes are required, so their sbar.* calls are wrapped.
+require("scale").install(sbar)
+
 -- Set the bar name, if you are using another bar instance than sketchybar
 -- sbar.set_bar_name("bottom_bar")
 
