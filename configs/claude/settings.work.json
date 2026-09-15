@@ -10,8 +10,12 @@
   },
   "attribution": {
     "commit": "",
-    "pr": ""
+    "pr": "",
+    "sessionUrl": false
   },
+  "enableArtifact": false,
+  "feedbackDrafts": false,
+  "feedbackSurveyRate": 0,
   "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
