@@ -67,7 +67,10 @@ with tempfile.TemporaryDirectory() as tmp:
     day = data["per_day"][-1]
     check("subagent tokens attributed to subagents", data["subagent"][0] == 25)
     check("tool uses counted by name, once per call", data["tools"] == {"Skill": 2, "Bash": 1})
-    check("thinking share tracked per model", data["thinking"]["opus"] == [40, 10])
+    check("thinking share tracked per harness and model",
+          data["models"][("claude", "claude-opus-5")]["output"] == 40
+          and data["models"][("claude", "claude-opus-5")]["thinking"] == 10)
+    check("sessions know their harness", data["sessions"]["s2"]["tool"] == "claude")
     check("session keeps its first typed prompt, whitespace collapsed", data["sessions"]["s2"]["prompt"] == "fix the flaky test")
     check("session cost sums its replies", data["sessions"]["s2"]["cost"] == cs.cost_usd("claude-opus-5", {
         "input_tokens": 50, "output_tokens": 40, "cache_read_input_tokens": 300}))
@@ -127,17 +130,18 @@ with tempfile.TemporaryDirectory() as tmp:
 
     db = root / "index.db"
     con = sqlite3.connect(db)
-    con.executescript("CREATE TABLE runs(run_id, usage_json, created_at, agent_id);"
+    con.executescript("CREATE TABLE runs(run_id, usage_json, created_at, agent_id, model);"
                       "CREATE TABLE agents(agent_id, workspace_ref);")
-    con.execute("INSERT INTO runs VALUES ('r1', ?, ?, 'a1')", (json.dumps(
+    con.execute("INSERT INTO runs VALUES ('r1', ?, ?, 'a1', 'auto-smart')", (json.dumps(
         {"inputTokens": 100, "outputTokens": 20, "cacheReadTokens": 900, "cacheWriteTokens": 50}), NOON))
-    con.execute("INSERT INTO runs VALUES ('r2', NULL, ?, 'a1')", (NOON,))
+    con.execute("INSERT INTO runs VALUES ('r2', NULL, ?, 'a1', 'auto-smart')", (NOON,))
     con.execute("INSERT INTO agents VALUES ('a1', '/src/nest')")
     con.commit()
     con.close()
     u, *_ = cs.scan_cursor(db)
     check("cursor: one usage row per run, null usage skipped", len(u) == 1 and u[0].tokens == 170)
     check("cursor: workspace becomes the project", u[0].project == "nest")
+    check("cursor: model recorded as reported", u[0].model == "auto-smart")
     check("cursor: unreadable db degrades to nothing", cs.scan_cursor(root / "nope.db")[0] == [])
 
 check("opus input priced at $5/MTok", cs.cost_usd("claude-opus-5", {"input_tokens": 1_000_000}) == 5)
@@ -156,6 +160,19 @@ check("stacked column: first series at the bottom", cs.series_color("opus") + "â
 check("stacked column: next series above it", cs.series_color("fable") + "â–ˆ" in rows[0])
 check("days before the recent window are faint",
       cs.series_color("opus", faint=True) in cs.column_chart([{"opus": 1}, {"opus": 1}], ["opus"], recent=1)[-1])
+
+text, spans = cs.chips([(7, "7d"), (30, "30d")], 30, 12)
+check("chips: spans track label widths", spans == [(12, 13, 7), (16, 18, 30)])
+check("chips: active label is highlighted", cs.BOLD + "30d" in text and cs.DIM + "7d" in text)
+
+cs.HITS.update(panel=[(20, 2, 7, "models"), (20, 10, 15, "agents")], range=[(12, 13, 7), (16, 18, 30)],
+               chart=(5, 12, 11, 2, 30))
+check("click: panel tab", cs.click_action(20, 11) == ("panel", "agents"))
+check("click: range chip on the header row", cs.click_action(1, 17) == ("range", 30))
+check("click: chart column maps to its day", cs.click_action(8, 15) == ("sel", 2))
+check("click: past the last column is dead space", cs.click_action(8, 11 + 60) is None)
+check("click: empty space does nothing", cs.click_action(19, 40) is None)
+
 
 def blank_day(tokens):
     from collections import defaultdict

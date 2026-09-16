@@ -22,7 +22,7 @@ REFRESH_SECS = 30
 DAYS = 30
 RANGES = {"7": 7, "3": 30, "9": 90, "a": 365}
 METRICS = ("tokens", "cost", "lines")
-PANELS = ("models", "agents", "sessions", "skills", "tools", "projects", "hours", "limits")
+PANELS = ("models", "agents", "sessions", "skills", "tools", "projects", "hours", "limits", "speed")
 WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 BOLD, DIM, RESET = "\033[1m", "\033[2m", "\033[0m"
@@ -31,6 +31,11 @@ BLOCKS = " ▁▂▃▄▅▆▇█"
 SHADES = " ░▒▓█"
 LABELS = {"five_hour": "Session (5h)", "seven_day": "Week (7d)"}
 LEFT, RIGHT = ("\x1b[D", "h"), ("\x1b[C", "l")
+MOUSE_ON, MOUSE_OFF = "\033[?1000h\033[?1006h", "\033[?1006l\033[?1000l"
+MOUSE_RE = re.compile(r"\033\[<(\d+);(\d+);(\d+)([Mm])")
+RANGE_CHIPS = ((7, "7d"), (30, "30d"), (90, "90d"), (365, "all"))
+# Filled by render(), read by the mouse handler: 1-based (row, col) spans of the clickable chrome.
+HITS = {"range": [], "panel": [], "chart": None}
 SERIES_COLORS = {"opus": "35", "fable": "36", "sonnet": "34", "haiku": "32", "added": "32", "removed": "31",
                  "week": "35", "session": "36", "codex": "33", "opencode": "32", "cursor": "31"}
 COMMAND_RE = re.compile(r"<command-name>/?([^<\s]+)</command-name>")
@@ -46,7 +51,7 @@ PRICES = (
     ("claude-haiku", 1, 5, 0.1),
 )
 
-Usage = namedtuple("Usage", "key ts day weekday hour fam tokens output thinking cost input cache_read session project subagent tool")
+Usage = namedtuple("Usage", "key ts day weekday hour fam model tokens output thinking cost input cache_read session project worktree subagent tool")
 Lines = namedtuple("Lines", "key day project added removed")
 Skill = namedtuple("Skill", "key day name typed")
 Tool = namedtuple("Tool", "key day name")
@@ -158,10 +163,16 @@ def cost_usd(model, u):
                    + w5m * inp * 1.25 + w1h * inp * 2 + (u.get("cache_read_input_tokens") or 0) * read) / 1e6
 
 
-def project_name(cwd):
+def split_cwd(cwd):
+    """Return (repo, worktree); worktree is "" outside a worktree. `jordan/NES-1234-x` branches land as dir names."""
     if not isinstance(cwd, str) or not cwd:
-        return "?"
-    return Path(re.split(r"/\.(?:claude/)?worktrees/", cwd)[0]).name
+        return "?", ""
+    parts = re.split(r"/\.(?:claude/)?worktrees/", cwd, maxsplit=1)
+    return Path(parts[0]).name, parts[1].split("/")[0] if len(parts) > 1 else ""
+
+
+def project_name(cwd):
+    return split_cwd(cwd)[0]
 
 
 def count_lines(result):
@@ -188,7 +199,7 @@ def scan_file(path):
                 ts = datetime.fromisoformat(e["timestamp"].replace("Z", "+00:00")).astimezone()
             except (ValueError, TypeError, KeyError, AttributeError):
                 continue
-            project = project_name(e.get("cwd"))
+            project, worktree = split_cwd(e.get("cwd"))
             msg = e.get("message") if isinstance(e.get("message"), dict) else {}
             model, u, content = msg.get("model") or "", msg.get("usage"), msg.get("content")
             if isinstance(u, dict) and model.startswith("claude-"):
@@ -196,8 +207,8 @@ def scan_file(path):
                 output = u.get("output_tokens") or 0
                 thinking = (u.get("output_tokens_details") or {}).get("thinking_tokens") or 0
                 usage.append(Usage(f"{msg.get('id')}:{e.get('requestId')}", ts.timestamp(), ts.date(), ts.weekday(), ts.hour,
-                                   model.split("-")[1], written + output, output, thinking, cost_usd(model, u), written,
-                                   u.get("cache_read_input_tokens") or 0, e.get("sessionId"), project, subagent, "claude"))
+                                   model.split("-")[1], model, written + output, output, thinking, cost_usd(model, u), written,
+                                   u.get("cache_read_input_tokens") or 0, e.get("sessionId"), project, worktree, subagent, "claude"))
             if isinstance(content, list):
                 for b in content:
                     if not isinstance(b, dict) or b.get("type") != "tool_use":
@@ -248,8 +259,8 @@ def scan_codex(path):
             if not fresh + output:
                 continue
             usage.append(Usage(f"codex:{session}:{e['timestamp']}", ts.timestamp(), ts.date(), ts.weekday(), ts.hour,
-                               "codex", fresh + output, output, u.get("reasoning_output_tokens") or 0, 0.0,
-                               fresh, cached, f"codex:{session}", project_name(cwd), False, "codex"))
+                               "codex", model or "unknown", fresh + output, output, u.get("reasoning_output_tokens") or 0, 0.0,
+                               fresh, cached, f"codex:{session}", *split_cwd(cwd), False, "codex"))
     return usage, [], [], [], [], limits
 
 
@@ -272,21 +283,21 @@ def scan_opencode(path):
                                              "cache_creation_input_tokens": cache.get("write"),
                                              "cache_read_input_tokens": cache.get("read")})
     return [Usage(f"opencode:{e.get('id')}", ts.timestamp(), ts.date(), ts.weekday(), ts.hour, "opencode",
-                  fresh + output, output, t.get("reasoning") or 0, cost, fresh, cache.get("read") or 0,
-                  f"opencode:{e.get('sessionID')}", "opencode", False, "opencode")], [], [], [], [], []
+                  e.get("modelID") or "unknown", fresh + output, output, t.get("reasoning") or 0, cost, fresh, cache.get("read") or 0,
+                  f"opencode:{e.get('sessionID')}", "opencode", "", False, "opencode")], [], [], [], [], []
 
 
 def scan_cursor(path):
     """cursor-agent SDK run store. immutable=1 skips the WAL, so a live run's newest turn may be missing."""
     try:
         con = sqlite3.connect(f"file:{path}?immutable=1", uri=True)
-        rows = con.execute("SELECT run_id, usage_json, created_at, agent_id FROM runs WHERE usage_json IS NOT NULL").fetchall()
+        rows = con.execute("SELECT run_id, usage_json, created_at, agent_id, model FROM runs WHERE usage_json IS NOT NULL").fetchall()
         workspaces = dict(con.execute("SELECT agent_id, workspace_ref FROM agents"))
         con.close()
     except sqlite3.Error:
         return [], [], [], [], [], []
     usage = []
-    for run_id, raw, created, agent in rows:
+    for run_id, raw, created, agent, model in rows:
         try:
             u = json.loads(raw)
             ts = _stamp(created)
@@ -297,17 +308,17 @@ def scan_cursor(path):
         if not fresh + output:
             continue
         usage.append(Usage(f"cursor:{run_id}", ts.timestamp(), ts.date(), ts.weekday(), ts.hour, "cursor",
-                           fresh + output, output, u.get("reasoningTokens") or 0, 0.0, fresh,
-                           u.get("cacheReadTokens") or 0, f"cursor:{agent}", project_name(workspaces.get(agent)),
+                           model or "unknown", fresh + output, output, u.get("reasoningTokens") or 0, 0.0, fresh,
+                           u.get("cacheReadTokens") or 0, f"cursor:{agent}", *split_cwd(workspaces.get(agent)),
                            False, "cursor"))
     return usage, [], [], [], [], []
 
 
 SOURCES = (
-    (PROJECTS, "**/*.jsonl", scan_file),
-    (Path.home() / ".codex", "**/rollout-*.jsonl", scan_codex),
-    (Path.home() / ".local/share/opencode/storage/message", "**/msg_*.json", scan_opencode),
-    (Path.home() / ".cursor/projects", "*/sdk-agent-store/*/index.db", scan_cursor),
+    ("claude", PROJECTS, "**/*.jsonl", scan_file),
+    ("codex", Path.home() / ".codex", "**/rollout-*.jsonl", scan_codex),
+    ("opencode", Path.home() / ".local/share/opencode/storage/message", "**/msg_*.json", scan_opencode),
+    ("cursor", Path.home() / ".cursor/projects", "*/sdk-agent-store/*/index.db", scan_cursor),
 )
 
 
@@ -325,15 +336,21 @@ def aggregate(root, today, days=DAYS, sources=None):
     cutoff = time.time() - (days + 1) * 86400
     usage, lines, skills, tools, prompts = {}, {}, {}, {}, {}
     codex_limits = (None, None)
-    for src_root, pattern, scanner in sources or ((root, "**/*.jsonl", scan_file),):
+    timing, last_seen = [], {}
+    for name, src_root, pattern, scanner in sources or (("claude", root, "**/*.jsonl", scan_file),):
+        started, seen, parsed = time.time(), 0, 0
         for p in src_root.glob(pattern):
             try:
                 st = p.stat()
+                # Tracked before the cutoff test, so a harness unused in this range can still say when it last ran.
+                last_seen[name] = max(last_seen.get(name, 0), st.st_mtime)
                 if st.st_mtime < cutoff:
                     continue
                 sig = (st.st_mtime, st.st_size)
+                seen += 1
                 if p not in _scanned or _scanned[p][0] != sig:
                     _scanned[p] = (sig, scanner(p))
+                    parsed += 1
             except OSError:
                 continue
             file_usage, file_lines, file_skills, file_tools, file_prompts, file_limits = _scanned[p][1]
@@ -348,6 +365,7 @@ def aggregate(root, today, days=DAYS, sources=None):
             for ts, lim in file_limits:
                 if codex_limits[1] is None or ts > codex_limits[1]:
                     codex_limits = (lim, ts)
+        timing.append((name, time.time() - started, seen, parsed))
 
     start = today - timedelta(days=days - 1)
 
@@ -358,7 +376,7 @@ def aggregate(root, today, days=DAYS, sources=None):
                 "sessions": set(), "input": 0, "cache_read": 0} for _ in range(days)]
     hours = [[0] * 24 for _ in range(7)]
     projects = defaultdict(lambda: [0, 0.0, 0])
-    thinking = defaultdict(lambda: [0, 0])
+    models = defaultdict(lambda: {"tokens": [0, 0], "cost": 0.0, "output": 0, "thinking": 0})
     subagent = [0, 0.0]
     sessions = {}
     agents = defaultdict(lambda: {"tokens": [0, 0], "cost": 0.0, "sessions": set()})
@@ -381,17 +399,23 @@ def aggregate(root, today, days=DAYS, sources=None):
         if r.session:
             d["sessions"].add(r.session)
             s = sessions.setdefault(r.session, {"cost": 0.0, "tokens": 0, "start": r.ts, "end": r.ts,
-                                                "project": r.project, "prompt": None, "prompt_ts": None})
+                                                "project": r.project, "worktree": r.worktree, "prompt": None,
+                                                "prompt_ts": None, "tool": r.tool})
             s["cost"] += r.cost
             s["tokens"] += r.tokens
             s["start"], s["end"] = min(s["start"], r.ts), max(s["end"], r.ts)
             if not r.subagent:
-                s["project"] = r.project
+                s["project"], s["worktree"] = r.project, r.worktree
         hours[r.weekday][r.hour] += 1
         projects[r.project][0] += r.tokens
         projects[r.project][1] += r.cost
-        thinking[r.fam][0] += r.output
-        thinking[r.fam][1] += r.thinking
+        m = models[(r.tool, r.model)]
+        m["tokens"][1] += r.tokens
+        if i >= days - 7:
+            m["tokens"][0] += r.tokens
+        m["cost"] += r.cost
+        m["output"] += r.output
+        m["thinking"] += r.thinking
         if r.subagent:
             subagent[0] += r.tokens
             subagent[1] += r.cost
@@ -410,8 +434,9 @@ def aggregate(root, today, days=DAYS, sources=None):
             plugin, _, name = r.name.rpartition(":")
             skill_counts[name if plugin == name else r.name] += 1
     return {"per_day": per_day, "hours": hours, "projects": dict(projects), "skills": skill_counts,
-            "agents": dict(agents), "codex_limits": codex_limits,
-            "tools": Counter(r.name for r in tools.values() if in_range(r.day)), "thinking": dict(thinking),
+            "agents": dict(agents), "codex_limits": codex_limits, "timing": timing, "models": dict(models),
+            "last_seen": last_seen,
+            "tools": Counter(r.name for r in tools.values() if in_range(r.day)),
             "subagent": subagent, "sessions": sessions}
 
 
@@ -475,6 +500,16 @@ def column_chart(series, order, height=8, recent=7, gap=" ", fmt=fmt_tokens, top
     return rows
 
 
+def chips(items, active, col):
+    """Render a row of selectable labels; returns (text, [(start col, end col, value)]) in 1-based columns."""
+    parts, spans = [], []
+    for value, label in items:
+        parts.append(f"{MAGENTA}{BOLD}{label}{RESET}" if value == active else f"{DIM}{label}{RESET}")
+        spans.append((col, col + len(label) - 1, value))
+        col += len(label) + 2
+    return "  ".join(parts), spans
+
+
 def bar(value, top, width, color):
     fill = round(value / (top or 1) * width)
     return f"{color}{'█' * fill}{RESET}{' ' * (width - fill)}"
@@ -509,37 +544,50 @@ def agents_panel(data, days):
         rows.append(f"  {series_color('opus' if tool == 'claude' else tool)}{tool.capitalize():<9}{RESET}"
                     f" {bar(a['tokens'][1], top, width, series_color('opus' if tool == 'claude' else tool))}"
                     f" {fmt_tokens(a['tokens'][0]):>7} {fmt_tokens(a['tokens'][1]):>7} {cost:>11} {len(a['sessions']):>9}")
+    for tool, mtime in sorted(data["last_seen"].items(), key=lambda kv: -kv[1]):
+        if tool not in agents:
+            rows.append(f"  {series_color(tool, True)}{tool.capitalize():<9}{RESET} {DIM}{'':<{width}}"
+                        f" no activity in this range — last used {datetime.fromtimestamp(mtime):%b %d} (press a for all time){RESET}")
     notes = {"codex": "codex: interactive sessions only — headless `codex exec` runs log no usage",
              "cursor": "cursor: cursor-agent SDK runs only — the IDE keeps usage server-side"}
     return rows + [f"  {DIM}{notes[t]}{RESET}" for t in ("codex", "cursor") if t in agents]
 
 
-def models_panel(data, days):
-    tokens, cost = series_totals(data["per_day"], "tokens"), series_totals(data["per_day"], "cost")
-    if not tokens:
-        return empty(f"No transcripts in the last {days} days.")
-    width = 30
-    top = max(mo for _, mo in tokens.values())
-    rows = [f"  {'':<8} {'':<{width}} {DIM}{'7d':>7} {f'{days}d':>7} {'cost':>8} {'think':>6}{RESET}"]
-    for fam, (wk, mo) in sorted(tokens.items(), key=lambda kv: -kv[1][1]):
+def models_panel(data, days, limit=12):
+    models = data["models"]
+    if not models:
+        return empty(f"No model usage in the last {days} days.")
+    width = 22
+    ranked = sorted(models.items(), key=lambda kv: -kv[1]["tokens"][1])[:limit]
+    top = ranked[0][1]["tokens"][1]
+    rows = [f"  {'harness':<9} {'model':<20} {'':<{width}} {DIM}{'7d':>7} {f'{days}d':>7} {'cost':>8} {'think':>6}{RESET}"]
+    for (tool, model), m in ranked:
+        wk, mo = m["tokens"]
         fill, wfill = round(mo / top * width), round(wk / top * width)
-        b = f"{series_color(fam)}{'█' * wfill}{series_color(fam, True)}{'█' * (fill - wfill)}{RESET}{' ' * (width - fill)}"
-        output, thought = data["thinking"].get(fam, (0, 0))
-        think = f"{thought / output:.0%}" if output else "–"
-        rows.append(f"  {series_color(fam)}{fam.capitalize():<8}{RESET} {b} {fmt_tokens(wk):>7} {fmt_tokens(mo):>7}"
-                    f" {fmt_cost(cost[fam][1]):>8} {think:>6}")
-    rows.append(f"  {DIM}think = share of output tokens spent thinking{RESET}")
+        colour = series_color(tool if tool != "claude" else model.split("-")[1] if "-" in model else tool)
+        b = f"{colour}{'█' * wfill}{series_color(tool, True)}{'█' * (fill - wfill)}{RESET}{' ' * (width - fill)}"
+        think = f"{m['thinking'] / m['output']:.0%}" if m["output"] else "–"
+        cost = fmt_cost(m["cost"]) if m["cost"] else "–"
+        rows.append(f"  {colour}{tool[:9]:<9}{RESET} {model.removeprefix('claude-')[:20]:<20} {b}"
+                    f" {fmt_tokens(wk):>7} {fmt_tokens(mo):>7} {cost:>8} {think:>6}")
+    rows.append(f"  {DIM}think = share of output tokens spent thinking · cost only where the model is priced{RESET}")
     return rows
 
 
-def sessions_panel(data, days, limit=10):
-    ranked = sorted(data["sessions"].values(), key=lambda s: -s["cost"])[:limit]
+def sessions_panel(data, days, limit=4):
+    # Top few per harness, not a global top N: Claude's sessions dwarf the others and would fill the panel.
+    per_harness = defaultdict(list)
+    for s in sorted(data["sessions"].values(), key=lambda s: -s["tokens"]):
+        if len(per_harness[s["tool"]]) < limit:
+            per_harness[s["tool"]].append(s)
+    ranked = sorted((s for group in per_harness.values() for s in group), key=lambda s: -s["tokens"])
     if not ranked:
         return empty(f"No sessions in the last {days} days.")
-    rows = [f"  {DIM}{'cost':>8}  {'started':<12}  {'length':>6}  {'project':<14}  first prompt{RESET}"]
+    rows = [f"  {DIM}{'harness':<9} {'tokens':>7} {'cost':>8}  {'started':<12}  {'length':>6}  {'project':<10}  {'worktree':<22}  first prompt{RESET}"]
     for s in ranked:
-        rows.append(f"  {fmt_cost(s['cost']):>8}  {datetime.fromtimestamp(s['start']):%b %d %H:%M}  {fmt_duration(s['end'] - s['start']):>6}"
-                    f"  {s['project'][:14]:<14}  {DIM}{(s['prompt'] or '–')[:60]}{RESET}")
+        rows.append(f"  {series_color(s['tool'])}{s['tool'][:9]:<9}{RESET} {fmt_tokens(s['tokens']):>7} {fmt_cost(s['cost']) if s['cost'] else '–':>8}"
+                    f"  {datetime.fromtimestamp(s['start']):%b %d %H:%M}  {fmt_duration(s['end'] - s['start']):>6}"
+                    f"  {s['project'][:10]:<10}  {(s['worktree'] or '—')[:22]:<22}  {DIM}{(s['prompt'] or '–')[:36]}{RESET}")
     return rows
 
 
@@ -582,6 +630,21 @@ def hours_panel(data, days):
     return rows
 
 
+def speed_panel(data, days):
+    """Where the last load's time went. A file is only re-parsed when its size or mtime changed."""
+    timing = data.get("timing") or []
+    total = sum(t[1] for t in timing)
+    rows = [f"  {'source':<12} {'':<20} {DIM}{'time':>7} {'files':>7} {'parsed':>7}{RESET}"]
+    for name, secs, seen, parsed in sorted(timing, key=lambda t: -t[1]):
+        rows.append(f"  {name[:12]:<12} {bar(secs, total, 20, MAGENTA)} {secs:6.2f}s {seen:>7} {parsed:>7}")
+    rows.append(f"  {BOLD}{'total':<12}{RESET} {'':<20} {BOLD}{total:6.2f}s{RESET}")
+    loads = data.get("loads") or []
+    recent = " ".join(f"{secs:.2f}s" for _, secs, _ in loads[-6:])
+    rows += ["", f"  {DIM}last loads ({days}d): {recent}{RESET}",
+             f"  {DIM}first load parses everything; later ones re-parse only changed files · ai-stats --bench for cold vs warm{RESET}"]
+    return rows
+
+
 def limits_panel(data, days, cols=60, span=7 * 86400):
     if not data["history"]:
         return empty("No limit history yet: the statusline records a sample every 5 minutes.")
@@ -598,9 +661,15 @@ def limits_panel(data, days, cols=60, span=7 * 86400):
     return rows
 
 
+_load_history = []
+
+
 def load(days):
     today, now = datetime.now().date(), time.time()
-    return {**aggregate(PROJECTS, today, days, SOURCES), "limits": load_limits(), "history": load_history(now),
+    data = aggregate(PROJECTS, today, days, SOURCES)
+    _load_history.append((days, time.time() - now, sum(t[3] for t in data["timing"])))
+    del _load_history[:-8]
+    return {**data, "limits": load_limits(), "history": load_history(now), "loads": list(_load_history),
             "today": today, "now": now}
 
 
@@ -611,11 +680,20 @@ def render(data, sel, metric="tokens", panel="models"):
     start = today - timedelta(days=days - 1)
     limits, mtime = data["limits"]
 
-    out = [f" {BOLD}AI usage{RESET}  {DIM}{datetime.now():%a %b %d %H:%M} · ←/→ move · 7/3/9/a range · c chart · tab panel · r refresh · q quit{RESET}", ""]
+    head = f" {BOLD}AI usage{RESET}  "
+    range_text, HITS["range"] = chips(RANGE_CHIPS, days, len(" AI usage  ") + 1)
+    out = [f"{head}{range_text}  {DIM}{datetime.now():%a %b %d %H:%M} · click or keys · ←/→ move · c chart · r refresh · q quit{RESET}", ""]
     stamp = f"  {DIM}as of {fmt_duration(now - mtime)} ago{RESET}" if mtime is not None else ""
     out.append(f" {MAGENTA}{BOLD}Plan limits{RESET}{stamp}")
     out += limit_rows(limits, now) or empty("No data yet: limits are captured when a Claude Code session renders its statusline.")
-    out += codex_limit_rows(data, now)
+    codex_rows = codex_limit_rows(data, now)
+    out += codex_rows
+    missing = [t for t in ("codex", "opencode", "cursor") if t in data["agents"]]
+    if missing:
+        absent = [t for t in missing if t != "codex" or not codex_rows]
+        if absent:
+            out.append(f"  {DIM}{', '.join(absent)}: no live plan limits on disk"
+                       f"{' (codex logs them only while a session window is open)' if 'codex' in absent else ''}{RESET}")
 
     tok = [sum(d["tokens"].values()) for d in per_day]
     cost = sum(sum(d["cost"].values()) for d in per_day)
@@ -636,8 +714,11 @@ def render(data, sel, metric="tokens", panel="models"):
     # 90 two-char columns would overflow a normal terminal.
     gap = " " if len(buckets) <= 45 else ""
     cell = 1 + len(gap)
-    out += column_chart([b[metric] for b in buckets], order, recent=7 // size or 1, gap=gap,
-                        fmt=fmt_cost if metric == "cost" else fmt_tokens)
+    chart = column_chart([b[metric] for b in buckets], order, recent=7 // size or 1, gap=gap,
+                         fmt=fmt_cost if metric == "cost" else fmt_tokens)
+    # Chart rows are "  <6-wide axis> ┤" before the first cell, so cells start at column 11.
+    HITS["chart"] = (len(out) + 1, len(out) + len(chart), 11, cell, len(buckets))
+    out += chart
     axis = ["─"] * (len(buckets) * cell)
     axis[sel * cell] = f"{YELLOW}▲{RESET}"
     out.append(f"         └{''.join(axis)}")
@@ -653,10 +734,12 @@ def render(data, sel, metric="tokens", panel="models"):
                f" · {len(d['sessions'])} sessions · {cache_hit([d])} cache · {GREEN}+{d['lines']['added']}{RESET} {RED}−{d['lines']['removed']}{RESET}"
                f"  {breakdown or DIM + 'no usage' + RESET}")
 
-    tabs = "  ".join(f"{MAGENTA}{BOLD}{p.capitalize()}{RESET}" if p == panel else f"{DIM}{p.capitalize()}{RESET}" for p in PANELS)
+    tabs, spans = chips([(p, p.capitalize()) for p in PANELS], panel, 2)
+    HITS["panel"] = [(len(out) + 2, x0, x1, value) for x0, x1, value in spans]
     out += ["", f" {tabs}"]
     out += {"models": models_panel, "agents": agents_panel, "sessions": sessions_panel, "skills": lambda dt, n: counts_panel(dt["skills"], "skills", n),
-            "tools": tools_panel, "projects": projects_panel, "hours": hours_panel, "limits": limits_panel}[panel](data, days)
+            "tools": tools_panel, "projects": projects_panel, "hours": hours_panel, "limits": limits_panel,
+            "speed": speed_panel}[panel](data, days)
     return out
 
 
@@ -684,7 +767,48 @@ def summary(data):
             "today": totals(data["per_day"][-1:]), "week": totals(data["per_day"][-7:])}
 
 
+def bench():
+    """Timing breakdown: cold (no file cache) vs warm per range, then per source at 30 days."""
+    today = datetime.now().date()
+
+    def run(days, sources):
+        _scanned.clear()
+        t0 = time.time()
+        data = aggregate(PROJECTS, today, days, sources)
+        cold, files = time.time() - t0, len(_scanned)
+        t0 = time.time()
+        aggregate(PROJECTS, today, days, sources)
+        return cold, time.time() - t0, files, sum(sum(d["tokens"].values()) for d in data["per_day"])
+
+    print(f" {'range':>6} {'cold':>7} {'warm':>7} {'files':>7} {'tokens':>8}")
+    for days in (1, 7, 30, 90, 365):
+        cold, warm, files, tokens = run(days, SOURCES)
+        print(f" {f'{days}d':>6} {cold:6.2f}s {warm:6.2f}s {files:>7} {fmt_tokens(tokens):>8}")
+    print(f"\n per source (30d)\n {'source':>10} {'cold':>7} {'warm':>7} {'files':>7} {'tokens':>8}")
+    for source in SOURCES:
+        cold, warm, files, tokens = run(30, (source,))
+        print(f" {source[0]:>10} {cold:6.2f}s {warm:6.2f}s {files:>7} {fmt_tokens(tokens):>8}")
+
+
+def click_action(row, col):
+    """Map a click to ("panel"|"range"|"sel", value), or None when it lands on nothing clickable."""
+    for hit_row, x0, x1, value in HITS["panel"]:
+        if row == hit_row and x0 <= col <= x1:
+            return "panel", value
+    for x0, x1, value in HITS["range"]:
+        if row == 1 and x0 <= col <= x1:
+            return "range", value
+    if HITS["chart"]:
+        top, bottom, x0, cell, count = HITS["chart"]
+        if top <= row <= bottom and x0 <= col < x0 + count * cell:
+            return "sel", (col - x0) // cell
+    return None
+
+
 def main():
+    if "--bench" in sys.argv[1:]:
+        bench()
+        return
     if "--json" in sys.argv[1:]:
         print(json.dumps(summary(load(7))))
         return
@@ -694,7 +818,7 @@ def main():
         return
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
-    sys.stdout.write("\033[?1049h\033[?25l\033[2J")
+    sys.stdout.write("\033[?1049h\033[?25l\033[2J" + MOUSE_ON)
     try:
         tty.setcbreak(fd)
         sel, data, loaded = days - 1, load(days), time.time()
@@ -706,10 +830,27 @@ def main():
             if not select.select([fd], [], [], max(0, REFRESH_SECS - (time.time() - loaded)))[0]:
                 data, loaded = load(days), time.time()
                 continue
-            key = os.read(fd, 16).decode(errors="ignore")
+            key = os.read(fd, 64).decode(errors="ignore")
             if key in ("", "q", "Q"):
                 break
             columns = len(chart_buckets(data["per_day"])[0])
+            if (m := MOUSE_RE.match(key)) and m.group(4) == "M":
+                button, col, row = int(m.group(1)), int(m.group(2)), int(m.group(3))
+                if button == 64:
+                    sel = max(0, min(sel, columns - 1) - 1)
+                elif button == 65:
+                    sel = min(columns - 1, sel + 1)
+                elif button == 0 and (action := click_action(row, col)):
+                    kind, value = action
+                    if kind == "panel":
+                        panel = PANELS.index(value)
+                    elif kind == "sel":
+                        sel = value
+                    elif value != days:
+                        days = value
+                        data, loaded = load(days), time.time()
+                        sel = len(chart_buckets(data["per_day"])[0]) - 1
+                continue
             if key in LEFT:
                 sel = max(0, min(sel, columns - 1) - 1)
             elif key in RIGHT:
@@ -727,7 +868,7 @@ def main():
         pass
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
-        sys.stdout.write("\033[?25h\033[?1049l")
+        sys.stdout.write(MOUSE_OFF + "\033[?25h\033[?1049l")
         sys.stdout.flush()
 
 
