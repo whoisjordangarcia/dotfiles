@@ -22,7 +22,7 @@ alias update-claude="curl -fsSL https://claude.ai/install.sh | bash"
 alias claude-sync="bash ~/dev/dotfiles/script/claude/sync-claude.sh"
 # Sync live ~/.claude/settings.json back into this env's dedicated dotfiles copy
 alias claude-settings-sync="bash ~/dev/dotfiles/script/claude/sync-settings.sh"
-alias claude-stats="python3 ~/dev/dotfiles/configs/claude/claude_stats.py"
+alias ai-stats="python3 ~/dev/dotfiles/configs/ai-stats/ai_stats.py"
 # Snapshot your live Brave extensions into configs/brave/extensions.txt
 alias brave-sync="bash ~/dev/dotfiles/script/brave/sync.sh"
 # Apply per-profile Brave colors (Work vs Personal); quit Brave first

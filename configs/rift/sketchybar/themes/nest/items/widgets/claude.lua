@@ -3,7 +3,7 @@ local settings = require("settings")
 local popup_manager = require("items.widgets.popup_manager")
 local style = require("items.widgets.popup_style")
 
-local STATS = "python3 $HOME/dev/dotfiles/configs/claude/claude_stats.py --json 2>/dev/null"
+local STATS = "python3 $HOME/dev/dotfiles/configs/ai-stats/ai_stats.py --json 2>/dev/null"
 
 local claude = sbar.add("item", "widgets.claude", {
 	position = "right",

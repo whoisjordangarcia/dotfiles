@@ -2,11 +2,12 @@
 import importlib.util
 import json
 import re
+import sqlite3
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location("claude_stats", Path(__file__).with_name("claude_stats.py"))
+spec = importlib.util.spec_from_file_location("ai_stats", Path(__file__).with_name("ai_stats.py"))
 cs = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cs)
 
@@ -90,6 +91,54 @@ with tempfile.TemporaryDirectory() as tmp:
         check(f"panel renders: {panel}", len(cs.render(data, cs.DAYS - 1, "cost", panel)) > 10)
     check("window has one slot per day", len(data["per_day"]) == cs.DAYS)
     check("range length follows the argument", len(cs.aggregate(Path(tmp), today, 90)["per_day"]) == 90)
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    codex = root / "sessions" / "rollout-x.jsonl"
+    codex.parent.mkdir(parents=True)
+    codex.write_text("\n".join([
+        json.dumps({"timestamp": NOON, "type": "session_meta", "payload": {"session_id": "cs1", "cwd": "/src/nest"}}),
+        json.dumps({"timestamp": NOON, "payload": {"type": "turn_context", "model": "gpt-5.6-terra"}}),
+        json.dumps({"timestamp": NOON, "payload": {"type": "token_count", "info": {
+            "last_token_usage": {"input_tokens": 1000, "cached_input_tokens": 900,
+                                 "cache_write_input_tokens": 50, "output_tokens": 20, "reasoning_output_tokens": 5}},
+            "rate_limits": {"primary": {"used_percent": 12, "window_minutes": 300, "resets_at": 9e9},
+                            "secondary": {"used_percent": 40, "window_minutes": 10080, "resets_at": 1}}}}),
+    ]))
+    u, _, _, _, _, limits = cs.scan_codex(codex)
+    check("codex: cached tokens excluded from input", u[0].tokens == 100 + 50 + 20)
+    check("codex: cache reads kept for the hit rate", u[0].cache_read == 900)
+    check("codex: session and project carried", (u[0].session, u[0].project, u[0].tool) == ("codex:cs1", "nest", "codex"))
+    check("codex: no price table for gpt models", u[0].cost == 0)
+    rows = [plain(r) for r in cs.codex_limit_rows({"codex_limits": (limits[0][1], 0)}, now=1000)]
+    check("codex: live window shown, expired one dropped", len(rows) == 1 and rows[0].startswith("  Codex (5h)"))
+
+    msg = root / "message" / "ses_1" / "msg_1.json"
+    msg.parent.mkdir(parents=True)
+    msg.write_text(json.dumps({"id": "msg_1", "sessionID": "ses_1", "role": "assistant", "modelID": "claude-opus-4-5",
+                               "time": {"created": 1769113117928}, "cost": 0,
+                               "tokens": {"input": 100, "output": 20, "reasoning": 5, "cache": {"read": 900, "write": 50}}}))
+    u, *_ = cs.scan_opencode(msg)
+    check("opencode: tokens summed, cache reads excluded", u[0].tokens == 170)
+    check("opencode: anthropic models get priced", round(u[0].cost, 6) == round(
+        cs.cost_usd("claude-opus-4-5", {"input_tokens": 100, "output_tokens": 20,
+                                        "cache_creation_input_tokens": 50, "cache_read_input_tokens": 900}), 6))
+    check("opencode: user messages ignored", cs.scan_opencode(msg.with_name("missing.json"))[0] == [])
+
+    db = root / "index.db"
+    con = sqlite3.connect(db)
+    con.executescript("CREATE TABLE runs(run_id, usage_json, created_at, agent_id);"
+                      "CREATE TABLE agents(agent_id, workspace_ref);")
+    con.execute("INSERT INTO runs VALUES ('r1', ?, ?, 'a1')", (json.dumps(
+        {"inputTokens": 100, "outputTokens": 20, "cacheReadTokens": 900, "cacheWriteTokens": 50}), NOON))
+    con.execute("INSERT INTO runs VALUES ('r2', NULL, ?, 'a1')", (NOON,))
+    con.execute("INSERT INTO agents VALUES ('a1', '/src/nest')")
+    con.commit()
+    con.close()
+    u, *_ = cs.scan_cursor(db)
+    check("cursor: one usage row per run, null usage skipped", len(u) == 1 and u[0].tokens == 170)
+    check("cursor: workspace becomes the project", u[0].project == "nest")
+    check("cursor: unreadable db degrades to nothing", cs.scan_cursor(root / "nope.db")[0] == [])
 
 check("opus input priced at $5/MTok", cs.cost_usd("claude-opus-5", {"input_tokens": 1_000_000}) == 5)
 check("fable 5.1 cache reads at $0.25/MTok", cs.cost_usd("claude-fable-5-1", {"cache_read_input_tokens": 1_000_000}) == 0.25)

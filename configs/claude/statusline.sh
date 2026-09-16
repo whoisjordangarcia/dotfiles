@@ -272,9 +272,9 @@ read_data=$(echo "$input" | jq -r '[
 
 IFS=$'\x1f' read -r model_full cost lines_added lines_removed session_id cwd ctx_pct ctx_current ctx_cache_read rate_5h rate_7d rate_5h_resets rate_7d_resets effort_level <<<"$read_data"
 
-# claude-stats (claude_stats.py) reads plan limits from here; the whole input is
+# ai-stats (ai_stats.py) reads plan limits from here; the whole input is
 # kept so any extra rate_limits window shows up there without a jq change.
-STATS_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/claude-stats"
+STATS_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ai-stats"
 if [ "$rate_5h" != "-1" ]; then
   mkdir -p "$STATS_CACHE_DIR" && cache_write "$STATS_CACHE_DIR/statusline.json" "$input"
   # ponytail: ~7KB/day unbounded; trim here if it ever matters.

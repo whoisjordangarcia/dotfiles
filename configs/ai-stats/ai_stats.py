@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""claude-stats: interactive TUI of Claude plan limits, usage, cost, skills and activity. --json for bar widgets."""
+"""ai-stats: interactive TUI of Claude plan limits, usage, cost, skills and activity. --json for bar widgets."""
 import json
 import os
 import re
 import select
+import sqlite3
 import sys
 import termios
 import time
@@ -13,7 +14,7 @@ from datetime import datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 
-CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "claude-stats"
+CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "ai-stats"
 CACHE = CACHE_DIR / "statusline.json"
 HISTORY = CACHE_DIR / "limits.log"
 PROJECTS = Path.home() / ".claude" / "projects"
@@ -21,7 +22,7 @@ REFRESH_SECS = 30
 DAYS = 30
 RANGES = {"7": 7, "3": 30, "9": 90}
 METRICS = ("tokens", "cost", "lines")
-PANELS = ("models", "sessions", "skills", "tools", "projects", "hours", "limits")
+PANELS = ("models", "agents", "sessions", "skills", "tools", "projects", "hours", "limits")
 WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 BOLD, DIM, RESET = "\033[1m", "\033[2m", "\033[0m"
@@ -31,7 +32,7 @@ SHADES = " ░▒▓█"
 LABELS = {"five_hour": "Session (5h)", "seven_day": "Week (7d)"}
 LEFT, RIGHT = ("\x1b[D", "h"), ("\x1b[C", "l")
 SERIES_COLORS = {"opus": "35", "fable": "36", "sonnet": "34", "haiku": "32", "added": "32", "removed": "31",
-                 "week": "35", "session": "36"}
+                 "week": "35", "session": "36", "codex": "33", "opencode": "32", "cursor": "31"}
 COMMAND_RE = re.compile(r"<command-name>/?([^<\s]+)</command-name>")
 
 # $/MTok (input, output, cache read); first prefix match wins. Cache writes bill 1.25x input (5m) or 2x (1h).
@@ -45,7 +46,7 @@ PRICES = (
     ("claude-haiku", 1, 5, 0.1),
 )
 
-Usage = namedtuple("Usage", "key ts day weekday hour fam tokens output thinking cost input cache_read session project subagent")
+Usage = namedtuple("Usage", "key ts day weekday hour fam tokens output thinking cost input cache_read session project subagent tool")
 Lines = namedtuple("Lines", "key day project added removed")
 Skill = namedtuple("Skill", "key day name typed")
 Tool = namedtuple("Tool", "key day name")
@@ -120,8 +121,8 @@ def pct_color(pct):
     return RED if pct >= 80 else YELLOW if pct >= 50 else GREEN
 
 
-def limit_rows(limits, now, width=36):
-    keys = [k for k in LABELS if k in limits] + sorted(k for k in limits if k not in LABELS)
+def limit_rows(limits, now, width=36, labels=LABELS):
+    keys = [k for k in labels if k in limits] + sorted(k for k in limits if k not in labels)
     rows = []
     for k in keys:
         v = limits[k]
@@ -129,7 +130,7 @@ def limit_rows(limits, now, width=36):
             continue
         pct = float(v["used_percentage"])
         fill = round(min(pct, 100) / 100 * width)
-        label = LABELS.get(k, k.replace("_", " ").capitalize())
+        label = labels.get(k, k.replace("_", " ").capitalize())
         tail = ""
         try:
             reset = float(v["resets_at"])
@@ -175,7 +176,7 @@ def count_lines(result):
 
 
 def scan_file(path):
-    """Return ([Usage], [Lines], [Skill], [Tool], [Prompt]) for one transcript."""
+    """Return ([Usage], [Lines], [Skill], [Tool], [Prompt], [limits]) for one Claude Code transcript."""
     usage, lines, skills, tools, prompts = [], [], [], [], []
     subagent = "subagents" in Path(path).parts
     with open(path, errors="replace") as f:
@@ -196,7 +197,7 @@ def scan_file(path):
                 thinking = (u.get("output_tokens_details") or {}).get("thinking_tokens") or 0
                 usage.append(Usage(f"{msg.get('id')}:{e.get('requestId')}", ts.timestamp(), ts.date(), ts.weekday(), ts.hour,
                                    model.split("-")[1], written + output, output, thinking, cost_usd(model, u), written,
-                                   u.get("cache_read_input_tokens") or 0, e.get("sessionId"), project, subagent))
+                                   u.get("cache_read_input_tokens") or 0, e.get("sessionId"), project, subagent, "claude"))
             if isinstance(content, list):
                 for b in content:
                     if not isinstance(b, dict) or b.get("type") != "tool_use":
@@ -213,7 +214,101 @@ def scan_file(path):
                 added, removed = count_lines(e["toolUseResult"])
                 if added or removed:
                     lines.append(Lines(e.get("uuid"), ts.date(), project, added, removed))
-    return usage, lines, skills, tools, prompts
+    return usage, lines, skills, tools, prompts, []
+
+
+def _stamp(iso):
+    return datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone()
+
+
+def scan_codex(path):
+    """Codex rollout: token_count events, whose model comes from the preceding turn_context."""
+    usage, limits = [], []
+    session, cwd, model = Path(path).stem, "", ""
+    with open(path, errors="replace") as f:
+        for raw in f:
+            if not any(s in raw for s in ('"token_count"', '"turn_context"', '"session_meta"')):
+                continue
+            try:
+                e = json.loads(raw)
+                p = e.get("payload") or {}
+                ts = _stamp(e["timestamp"])
+            except (ValueError, TypeError, KeyError, AttributeError):
+                continue
+            session, cwd, model = p.get("session_id") or session, p.get("cwd") or cwd, p.get("model") or model
+            if isinstance(p.get("rate_limits"), dict):
+                limits.append((ts.timestamp(), p["rate_limits"]))
+            u = (p.get("info") or {}).get("last_token_usage") if isinstance(p.get("info"), dict) else None
+            if not isinstance(u, dict):
+                continue
+            # Codex counts cached tokens inside input_tokens; Claude reports them separately.
+            cached = u.get("cached_input_tokens") or 0
+            fresh = max(0, (u.get("input_tokens") or 0) - cached) + (u.get("cache_write_input_tokens") or 0)
+            output = u.get("output_tokens") or 0
+            if not fresh + output:
+                continue
+            usage.append(Usage(f"codex:{session}:{e['timestamp']}", ts.timestamp(), ts.date(), ts.weekday(), ts.hour,
+                               "codex", fresh + output, output, u.get("reasoning_output_tokens") or 0, 0.0,
+                               fresh, cached, f"codex:{session}", project_name(cwd), False, "codex"))
+    return usage, [], [], [], [], limits
+
+
+def scan_opencode(path):
+    """One opencode assistant message. The mirrored step-finish part file repeats these numbers — ignore it."""
+    try:
+        e = json.loads(Path(path).read_text())
+        ts = datetime.fromtimestamp((e["time"]["created"]) / 1000).astimezone()
+    except (OSError, ValueError, TypeError, KeyError):
+        return [], [], [], [], [], []
+    t = e.get("tokens")
+    if e.get("role") != "assistant" or not isinstance(t, dict):
+        return [], [], [], [], [], []
+    cache = t.get("cache") or {}
+    fresh = (t.get("input") or 0) + (cache.get("write") or 0)
+    output = t.get("output") or 0
+    if not fresh + output:
+        return [], [], [], [], [], []
+    cost = cost_usd(e.get("modelID") or "", {"input_tokens": t.get("input"), "output_tokens": output,
+                                             "cache_creation_input_tokens": cache.get("write"),
+                                             "cache_read_input_tokens": cache.get("read")})
+    return [Usage(f"opencode:{e.get('id')}", ts.timestamp(), ts.date(), ts.weekday(), ts.hour, "opencode",
+                  fresh + output, output, t.get("reasoning") or 0, cost, fresh, cache.get("read") or 0,
+                  f"opencode:{e.get('sessionID')}", "opencode", False, "opencode")], [], [], [], [], []
+
+
+def scan_cursor(path):
+    """cursor-agent SDK run store. immutable=1 skips the WAL, so a live run's newest turn may be missing."""
+    try:
+        con = sqlite3.connect(f"file:{path}?immutable=1", uri=True)
+        rows = con.execute("SELECT run_id, usage_json, created_at, agent_id FROM runs WHERE usage_json IS NOT NULL").fetchall()
+        workspaces = dict(con.execute("SELECT agent_id, workspace_ref FROM agents"))
+        con.close()
+    except sqlite3.Error:
+        return [], [], [], [], [], []
+    usage = []
+    for run_id, raw, created, agent in rows:
+        try:
+            u = json.loads(raw)
+            ts = _stamp(created)
+        except (ValueError, TypeError, AttributeError):
+            continue
+        fresh = (u.get("inputTokens") or 0) + (u.get("cacheWriteTokens") or 0)
+        output = u.get("outputTokens") or 0
+        if not fresh + output:
+            continue
+        usage.append(Usage(f"cursor:{run_id}", ts.timestamp(), ts.date(), ts.weekday(), ts.hour, "cursor",
+                           fresh + output, output, u.get("reasoningTokens") or 0, 0.0, fresh,
+                           u.get("cacheReadTokens") or 0, f"cursor:{agent}", project_name(workspaces.get(agent)),
+                           False, "cursor"))
+    return usage, [], [], [], [], []
+
+
+SOURCES = (
+    (PROJECTS, "**/*.jsonl", scan_file),
+    (Path.home() / ".codex", "**/rollout-*.jsonl", scan_codex),
+    (Path.home() / ".local/share/opencode/storage/message", "**/msg_*.json", scan_opencode),
+    (Path.home() / ".cursor/projects", "*/sdk-agent-store/*/index.db", scan_cursor),
+)
 
 
 @lru_cache(maxsize=None)
@@ -226,28 +321,33 @@ def is_skill(name):
 _scanned = {}
 
 
-def aggregate(root, today, days=DAYS):
+def aggregate(root, today, days=DAYS, sources=None):
     cutoff = time.time() - (days + 1) * 86400
     usage, lines, skills, tools, prompts = {}, {}, {}, {}, {}
-    for p in root.rglob("*.jsonl"):
-        try:
-            st = p.stat()
-            if st.st_mtime < cutoff:
+    codex_limits = (None, None)
+    for src_root, pattern, scanner in sources or ((root, "**/*.jsonl", scan_file),):
+        for p in src_root.glob(pattern):
+            try:
+                st = p.stat()
+                if st.st_mtime < cutoff:
+                    continue
+                sig = (st.st_mtime, st.st_size)
+                if p not in _scanned or _scanned[p][0] != sig:
+                    _scanned[p] = (sig, scanner(p))
+            except OSError:
                 continue
-            sig = (st.st_mtime, st.st_size)
-            if p not in _scanned or _scanned[p][0] != sig:
-                _scanned[p] = (sig, scan_file(p))
-        except OSError:
-            continue
-        file_usage, file_lines, file_skills, file_tools, file_prompts = _scanned[p][1]
-        # A streamed reply repeats its usage on every content-block line.
-        for r in file_usage:
-            if r.key not in usage or r.tokens > usage[r.key].tokens:
-                usage[r.key] = r
-        lines.update((r.key, r) for r in file_lines)
-        skills.update((r.key, r) for r in file_skills)
-        tools.update((r.key, r) for r in file_tools)
-        prompts.update((r.key, r) for r in file_prompts)
+            file_usage, file_lines, file_skills, file_tools, file_prompts, file_limits = _scanned[p][1]
+            # A streamed reply repeats its usage on every content-block line.
+            for r in file_usage:
+                if r.key not in usage or r.tokens > usage[r.key].tokens:
+                    usage[r.key] = r
+            lines.update((r.key, r) for r in file_lines)
+            skills.update((r.key, r) for r in file_skills)
+            tools.update((r.key, r) for r in file_tools)
+            prompts.update((r.key, r) for r in file_prompts)
+            for ts, lim in file_limits:
+                if codex_limits[1] is None or ts > codex_limits[1]:
+                    codex_limits = (lim, ts)
 
     start = today - timedelta(days=days - 1)
 
@@ -261,10 +361,19 @@ def aggregate(root, today, days=DAYS):
     thinking = defaultdict(lambda: [0, 0])
     subagent = [0, 0.0]
     sessions = {}
+    agents = defaultdict(lambda: {"tokens": [0, 0], "cost": 0.0, "sessions": set()})
     for r in usage.values():
         if not in_range(r.day):
             continue
-        d = per_day[(r.day - start).days]
+        i = (r.day - start).days
+        a = agents[r.tool]
+        a["tokens"][1] += r.tokens
+        a["cost"] += r.cost
+        if i >= days - 7:
+            a["tokens"][0] += r.tokens
+        if r.session:
+            a["sessions"].add(r.session)
+        d = per_day[i]
         d["tokens"][r.fam] += r.tokens
         d["cost"][r.fam] += r.cost
         d["input"] += r.input
@@ -301,6 +410,7 @@ def aggregate(root, today, days=DAYS):
             plugin, _, name = r.name.rpartition(":")
             skill_counts[name if plugin == name else r.name] += 1
     return {"per_day": per_day, "hours": hours, "projects": dict(projects), "skills": skill_counts,
+            "agents": dict(agents), "codex_limits": codex_limits,
             "tools": Counter(r.name for r in tools.values() if in_range(r.day)), "thinking": dict(thinking),
             "subagent": subagent, "sessions": sessions}
 
@@ -352,6 +462,36 @@ def bar(value, top, width, color):
 
 def empty(text):
     return [f"  {DIM}{text}{RESET}"]
+
+
+def codex_limit_rows(data, now):
+    """Codex's own windows, normalised onto the Claude keys. Dropped once their reset has passed (stale window)."""
+    limits, _ = data["codex_limits"]
+    if not isinstance(limits, dict):
+        return []
+    norm = {}
+    for src in (limits.get("primary"), limits.get("secondary")):
+        if isinstance(src, dict) and src.get("used_percent") is not None and (src.get("resets_at") or 0) > now:
+            norm["five_hour" if (src.get("window_minutes") or 0) <= 600 else "seven_day"] = {
+                "used_percentage": src["used_percent"], "resets_at": src["resets_at"]}
+    return limit_rows(norm, now, labels={"five_hour": "Codex (5h)", "seven_day": "Codex (7d)"})
+
+
+def agents_panel(data, days):
+    agents = data["agents"]
+    if not agents:
+        return empty(f"No agent activity in the last {days} days.")
+    width = 26
+    top = max(a["tokens"][1] for a in agents.values())
+    rows = [f"  {'':<9} {'':<{width}} {DIM}{'7d':>7} {f'{days}d':>7} {'cost':>11} {'sessions':>9}{RESET}"]
+    for tool, a in sorted(agents.items(), key=lambda kv: -kv[1]["tokens"][1]):
+        cost = fmt_cost(a["cost"]) if a["cost"] else "tokens only"
+        rows.append(f"  {series_color('opus' if tool == 'claude' else tool)}{tool.capitalize():<9}{RESET}"
+                    f" {bar(a['tokens'][1], top, width, series_color('opus' if tool == 'claude' else tool))}"
+                    f" {fmt_tokens(a['tokens'][0]):>7} {fmt_tokens(a['tokens'][1]):>7} {cost:>11} {len(a['sessions']):>9}")
+    notes = {"codex": "codex: interactive sessions only — headless `codex exec` runs log no usage",
+             "cursor": "cursor: cursor-agent SDK runs only — the IDE keeps usage server-side"}
+    return rows + [f"  {DIM}{notes[t]}{RESET}" for t in ("codex", "cursor") if t in agents]
 
 
 def models_panel(data, days):
@@ -440,7 +580,8 @@ def limits_panel(data, days, cols=60, span=7 * 86400):
 
 def load(days):
     today, now = datetime.now().date(), time.time()
-    return {**aggregate(PROJECTS, today, days), "limits": load_limits(), "history": load_history(now), "today": today, "now": now}
+    return {**aggregate(PROJECTS, today, days, SOURCES), "limits": load_limits(), "history": load_history(now),
+            "today": today, "now": now}
 
 
 def render(data, sel, metric="tokens", panel="models"):
@@ -454,6 +595,7 @@ def render(data, sel, metric="tokens", panel="models"):
     stamp = f"  {DIM}as of {fmt_duration(now - mtime)} ago{RESET}" if mtime is not None else ""
     out.append(f" {MAGENTA}{BOLD}Plan limits{RESET}{stamp}")
     out += limit_rows(limits, now) or empty("No data yet: limits are captured when a Claude Code session renders its statusline.")
+    out += codex_limit_rows(data, now)
 
     tok = [sum(d["tokens"].values()) for d in per_day]
     cost = sum(sum(d["cost"].values()) for d in per_day)
@@ -487,7 +629,7 @@ def render(data, sel, metric="tokens", panel="models"):
 
     tabs = "  ".join(f"{MAGENTA}{BOLD}{p.capitalize()}{RESET}" if p == panel else f"{DIM}{p.capitalize()}{RESET}" for p in PANELS)
     out += ["", f" {tabs}"]
-    out += {"models": models_panel, "sessions": sessions_panel, "skills": lambda dt, n: counts_panel(dt["skills"], "skills", n),
+    out += {"models": models_panel, "agents": agents_panel, "sessions": sessions_panel, "skills": lambda dt, n: counts_panel(dt["skills"], "skills", n),
             "tools": tools_panel, "projects": projects_panel, "hours": hours_panel, "limits": limits_panel}[panel](data, days)
     return out
 
