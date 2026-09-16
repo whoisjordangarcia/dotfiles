@@ -20,7 +20,7 @@ HISTORY = CACHE_DIR / "limits.log"
 PROJECTS = Path.home() / ".claude" / "projects"
 REFRESH_SECS = 30
 DAYS = 30
-RANGES = {"7": 7, "3": 30, "9": 90}
+RANGES = {"7": 7, "3": 30, "9": 90, "a": 365}
 METRICS = ("tokens", "cost", "lines")
 PANELS = ("models", "agents", "sessions", "skills", "tools", "projects", "hours", "limits")
 WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
@@ -415,6 +415,26 @@ def aggregate(root, today, days=DAYS, sources=None):
             "subagent": subagent, "sessions": sessions}
 
 
+def chart_buckets(per_day):
+    """Fold days into weeks past 90 days, so a year still fits on one screen. Returns (buckets, days per bucket)."""
+    size = 1 if len(per_day) <= 90 else 7
+    if size == 1:
+        return per_day, size
+    buckets = []
+    for i in range(0, len(per_day), size):
+        merged = {"tokens": defaultdict(int), "cost": defaultdict(float), "lines": defaultdict(int),
+                  "sessions": set(), "input": 0, "cache_read": 0}
+        for d in per_day[i:i + size]:
+            for metric in ("tokens", "cost", "lines"):
+                for k, v in d[metric].items():
+                    merged[metric][k] += v
+            merged["sessions"] |= d["sessions"]
+            merged["input"] += d["input"]
+            merged["cache_read"] += d["cache_read"]
+        buckets.append(merged)
+    return buckets, size
+
+
 def series_totals(per_day, metric):
     """Return {series: [last 7 days, whole range]} for one metric."""
     totals = defaultdict(lambda: [0, 0])
@@ -591,7 +611,7 @@ def render(data, sel, metric="tokens", panel="models"):
     start = today - timedelta(days=days - 1)
     limits, mtime = data["limits"]
 
-    out = [f" {BOLD}Claude usage{RESET}  {DIM}{datetime.now():%a %b %d %H:%M} · ←/→ day · 7/3/9 range · c chart · tab panel · r refresh · q quit{RESET}", ""]
+    out = [f" {BOLD}AI usage{RESET}  {DIM}{datetime.now():%a %b %d %H:%M} · ←/→ move · 7/3/9/a range · c chart · tab panel · r refresh · q quit{RESET}", ""]
     stamp = f"  {DIM}as of {fmt_duration(now - mtime)} ago{RESET}" if mtime is not None else ""
     out.append(f" {MAGENTA}{BOLD}Plan limits{RESET}{stamp}")
     out += limit_rows(limits, now) or empty("No data yet: limits are captured when a Claude Code session renders its statusline.")
@@ -606,24 +626,30 @@ def render(data, sel, metric="tokens", panel="models"):
                 f" · {BOLD}{fmt_cost(cost)}{RESET} · {BOLD}{sessions}{RESET} sessions · {BOLD}{cache_hit(per_day)}{RESET} cache hit"
                 f" · {GREEN}+{fmt_tokens(added)}{RESET} {RED}−{fmt_tokens(removed)}{RESET} lines"]
 
+    buckets, size = chart_buckets(per_day)
+    sel = min(sel, len(buckets) - 1)
     title = {"tokens": "Tokens excl. cache reads", "cost": "API-equivalent cost", "lines": "Lines added / removed"}[metric]
-    out.append(f" {MAGENTA}{BOLD}{title}{RESET}  {DIM}faint = before last 7d · c to switch{RESET}")
+    grain = f" · {DIM}weekly{RESET}" if size > 1 else ""
+    out.append(f" {MAGENTA}{BOLD}{title}{RESET}{grain}  {DIM}faint = before last 7d · c to switch{RESET}")
     totals = series_totals(per_day, metric)
     order = ["removed", "added"] if metric == "lines" else sorted(totals, key=lambda s: -totals[s][1])
     # 90 two-char columns would overflow a normal terminal.
-    gap = " " if days <= 45 else ""
+    gap = " " if len(buckets) <= 45 else ""
     cell = 1 + len(gap)
-    out += column_chart([d[metric] for d in per_day], order, gap=gap, fmt=fmt_cost if metric == "cost" else fmt_tokens)
-    axis = ["─"] * (days * cell)
+    out += column_chart([b[metric] for b in buckets], order, recent=7 // size or 1, gap=gap,
+                        fmt=fmt_cost if metric == "cost" else fmt_tokens)
+    axis = ["─"] * (len(buckets) * cell)
     axis[sel * cell] = f"{YELLOW}▲{RESET}"
     out.append(f"         └{''.join(axis)}")
     left, right = f"{start:%b %d}", "today"
-    out.append(f"          {DIM}{left}{right:>{days * cell - len(left)}}{RESET}")
+    out.append(f"          {DIM}{left}{right:>{len(buckets) * cell - len(left)}}{RESET}")
 
-    d = per_day[sel]
+    d = buckets[sel]
+    sel_start = start + timedelta(days=sel * size)
+    sel_label = f"{sel_start:%a %b %d}" if size == 1 else f"week of {sel_start:%b %d}"
     breakdown = " · ".join(f"{series_color(fam)}{fam.capitalize()}{RESET} {fmt_tokens(t)}"
                            for fam, t in sorted(d["tokens"].items(), key=lambda kv: -kv[1]))
-    out.append(f"  {YELLOW}▲{RESET} {BOLD}{start + timedelta(days=sel):%a %b %d}{RESET}  {fmt_tokens(tok[sel])} · {fmt_cost(sum(d['cost'].values()))}"
+    out.append(f"  {YELLOW}▲{RESET} {BOLD}{sel_label}{RESET}  {fmt_tokens(sum(d['tokens'].values()))} · {fmt_cost(sum(d['cost'].values()))}"
                f" · {len(d['sessions'])} sessions · {cache_hit([d])} cache · {GREEN}+{d['lines']['added']}{RESET} {RED}−{d['lines']['removed']}{RESET}"
                f"  {breakdown or DIM + 'no usage' + RESET}")
 
@@ -683,18 +709,20 @@ def main():
             key = os.read(fd, 16).decode(errors="ignore")
             if key in ("", "q", "Q"):
                 break
+            columns = len(chart_buckets(data["per_day"])[0])
             if key in LEFT:
-                sel = max(0, sel - 1)
+                sel = max(0, min(sel, columns - 1) - 1)
             elif key in RIGHT:
-                sel = min(days - 1, sel + 1)
+                sel = min(columns - 1, sel + 1)
             elif key == "c":
                 metric = (metric + 1) % len(METRICS)
             elif key == "\t":
                 panel = (panel + 1) % len(PANELS)
             elif key in RANGES or key == "r":
                 days = RANGES.get(key, days)
-                sel = min(sel, days - 1) if key == "r" else days - 1
                 data, loaded = load(days), time.time()
+                last = len(chart_buckets(data["per_day"])[0]) - 1
+                sel = min(sel, last) if key == "r" else last
     except KeyboardInterrupt:
         pass
     finally:

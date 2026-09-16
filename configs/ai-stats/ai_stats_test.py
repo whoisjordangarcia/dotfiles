@@ -157,6 +157,18 @@ check("stacked column: next series above it", cs.series_color("fable") + "█" i
 check("days before the recent window are faint",
       cs.series_color("opus", faint=True) in cs.column_chart([{"opus": 1}, {"opus": 1}], ["opus"], recent=1)[-1])
 
+def blank_day(tokens):
+    from collections import defaultdict
+    return {"tokens": defaultdict(int, {"opus": tokens}), "cost": defaultdict(float), "lines": defaultdict(int),
+            "sessions": {f"s{tokens}"}, "input": tokens, "cache_read": 0}
+
+
+check("ranges under 90 days stay daily", cs.chart_buckets([blank_day(1)] * 90)[1] == 1)
+weeks, size = cs.chart_buckets([blank_day(1) for _ in range(364)])
+check("a year folds into weeks", (len(weeks), size) == (52, 7))
+check("weekly bucket sums its days", sum(weeks[0]["tokens"].values()) == 7)
+check("weekly bucket unions its sessions", weeks[0]["sessions"] == {"s1"})
+
 limits = {"seven_day_fable": {"used_percentage": 12}, "seven_day": {"used_percentage": 90},
           "five_hour": {"used_percentage": 40, "resets_at": 4000}}
 rows = [plain(r) for r in cs.limit_rows(limits, now=0)]

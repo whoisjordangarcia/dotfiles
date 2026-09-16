@@ -5,6 +5,27 @@ local style = require("items.widgets.popup_style")
 
 local STATS = "python3 $HOME/dev/dotfiles/configs/ai-stats/ai_stats.py --json 2>/dev/null"
 
+local METER_SEGMENTS = 5
+
+local function meter(pct)
+	local filled = math.floor(math.min(pct, 100) / 100 * METER_SEGMENTS + 0.5)
+	return string.rep("▰", filled) .. string.rep("▱", METER_SEGMENTS - filled)
+end
+
+-- Two items, not one label: SketchyBar colours a label as a whole, so the 5h
+-- and week meters need separate items to warn independently.
+local week = sbar.add("item", "widgets.claude.week", {
+	position = "right",
+	label = {
+		string = "—",
+		font = { family = settings.font.numbers, size = 11.0 },
+		color = colors.chrome.label,
+	},
+	background = { drawing = false },
+	padding_left = 4,
+	padding_right = 4,
+})
+
 local claude = sbar.add("item", "widgets.claude", {
 	position = "right",
 	icon = {
@@ -32,7 +53,7 @@ local claude = sbar.add("item", "widgets.claude", {
 	padding_right = 4,
 })
 
-local bracket = sbar.add("bracket", "widgets.claude.bracket", { claude.name }, {
+local bracket = sbar.add("bracket", "widgets.claude.bracket", { claude.name, week.name }, {
 	background = { color = colors.bg1 },
 	popup = { align = "center", height = style.height },
 })
@@ -43,7 +64,7 @@ local week_row = style.row(bracket.name, "󰃭", "Week")
 local today_row = style.row(bracket.name, "󰃶", "Today")
 local week_spend_row = style.row(bracket.name, "󰄫", "Week spend")
 
-local function week_color(pct)
+local function limit_color(pct)
 	if pct >= 80 then
 		return colors.red
 	elseif pct >= 50 then
@@ -81,24 +102,34 @@ end
 claude:subscribe({ "routine", "forced", "system_woke" }, function()
 	sbar.exec(STATS, function(stats)
 		if type(stats) ~= "table" then
-			claude:set({ label = { string = "—", color = colors.with_alpha(colors.text, 0.3) } })
+			local faded = colors.with_alpha(colors.text, 0.3)
+			claude:set({ label = { string = "—", color = faded } })
+			week:set({ label = { string = "—", color = faded } })
 			return
 		end
 
 		local limits = type(stats.limits) == "table" and stats.limits or {}
-		local week = limits.seven_day
+		local session, seven_day = limits.five_hour, limits.seven_day
 		local today = type(stats.today) == "table" and stats.today or {}
 		local cost = type(today.cost_usd) == "number" and string.format("$%.0f", today.cost_usd) or "$—"
+		local faded = colors.with_alpha(colors.text, 0.3)
 
-		if type(week) == "table" and type(week.used_percentage) == "number" then
-			claude:set({
-				label = {
-					string = string.format("W %.0f%% · %s", week.used_percentage, cost),
-					color = week_color(week.used_percentage),
-				},
-			})
+		if type(session) == "table" and type(session.used_percentage) == "number" then
+			claude:set({ label = {
+				string = string.format("5h %s %.0f%%", meter(session.used_percentage), session.used_percentage),
+				color = limit_color(session.used_percentage),
+			} })
 		else
-			claude:set({ label = { string = cost, color = colors.with_alpha(colors.text, 0.3) } })
+			claude:set({ label = { string = "—", color = faded } })
+		end
+
+		if type(seven_day) == "table" and type(seven_day.used_percentage) == "number" then
+			week:set({ label = {
+				string = string.format("7d %s %.0f%% · %s", meter(seven_day.used_percentage), seven_day.used_percentage, cost),
+				color = limit_color(seven_day.used_percentage),
+			} })
+		else
+			week:set({ label = { string = cost, color = faded } })
 		end
 
 		session_row:set({ label = { string = limit_text(limits.five_hour) } })
