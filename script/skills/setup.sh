@@ -53,11 +53,37 @@ ensure_skill_dir() {
 	mkdir -p "$target_dir"
 }
 
+# Remove links left behind when a skill is deleted from the source. Linking is
+# additive, so without this a removed skill stays projected on every machine
+# that ever ran setup — and shows up as a broken symlink the agent CLIs still
+# enumerate. Only links that pointed into this repo's skills source are pruned,
+# so unrelated/broken links are never touched.
+prune_stale_skill_links() {
+	local target_dir="$1"
+	[ -d "$target_dir" ] || return 0
+
+	local entry link_dest
+	for entry in "$target_dir"/*; do
+		[ -L "$entry" ] || continue
+		if [ ! -e "$entry" ]; then
+			link_dest=$(readlink "$entry")
+			case "$link_dest" in
+			"$SKILLS_SOURCE"/*)
+				rm "$entry"
+				info "Pruned stale skill link: $entry"
+				;;
+			esac
+		fi
+	done
+}
+
 link_shared_skills() {
 	local target_dir="$1"
 
 	# Guard rejected this target (resolves into the repo) — skip it, don't abort.
 	ensure_skill_dir "$target_dir" || return 0
+
+	prune_stale_skill_links "$target_dir"
 
 	local skill_dir skill_name
 	for skill_dir in "$SKILLS_SOURCE"/*; do

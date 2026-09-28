@@ -105,4 +105,15 @@ env -u WORK_ENV HOME="$TEST_HOME" DOT_ENVIRONMENT=personal LOG_LEVEL=error \
 assert_absent "$TEST_HOME/.claude/skills/nest-linear-beta"
 echo "✓ switching work → personal prunes stale nest-* links"
 
+# A skill deleted from the source must be pruned from every projection, while an
+# unrelated external link is kept. Linking is additive, so without the prune a
+# removed skill lingers as a broken link on every machine that already ran setup.
+seed_home
+ln -s "$REPO_ROOT/configs/skills/__deleted__" "$TEST_HOME/.cursor/skills/deleted-skill"
+env -u WORK_ENV HOME="$TEST_HOME" DOT_ENVIRONMENT=personal LOG_LEVEL=error \
+	DOT_SYMLINK_MODE=override "$REPO_ROOT/script/skills/setup.sh" >/dev/null 2>&1
+assert_absent "$TEST_HOME/.cursor/skills/deleted-skill"
+assert_symlink_to "$TEST_HOME/.cursor/skills/external-example" "$TEST_HOME/external-skills/example"
+echo "✓ deleted skills are pruned from projections; unrelated external links survive"
+
 echo "All skills setup tests passed"
