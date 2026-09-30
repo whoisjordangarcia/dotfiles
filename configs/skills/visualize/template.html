@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>visualize</title>
+<style>
+:root {
+  --bg: #e9e9e7; --sheet: #f6f6f4; --card: #fff; --ink: #1d1d1f; --mute: #6b6b70; --line: #dadada;
+  --hot: #2f6fed; --hot-bg: #e4ecff; --fill: #8fa9f5;
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); }
+main { width: min(1100px, 100%); background: var(--sheet); border-radius: 16px; padding: 24px 28px; box-shadow: 0 1px 3px rgb(0 0 0 / .08); }
+h1 { margin: 0; font-size: 18px; }
+#label { margin: 2px 0 18px; color: var(--mute); }
+.stage { display: grid; grid-template-columns: minmax(240px, 300px) 1fr; gap: 24px; align-items: start; }
+@media (max-width: 760px) { .stage { grid-template-columns: 1fr; } }
+.card { view-transition-name: card; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 13px; }
+.card .head { font-family: var(--mono); margin-bottom: 8px; }
+.card ul { margin: 0; padding-left: 18px; }
+.card li { margin: 5px 0; animation: rise .4s var(--ease) both; animation-delay: calc(120ms + var(--i) * 70ms); }
+code { font: 12px var(--mono); background: #ececec; border-radius: 4px; padding: 1px 5px; }
+code.hot { background: var(--hot-bg); color: var(--hot); animation: mark 1s .4s ease-out both; }
+.panes { display: flex; gap: 28px; flex-wrap: wrap; }
+.pane { flex: 1 1 220px; max-width: 340px; font-size: 12px; }
+.pane .name { font-family: var(--mono); margin-bottom: 4px; }
+.pane .foot { margin-top: 6px; color: var(--mute); font-variant-numeric: tabular-nums; }
+
+/* Drawing primitives for pane html. .frame stacks its children; give a child position:absolute to place it by px. */
+.frame { position: relative; height: 240px; display: flex; flex-direction: column; gap: 4px; padding: 4px 14px 4px 4px; overflow: hidden;
+  border: 1px solid #9a9a9a; background: repeating-linear-gradient(135deg, #fff 0 5px, #dcdcdc 5px 6px); }
+.box { flex: none; min-height: 18px; padding: 1px 4px; border: 1px dashed #555; background: rgb(255 255 255 / .6); font: 11px var(--mono); overflow: hidden; white-space: nowrap; }
+.box.hot { border-color: var(--hot); color: var(--hot); }
+.box.fill { border: 1px solid var(--hot); background: var(--fill); }
+.box.hot, .box.fill { animation: glow 1s .45s ease-out both; }
+.box.gone { opacity: .35; text-decoration: line-through; animation: fade-gone .6s .3s both; }
+.thumb { position: absolute; right: 3px; width: 5px; border-radius: 3px; background: #333; }
+.row { display: flex; gap: 4px; }
+
+.caption { margin: 24px 0 18px; min-height: 3em; }
+.in { animation: rise .45s var(--ease) both; }
+.caption.in { animation-delay: .2s; }
+nav .meta { display: flex; justify-content: space-between; font-weight: 500; font-variant-numeric: tabular-nums; }
+nav input { width: 100%; margin: 6px 0 12px; accent-color: var(--ink); }
+nav button { font: inherit; padding: 5px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); cursor: pointer; transition: transform .15s var(--ease), background .15s; }
+nav button:hover:not(:disabled) { background: #f0f0ee; }
+nav button:active:not(:disabled) { transform: scale(.96); }
+nav button:disabled { opacity: .4; cursor: default; }
+#play { float: right; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes mark { from { background: #b9ceff; } }
+@keyframes glow { from { box-shadow: 0 0 0 0 rgb(47 111 237 / .6); } to { box-shadow: 0 0 0 8px rgb(47 111 237 / 0); } }
+@keyframes fade-gone { from { opacity: 1; text-decoration-color: transparent; } }
+@keyframes pop { from { opacity: 0; transform: scale(.9); } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes out-l { to { opacity: 0; transform: translateX(-14px); } }
+@keyframes out-r { to { opacity: 0; transform: translateX(14px); } }
+@keyframes in-l { from { opacity: 0; transform: translateX(-14px); } }
+@keyframes in-r { from { opacity: 0; transform: translateX(14px); } }
+
+/* Unnamed content swaps instantly; only named boxes and the card animate. */
+::view-transition-old(root) { display: none; }
+::view-transition-new(root) { animation: none; }
+::view-transition-group(*) { animation-duration: .5s; animation-timing-function: var(--ease); }
+::view-transition-new(*):only-child { animation: pop .4s .15s var(--ease) both; }
+::view-transition-old(*):only-child { animation: fade-out .25s both; }
+::view-transition-old(card) { animation: out-l .22s ease-in both; }
+::view-transition-new(card) { animation: in-r .38s .08s var(--ease) both; }
+:root[data-dir="back"]::view-transition-old(card) { animation-name: out-r; }
+:root[data-dir="back"]::view-transition-new(card) { animation-name: in-l; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title"></h1>
+  <div id="label"></div>
+  <div class="stage">
+    <div class="card"><div class="head" id="head"></div><ul id="items"></ul></div>
+    <div class="panes" id="panes"></div>
+  </div>
+  <p class="caption" id="caption"></p>
+  <nav>
+    <div class="meta"><span>Step</span><span id="count"></span></div>
+    <input id="slider" type="range" min="1" step="1" aria-label="Step">
+    <button id="prev">Previous</button> <button id="next">Next</button> <button id="play">Play</button>
+  </nav>
+</main>
+<script>
+const DECK = /*DECK*/{
+  title: "Example: constant estimate vs width-aware",
+  steps: [
+    {
+      label: "the width",
+      head: "textColumnWidthPx(1000)",
+      items: [
+        "<code>root.clientWidth</code> : 1000 px · observed by the surface",
+        "<code class=\"hot\">column</code> : min(650, 1000 − 2·24 − 2·17) = 650",
+      ],
+      panes: [
+        { name: "before", foot: "strip slot 128 · 11 rows mounted",
+          html: `<div class="frame"><div class="box" style="height:22px">user 48</div><div class="box" style="height:34px">prose 80</div><div class="box" data-k="images" style="height:40px">images · est 96</div><div class="thumb" style="top:120px;height:70px"></div></div>` },
+        { name: "after", foot: "strip slot 128 · 11 rows mounted",
+          html: `<div class="frame"><div class="box" style="height:22px">user 48</div><div class="box" style="height:34px">prose 80</div><div class="box hot" data-k="images" style="height:40px">images · est 96</div><div class="thumb" style="top:120px;height:70px"></div></div>` },
+      ],
+      caption: "The right plane starts from the pane's width. Any pane 732 px or wider gives a 650 px text column.",
+    },
+    {
+      label: "the estimate",
+      head: "estimatePx(650)",
+      items: ["<code class=\"hot\">images × 9</code> : 3 rows of 3 at 650 px = 474"],
+      panes: [
+        { name: "before", foot: "strip slot 128 · 11 rows mounted",
+          html: `<div class="frame"><div class="box" style="height:34px">prose 80</div><div class="box" data-k="images" style="height:40px">images · est 96</div><div class="thumb" style="top:120px;height:70px"></div></div>` },
+        { name: "after", foot: "strip slot 506 · 6 rows mounted",
+          html: `<div class="frame"><div class="box" style="height:34px">prose 80</div><div class="row"><div class="box fill" style="width:40px;height:40px"></div><div class="box fill" style="width:40px;height:40px"></div><div class="box fill" style="width:40px;height:40px"></div></div><div class="box gone" data-k="images" style="height:20px">images · est 96</div><div class="thumb" style="top:40px;height:150px"></div></div>` },
+      ],
+      caption: "The width-aware estimate lays the images out at the real column width, so the reserved slot is the grid's height.",
+    },
+  ],
+}/*END*/;
+
+const $ = (id) => document.getElementById(id);
+const n = DECK.steps.length;
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const NUM = /\d+(?:\.\d+)?/g;
+let i = 0;
+let timer = null;
+
+function replay(el) {
+  el.classList.remove("in");
+  void el.offsetWidth;
+  el.classList.add("in");
+}
+
+// A box keeps its morph identity across steps by data-k, else its label with digits stripped, numbered by occurrence.
+function nameShapes() {
+  document.querySelectorAll(".pane").forEach((pane, p) => {
+    const seen = {};
+    pane.querySelector(".frame")?.style.setProperty("view-transition-name", `f${p}`);
+    pane.querySelectorAll(".box, .thumb").forEach((el) => {
+      const raw = el.dataset.k || el.textContent.replace(/\d+/g, "").trim() || el.className;
+      const key = `b${p}-${raw.replace(/[^\w-]/g, "_")}`;
+      seen[key] = (seen[key] ?? 0) + 1;
+      el.style.viewTransitionName = `${key}-${seen[key]}`;
+    });
+  });
+}
+
+// Counts each changed number from its old value; skipped when the two texts hold different counts of numbers.
+function tween(el, before) {
+  const after = el.textContent, from = before.match(NUM), to = after.match(NUM);
+  if (still || !from || !to || from.length !== to.length || from.join() === to.join()) return;
+  const t0 = performance.now();
+  const frame = (t) => {
+    const k = Math.min(1, (t - t0) / 650), e = 1 - (1 - k) ** 3;
+    let j = 0;
+    el.textContent = after.replace(NUM, (m) => {
+      const a = +from[j++];
+      return a === +m ? m : String(Math.round(a + (m - a) * e));
+    });
+    if (k < 1) requestAnimationFrame(frame);
+    else el.textContent = after;
+  };
+  requestAnimationFrame(frame);
+}
+
+function render() {
+  const s = DECK.steps[i];
+  const oldFeet = [...document.querySelectorAll(".foot")].map((f) => f.textContent);
+  document.title = DECK.title;
+  $("title").textContent = DECK.title;
+  $("label").textContent = `Step ${i + 1} · ${s.label}`;
+  $("head").innerHTML = s.head;
+  $("items").innerHTML = s.items.map((x, k) => `<li style="--i:${k}">${x}</li>`).join("");
+  $("panes").innerHTML = s.panes.map((p) => `<div class="pane"><div class="name">${p.name}</div>${p.html}<div class="foot">${p.foot ?? ""}</div></div>`).join("");
+  $("caption").innerHTML = s.caption;
+  $("count").textContent = `${i + 1} of ${n}`;
+  $("slider").value = i + 1;
+  $("prev").disabled = i === 0;
+  $("next").disabled = i === n - 1;
+  history.replaceState(null, "", `#${i + 1}`);
+  nameShapes();
+  [$("label"), $("head"), $("caption")].forEach(replay);
+  document.querySelectorAll(".foot").forEach((f, k) => oldFeet[k] !== undefined && tween(f, oldFeet[k]));
+}
+
+function go(j) {
+  j = Math.max(0, Math.min(n - 1, j));
+  document.documentElement.dataset.dir = j < i ? "back" : "fwd";
+  i = j;
+  if (still || !document.startViewTransition) render();
+  else document.startViewTransition(render);
+}
+
+function play() {
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  } else {
+    if (i === n - 1) go(0);
+    timer = setInterval(() => (i === n - 1 ? play() : go(i + 1)), 3500);
+  }
+  $("play").textContent = timer ? "Pause" : "Play";
+}
+
+$("slider").max = n;
+$("slider").oninput = (e) => go(e.target.value - 1);
+$("prev").onclick = () => go(i - 1);
+$("next").onclick = () => go(i + 1);
+$("play").onclick = play;
+// The slider steps itself on arrows and a focused button clicks itself on space; handling those here would double-step.
+document.onkeydown = (e) => {
+  if (e.target.matches("input")) return;
+  if (e.key === "ArrowRight") go(i + 1);
+  if (e.key === "ArrowLeft") go(i - 1);
+  if (e.key === " " && !e.target.matches("button")) { e.preventDefault(); play(); }
+};
+i = Math.max(0, Math.min(n - 1, (parseInt(location.hash.slice(1)) || 1) - 1));
+render();
+</script>
+</body>
+</html>
