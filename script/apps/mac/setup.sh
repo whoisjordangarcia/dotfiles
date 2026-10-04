@@ -58,12 +58,11 @@ if [[ -f "$BREWFILE_LOCAL" ]]; then
   brew bundle --file="$BREWFILE_LOCAL"
 fi
 
-# Keep packages fresh in the background. The tap trust loop above covers
-# domt4/autoupdate, so `brew autoupdate` loads without a trust prompt.
-if ! brew autoupdate status 2>/dev/null | grep -q 'and running'; then
-  step "Enabling brew autoupdate (daily upgrade + cleanup)..."
-  brew autoupdate start 86400 --upgrade --cleanup
-fi
+# No background upgrades: an upgrade replaces ad-hoc-signed binaries (rift,
+# borders, python) and macOS drops their Accessibility / Full Disk Access
+# grants. Upgrade by hand. This turns off the agent on machines that still
+# have it from the old setup; a no-op once the tap is gone.
+brew autoupdate delete &>/dev/null || true
 
 # Optionally remove packages that are no longer in the Brewfile(s)
 echo ""

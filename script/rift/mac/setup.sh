@@ -91,6 +91,11 @@ success "rift service started"
 # NOTE: WM-related global defaults (dock/menu bar autohide, window drag
 # gesture, desktop icons, killall) live in script/macos/setup.sh.
 
+# Pin both: they're ad-hoc signed, so every upgrade is a new binary at a new
+# Cellar path and the Accessibility grant below is lost. To upgrade on purpose:
+#   brew unpin rift && brew upgrade rift && brew pin rift   (then re-grant)
+brew pin rift borders
+
 # macOS bug: Accessibility permissions require dragging the real binary (not symlink)
 RIFT_BIN=$(realpath "$(command -v rift)")
 info "Drag rift into the Accessibility pane opening now:"
