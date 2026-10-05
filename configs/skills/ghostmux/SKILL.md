@@ -1,12 +1,13 @@
 ---
 name: ghostmux
-description: Drive the running GhostMux terminal app from the shell — create sessions, launch agents in them, rename sessions, and organize them into groups. Use whenever the user asks to open/create/spin up ghostmux sessions or tabs, put sessions in a group, rename or close a ghostmux session, list what's running in ghostmux, or fan work out across several worktrees each with its own agent. Triggers on "ghostmux", "new session", "spin up N worktrees", "launch claude in a session", "what's running in ghostmux".
+description: Drive the running GhostMux terminal app from the shell — create sessions, launch agents in them, rename sessions, and organize them into groups. Use whenever the user asks to open/create/spin up ghostmux sessions or tabs, put sessions in a group, rename or close a ghostmux session, list what's running in ghostmux, fan work out across several worktrees each with its own agent, or have a recurring loop (PR checks, issue triage) open one named, grouped session per item. Triggers on "ghostmux", "new session", "new thread", "spin up N worktrees", "launch claude in a session", "a session per PR", "what's running in ghostmux".
 ---
 
 # Driving GhostMux from the shell
 
-GhostMux is a macOS terminal multiplexer at `~/dev/ghostmux`. The CLI is
-`~/dev/ghostmux/scripts/ghostmux` — symlink it onto PATH, or call it by path.
+GhostMux is a macOS terminal multiplexer. The app installs its CLI at
+`~/.ghostmux/bin/ghostmux` — call it by that path unless `ghostmux` is on PATH.
+Examples below write `ghostmux` for short.
 
 **GhostMux must be running.** The CLI queues intents into `~/.ghostmux/sync/`
 and the app applies them on a 2s poll; nothing happens if the app is closed.
@@ -14,13 +15,14 @@ and the app applies them on a 2s poll; nothing happens if the app is closed.
 ## Commands
 
 ```
-ghostmux new [--cwd DIR] [--name NAME] [--group GROUP] [--cmd CMD] [--wait]
+ghostmux new [--cwd DIR] [--name NAME] [--group GROUP] [--cmd CMD] [--wait] [--unique]
 ghostmux rename TARGET NEW-NAME
 ghostmux group NAME
 ghostmux move TARGET GROUP
 ghostmux focus TARGET
 ghostmux close TARGET
 ghostmux ls [--json]
+ghostmux sim URL [DEVICE]
 ```
 
 `TARGET` is a zmx surface name (globally unique — prefer it) or a session's row
@@ -43,6 +45,32 @@ name when exactly one session carries it. `ghostmux ls` prints both.
   agent you launched is still going or is stuck waiting on a human.
 - **Don't `close` a session you didn't create** without asking. It kills live
   work.
+
+## Showing the user a page on iPhone
+
+`ghostmux sim URL [DEVICE]` opens URL in Safari on an iOS Simulator — use it
+when the user wants to see a page on mobile. Reuses an already-booted simulator;
+otherwise boots DEVICE (name or UDID from `xcrun simctl list devices available`)
+or the first available iPhone. Runs immediately (no app poll), and works even if
+GhostMux is closed. A bare host gets `https://`.
+
+## Polling loops (e.g. "watch my PRs, open a session per PR")
+
+Inside a `/loop`, call `new --unique` every pass. It skips (exit 0) when a session
+with that name already exists, so the same session isn't opened again on each pass. Use a
+stable name derived from the item, never a timestamp:
+
+```bash
+gh pr list --search 'review-requested:@me' --json number,title \
+  --jq '.[] | "\(.number)\t\(.title)"' |
+while IFS=$'\t' read -r n title; do
+  ghostmux new --unique --name "PR #$n" --group "PR Review" --cwd ~/dev/repo \
+    --cmd "claude 'Review PR #$n with gh pr diff $n; summarize risks.'"
+done
+```
+
+The dedup reads the manifest, which lags queued intents by ~2s, so don't fire
+two passes back to back.
 
 ## Worktree fan-out
 
