@@ -45,7 +45,13 @@
     --accent:   #e65732;
     --accent-2: #e78d32;
     --accent-3: #a367c8;
-    --rose: #c45567;
+    --rose: #c0405e;
+    /* Categorical data series. Orange and amber are the brand accents; purple and rose
+       are one step deeper than the gradient stops so lines and bars clear 3:1 on white. */
+    --series-1: var(--accent);
+    --series-2: #9a5fc4;
+    --series-3: var(--rose);
+    --series-4: var(--accent-2);
 
     /* Mode-resolved values (default = light) */
     --bg:  var(--bg-light);
@@ -58,9 +64,12 @@
     --peach:       color-mix(in oklch, var(--accent) 14%, transparent);
     --peach-hover: color-mix(in oklch, var(--accent) 22%, transparent);
     --tan:         color-mix(in oklch, var(--accent) 14%, transparent);
+    /* Accent as text: the raw accent is 3.6:1 on white; 20% toward ink clears AA in both modes. */
+    --accent-ink:  color-mix(in oklch, var(--accent) 80%, var(--ink));
 
     --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     --content-width: 720px;
     --glass-bg: var(--bg);
     --glass-bg-strong: var(--bg);
@@ -153,7 +162,7 @@
     font-size: 13px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--accent-ink);
     margin: 0 0 20px;
   }
 
@@ -166,6 +175,9 @@
     text-wrap: balance;
     padding-bottom: 0.2em;
     margin: 0 0 8px;
+    /* Hug the text so the gradient's purple end lands on the title, not beside it. */
+    width: fit-content;
+    max-width: 100%;
     background: linear-gradient(105deg, var(--accent) 0%, var(--accent-2) 45%, var(--accent-3) 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -173,6 +185,7 @@
   }
 
   h2 {
+    position: relative;
     font-family: var(--serif);
     font-weight: 400;
     font-size: clamp(32px, 4vw, 44px);
@@ -181,6 +194,13 @@
     text-wrap: balance;
     margin: 72px 0 20px;
     scroll-margin-top: 32px;
+  }
+  h2::after {
+    content: "";
+    position: absolute;
+    left: 0; bottom: -10px;
+    height: 2px; width: 56px;
+    background: var(--accent);
   }
 
   h3 {
@@ -210,7 +230,7 @@
   }
 
   a {
-    color: var(--accent);
+    color: var(--accent-ink);
     text-decoration: none;
     background-image: linear-gradient(var(--accent), var(--accent));
     background-repeat: no-repeat;
@@ -220,34 +240,46 @@
   }
   a:hover { background-size: 100% 2px; }
 
-  .accent { color: var(--accent); }
+  .accent { color: var(--accent-ink); }
 
   strong { font-weight: 600; }
 
   ul, ol { padding-left: 22px; margin: 0 0 24px; }
   li { margin-bottom: 8px; }
 
-  .content table {
-    display: block;
-    width: 100%;
+  /* JS wraps every .content table; the wrapper scrolls so the table keeps its semantics. */
+  .table-scroll {
     margin: 30px 0;
     overflow-x: auto;
     border: 1px solid color-mix(in oklch, var(--ink) 10%, transparent);
     border-radius: 14px;
-    border-spacing: 0;
-    border-collapse: separate;
     background: color-mix(in oklch, var(--ink) 2%, var(--bg));
     box-shadow: 0 1px 2px rgba(10, 10, 10, 0.04), 0 10px 28px rgba(10, 10, 10, 0.06);
+    scrollbar-width: thin;
+  }
+  html[data-mode="dark"] .table-scroll { box-shadow: none; }
+  .table-scroll[data-overflow] {
+    /* fade the clipped edge so a wider table reads as scrollable */
+    mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
+  }
+  .table-scroll[data-overflow="end"] {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+  .content table {
+    width: 100%;
+    margin: 0;
+    border-spacing: 0;
+    border-collapse: separate;
     font-size: 14.5px;
     line-height: 1.45;
   }
-  html[data-mode="dark"] .content table { box-shadow: none; }
   .content thead {
-    background: color-mix(in oklch, var(--accent) 10%, var(--bg));
+    background: color-mix(in oklch, var(--ink) 4%, var(--bg));
   }
   .content th,
   .content td {
-    min-width: 120px;
     padding: 11px 14px;
     border-bottom: 1px solid color-mix(in oklch, var(--ink) 9%, transparent);
     text-align: left;
@@ -268,17 +300,22 @@
     background: var(--hover);
   }
   .content tr:last-child td { border-bottom: 0; }
+  /* Wrap between chips, never inside one; a long identifier scrolls rather than breaks. */
   .content td code {
     font-size: 0.86em;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: keep-all;
   }
+  .content th,
+  .content td { min-width: 96px; }
 
   .ok {
     color: color-mix(in oklch, #2d6a4f 84%, var(--ink));
     font-weight: 650;
   }
   .bad {
-    color: color-mix(in oklch, #c45567 88%, var(--ink));
+    color: color-mix(in oklch, var(--rose) 88%, var(--ink));
     font-weight: 650;
   }
   .pill {
@@ -287,7 +324,7 @@
     border: 1px solid var(--border);
     border-radius: 999px;
     background: var(--hover);
-    color: var(--accent);
+    color: var(--accent-ink);
     font-size: 11px;
     font-weight: 650;
     letter-spacing: 0.04em;
@@ -328,7 +365,7 @@
   .callout strong,
   .verdict strong,
   .decision strong {
-    color: var(--accent);
+    color: var(--accent-ink);
     font-weight: 400;
     font-style: italic;
   }
@@ -382,7 +419,7 @@
     border-radius: 2px;
   }
   blockquote strong {
-    color: var(--accent);
+    color: var(--accent-ink);
     font-weight: 400;
     font-style: italic;
   }
@@ -394,7 +431,7 @@
   }
 
   code {
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-family: var(--mono);
     font-size: 0.92em;
     background: color-mix(in oklch, var(--ink) 7%, transparent);
     color: var(--ink);
@@ -454,8 +491,8 @@
     transition: opacity 140ms ease, color 140ms ease, background 140ms ease, border-color 140ms ease;
   }
   pre:hover .copy-btn, .copy-btn:focus-visible { opacity: 1; }
-  .copy-btn:hover { color: var(--accent); background: var(--hover); }
-  .copy-btn.copied { color: var(--accent); border-color: var(--accent); opacity: 1; }
+  .copy-btn:hover { color: var(--accent-ink); background: var(--hover); }
+  .copy-btn.copied { color: var(--accent-ink); border-color: var(--accent); opacity: 1; }
   @media (hover: none) { .copy-btn { opacity: 1; } }   /* always visible on touch */
 
   /* syntax highlighting — brand-token theme (engine loads only when the doc has code) */
@@ -482,7 +519,7 @@
     font-family: var(--sans);
     font-weight: 400;
     font-size: 0.6em;
-    color: var(--accent);
+    color: var(--accent-ink);
     background: none;
     opacity: 0;
     transition: opacity 160ms ease;
@@ -527,8 +564,8 @@
     transition: background 160ms ease, color 160ms ease;
   }
   .doc-settings summary::-webkit-details-marker { display: none; }
-  .doc-settings summary:hover { background: var(--hover); color: var(--accent); }
-  .doc-settings[open] summary { background: var(--hover); color: var(--accent); }
+  .doc-settings summary:hover { background: var(--hover); color: var(--accent-ink); }
+  .doc-settings[open] summary { background: var(--hover); color: var(--accent-ink); }
   .doc-settings .panel {
     position: absolute;
     top: 44px;
@@ -638,7 +675,7 @@
   .doc-settings .width-options button:hover { background: var(--hover); }
   .doc-settings .width-options button[aria-pressed="true"] {
     background: var(--peach);
-    border-color: var(--accent);
+    border-color: var(--accent-ink);
     color: var(--accent);
     font-weight: 600;
   }
@@ -665,12 +702,12 @@
     font-size: 11px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--accent-ink);
     font-weight: 600;
   }
   .toc-chevron {
     font-size: 16px;
-    color: var(--accent);
+    color: var(--accent-ink);
     transition: transform 220ms ease;
     line-height: 1;
   }
@@ -696,7 +733,7 @@
     font-variant-numeric: tabular-nums;
     transition: color 160ms ease;
   }
-  .toc nav > ul > li > a[aria-current="location"]::before { color: var(--accent); }
+  .toc nav > ul > li > a[aria-current="location"]::before { color: var(--accent-ink); }
   .toc nav ul ul {
     padding-left: 26px;
     margin: 2px 0 8px;
@@ -718,7 +755,7 @@
     transition: color 160ms ease;
   }
   .toc a:hover { color: var(--ink); }
-  .toc a[aria-current="location"] { color: var(--accent); font-weight: 600; }
+  .toc a[aria-current="location"] { color: var(--accent-ink); font-weight: 600; }
   .toc nav ul ul a { padding-left: 12px; }
   /* sliding active pill — glides between sections as you scroll */
   .toc-pill {
@@ -829,15 +866,8 @@
     .content > *               { opacity: 0; transform: translateY(12px);
                                   animation: rise 600ms cubic-bezier(.2,.7,.2,1) forwards; }
 
-    h2 {
-      position: relative;
-    }
     h2::after {
-      content: "";
-      position: absolute;
-      left: 0; bottom: -10px;
-      height: 2px; width: 0;
-      background: var(--accent);
+      width: 0;
       animation: grow 900ms cubic-bezier(.2,.7,.2,1) forwards;
       animation-delay: 500ms;
     }
@@ -892,6 +922,27 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .read-progress > span { transition: none; }
+  }
+
+  /* ---------- keyboard focus ---------- */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  .toc a:focus-visible { outline-offset: -2px; }
+
+  /* ---------- print: the article only, on paper ---------- */
+  @media print {
+    .toc, .doc-settings, .read-progress, .copy-btn, .heading-anchor { display: none !important; }
+    body { padding-left: 0 !important; background: #fff; color: #000; }
+    main { max-width: none; padding: 0; }
+    h1 { background: none; color: #000; -webkit-text-fill-color: initial; }
+    .table-scroll { overflow: visible; box-shadow: none; mask-image: none; -webkit-mask-image: none; }
+    pre { white-space: pre-wrap; }
+    h2, h3 { break-after: avoid; }
+    .mermaid, .table-scroll, pre, figure { break-inside: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8em; color: #555; }
   }
 </style>
 </head>
@@ -1028,6 +1079,11 @@
           lineColor: dark ? '#a9a39b' : '#6f6b65',
           secondaryColor: dark ? '#202020' : '#f1f1ee',
           tertiaryColor: dark ? '#121212' : '#fbfbfa',
+          // subgraphs default to mermaid's yellow; keep them on the same neutral surface
+          clusterBkg: dark ? 'rgba(255,255,255,0.04)' : 'rgba(10,10,10,0.03)',
+          clusterBorder: dark ? '#3a3733' : '#d9d7d2',
+          titleColor: dark ? '#a9a39b' : '#6f6b65',
+          edgeLabelBackground: dark ? '#1c1b19' : '#ffffff',
         },
         flowchart: { curve: 'basis', padding: 16 }
       });
@@ -1126,6 +1182,11 @@
     var btn = document.querySelector('[data-toc-toggle]');
     if (!toc || !section || !btn) return;
     section.removeAttribute('hidden');
+    // Below the sidebar breakpoint the TOC floats over the article, so start it collapsed.
+    var details = toc.querySelector('details');
+    if (details && window.matchMedia && window.matchMedia('(max-width: 1079px)').matches) {
+      details.open = false;
+    }
     var saved;
     try { saved = localStorage.getItem('nest-doc-toc'); } catch (e) { saved = null; }
     function apply(visible) {
@@ -1182,6 +1243,26 @@
         if (lang) code.classList.add('language-' + lang);
       }
       if (lang && !pre.hasAttribute('data-lang')) pre.setAttribute('data-lang', lang);
+    });
+  })();
+
+  // --- Tables scroll inside a wrapper; the fade edge only shows while there is more to the right ---
+  (function () {
+    document.querySelectorAll('.content table').forEach(function (table) {
+      if (table.parentElement.classList.contains('table-scroll')) return;
+      var wrap = document.createElement('div');
+      wrap.className = 'table-scroll';
+      table.parentNode.insertBefore(wrap, table);
+      wrap.appendChild(table);
+      function update() {
+        var overflow = wrap.scrollWidth > wrap.clientWidth + 1;
+        if (!overflow) { wrap.removeAttribute('data-overflow'); return; }
+        var atEnd = wrap.scrollLeft + wrap.clientWidth >= wrap.scrollWidth - 1;
+        wrap.setAttribute('data-overflow', atEnd ? 'end' : 'start');
+      }
+      wrap.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+      update();
     });
   })();
 

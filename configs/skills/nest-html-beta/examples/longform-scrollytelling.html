@@ -41,13 +41,13 @@
   figure{margin:34px 0}
   figure.wide{width:min(1100px,92vw);margin-left:calc((var(--content) - min(1100px,92vw))/2);margin-right:auto}
   figcaption{font-size:13px;color:var(--ink-soft);text-align:center;margin-top:10px;font-style:italic}
-  .gl-figure{position:relative;height:clamp(360px,56vh,560px);border:1px solid var(--border);border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#fff,rgba(230,87,50,.02))}
+  .gl-figure{position:relative;height:clamp(360px,56vh,560px);border:1px solid color-mix(in oklch, var(--ink) 10%, transparent);border-radius:14px;overflow:hidden;background:color-mix(in oklch, var(--ink) 3%, var(--bg))}
   .gl-figure canvas.gl{position:absolute;inset:0;width:100%;height:100%;display:block}
   .gl-figure .gl-caption{position:absolute;left:18px;right:18px;bottom:14px;font-size:14px;color:var(--ink-soft);
     background:rgba(255,255,255,.78);backdrop-filter:blur(4px);border:1px solid var(--border);border-radius:8px;padding:8px 12px;pointer-events:none}
   .gl-figure .gl-eyebrow{position:absolute;left:18px;top:14px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
   /* mermaid */
-  .mermaid{background:var(--hover);border:1px solid var(--border);border-radius:12px;padding:22px;text-align:center}
+  .mermaid{background:color-mix(in oklch, var(--ink) 3%, var(--bg));border:1px solid color-mix(in oklch, var(--ink) 10%, transparent);border-radius:12px;padding:22px;text-align:center}
   .mermaid svg{max-width:100%;height:auto}
   /* charts */
   .chart-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:40px;align-items:center}
@@ -66,7 +66,7 @@
   .donut-legend .legend-value{font-variant-numeric:tabular-nums;font-weight:600}
   /* scrollytelling */
   .scrolly{width:min(1100px,92vw);margin:48px auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(1.5rem,5vw,4rem);align-items:start}
-  .scrolly-visual{position:sticky;top:8vh;height:84vh;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#fff,rgba(163,103,200,.03))}
+  .scrolly-visual{position:sticky;top:8vh;height:84vh;display:flex;align-items:center;justify-content:center;border:1px solid color-mix(in oklch, var(--ink) 10%, transparent);border-radius:14px;overflow:hidden;background:color-mix(in oklch, var(--ink) 3%, var(--bg))}
   #scrolly-gl{display:block;width:100%;height:100%}
   .scrolly-cap{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-3);opacity:.75}
   .scrolly-steps{display:flex;flex-direction:column}
@@ -295,14 +295,14 @@ pie showData
 <script>
   if(window.mermaid)window.mermaid.initialize({startOnLoad:true,theme:'default',
     themeVariables:{primaryColor:'#fadfd8',primaryBorderColor:'#e65732',primaryTextColor:'#7a2615',
-      lineColor:'#b04b1d',pie1:'#e65732',pie2:'#a367c8',pie3:'#c45567',pie4:'#e78d32',
+      lineColor:'#b04b1d',pie1:'#e65732',pie2:'#9a5fc4',pie3:'#c0405e',pie4:'#e78d32',
       fontFamily:'-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif'}});
 </script>
 
 <!-- live-from-JSON charts (render once on load) -->
 <script>
 (function(){
-  var DC=['#e65732','#a367c8','#c45567','#e78d32'];
+  var DC=['#e65732','#9a5fc4','#c0405e','#e78d32'];
   function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function readJSON(id){var n=document.getElementById(id);if(!n)return null;try{return JSON.parse(n.textContent);}catch(e){return null;}}
   function bar(el,data,gid){var cats=(data&&data.categories)||[];var X0=40,X1=600,TOP=40,BASE=200;var max=Math.max(1,Math.max.apply(null,cats.map(function(c){return +c.value||0;})));var slot=cats.length?(X1-X0)/cats.length:0;var bw=Math.min(70,slot*0.55);
@@ -319,7 +319,7 @@ pie showData
 <!-- three.js: IntersectionObserver-mounted figures + scrollytelling -->
 <script type="module">
 import * as THREE from 'three';
-const BRAND={ink:new THREE.Color('#0a0a0a'),orange:new THREE.Color('#e65732'),amber:new THREE.Color('#e78d32'),purple:new THREE.Color('#a367c8'),rose:new THREE.Color('#c45567')};
+const BRAND={ink:new THREE.Color('#0a0a0a'),orange:new THREE.Color('#e65732'),amber:new THREE.Color('#e78d32'),purple:new THREE.Color('#9a5fc4'),rose:new THREE.Color('#c0405e')};
 function disc(){const s=64,c=document.createElement('canvas');c.width=c.height=s;const g=c.getContext('2d'),gr=g.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.beginPath();g.arc(s/2,s/2,s/2,0,Math.PI*2);g.fill();const t=new THREE.CanvasTexture(c);t.needsUpdate=true;return t;}
 
 // Long-form mount: run while the figure is on-screen, dispose when it leaves.

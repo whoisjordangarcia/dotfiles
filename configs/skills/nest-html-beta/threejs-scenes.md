@@ -71,8 +71,8 @@ const BRAND = {
   ink:    new THREE.Color('#0a0a0a'),
   orange: new THREE.Color('#e65732'),
   amber:  new THREE.Color('#e78d32'),
-  purple: new THREE.Color('#a367c8'),
-  rose:   new THREE.Color('#c45567'),
+  purple: new THREE.Color('#9a5fc4'),
+  rose:   new THREE.Color('#c0405e'),
 };
 
 // Round soft-edged sprite so nodes are dots, not squares. Built once, reused.

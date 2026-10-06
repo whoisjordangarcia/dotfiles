@@ -407,12 +407,12 @@ Inside the first chart's `<svg>`, declare the brand gradients in `<defs>` and re
     <stop offset="100%" stop-color="#e78d32"/>
   </linearGradient>
   <linearGradient id="g-purple" x1="0" y1="1" x2="0" y2="0">
-    <stop offset="0%" stop-color="#a367c8"/>
-    <stop offset="100%" stop-color="#c08adb"/>
+    <stop offset="0%" stop-color="#9a5fc4"/>
+    <stop offset="100%" stop-color="#b98ad9"/>
   </linearGradient>
   <linearGradient id="g-rose" x1="0" y1="1" x2="0" y2="0">
-    <stop offset="0%" stop-color="#c45567"/>
-    <stop offset="100%" stop-color="#e07a8a"/>
+    <stop offset="0%" stop-color="#c0405e"/>
+    <stop offset="100%" stop-color="#dc6f85"/>
   </linearGradient>
 </defs>
 ```
@@ -428,8 +428,8 @@ For comparing 2–5 values on a small numeric scale (e.g. 1–5 rating). `viewBo
   <defs>...gradients...</defs>
   <!-- y-axis grid + labels -->
   <g font-family="-apple-system, sans-serif" font-size="11" fill="rgba(10,10,10,0.45)">
-    <line x1="56" y1="40"  x2="620" y2="40"  stroke="rgba(230,87,50,0.10)"/>
-    <line x1="56" y1="200" x2="620" y2="200" stroke="rgba(230,87,50,0.18)"/>
+    <line x1="56" y1="40"  x2="620" y2="40"  stroke="var(--ink)" stroke-opacity="0.10"/>
+    <line x1="56" y1="200" x2="620" y2="200" stroke="var(--ink)" stroke-opacity="0.22"/>
     <text x="48" y="44" text-anchor="end">5</text>
     <text x="48" y="204" text-anchor="end">1</text>
   </g>
@@ -459,7 +459,7 @@ Best for distributions where you have many short categories. Zero JS, just flexb
 ```css
 .hbar { display: flex; align-items: center; gap: 12px; margin: 8px 0; font-size: 13px; }
 .hbar .lbl { width: 56px; color: var(--ink-soft); font-family: ui-monospace, "SF Mono", Menlo, monospace; }
-.hbar .track { flex: 1; height: 14px; background: rgba(230,87,50,0.08); border-radius: 999px; overflow: hidden; }
+.hbar .track { flex: 1; height: 14px; background: color-mix(in oklch, var(--ink) 8%, transparent); border-radius: 999px; overflow: hidden; }
 .hbar .fill { display: block; height: 100%; background: linear-gradient(90deg, #e65732 0%, #e78d32 100%); border-radius: 999px; }
 .hbar .num { width: 24px; text-align: right; color: var(--ink); font-weight: 600; }
 ```
@@ -469,7 +469,7 @@ Best for distributions where you have many short categories. Zero JS, just flexb
 **Donuts use D3, not hand-rolled SVG.** The donut is the one chart where the slice geometry (arc maths, stacking via `stroke-dashoffset`) is fiddly enough that D3's arc generator earns its keep, and readers who want a donut almost always want to hover a slice for the exact value. Copy the **donut** function from `examples/d3-chart-catalog.html` (`d3.pie()` + `d3.arc()`), swap the data, and you're done.
 
 - CDN in `<head>`: `https://cdn.jsdelivr.net/npm/d3@7` — assume readers are online. Keep the core proportions in prose too because it improves scanning, accessibility, and print/PDF output.
-- Keep the **fixed brand slice palette** (orange `#e65732`, purple `#a367c8`, rose `#c45567`, amber `#e78d32`); set every *structural* color (centerpiece text, stroke separators) with `.style('fill','var(--ink)')` / `var(--bg)` so it flips with theme + light/dark.
+- Keep the **fixed brand slice palette** (orange `#e65732`, purple `#9a5fc4`, rose `#c0405e`, amber `#e78d32`); set every *structural* color (centerpiece text, stroke separators) with `.style('fill','var(--ink)')` / `var(--bg)` so it flips with theme + light/dark.
 - Always pair it with a legend (swatch + count) and a visually-hidden `<table class="sr-only">` of the data for screen readers.
 
 Bar charts and horizontal bars stay hand-rolled SVG/CSS (cheap, zero-dependency); only the **donut** reaches for D3 by default.

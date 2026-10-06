@@ -32,8 +32,8 @@
     --border:color-mix(in oklch, var(--accent) 22%, transparent);
     --hover:color-mix(in oklch, var(--accent) 8%, transparent);
     --peach:color-mix(in oklch, var(--accent) 12%, var(--bg));
-    --grid:color-mix(in oklch, var(--accent) 14%, transparent);
-    --axis:color-mix(in oklch, var(--accent) 26%, transparent);
+    --grid:color-mix(in oklch, var(--ink) 10%, transparent);
+    --axis:color-mix(in oklch, var(--ink) 22%, transparent);
     --serif:"Instrument Serif",Georgia,serif; --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
     --mono:ui-monospace,"SF Mono",Menlo,monospace;
   }
@@ -72,7 +72,7 @@
   .chart svg.donut{width:260px;height:260px;max-width:100%;margin:0 auto;overflow:hidden}
   .hbar{display:flex;align-items:center;gap:12px;margin:8px 0;font-size:13px}
   .hbar .lbl{width:84px;color:var(--ink-soft);font-family:var(--mono)}
-  .hbar .track{flex:1;height:14px;background:color-mix(in oklch, var(--accent) 8%, transparent);border-radius:999px;overflow:hidden}
+  .hbar .track{flex:1;height:14px;background:color-mix(in oklch, var(--ink) 8%, transparent);border-radius:999px;overflow:hidden}
   .hbar .num{color:var(--ink)}
   .hbar .fill{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:999px}
   .hbar .num{width:28px;text-align:right;font-weight:600}
@@ -318,8 +318,8 @@ pie showData
       <svg viewBox="0 0 640 280" role="img" aria-label="Bar chart: average rating by category. Docs 4.3, Decks 4.0, Charts 3.0 out of 5.">
         <defs>
           <linearGradient id="g-orange" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#e65732"/><stop offset="100%" stop-color="#e78d32"/></linearGradient>
-          <linearGradient id="g-purple" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#a367c8"/><stop offset="100%" stop-color="#c08adb"/></linearGradient>
-          <linearGradient id="g-rose" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#c45567"/><stop offset="100%" stop-color="#e07a8a"/></linearGradient>
+          <linearGradient id="g-purple" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#9a5fc4"/><stop offset="100%" stop-color="#b98ad9"/></linearGradient>
+          <linearGradient id="g-rose" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#c0405e"/><stop offset="100%" stop-color="#dc6f85"/></linearGradient>
         </defs>
         <g font-family="-apple-system,sans-serif" font-size="11" style="fill:var(--ink-soft)">
           <line x1="56" y1="40" x2="620" y2="40" style="stroke:var(--grid)"/>
@@ -364,16 +364,16 @@ pie showData
         <g transform="translate(80 80)">
           <circle r="60" fill="none" style="stroke:color-mix(in oklch, var(--accent) 9%, transparent)" stroke-width="22"/>
           <circle class="arc" r="60" fill="none" stroke="#e65732" stroke-width="22" stroke-dasharray="215.4 376.99" stroke-dashoffset="0" transform="rotate(-90)"/>
-          <circle class="arc" r="60" fill="none" stroke="#a367c8" stroke-width="22" stroke-dasharray="107.7 376.99" stroke-dashoffset="-215.4" transform="rotate(-90)"/>
-          <circle class="arc" r="60" fill="none" stroke="#c45567" stroke-width="22" stroke-dasharray="53.85 376.99" stroke-dashoffset="-323.1" transform="rotate(-90)"/>
+          <circle class="arc" r="60" fill="none" stroke="#9a5fc4" stroke-width="22" stroke-dasharray="107.7 376.99" stroke-dashoffset="-215.4" transform="rotate(-90)"/>
+          <circle class="arc" r="60" fill="none" stroke="#c0405e" stroke-width="22" stroke-dasharray="53.85 376.99" stroke-dashoffset="-323.1" transform="rotate(-90)"/>
           <text text-anchor="middle" y="-1" font-family="Instrument Serif,serif" font-size="36" style="fill:var(--ink)">7</text>
           <text text-anchor="middle" y="16" font-size="11" style="fill:var(--ink-soft)">diagram kinds</text>
         </g>
       </svg>
       <ul class="donut-legend">
         <li><span class="sw" style="background:#e65732"></span>Relationships · 4</li>
-        <li><span class="sw" style="background:#a367c8"></span>Quantities · 2</li>
-        <li><span class="sw" style="background:#c45567"></span>Spatial · 1</li>
+        <li><span class="sw" style="background:#9a5fc4"></span>Quantities · 2</li>
+        <li><span class="sw" style="background:#c0405e"></span>Spatial · 1</li>
       </ul>
     </div>
     <figcaption>Arcs via stroke-dasharray; legend so no hover needed.</figcaption>

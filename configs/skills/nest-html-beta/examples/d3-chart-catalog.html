@@ -30,8 +30,8 @@
     --border:color-mix(in oklch, var(--accent) 22%, transparent);
     --hover:color-mix(in oklch, var(--accent) 8%, transparent);
     /* chart structure — derived from accent so grids/axes re-skin per theme */
-    --grid:color-mix(in oklch, var(--accent) 14%, transparent);
-    --axis:color-mix(in oklch, var(--accent) 26%, transparent);
+    --grid:color-mix(in oklch, var(--ink) 10%, transparent);
+    --axis:color-mix(in oklch, var(--ink) 22%, transparent);
     --serif:"Instrument Serif",Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:ui-monospace,Menlo,monospace;}
   html[data-theme="slate"]  { --bg-light:#f7f8fa; --bg-dark:#0d1220; --ink-light:#1a1f2e; --ink-dark:#e6ecff; --accent:#2563eb; --accent-2:#4f7cf5; --accent-3:#7e8fff; }
   html[data-theme="forest"] { --bg-light:#fafaf6; --bg-dark:#0d1612; --ink-light:#0f1c15; --ink-dark:#e8f3ec; --accent:#2d6a4f; --accent-2:#52b788; --accent-3:#74c69d; }
@@ -227,7 +227,7 @@
 <script>
 (function(){
   if (!window.d3) return;
-  var O='#e65732', P='#a367c8', R='#c45567', A='#e78d32';   // categorical series palette (intentionally fixed-brand; structure/ink track CSS tokens)
+  var O='#e65732', P='#9a5fc4', R='#c0405e', A='#e78d32';   // categorical series palette (intentionally fixed-brand; structure/ink track CSS tokens)
   var BR=[O,P,R,A];
   var tip = d3.select('body').append('div').attr('class','tip');
   function show(html,e){ tip.html(html).style('left',e.clientX+'px').style('top',e.clientY+'px').style('opacity',1); }

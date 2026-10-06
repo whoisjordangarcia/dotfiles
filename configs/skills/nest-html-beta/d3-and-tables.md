@@ -40,9 +40,9 @@ The grid mounts into `<div id="grid" class="ag-theme-quartz" style="height:360px
   --ag-data-color: var(--ink);
   --ag-odd-row-background-color: color-mix(in oklch, var(--ink) 3%, var(--bg));
   /* header + borders + rows */
-  --ag-header-background-color: color-mix(in oklch, var(--accent) 12%, var(--bg));
+  --ag-header-background-color: color-mix(in oklch, var(--ink) 4%, var(--bg));
   --ag-header-foreground-color: var(--ink);
-  --ag-border-color: var(--border);
+  --ag-border-color: color-mix(in oklch, var(--ink) 10%, transparent);
   --ag-row-border-color: color-mix(in oklch, var(--ink) 10%, transparent);
   --ag-row-hover-color: var(--hover);
   --ag-selected-row-background-color: color-mix(in oklch, var(--accent) 14%, transparent);
@@ -90,7 +90,7 @@ A bundled, runnable reference ships with this skill: **`examples/d3-chart-catalo
 
 **Wiring:**
 - CDN in `<head>`: `https://cdn.jsdelivr.net/npm/d3@7`. Assume readers are online; D3 interactivity is allowed when it earns its place. Keep the core takeaway in real HTML too for accessibility, print, and first-pass scanning.
-- **Brand theming (theme + light/dark/system aware):** the *categorical series* palette stays fixed-brand — orange `#e65732`, purple `#a367c8`, rose `#c45567`, amber `#e78d32` (these read on both light and dark, so the encoding is stable across modes). But every *structural* color — axes, grid, tick text, crosshair, tooltip, donut/gauge centerpiece, node fills, slice separators — must derive from the page tokens so it flips with mode and re-skins per theme. **The trick:** SVG presentation *attributes* (`.attr('fill', '#0a0a0a')`) are static strings that never re-resolve, but the SVG `fill`/`stroke` *CSS properties* accept `var()` and update live when `--ink`/`--bg` change. So set structural colors with `.style('fill','var(--ink)')` / `.style('stroke','var(--bg)')` — **not** `.attr(...)` — and they track the gear's theme/mode toggle with **no re-render**. Two leverage points the catalog uses:
+- **Brand theming (theme + light/dark/system aware):** the *categorical series* palette stays fixed-brand — orange `#e65732`, purple `#9a5fc4`, rose `#c0405e`, amber `#e78d32` (these read on both light and dark, so the encoding is stable across modes). But every *structural* color — axes, grid, tick text, crosshair, tooltip, donut/gauge centerpiece, node fills, slice separators — must derive from the page tokens so it flips with mode and re-skins per theme. **The trick:** SVG presentation *attributes* (`.attr('fill', '#0a0a0a')`) are static strings that never re-resolve, but the SVG `fill`/`stroke` *CSS properties* accept `var()` and update live when `--ink`/`--bg` change. So set structural colors with `.style('fill','var(--ink)')` / `.style('stroke','var(--bg)')` — **not** `.attr(...)` — and they track the gear's theme/mode toggle with **no re-render**. Two leverage points the catalog uses:
   - A stylesheet rule beats a presentation attribute, so `.axis text{fill:var(--ink-soft)} .axis line{stroke:var(--grid)} .axis .domain{stroke:var(--axis)}` re-themes every cartesian chart's axes/grid at once — the `gridStyle`/`axisStyle` helpers still set inline strokes, but the CSS overrides them. Define `--grid`/`--axis` from `--accent` via `color-mix`.
   - The tooltip inverts with mode: `.tip{background:var(--ink);color:var(--bg)}` (dark chip on light, light chip on dark). The catalog also defines shared `tip` + `show/hide` helpers — reuse them so every chart matches the page.
   Series colors are the *only* literal hex left in the chart JS; if you see `.attr('fill','#0a0a0a')` or `rgba(10,10,10,…)` in lifted code, convert it to a `.style(...,'var(--…)')` token ref or it will vanish in dark mode.
