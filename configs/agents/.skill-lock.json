@@ -10,15 +10,6 @@
       "installedAt": "2026-01-28T20:38:13.659Z",
       "updatedAt": "2026-04-10T18:12:24.075Z"
     },
-    "find-skills": {
-      "source": "vercel-labs/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/vercel-labs/skills.git",
-      "skillPath": "skills/find-skills/SKILL.md",
-      "skillFolderHash": "c2f31172b6f256272305a5e6e7228b258446899f",
-      "installedAt": "2026-01-28T20:38:16.676Z",
-      "updatedAt": "2026-01-28T20:38:16.676Z"
-    },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
@@ -45,15 +36,6 @@
       "skillFolderHash": "bf90d0a4b83ea054653350f9c67f6de235d3a368",
       "installedAt": "2026-02-26T21:33:53.358Z",
       "updatedAt": "2026-02-26T21:33:53.358Z"
-    },
-    "mobile-ios-design": {
-      "source": "wshobson/agents",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/wshobson/agents.git",
-      "skillPath": "plugins/ui-design/skills/mobile-ios-design/SKILL.md",
-      "skillFolderHash": "bb1282a12b6298c13e499b84eb61c9928f7f8362",
-      "installedAt": "2026-03-03T00:09:49.906Z",
-      "updatedAt": "2026-03-03T00:09:49.906Z"
     },
     "nest-db-query": {
       "source": "Nest-Genomics/ai-skills",
