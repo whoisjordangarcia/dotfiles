@@ -3,7 +3,9 @@
   // Work-mode greeting: NEST GENOMICS logo on the left, system info beside it.
   "logo": {
     "type": "file",
-    "source": "~/.config/fastfetch/logo-nest.txt",
+    // fastfetch expands env vars in logo sources but NOT `~` — a tilde path
+    // silently falls back to the auto-detected distro logo.
+    "source": "$HOME/.config/fastfetch/logo-nest.txt",
     "color": { "1": "red" },
     "padding": { "top": 0, "right": 2 }
   },
