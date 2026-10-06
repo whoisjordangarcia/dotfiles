@@ -534,7 +534,23 @@ echo "# Notes" | ./linear document create "Design notes" --issue NES-123 --conte
 ./linear document create "Kickoff" --project <project-uuid> --content "## Agenda\n- ..."
 ```
 
-> **Gotchas (learned the hard way):** the schema types every anchor as optional `String`, but the API enforces *exactly one* at validation time. `icon` is intentionally unsupported — Linear rejects emoji (it wants a named icon from its own set), so this CLI omits it.
+> **Gotchas (learned the hard way):** the schema types every anchor as optional `String`, but the API enforces *exactly one* at validation time. `document create` omits `icon` because Linear rejects emoji. It wants a named icon from its own set: `Page` and `Book` are accepted, while `Document` and `Notes` are rejected.
+
+## Ticket Runbooks (beta)
+
+**Runbooks are the standard way to attach verification evidence to a ticket.** A runbook is a markdown Linear **document** anchored to the issue, not an HTML file or a sidebar attachment. Write it locally with screenshots and videos referenced by path, then publish:
+
+```bash
+./linear issue runbook NES-123 ./runbook/NES-123.md
+```
+
+- **Title:** `Runbook: <title>`, where the title is the file's leading `# H1` (removed from the body so it doesn't render twice). `--title` overrides it, and the fallback is the issue title.
+- **Assets:** every local `![alt](path)` and `[text](path)` is uploaded as an asset without a sidebar attachment, and the link is rewritten. Paths are relative to the markdown file, or absolute. `http(s)`, `data:`, `mailto:` and `#anchor` links are left alone. All local files are checked before anything uploads.
+- **Upsert:** an issue has one runbook. Re-running updates the existing `Runbook: …` document, including its title, instead of creating a second one.
+- **Icon:** blue `Page` by default (`#4EA7FC`); `--icon` and `--color` override it.
+- **Video:** convert `.webm` to H.264 `.mp4` first (`ffmpeg -i in.webm -c:v libx264 -pix_fmt yuv420p -movflags +faststart out.mp4`) and link it as `[Recording](./session.mp4)`.
+
+Suggested shape: Status table → What broke → Fix → Verified locally/STG (numbered steps, each with a screenshot and ✅/❌) → Runbook to verify on TST → Notes / open questions. This is separate from the AC-validation *comment* (`issue upload … --comment-file report.md`) that nest-factory posts. The comment is the verdict; the runbook is the reusable how-to-verify.
 
 ## Important Notes
 

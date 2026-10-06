@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { LinearClient } from "@linear/sdk"
 import { fileURLToPath } from "url"
-import { dirname, join, basename, extname } from "path"
+import { dirname, join, basename, extname, resolve } from "path"
 import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from "fs"
 import fetch from "node-fetch"
 // Get the directory of the linear executable (parent of scripts/)
@@ -244,6 +244,7 @@ Actions:
   relate <id> <related-id>        Create a relation between two issues
   images <id-or-key>              List or download inline images from description
   upload <id-or-key> <file>       Upload a file (attachment + optional comment)
+  runbook <id-or-key> <file.md>   Publish a markdown runbook as a Linear document on the issue
 
 Global Options:
   --json       Output raw JSON
@@ -413,6 +414,38 @@ Examples:
   linear-cli issue relate NES-123 NES-456 --type blocks
   linear-cli issue relate NES-123 NES-456 --type related`)
 }
+function showIssueRunbookHelp() {
+  console.log(`Usage: linear-cli issue runbook <id-or-key> <file.md> [options]
+
+Publish a markdown runbook as a Linear document attached to the issue.
+
+Local files referenced as ![alt](path) or [text](path) — paths relative to the
+markdown file — are uploaded as assets (no sidebar attachment) and the links
+rewritten. http(s), data:, mailto: and #anchor links are left alone. Every
+local file is checked before anything is uploaded.
+
+Title: "Runbook: " + (--title, else the file's leading "# H1", which is
+removed from the body, else the issue title). An issue has one runbook:
+re-running updates the issue's existing "Runbook: " document (title
+included) instead of creating a second one.
+
+Arguments:
+  id-or-key          Issue identifier (e.g., NES-123)
+  file.md            Markdown runbook
+
+Options:
+  --title <text>     Document title
+  --icon <name>      Linear icon name (default: Page). Emoji are rejected
+  --color <hex>      Icon colour (default: #4EA7FC, Linear blue)
+  --json             Output JSON: { id, title, url, action, issue, assets }
+  -h, --help         Show help
+
+Example:
+  linear-cli issue runbook NES-123 ./runbook/NES-123.md
+    where NES-123.md contains e.g. ![Stamped PDF](./shots/stamped.png)
+    and [Recording](./session.mp4)`)
+}
+
 function showIssueUploadHelp() {
   console.log(`Usage: linear-cli issue upload <id-or-key> <file> [options]
 
@@ -1661,6 +1694,47 @@ function detectContentType(filename) {
   return map[ext] || "application/octet-stream"
 }
 
+// Returns the asset URL. Exits the process if Linear refuses the upload.
+async function uploadAsset(graphQLClient, filePath, contentType) {
+  const filename = basename(filePath)
+  const size = statSync(filePath).size
+
+  const uploadResp = await graphQLClient.rawRequest(
+    `mutation FileUpload($contentType: String!, $filename: String!, $size: Int!) {
+      fileUpload(contentType: $contentType, filename: $filename, size: $size) {
+        success
+        uploadFile {
+          uploadUrl
+          assetUrl
+          headers { key value }
+        }
+      }
+    }`,
+    { contentType, filename, size }
+  )
+  const uploadFile = uploadResp.data?.fileUpload?.uploadFile
+  if (!uploadResp.data?.fileUpload?.success || !uploadFile) {
+    console.error(`Error: Linear refused fileUpload for ${filename}`)
+    process.exit(1)
+  }
+
+  const headers = { "Content-Type": contentType, "Content-Length": String(size) }
+  for (const h of uploadFile.headers || []) headers[h.key] = h.value
+  const putResp = await fetch(uploadFile.uploadUrl, {
+    method: "PUT",
+    headers,
+    body: readFileSync(filePath),
+  })
+  if (!putResp.ok) {
+    const text = await putResp.text().catch(() => "")
+    console.error(
+      `Error: Upload PUT failed (${putResp.status} ${putResp.statusText})${text ? `\n${text.slice(0, 500)}` : ""}`
+    )
+    process.exit(1)
+  }
+  return uploadFile.assetUrl
+}
+
 async function uploadFileToIssue(identifier, filePath, flags) {
   const client = getLinearClient()
   const graphQLClient = client.client
@@ -1686,45 +1760,9 @@ async function uploadFileToIssue(identifier, filePath, flags) {
   const filename = basename(filePath)
   const contentType = flags["content-type"] || detectContentType(filename)
   const size = stats.size
+  const uploadFile = { assetUrl: await uploadAsset(graphQLClient, filePath, contentType) }
 
-  // Step 1: ask Linear for a signed upload URL.
-  const uploadResp = await graphQLClient.rawRequest(
-    `mutation FileUpload($contentType: String!, $filename: String!, $size: Int!) {
-      fileUpload(contentType: $contentType, filename: $filename, size: $size) {
-        success
-        uploadFile {
-          uploadUrl
-          assetUrl
-          headers { key value }
-        }
-      }
-    }`,
-    { contentType, filename, size }
-  )
-  const uploadFile = uploadResp.data?.fileUpload?.uploadFile
-  if (!uploadResp.data?.fileUpload?.success || !uploadFile) {
-    console.error(`Error: Linear refused fileUpload for ${filename}`)
-    process.exit(1)
-  }
-
-  // Step 2: PUT the bytes to the signed URL with the headers Linear specified.
-  const headers = { "Content-Type": contentType, "Content-Length": String(size) }
-  for (const h of uploadFile.headers || []) headers[h.key] = h.value
-  const fileBuffer = readFileSync(filePath)
-  const putResp = await fetch(uploadFile.uploadUrl, {
-    method: "PUT",
-    headers,
-    body: fileBuffer,
-  })
-  if (!putResp.ok) {
-    const text = await putResp.text().catch(() => "")
-    console.error(
-      `Error: Upload PUT failed (${putResp.status} ${putResp.statusText})${text ? `\n${text.slice(0, 500)}` : ""}`
-    )
-    process.exit(1)
-  }
-
-  // Step 3: optionally register a sidebar attachment record.
+  // Register a sidebar attachment record unless told not to.
   let attachmentId = null
   if (!flags["no-attachment"]) {
     const title = flags.title || filename
@@ -1791,6 +1829,101 @@ async function uploadFileToIssue(identifier, filePath, flags) {
   console.log(`  Asset URL: ${uploadFile.assetUrl}`)
   if (commentUrl) console.log(`  Comment:   ${commentUrl}`)
   if (attachmentId) console.log(`  Attachment ID: ${attachmentId}`)
+}
+
+// ![alt](target) and [text](target), with an optional "title".
+const MD_LINK_RE = /(!?\[[^\]]*\])\(([^)\s]+)(\s+"[^"]*")?\)/g
+const isLocalTarget = (target) => !/^(https?:|data:|mailto:|#)/i.test(target)
+const RUNBOOK_PREFIX = "Runbook: "
+
+async function publishRunbook(identifier, mdPath, flags) {
+  const client = getLinearClient()
+  const graphQLClient = client.client
+
+  if (!existsSync(mdPath)) {
+    console.error(`Error: File not found: ${mdPath}`)
+    process.exit(1)
+  }
+  let issue
+  try {
+    issue = await resolveIssueByIdentifier(client, identifier)
+  } catch (error) {
+    console.error(`Error: ${error.message}`)
+    process.exit(1)
+  }
+
+  let content = readFileSync(mdPath, "utf8")
+  let title = flags.title
+  if (!title) {
+    // The document has its own title field; a leading H1 would render twice.
+    const h1 = content.match(/^#\s+(.+)\n+/)
+    if (h1) {
+      title = h1[1].trim()
+      content = content.slice(h1[0].length)
+    } else {
+      title = issue.title
+    }
+  }
+  if (!title.startsWith(RUNBOOK_PREFIX)) title = RUNBOOK_PREFIX + title
+
+  // Validate every local file before uploading any, so a typo doesn't leave
+  // orphaned assets behind.
+  const baseDir = dirname(resolve(mdPath))
+  const targets = [
+    ...new Set([...content.matchAll(MD_LINK_RE)].map((m) => m[2]).filter(isLocalTarget)),
+  ]
+  const missing = targets.filter((t) => !existsSync(resolve(baseDir, t)))
+  if (missing.length) {
+    console.error(`Error: referenced files not found (relative to ${baseDir}):\n  ${missing.join("\n  ")}`)
+    process.exit(1)
+  }
+  const assetUrls = {}
+  for (const target of targets) {
+    assetUrls[target] = await uploadAsset(graphQLClient, resolve(baseDir, target), detectContentType(target))
+  }
+  content = content.replace(MD_LINK_RE, (whole, label, target, linkTitle = "") =>
+    isLocalTarget(target) ? `${label}(${assetUrls[target]}${linkTitle})` : whole
+  )
+
+  const style = { icon: flags.icon || "Page", color: flags.color || "#4EA7FC" }
+  const docs = await graphQLClient.rawRequest(
+    `query issueDocs($id: String!) { issue(id: $id) { documents { nodes { id title } } } }`,
+    { id: issue.id }
+  )
+  // One runbook per issue: a re-run replaces it even if the title changed.
+  const existing = docs.data.issue.documents.nodes.find((d) => d.title?.startsWith(RUNBOOK_PREFIX))
+
+  let doc
+  if (existing) {
+    const resp = await graphQLClient.rawRequest(
+      `mutation updateDoc($id: String!, $input: DocumentUpdateInput!) {
+        documentUpdate(id: $id, input: $input) { success document { id title url } }
+      }`,
+      { id: existing.id, input: { title, content, ...style } }
+    )
+    doc = resp.data.documentUpdate?.success && resp.data.documentUpdate.document
+  } else {
+    const resp = await graphQLClient.rawRequest(
+      `mutation createDoc($input: DocumentCreateInput!) {
+        documentCreate(input: $input) { success document { id title url } }
+      }`,
+      { input: { title, content, issueId: issue.id, ...style } }
+    )
+    doc = resp.data.documentCreate?.success && resp.data.documentCreate.document
+  }
+  if (!doc) {
+    console.error(`Error: Failed to ${existing ? "update" : "create"} document`)
+    process.exit(1)
+  }
+
+  const action = existing ? "updated" : "created"
+  if (flags.json) {
+    console.log(JSON.stringify({ ...doc, action, issue: issue.identifier, assets: assetUrls }, null, 2))
+    return
+  }
+  console.log(`✓ Runbook ${action} on #${issue.identifier}: ${doc.title}`)
+  console.log(`  URL: ${doc.url}`)
+  console.log(`  Assets uploaded: ${targets.length}`)
 }
 
 async function relateIssues(identifier, relatedIdentifier, flags) {
@@ -2397,6 +2530,9 @@ async function main() {
             case "upload":
               showIssueUploadHelp()
               break
+            case "runbook":
+              showIssueRunbookHelp()
+              break
             default:
               showIssueHelp()
           }
@@ -2662,6 +2798,16 @@ Run 'linear-cli issue upload --help' for usage`)
               process.exit(1)
             }
             await uploadFileToIssue(args[0], args[1], flags)
+            break
+
+          case "runbook":
+            if (args.length < 2) {
+              console.error(`Error: Missing required arguments
+
+Run 'linear-cli issue runbook --help' for usage`)
+              process.exit(1)
+            }
+            await publishRunbook(args[0], args[1], flags)
             break
 
           default:
