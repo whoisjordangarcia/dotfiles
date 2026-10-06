@@ -485,3 +485,42 @@ rmpc() {
   command rmpc "$@"
 }
 alias lamusique="rmpc"  # la musique -> the rmpc() wrapper above (mounts NAS, starts mpd)
+
+# sshls — the ssh aliases on this machine and what each one is.
+#
+# Reads ~/.ssh/hosts.local (gitignored) rather than carrying a table here: this
+# repo is public and bans real hostnames. Description = the comment line above
+# each Host; addresses are stripped so a paste of the output stays shareable.
+sshls() {
+  local f=${1:-$HOME/.ssh/hosts.local}
+  [[ -r $f ]] || { print -u2 "sshls: cannot read $f"; return 1 }
+  awk '
+    # first line of a comment run wins: later lines are continuations, and a
+    # blank line means the run belongs to the file, not to the Host below it
+    /^[[:space:]]*#/ { if (desc == "") desc = $0; next }
+    /^[[:space:]]*$/ { desc = ""; next }
+    tolower($1) == "host" {
+      names = ""
+      for (i = 2; i <= NF; i++)
+        if ($i !~ /[*?]/) names = names (names ? ", " : "") $i
+      if (names != "") {
+        first = $2
+        # leading "# ── " and a "name — " prefix are punctuation runs, matched as
+        # non-alphanumerics so the box-drawing and dash bytes need no encoding
+        sub(/^[^A-Za-z0-9]+/, "", desc)
+        if (index(desc, first) == 1) {
+          desc = substr(desc, length(first) + 1)
+          sub(/^[^A-Za-z0-9]+/, "", desc)
+        }
+        gsub(/\([^)]*\)/, "", desc)
+        gsub(/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(:[0-9]+)?/, "", desc)
+        gsub(/[[:space:]]+/, " ", desc)
+        gsub(/ \./, ".", desc)
+        sub(/[[:space:]]+$/, "", desc)
+        if (desc == "") print names; else printf "%-34s %s\n", names, desc
+      }
+      desc = ""; next
+    }
+    { next }
+  ' "$f"
+}
