@@ -1,6 +1,6 @@
 ---
 name: diagnose-crash
-description: Read crash logs (coredumps + journal) on a Linux box — defaults to the Arch desktop `archbtw` (192.168.1.220). Use when the user says an app crashed, quit, closed unexpectedly, segfaulted, or asks "why did X die", "what crashed", "show crash logs", "any crashes", "diagnose crash", "check coredumps". Read-only.
+description: Read crash logs (coredumps + journal) on a Linux box the user names (e.g. atelier). The Arch desktop `archbtw` is retired — no default host; ask which box. Use when the user says an app crashed, quit, closed unexpectedly, segfaulted, or asks "why did X die", "what crashed", "show crash logs", "any crashes", "diagnose crash", "check coredumps". Read-only.
 allowed-tools: Bash(/usr/bin/ssh:*), Bash(coredumpctl:*), Bash(journalctl:*)
 ---
 
@@ -10,20 +10,10 @@ Read-only. Never delete dumps, never change `coredump.conf`, never restart units
 
 ## Target
 
-Default host is the Arch desktop: `/usr/bin/ssh jordan@192.168.1.220 '<cmd>'`.
-Use `/usr/bin/ssh`, not Homebrew ssh — macOS LAN TCC is per-binary and the
-Homebrew one gets `EHOSTUNREACH`.
-
-If ssh times out the box is asleep. Wake it, then poll for up to 2 min:
-
-```bash
-/usr/bin/python3 -c "
-import socket
-p=b'\xff'*6+bytes.fromhex('d45d64d5e7f4')*16
-s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-s.setsockopt(socket.SOL_SOCKET,socket.SO_BROADCAST,1)
-s.sendto(p,('192.168.1.255',9))"
-```
+**`archbtw` (192.168.1.220) is retired (2026-10-07)** — don't ssh to it or try
+to wake it. There is no default host: ask which Linux box, then
+`/usr/bin/ssh <host> '<cmd>'`. Use `/usr/bin/ssh`, not Homebrew ssh — macOS LAN
+TCC is per-binary and the Homebrew one gets `EHOSTUNREACH`.
 
 Running on a Linux box directly? Drop the ssh wrapper, same commands.
 

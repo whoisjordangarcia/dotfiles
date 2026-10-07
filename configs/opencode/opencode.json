@@ -1,31 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "theme": "opencode",
-  "autoupdate": true,
-  "provider": {
-    "archbtw": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "archbtw (local 4090)",
-      "options": {
-        "baseURL": "http://192.168.1.220:8080/v1",
-        "apiKey": "sk-noauth"
-      },
-      "models": {
-        "qwen3.8-27b": {
-          "name": "Qwen3.8-27B (local)",
-          "limit": {
-            "context": 262144,
-            "output": 32768
-          }
-        },
-        "qwen3.8-27b-uncensored": {
-          "name": "Qwen3.8-27B Uncensored (local)",
-          "limit": {
-            "context": 262144,
-            "output": 32768
-          }
-        }
-      }
-    }
-  }
+  "autoupdate": true
 }
