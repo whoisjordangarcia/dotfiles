@@ -1,0 +1,1 @@
+{"name": "statusline-mod", "version": "0.5.0", "description": "Collects git, PR/CI and tok/s for the statusLine command (cli/statusline.ts) and draws running dev servers above the prompt", "types": "./types/index.d.ts"}

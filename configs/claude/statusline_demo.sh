@@ -4,7 +4,7 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-STATUSLINE="$SCRIPT_DIR/statusline.sh"
+STATUSLINE="$SCRIPT_DIR/plugins/statusline-mod/cli/statusline.sh"
 DEMO_DIR=$(mktemp -d "/tmp/statusline-demo-XXXXXX")
 
 # Hermetic git: ignore global/system config so scratch-repo commits don't
@@ -166,13 +166,13 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.10,"
 # ─── 9. Sonnet model + high context ─────────────────────────────
 clear_caches
 header "9. Sonnet model + high context (92%) + warning"
-expect "s3.7 ⋮ \$5.00 ⋮ ... ⋮ ▰▰▰▰▰▰▰▰▰▱ 92% (185k) ⚠️"
+expect "s3.7 ⋮ \$5.00 ⋮ ... ⋮ ━━━━━━━━━━ 92% (185k) ⚠️"
 run '{"model":{"display_name":"Claude 3.7 Sonnet"},"cost":{"total_cost_usd":5.00,"total_duration_ms":1800000},"session_id":"demo-9","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":92,"current_usage":{"input_tokens":170000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":5000}}}'
 
 # ─── 10. Medium context (yellow zone) ────────────────────────────
 clear_caches
 header "10. Medium context (62%) — yellow bar"
-expect "▰▰▰▰▰▰▱▱▱▱ 62% (125k)"
+expect "━━━━━━━━━━ 62% (125k)"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":2.00,"total_duration_ms":600000},"session_id":"demo-10","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":62,"current_usage":{"input_tokens":110000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":5000}}}'
 
 # ─── 11. Node apps listening on ports (line 3) ───────────────────
@@ -191,17 +191,15 @@ expect "L2: ⎇ #4567 ✓ jordan/preview-pr"
 expect "L3: client-api:3000 provider-portal:4200  (clickable: localhost / dev.portal.nestgenomics.com)"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.95,"total_duration_ms":360000},"session_id":"demo-11","cwd":"'"$WT1"'","context_window":{"context_window_size":200000,"used_percentage":28,"current_usage":{"input_tokens":40000,"cache_creation_input_tokens":3000,"cache_read_input_tokens":12000}}}'
 
-# ─── 14. Dirty tree with sync status ────────────────────────────
+# ─── 14. Sync status ────────────────────────────────────────────
 clear_caches
 mkdir -p /tmp/claude-statusline-git-cache
-dirty_key=$(printf '%s' "$REPO1" | md5 -q 2>/dev/null || printf '%s' "$REPO1" | md5sum | cut -d' ' -f1)
-# Fake dirty status: 2 staged, 3 modified, 1 new
-printf '\033[0;32m● 2 staged\033[0m \033[0;39m◦ 3 modified\033[0m \033[0;2;39m+1 new\033[0m' >"/tmp/claude-statusline-git-cache/${dirty_key}_dirty"
+sync_key=$(printf '%s' "$REPO1" | md5 -q 2>/dev/null || printf '%s' "$REPO1" | md5sum | cut -d' ' -f1)
 # Fake sync: 2 ahead, 1 behind
-printf '\033[0;39m↑2\033[0m \033[0;39m↓1\033[0m' >"/tmp/claude-statusline-git-cache/${dirty_key}_sync"
+printf '\033[0;39m↑2\033[0m \033[0;39m↓1\033[0m' >"/tmp/claude-statusline-git-cache/${sync_key}_sync"
 
-header "14. Dirty tree with sync status"
-expect "main ⋮ ↑2 ↓1 ⋮ ● 2 staged ◦ 3 modified +1 new"
+header "14. Sync status"
+expect "main ⋮ ↑2 ↓1"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.45,"total_duration_ms":180000},"session_id":"demo-14","cwd":"'"$REPO1"'","context_window":{"context_window_size":200000,"used_percentage":21,"current_usage":{"input_tokens":30000,"cache_creation_input_tokens":2000,"cache_read_input_tokens":10000}}}'
 
 # ─── 15. CI failure on open PR ───────────────────────────────────
@@ -245,13 +243,13 @@ run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.50,"
 # ─── 20. Rate limits — high usage (yellow/red) ─────────────────
 clear_caches
 header "20. Rate limits — 5h critical, 7d below threshold"
-expect "S ▰▰▰▰▰▰▰▰▰▱ 85% (red); W hidden (62% < 80%)"
+expect "S ━━━━━━━━━━ 85% (red); W hidden (62% < 80%)"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":8.00,"total_duration_ms":3600000},"session_id":"demo-20","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3},"seven_day":{"used_percentage":62.1}}}'
 
 # ─── 21. Rate limits — critical (both red) ─────────────────────
 clear_caches
 header "21. Rate limits — critical (both red)"
-expect "S ▰▰▰▰▰▰▰▰▰▰ 95% ⋮ W ▰▰▰▰▰▰▰▰▰▱ 88%"
+expect "S ━━━━━━━━━━ 95% ⋮ W ━━━━━━━━━━ 88%"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":12.00,"total_duration_ms":7200000},"session_id":"demo-21","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":78},"rate_limits":{"five_hour":{"used_percentage":95.0},"seven_day":{"used_percentage":88.0}}}'
 
 # ─── 22. Session name ──────────────────────────────────────────
@@ -277,7 +275,7 @@ git worktree add -q "$REPO5/.claude/worktrees/jordan-nes-4331-bug-yoda-deep-link
 WT3="$REPO5/.claude/worktrees/jordan-nes-4331-bug-yoda-deep-links-ignore-url-account-and-redirect-to-first"
 
 header "19. Long worktree name (branch == dir → ⎇ deduped, branch truncated at 45 chars)"
-expect "L1: \$0.00 ⋮ 0s ⋮ ▱▱▱▱▱▱▱▱▱▱ 0%"
+expect "L1: \$0.00 ⋮ 0s ⋮ ━━━━━━━━━━ 0%"
 expect "L2: nest3 ⋮ jordan-nes-4331-bug-yoda-deep-links-ignore-ur… ⋮ just now"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},"session_id":"demo-19","cwd":"'"$WT3"'","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
 
@@ -293,7 +291,7 @@ LONG_NAME_DEMO="jordan-nes-3984-workflows-add-genetic-testing-decision-to-patien
 LONG_DIR_DEMO="$DEMO_DIR/$LONG_NAME_DEMO"
 mkdir -p "$LONG_DIR_DEMO"
 header "25. Long non-worktree cwd, no git — the path renders nowhere"
-expect "L1: \$0.00 ⋮ ▱▱▱▱▱▱▱▱▱▱ 0%   (no L2)"
+expect "L1: \$0.00 ⋮ ━━━━━━━━━━ 0%   (no L2)"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.00},"session_id":"demo-25","cwd":"'"$LONG_DIR_DEMO"'","context_window":{"context_window_size":200000,"current_usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
 
 # ─── 26. Worktree path (git detection failed) — ⎇ icon ──────────
@@ -326,7 +324,7 @@ run '{"model":{"display_name":"Claude Opus 4.8 (1M context)"},"cost":{"total_cos
 # ─── 30. Rate limit reset countdown ──────────────────────────────
 clear_caches
 header "30. Rate limit reset countdown (5h critical, resets in ~1h15m)"
-expect "S ▰▰▰▰▰▰▰▰▰▱ 85% ↻1h15m; W hidden below threshold"
+expect "S ━━━━━━━━━━ 85% ↻1h15m; W hidden below threshold"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":6.00,"total_duration_ms":3600000},"session_id":"demo-30","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":45},"rate_limits":{"five_hour":{"used_percentage":85.3,"resets_at":'$(($(date +%s) + 4530))'},"seven_day":{"used_percentage":50}}}'
 
 # ─── 31. Open PR — changes requested + CI failure ────────────────

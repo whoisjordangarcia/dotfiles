@@ -58,17 +58,42 @@ Only the two that aren't obvious from reading a neighbouring script:
 
 ### Claude Code Statusline
 
-The statusline lives at `configs/claude/statusline.sh` and has a regression test + visual demo:
+The statusline is the **`statusline-mod` plugin** (`configs/claude/plugins/statusline-mod/`, loaded
+from the working copy via `CLAUDE_CODE_PLUGIN_DIRS` in both settings files) and its CLI,
+`cli/statusline.sh` → `cli/statusline.ts`, linked as `~/.claude/statusline.sh` and run as the
+`statusLine` command. The split is by what each side can reach:
 
-- `configs/claude/statusline_test.sh` — assertion-based tests (`✓/✗` output)
-- `configs/claude/statusline_demo.sh` — side-by-side "expect vs actual" renderings for every scenario
+- **Only the `statusLine` command can print into that row** (between the prompt and the auto-mode row —
+  no plugin render component sits there), and only it receives the payload and `COLUMNS`. So it
+  renders every run itself, from its own payload — never from a copy handed to the mod, which put every
+  figure a run behind.
+- **Only the mod sees the turn** (working / waiting on you / tok/s) and can collect git, gh and lsof in
+  the background, each on its own lifetime (git 3s; base 10m, PR 2m, CI 1m, dev servers 30s). It writes
+  `/tmp/statusline-mod/<session id>.state`, which the CLI reads instead of running any of them. It also
+  draws running dev servers above the prompt (an `AbovePrompt` band), so the line leaves them out.
+  Without the state file (mod not loaded) the CLI collects behind statusline.sh's caches.
+- **`refreshInterval: 1`** is what animates the tok/s row: Claude Code re-runs the statusLine on events
+  only, never while a reply streams. It is affordable only because a run is ~45ms — under **bun**
+  (~6ms start against node's ~90ms), which `cli/statusline.sh` tries first. With node at ~150ms and
+  sessions without the mod running git each second, the same setting once drove the load average to 65.
+- **The interpreter is chosen by path, not PATH**: a session's PATH can lead with an nvm node too old to
+  run `.ts` (a project's `.nvmrc`), which printed nothing. If no runtime works, a `jq` line of the basics.
+- **Volatile figures are padded** (cost, context %, token count) and tok/s sits on its own row, so the
+  line holds still as numbers change.
 
-**When modifying `configs/claude/statusline.sh`, always run both:**
+**When modifying the mod or its CLI, run all three:**
 
 ```bash
-bash configs/claude/statusline_test.sh   # must end with "All N tests passed"
-bash configs/claude/statusline_demo.sh   # visually confirm each variation still matches the expect line
+bash configs/claude/statusline_test.sh                 # runs against the mod's CLI; must end "All N tests passed"
+bash configs/claude/statusline_demo.sh                 # visually confirm each variation matches its expect line
+claude plugin test configs/claude/plugins/statusline-mod   # the mod: the .state it writes, the dev-server band
 ```
+
+Known failure: "worktree line 2 leads with the MAIN repo name" fails on macOS only — `mktemp -t` there
+makes the fixture repo name 31 chars and the line truncates repo names at 30.
+
+The meter draws both halves as `━` and tells them apart only by colour, so the suite's `strip_ansi`
+maps filled → `▰` and dim → `▱` before stripping; meter assertions are written in `▰▱`.
 
 If you add a new field, branch/PR/worktree case, or line-3 indicator, add a corresponding test in `statusline_test.sh` and a scenario in `statusline_demo.sh` before considering the change complete. The demo doubles as living documentation for every supported rendering.
 
@@ -264,7 +289,7 @@ registers as `custom:catppuccin-mocha`; `name` is only the label shown in
 > (`0.2126r + 0.7152g + 0.0722b > 0.5` → light); then `COLORFGBG`'s last field
 > (`≤6` or `8` → dark); then `dark`. The OSC 11 path is why this works in Ghostty
 > and tmux, where `COLORFGBG` is unset — do not "fix" auto by exporting
-> `COLORFGBG`, and note that `statusline.sh` deliberately does no such detection
+> `COLORFGBG`, and note that the statusline (`statusline-mod`) deliberately does no such detection
 > at all (it emits only theme-owned ANSI slots).
 >
 > Auto picks between the **built-in** `dark`/`light` — never the `*-ansi`

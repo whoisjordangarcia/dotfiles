@@ -4,7 +4,8 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-STATUSLINE="$SCRIPT_DIR/statusline.sh"
+# The statusline is the statusline-mod plugin; its CLI runs collect + render on a payload, as statusLine did.
+STATUSLINE="${STATUSLINE:-$SCRIPT_DIR/plugins/statusline-mod/cli/statusline.sh}"
 
 # Pin a wide pane by default so content assertions are independent of the
 # terminal the suite happens to run in. Line-1 shedding / fit_line only kick in
@@ -35,8 +36,10 @@ errors=""
 unset SSH_CONNECTION TMUX
 
 # ─── Helpers ────────────────────────────────────────────────────────
-# Strips SGR color codes AND OSC 8 hyperlink wrappers (\e]8;;url\a … \e]8;;\a)
-strip_ansi() { sed $'s/\033\[[0-9;]*m//g; s/\033]8;;[^\007]*\007//g'; }
+# Strips SGR color codes AND OSC 8 hyperlink wrappers (\e]8;;url\a … \e]8;;\a). Meters draw both
+# halves as ━ and differ only in colour (the empty half is dim), so filled ━ becomes ▰ and empty ▱ first,
+# keeping slot counts assertable in plain text.
+strip_ansi() { perl -CS -Mutf8 -pe 's/\e\[0;2;39m(━+)/"\e[0;2;39m" . ("▱" x length($1))/ge; s/━/▰/g; s/\e\[[0-9;]*m//g; s/\e\]8;;[^\a]*\a//g'; }
 
 run_statusline() {
   # -u CLAUDE_EFFORT: the suite itself may run inside a Claude Code session
@@ -193,7 +196,7 @@ printf "\n\033[0;35m━━━ Context Bar ━━━━━━━━━━━━�
 
 out=$(run_statusline_plain "$INPUT_MINIMAL")
 assert_contains "shows context percentage" "$out" "0%"
-assert_contains "shows context meter" "$out" "▱▱▱▱▱▱▱▱▱▱ 0%"
+assert_contains "shows context meter" "$out" "▱▱▱▱▱▱▱▱▱▱   0%"
 
 out=$(run_statusline_plain "$INPUT_HIGH_CTX")
 assert_contains "shows high context %" "$out" "92%"
@@ -206,7 +209,7 @@ assert_not_contains "no warning emoji at 50-80%" "$out" "⚠️"
 # 10-slot meter rounds to the nearest slot (25% → 3 filled)
 INPUT_QTR_CTX='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.50,"total_duration_ms":60000},"session_id":"test-qtr","cwd":"/tmp","context_window":{"context_window_size":200000,"used_percentage":25}}'
 out=$(run_statusline_plain "$INPUT_QTR_CTX")
-assert_contains "meter rounds 25% to 3 slots" "$out" " ⋮ ▰▰▰▱▱▱▱▱▱▱ 25%"
+assert_contains "meter rounds 25% to 3 slots" "$out" " ⋮ ▰▰▰▱▱▱▱▱▱▱  25%"
 
 # Absolute token count next to the % (from current_usage totals)
 out=$(run_statusline_plain "$INPUT_FULL")
@@ -610,11 +613,11 @@ printf "\n\033[0;35m━━━ Node Apps (line 3) ━━━━━━━━━━�
 
 # Cache stores plain "name:port" entries; the statusline wraps each in an
 # OSC 8 link at display time — Nest frontend apps map to their https dev
-# hostnames, everything else falls back to http://localhost:<port>.
+# hostnames, client-api to its graphql endpoint, anything else to http://localhost:<port>.
 NODE_TEST_CWD=$(mktemp -d "/tmp/statusline-test-node-XXXXXX")
 mkdir -p /tmp/claude-statusline-node-cache
 node_test_key=$(printf '%s' "$NODE_TEST_CWD" | md5 -q 2>/dev/null || printf '%s' "$NODE_TEST_CWD" | md5sum | cut -d' ' -f1)
-printf 'client-api:3000 patient-navigator:3602 provider-portal:3601 yoda:3603' >"/tmp/claude-statusline-node-cache/${node_test_key}_node"
+printf 'client-api:3000 patient-navigator:3602 provider-portal:3601 yoda:3603 storybook:6006' >"/tmp/claude-statusline-node-cache/${node_test_key}_node"
 INPUT_NODE='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0.10,"total_duration_ms":30000},"session_id":"test-node","cwd":"'"$NODE_TEST_CWD"'","context_window":{"context_window_size":200000,"used_percentage":3,"current_usage":{"input_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}'
 
 out_raw=$(run_statusline "$INPUT_NODE")
@@ -623,13 +626,15 @@ assert_contains "shows app:port entries" "$out" 'client-api:3000 patient-navigat
 assert_contains "yoda links to its https dev host" "$out_raw" ']8;;https://dev.yoda.nestgenomics.com:3603'
 assert_contains "patient-navigator links to dev.app host" "$out_raw" ']8;;https://dev.app.nestgenomics.com:3602'
 assert_contains "provider-portal links to dev.portal host" "$out_raw" ']8;;https://dev.portal.nestgenomics.com:3601'
-assert_contains "unmapped app falls back to localhost link" "$out_raw" ']8;;http://localhost:3000'
+assert_contains "client-api links to its graphql endpoint" "$out_raw" ']8;;https://dev.api.nestgenomics.com:3000/graphql'
+assert_contains "unmapped app falls back to localhost link" "$out_raw" ']8;;http://localhost:6006'
 assert_not_contains "link URL adds no visible text" "$out" 'nestgenomics.com'
 
-# Unsupported terminal (no TMUX, unrecognized TERM_PROGRAM): OSC 8 is
+# Unsupported terminal (no TMUX, nothing identifying a link-capable one): OSC 8 is
 # suppressed entirely — mobile terminals like Terminus render the raw
 # escape bytes as visible text, so plain entries must be emitted instead.
-out_raw=$(echo "$INPUT_NODE" | env -u CLAUDE_EFFORT -u TMUX -u TERM_PROGRAM bash "$STATUSLINE" 2>/dev/null)
+# TERM is pinned too: the suite's own terminal (xterm-ghostty) would count.
+out_raw=$(echo "$INPUT_NODE" | env -u CLAUDE_EFFORT -u TMUX -u TERM_PROGRAM -u VTE_VERSION -u WT_SESSION -u KONSOLE_VERSION TERM=xterm-256color bash "$STATUSLINE" 2>/dev/null)
 assert_not_contains "unsupported terminal gets no OSC 8 sequences" "$out_raw" ']8;;'
 assert_contains "unsupported terminal still shows app:port text" "$(printf '%s' "$out_raw" | strip_ansi)" 'yoda:3603'
 
@@ -666,18 +671,18 @@ run_cols() { echo "$1" | env -u CLAUDE_EFFORT STATUSLINE_COLS="$2" bash "$STATUS
 
 # Moderate narrowing: line 1 sheds the cache badge (⚡) first but keeps the
 # token count + essentials, and no longer overflows.
-out=$(run_cols "$INPUT_FULL" 36 | strip_ansi)
+out=$(run_cols "$INPUT_FULL" 38 | strip_ansi)
 line1=$(echo "$out" | head -1)
-assert_within_cols "line 1 fits a 36-col pane" "$line1" 36
+assert_within_cols "line 1 fits a 38-col pane" "$line1" 38
 assert_not_contains "sheds cache badge first when narrow" "$line1" "⚡"
-assert_contains "keeps token count at 36 cols" "$line1" "(140k)"
+assert_contains "keeps token count at 38 cols" "$line1" "(140k)"
 assert_contains "keeps cost when narrow" "$line1" '$1.23'
 assert_contains "keeps context pct when narrow" "$line1" "70%"
 
 # Narrower: also sheds the token count, still within the pane.
-out=$(run_cols "$INPUT_FULL" 30 | strip_ansi)
+out=$(run_cols "$INPUT_FULL" 32 | strip_ansi)
 line1=$(echo "$out" | head -1)
-assert_within_cols "line 1 fits a 30-col pane" "$line1" 30
+assert_within_cols "line 1 fits a 32-col pane" "$line1" 32
 assert_not_contains "sheds token count when narrower" "$line1" "(140k)"
 assert_contains "keeps context pct at 32 cols" "$line1" "70%"
 

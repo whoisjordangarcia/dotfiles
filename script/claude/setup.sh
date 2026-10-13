@@ -44,7 +44,7 @@ link_file "$SCRIPT_DIR/../../configs/claude/themes/" "$HOME/.claude/themes" "dir
 # NOTE: ~/.claude/skills is intentionally NOT a whole-dir symlink — skills are
 # projected per-skill (work-only gating) by script/skills/setup.sh below.
 # A whole-dir link here would make per-skill links resolve INTO the repo.
-link_file "$SCRIPT_DIR/../../configs/claude/statusline.sh" "$HOME/.claude/statusline.sh"
+link_file "$SCRIPT_DIR/../../configs/claude/plugins/statusline-mod/cli/statusline.sh" "$HOME/.claude/statusline.sh"
 
 # settings.json comes from a DEDICATED per-environment file (no base/overlay
 # merge): configs/claude/settings.work.json or settings.personal.json, each a
