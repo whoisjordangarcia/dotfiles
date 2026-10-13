@@ -1,0 +1,7 @@
+{
+  "name": "dotfiles",
+  "owner": { "name": "Jordan Garcia" },
+  "plugins": [
+    { "name": "tok-speed", "source": "./configs/claude/plugins/tok-speed", "description": "Shows Claude's output tokens per second in the status line" }
+  ]
+}

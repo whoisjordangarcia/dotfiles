@@ -202,7 +202,8 @@
     "infracost@infracost": false,
     "ponytail@ponytail": true,
     "claude-security@claude-plugins-official": true,
-    "cloudflare@cloudflare": true
+    "cloudflare@cloudflare": true,
+    "tok-speed@dotfiles": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -233,6 +234,12 @@
       "source": {
         "source": "github",
         "repo": "cloudflare/skills"
+      }
+    },
+    "dotfiles": {
+      "source": {
+        "source": "github",
+        "repo": "whoisjordangarcia/dotfiles"
       }
     }
   },

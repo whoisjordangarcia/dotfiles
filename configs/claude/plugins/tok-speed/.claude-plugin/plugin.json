@@ -1,0 +1,1 @@
+{ "name": "tok-speed", "version": "0.1.0", "description": "Shows Claude's output tokens per second in the status line" }

@@ -255,7 +255,8 @@
     "remotion@remotion": true,
     "superpowers@superpowers-marketplace": true,
     "swift-lsp@claude-plugins-official": false,
-    "typescript-lsp@claude-plugins-official": false
+    "typescript-lsp@claude-plugins-official": false,
+    "tok-speed@dotfiles": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -286,6 +287,12 @@
       "source": {
         "source": "github",
         "repo": "obra/superpowers-marketplace"
+      }
+    },
+    "dotfiles": {
+      "source": {
+        "source": "github",
+        "repo": "whoisjordangarcia/dotfiles"
       }
     }
   },
