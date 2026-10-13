@@ -6,7 +6,9 @@
             "exit-timeout": 5,
             "wait-all": true,
             "cmd": [],
-            "prep-cmd": []
+            "prep-cmd": [
+                { "do": "caffeinate -u -t 2", "undo": "" }
+            ]
         }
     ],
     "env": {}

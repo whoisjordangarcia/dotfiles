@@ -40,8 +40,11 @@ sed "s|^csrf_allowed_origins = .*|csrf_allowed_origins = $ORIGINS|" \
   "$CONFIGS_DIR/sunshine.conf" > "$SUNSHINE_CONFIG_DIR/sunshine.conf"
 
 SUNSHINE_BIN=$(readlink -f /opt/homebrew/opt/sunshine-beta/bin/sunshine 2>/dev/null || echo "/opt/homebrew/opt/sunshine-beta/bin/sunshine")
-PLIST_SRC="/opt/homebrew/opt/sunshine-beta/homebrew.mxcl.sunshine-beta.plist"
-PLIST_DEST="$HOME/Library/LaunchAgents/homebrew.mxcl.sunshine-beta.plist"
+# Homebrew renamed service labels homebrew.mxcl.* → sh.brew.*; accept either.
+LABEL=sh.brew.sunshine-beta
+[[ -f "/opt/homebrew/opt/sunshine-beta/$LABEL.plist" ]] || LABEL=homebrew.mxcl.sunshine-beta
+PLIST_SRC="/opt/homebrew/opt/sunshine-beta/$LABEL.plist"
+PLIST_DEST="$HOME/Library/LaunchAgents/$LABEL.plist"
 
 # Install and start the LaunchAgent, triggering macOS TCC permission prompts.
 #
@@ -58,13 +61,13 @@ if [[ -f "$PLIST_SRC" ]]; then
 
   # Kickstart triggers TCC prompts for Screen Recording + Accessibility
   step "Starting Sunshine (macOS will prompt for Screen Recording & Accessibility permissions)..."
-  launchctl kickstart -p "gui/$UID/homebrew.mxcl.sunshine-beta" 2>/dev/null || \
-    warn "Kickstart failed — if permissions were just granted, re-run: launchctl kickstart -p gui/$UID/homebrew.mxcl.sunshine-beta"
+  launchctl kickstart -p "gui/$UID/$LABEL" 2>/dev/null || \
+    warn "Kickstart failed — if permissions were just granted, re-run: launchctl kickstart -p gui/$UID/$LABEL"
 else
   warn "Plist not found at $PLIST_SRC — skipping LaunchAgent setup"
 fi
 
 success "Sunshine installed and configured."
 info "Access Sunshine web UI at https://localhost:47990"
-info "To stop:  launchctl kill TERM gui/$UID/homebrew.mxcl.sunshine-beta"
+info "To stop:  launchctl kill TERM gui/$UID/$LABEL"
 warn "NOTE: Re-run this script or kickstart manually after each Sunshine update (binary path changes)."
