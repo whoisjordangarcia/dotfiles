@@ -58,6 +58,8 @@ SETTINGS_TARGET="$HOME/.claude/settings.json"
 [ -L "$SETTINGS_TARGET" ] && rm "$SETTINGS_TARGET"  # drop legacy symlink layout
 cp "$SETTINGS_SRC" "$SETTINGS_TARGET"
 success "Installed $SETTINGS_TARGET ($(basename "$SETTINGS_SRC"))"
+# The copied settings.json names "./settings.schema.json" as its $schema.
+link_file "$SCRIPT_DIR/../../configs/claude/settings.schema.json" "$HOME/.claude/settings.schema.json"
 
 # User-scope MCP servers live in ~/.claude.json (app-owned, not tracked), so
 # register them idempotently here. Cloudflare's MCP ships inside the

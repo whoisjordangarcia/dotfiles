@@ -172,6 +172,22 @@ diverged repo). Pure logic: bioprompt is never launched, so it's headless-safe.
 `configs/codex/hooks/touchid-gate.py` imports the same list — change the tuple
 shape and you must update both hooks.
 
+### Claude Settings Keys
+
+**When editing `configs/claude/settings.{work,personal}.json`, or after a Claude Code upgrade, run:**
+
+```bash
+bash configs/claude/settings_test.sh    # the checker's logic, offline; must end "All N tests passed"
+configs/claude/settings_schema.py       # the real files against the live docs; must print ✓ for both
+```
+
+`settings_schema.py` reads the code.claude.com settings reference on every run, so it is current where
+the schemastore schema lags (missing keys, deprecations only in prose, unknown keys accepted). It
+flags retired, undocumented, mistyped, and `~/.claude.json`- or managed-only keys. Each run also rewrites
+`configs/claude/settings.schema.json`, which both files name as `./settings.schema.json` and
+`setup.sh` links beside `~/.claude/settings.json`: a diff there is the docs moving — commit it.
+A key Claude Code writes itself but never documents goes in `RUNTIME_KEYS`.
+
 ## Traps
 
 ### Touch ID Command Gate (macOS)
