@@ -14,20 +14,16 @@ end
 
 -- Two items, not one label: SketchyBar colours a label as a whole, so the 5h
 -- and week meters need separate items to warn independently.
-local week = sbar.add("item", "widgets.claude.week", {
-	position = "right",
-	label = {
-		string = "—",
-		font = { family = settings.font.numbers, size = 11.0 },
-		color = colors.chrome.label,
-	},
-	background = { drawing = false },
-	padding_left = 4,
-	padding_right = 4,
-})
+-- Centred, except with a notched laptop display active, where the centre is
+-- under the notch: then it follows front_app on the left. Decided at load;
+-- display-change.sh reloads the bar on hotplug.
+local POS = require("scale").query("--notch") == 1 and "left" or "center"
+
+-- Gap from front_app, which sits just before it on the left.
+sbar.add("item", "widgets.claude.lead", { position = POS, width = 10, drawing = POS == "left" })
 
 local claude = sbar.add("item", "widgets.claude", {
-	position = "right",
+	position = POS,
 	icon = {
 		string = "󰚩",
 		font = {
@@ -49,6 +45,18 @@ local claude = sbar.add("item", "widgets.claude", {
 	background = { drawing = false },
 	-- The stats script parses transcripts (1-3 s); don't poll it harder.
 	update_freq = 300,
+	padding_left = 4,
+	padding_right = 4,
+})
+
+local week = sbar.add("item", "widgets.claude.week", {
+	position = POS,
+	label = {
+		string = "—",
+		font = { family = settings.font.numbers, size = 11.0 },
+		color = colors.chrome.label,
+	},
+	background = { drawing = false },
 	padding_left = 4,
 	padding_right = 4,
 })
@@ -154,4 +162,4 @@ claude:subscribe("mouse.clicked", function()
 end)
 claude:subscribe("mouse.exited.global", hide_details)
 
-sbar.add("item", "widgets.claude.spacer", { position = "right", width = 4 })
+sbar.add("item", "widgets.claude.spacer", { position = POS, width = 4, drawing = POS == "left" })

@@ -8,7 +8,27 @@
 -- Retina display, where the unscaled sizes are already correct).
 local M = {}
 
-M.scale = tonumber(os.getenv("SKETCHYBAR_SCALE")) or 1.4
+-- Default: match the macOS menu bar on the main display. The themes are drawn
+-- for a 30px bar, so scale = menubar height / 30 (exactly 1 on a 30px menu bar,
+-- which keeps every font and icon at its native size: crisp, no rounding).
+local BASE_HEIGHT = 30
+
+-- Runs helpers/menubar_swap with a query flag and returns its output as a number.
+function M.query(flag)
+	local dir = os.getenv("CONFIG_DIR") or (os.getenv("HOME") .. "/.config/sketchybar")
+	local f = io.popen('"' .. dir .. '/helpers/menubar_swap/bin/menubar_swap" ' .. flag .. " 2>/dev/null")
+	local n = f and tonumber(f:read("*a"))
+	if f then
+		f:close()
+	end
+	return n
+end
+
+M.scale = tonumber(os.getenv("SKETCHYBAR_SCALE")) or (M.query("--height") or BASE_HEIGHT) / BASE_HEIGHT
+
+-- Extra multiplier for font sizes (`size`) only, on top of `scale`: matching the
+-- menu bar's height leaves the themes' 11-13px text too small to read.
+M.font_scale = tonumber(os.getenv("SKETCHYBAR_FONT_SCALE")) or 1.2
 
 -- border_width is deliberately absent: hairlines read as hairlines at any size,
 -- and rounding 1 * scale would thicken every border by a whole pixel.
@@ -30,6 +50,8 @@ function M.scale_props(t)
 	for k, v in pairs(t) do
 		if type(v) == "table" then
 			out[k] = M.scale_props(v)
+		elseif k == "size" and type(v) == "number" then
+			out[k] = math.floor(v * M.scale * M.font_scale + 0.5)
 		elseif SCALED[k] and type(v) == "number" then
 			out[k] = math.floor(v * M.scale + 0.5)
 		else
@@ -40,7 +62,7 @@ function M.scale_props(t)
 end
 
 function M.install(bar)
-	if M.scale == 1 then
+	if M.scale == 1 and M.font_scale == 1 then
 		return
 	end
 	for _, name in ipairs({ "bar", "default", "add", "set" }) do

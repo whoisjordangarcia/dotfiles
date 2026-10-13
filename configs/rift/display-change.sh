@@ -26,5 +26,8 @@ sleep 2
 # Re-enable auto-assign — Rift performs a single clean workspace reassignment
 rift-cli execute config set --key virtual_workspaces.auto_assign_windows --value true 2>/dev/null
 
+# Re-size SketchyBar to the (possibly different) main display's menu bar.
+/opt/homebrew/bin/sketchybar --reload
+
 # Release lock
 rm -f "$LOCK"

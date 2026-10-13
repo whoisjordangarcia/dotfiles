@@ -12,6 +12,7 @@ end
 
 local scale = require("scale")
 scale.scale = 2
+scale.font_scale = 1
 
 local out = scale.scale_props({
 	height = 30,
@@ -49,5 +50,11 @@ check("add: props scaled", calls.add[3].height == 40)
 check("add: arity preserved", calls.add.n == 3)
 fake.bar({ height = 30 })
 check("bar: props scaled", calls.bar[1].height == 60)
+
+-- font_scale boosts font sizes only, never geometry.
+scale.font_scale = 1.5
+local boosted = scale.scale_props({ height = 30, label = { font = { size = 10.0 } } })
+check("font_scale: boosts font size", boosted.label.font.size == 30)
+check("font_scale: leaves geometry alone", boosted.height == 60)
 
 print(("All %d tests passed"):format(n))
