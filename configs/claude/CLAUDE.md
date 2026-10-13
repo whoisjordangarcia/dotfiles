@@ -24,3 +24,7 @@ Daily notes go through the `daily-note` skill. The why is in `~/dev/notes/10 - M
 - **An inline comment earns its place by being short and load-bearing:** a non-obvious constraint, a gotcha, a "why this and not the obvious thing", in one or two lines. Longer than the code it describes means cut it.
 - **One-line summaries only** on files, classes, functions, and Terraform resources — the bit that isn't inferable from the code.
 - Cut the prose, keep the signal: the constraint, the units, the ceiling, the link to a rule file.
+
+## Commits and PRs — no AI attribution
+
+- **Never write `Co-Authored-By: Claude …`, "Generated with Claude Code", or any AI attribution** into a commit message or PR body. `attribution`/`includeCoAuthoredBy` in settings only stop the automatic one; this covers the ones typed by hand.
