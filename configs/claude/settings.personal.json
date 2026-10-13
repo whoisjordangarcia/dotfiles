@@ -201,7 +201,8 @@
     "typescript-lsp@claude-plugins-official": false,
     "infracost@infracost": false,
     "ponytail@ponytail": true,
-    "claude-security@claude-plugins-official": true
+    "claude-security@claude-plugins-official": true,
+    "cloudflare@cloudflare": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -226,6 +227,12 @@
       "source": {
         "source": "github",
         "repo": "DietrichGebert/ponytail"
+      }
+    },
+    "cloudflare": {
+      "source": {
+        "source": "github",
+        "repo": "cloudflare/skills"
       }
     }
   },

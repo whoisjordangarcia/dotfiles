@@ -59,6 +59,19 @@ SETTINGS_TARGET="$HOME/.claude/settings.json"
 cp "$SETTINGS_SRC" "$SETTINGS_TARGET"
 success "Installed $SETTINGS_TARGET ($(basename "$SETTINGS_SRC"))"
 
+# User-scope MCP servers live in ~/.claude.json (app-owned, not tracked), so
+# register them idempotently here. Cloudflare's MCP ships inside the
+# cloudflare@cloudflare plugin (settings.personal.json) — don't add it here too
+# or it shows up twice. Both authenticate via OAuth: run /mcp once per machine.
+if [ "$DOT_ENV" = "personal" ]; then
+	if ! claude mcp get vercel &>/dev/null; then
+		claude mcp add --scope user --transport http vercel https://mcp.vercel.com
+		success "Registered Vercel MCP (authenticate via /mcp)"
+	else
+		debug "Vercel MCP already registered"
+	fi
+fi
+
 # CLAUDE.md is GENERATED (shared base + work/personal overlay), mirroring the
 # settings.json approach above, so work-only instructions never follow personal
 # machines around. The final ~/.claude/CLAUDE.md is what Claude actually reads,

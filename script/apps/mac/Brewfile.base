@@ -12,6 +12,7 @@ brew 'fzf'
 brew 'fd'
 brew 'tmux'
 brew 'neurosnap/tap/zmx' # session persistence (attach/detach), tmux alternative
+brew 'mosh' # mosh-server for roaming SSH from the phone (needs UDP 60000-61000 inbound)
 brew 'zoxide'
 brew 'starship'
 brew 'jq'
