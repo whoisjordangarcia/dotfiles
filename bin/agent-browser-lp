@@ -1,0 +1,7 @@
+#!/bin/sh
+# agent-browser on the Lightpanda engine (fast, headless, no profile).
+# The default config is headed + profile, which Lightpanda rejects, so swap in
+# a profile-less config; `"headed": false` in a config doesn't override, the flag does.
+export AGENT_BROWSER_CONFIG="$HOME/.agent-browser/lightpanda.json"
+export AGENT_BROWSER_SESSION="${AGENT_BROWSER_LP_SESSION:-lightpanda}"
+exec agent-browser --headed false "$@"

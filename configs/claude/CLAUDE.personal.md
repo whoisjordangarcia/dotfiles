@@ -9,6 +9,15 @@
 
 -->
 
+## Fast headless browsing → `agent-browser-lp` (Lightpanda engine)
+
+For public pages that need no login (scraping, docs, quick checks) use
+`agent-browser-lp <cmd>` — same commands as agent-browser, on the Lightpanda
+1.0 engine (`~/.local/bin/lightpanda`), headless, ~0.4s page opens. It's a
+wrapper (`~/dev/dotfiles/bin`) because the default config is headed + profile,
+which Lightpanda rejects. No profiles or logins — for logged-in work use Brave
+over CDP below.
+
 ## Browser automation on this Mac → drive Brave via CDP (non-headless)
 
 The "Agent Browser" Chrome profile does **not** exist on this Mac (only

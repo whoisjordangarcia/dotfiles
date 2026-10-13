@@ -208,3 +208,8 @@ export PATH="$HOME/.grok/bin:$PATH"
 fpath=(~/.grok/completions/zsh $fpath)
 autoload -Uz compinit && compinit -C
 # <<< grok installer <<<
+
+# One browser for everything: agent-browser gives EVERY session name its own Chrome
+# instance, so an unset session silently spawns a second browser ("default") alongside
+# whatever a script pinned. Added 2026-08-30.
+export AGENT_BROWSER_SESSION=main

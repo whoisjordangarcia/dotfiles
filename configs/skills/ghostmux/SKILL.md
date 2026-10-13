@@ -22,6 +22,8 @@ ghostmux move TARGET GROUP
 ghostmux focus TARGET
 ghostmux close TARGET
 ghostmux ls [--json]
+ghostmux browser URL [TARGET]
+ghostmux watch [AGENT-BROWSER-SESSION] [TARGET]
 ghostmux sim URL [DEVICE]
 ```
 
@@ -45,6 +47,16 @@ name when exactly one session carries it. `ghostmux ls` prints both.
   agent you launched is still going or is stuck waiting on a human.
 - **Don't `close` a session you didn't create** without asking. It kills live
   work.
+
+## Showing the user a page
+
+`ghostmux browser URL [TARGET]` opens URL in a GhostMux browser tab, by default
+in the session your shell runs in (`$ZMX_SESSION`). It reuses that session's
+browser tab, so calling it repeatedly doesn't pile up tabs.
+
+`ghostmux watch [SESSION] [TARGET]` shows an `agent-browser` session's live
+screen in that tab, so the user can watch you drive it. For mobile testing, see
+the `mobile-browser` skill.
 
 ## Showing the user a page on iPhone
 
