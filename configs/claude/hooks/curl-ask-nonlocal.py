@@ -19,6 +19,15 @@ VALUE_FLAGS = {
 
 LOOPBACK = re.compile(r"^(localhost|127(\.\d+){3}|\[?::1\]?|0\.0\.0\.0)$", re.I)
 
+# Hosts curled often enough that a prompt is noise. Exact match, no subdomains.
+TRUSTED = {
+    "www.unknowncheats.me", "api.tarkov.dev", "github.com",
+    "raw.githubusercontent.com", "api.github.com",
+}
+
+# Modes where the user already chose "don't ask me"; a hook "ask" would override that.
+NO_PROMPT_MODES = {"auto"}
+
 
 def host_of(token):
     """Best-effort host from a curl URL argument."""
@@ -52,17 +61,18 @@ def is_local(cmd):
             urls.append(tok)
         if not urls:
             return False  # URL from a variable or stdin - can't tell, so ask
-        if not all(LOOPBACK.match(host_of(u)) for u in urls):
+        if not all(LOOPBACK.match(h) or h.lower() in TRUSTED for h in map(host_of, urls)):
             return False
     return saw_curl
 
 
 def main():
     try:
-        cmd = json.load(sys.stdin).get("tool_input", {}).get("command", "")
+        payload = json.load(sys.stdin)
     except Exception:
-        cmd = ""  # unparseable input -> fall through to ask
-    if is_local(cmd):
+        payload = {}  # unparseable input -> fall through to ask
+    cmd = payload.get("tool_input", {}).get("command", "")
+    if payload.get("permission_mode") in NO_PROMPT_MODES or is_local(cmd):
         return  # silent: the loopback allow rules take it from here
     print(json.dumps({
         "hookSpecificOutput": {
@@ -84,6 +94,8 @@ def demo():
     assert not is_local("curl https://evil.com/?r=http://localhost:1")
     assert not is_local('curl "$URL"')
     assert not is_local("curl http://localhost.evil.com")
+    assert is_local("curl -A x https://www.unknowncheats.me/forum/")
+    assert not is_local("curl https://www.unknowncheats.me.evil.com")
     assert not is_local("ls")  # no curl at all -> hook says ask, but `if` never fires it
     print("ok")
 
