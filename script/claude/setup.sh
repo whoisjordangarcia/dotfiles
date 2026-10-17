@@ -10,7 +10,7 @@ source "$SCRIPT_DIR/../common/symlink.sh"
 source "$SCRIPT_DIR/../common/dot_env.sh"
 source "$SCRIPT_DIR/../common/bioprompt.sh"
 
-# Resolve the environment ONCE for everything below: settings.json, CLAUDE.md,
+# Resolve the environment ONCE for everything below: settings.json, the memory,
 # and the sourced skills/setup.sh (which reads the exports this sets). See
 # script/common/dot_env.sh for the precedence rules and why the .dotconfig
 # fallback is load-bearing for standalone runs.
@@ -33,9 +33,10 @@ mkdir -p "$SCRIPT_DIR/../../configs/claude/"{agents,commands,docs,prompts,themes
 
 link_file "$SCRIPT_DIR/../../configs/claude/agents/" "$HOME/.claude/agents" "directory"
 link_file "$SCRIPT_DIR/../../configs/claude/commands/" "$HOME/.claude/commands" "directory"
-# Reference docs CLAUDE.md points at instead of inlining — loaded on demand, so
-# the always-loaded CLAUDE.md stays short. Paths in CLAUDE.md are ~/.claude/docs/.
-link_file "$SCRIPT_DIR/../../configs/claude/docs/" "$HOME/.claude/docs" "directory"
+# Work-machine reference docs, linked in on demand so the always-loaded memory stays
+# short. The canonical memory points at the vault's notes for machine reference; these
+# are the work-only ones.
+link_file "$SCRIPT_DIR/../../configs/agents/docs/" "$HOME/.claude/docs" "directory"
 link_file "$SCRIPT_DIR/../../configs/claude/prompts/" "$HOME/.claude/prompts" "directory"
 # Custom themes: each themes/<slug>.json registers as `custom:<slug>` — the SLUG
 # IS THE FILENAME, not the "name" field. Select via /theme or by setting
@@ -74,29 +75,16 @@ if [ "$DOT_ENV" = "personal" ]; then
 	fi
 fi
 
-# CLAUDE.md is GENERATED (shared base + work/personal overlay), mirroring the
-# settings.json approach above, so work-only instructions never follow personal
-# machines around. The final ~/.claude/CLAUDE.md is what Claude actually reads,
-# so it must keep that name (not a symlink to an overlay). A hidden marker line
-# (`<!-- @dot-overlay:<env> -->`) is inserted between base and overlay so live
-# edits to ~/.claude/CLAUDE.md can be split back into the repo sources via
-# script/claude/sync-claude.sh (the `claude-sync` shell alias).
-CLAUDE_BASE="$REPO_DIR/configs/claude/CLAUDE.md"
-CLAUDE_ENV="$DOT_ENV"
-CLAUDE_OVERLAY="$REPO_DIR/configs/claude/CLAUDE.${CLAUDE_ENV}.md"
-CLAUDE_TARGET="$HOME/.claude/CLAUDE.md"
-# Legacy layout symlinked this to the repo file; replace with a generated file.
-[ -L "$CLAUDE_TARGET" ] && rm "$CLAUDE_TARGET"
-{
-	cat "$CLAUDE_BASE"
-	# Marker only — it sits in Claude's always-loaded context, so no prose here.
-	printf '\n<!-- @dot-overlay:%s -->\n\n' "$CLAUDE_ENV"
-	# if/fi, not `[ ] && cat`: as the group's LAST command a false test makes the
-	# whole group exit 1, so the `&& mv` below silently doesn't run — leaving a
-	# stale CLAUDE.md plus an orphan .tmp while still printing success.
-	if [ -f "$CLAUDE_OVERLAY" ]; then cat "$CLAUDE_OVERLAY"; fi
-} >"${CLAUDE_TARGET}.tmp" && mv "${CLAUDE_TARGET}.tmp" "$CLAUDE_TARGET"
-success "Generated $CLAUDE_TARGET (CLAUDE.${CLAUDE_ENV}.md overlay)"
+# The global memory is ONE file now: configs/agents/AGENTS.md, symlinked into every
+# place a harness reads it (~/.claude/CLAUDE.md for Claude Code's user scope,
+# ~/.config/opencode/AGENTS.md for OpenCode). script/memory-sync.sh is the single
+# generator; the old base + work/personal overlay split is gone, so there is no
+# dot-overlay marker and nothing to split back.
+if bash "$SCRIPT_DIR/../memory-sync.sh"; then
+	success "Linked the global memory from configs/agents/AGENTS.md"
+else
+	fail "memory-sync.sh failed — ~/.claude/CLAUDE.md may not point at the canonical memory"
+fi
 
 link_file "$SCRIPT_DIR/../../configs/claude/hooks/" "$HOME/.claude/hooks"
 

@@ -51,10 +51,9 @@ return {
 	["ClickUp"] = ":click_up:",
 	["Code"] = ":code:",
 	["Code - Insiders"] = ":code:",
-	-- cmux has no dedicated glyph in sketchybar-app-font; terminal is the
+	-- no dedicated glyph in sketchybar-app-font; terminal is the
 	-- closest fit (it's a terminal/session manager). See note below to render
 	-- the real app icon instead.
-	["cmux"] = ":terminal:",
 	["Cold Turkey Blocker"] = ":cold_turkey_blocker:",
 	["Color Picker"] = ":color_picker:",
 	["数码测色计"] = ":color_picker:",
@@ -266,7 +265,7 @@ return {
 	["Spotify"] = ":spotify:",
 	["Spotlight"] = ":spotlight:",
 	["Sublime Text"] = ":sublime_text:",
-	-- Supacode (AI coding agent, cmux successor) has no font glyph; :claude:
+	-- Supacode (AI coding agent) has no font glyph; :claude:
 	-- reads as "AI agent workspace" and stays distinct from :terminal:/:iterm:.
 	["Supacode"] = ":claude:",
 	["superProductivity"] = ":superproductivity:",

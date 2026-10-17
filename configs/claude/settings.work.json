@@ -372,5 +372,12 @@
       "$defaults",
       "Any write, mutation, deploy, delete, or reindex against a production AWS account or resource"
     ]
+  },
+  "pluginConfigs": {
+    "cc-plugin-agents-md@builtin": {
+      "options": {
+        "instructionFiles": "claude-md-and-agents-md"
+      }
+    }
   }
 }

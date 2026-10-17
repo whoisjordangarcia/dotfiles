@@ -1,117 +1,75 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# setup.sh — make every harness's skill directory agree, and keep the local skills in sync with the dotfiles.
+#
+# Layout that works with the skills.sh CLI (which owns ~/.agents/skills and rewrites it on every install):
+#
+#   ~/dev/dotfiles/configs/skills/*        source of truth for skills written for this machine
+#        │ copied by this script
+#        ▼
+#   ~/.agents/skills/                     the global root: local copies + third-party installs (skills.sh)
+#        │ symlinked by this script
+#        ├── ~/.claude/skills             Claude Code
+#        ├── ~/.codex/skills              Codex
+#        └── ~/.cursor/skills             Cursor
+#
+# OpenCode reads ~/.agents/skills directly. Omarchy's own two skills (omarchy, diagnose-crash) stay symlinked to
+# /usr/share/omarchy/default/agents/skills so an Omarchy update lands on its own.
+# Third-party skills are fetched with script/skills/install.sh — never vendored in the dotfiles.
 set -euo pipefail
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-REPO_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+DOTFILES=$(cd -- "$SCRIPT_DIR/../.." && pwd)
+LOCAL="$DOTFILES/configs/skills"
+OMARCHY=/usr/share/omarchy/default/agents/skills
+GLOBAL="$HOME/.agents/skills"
+FARMS=("$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.cursor/skills")
 
-source "$SCRIPT_DIR/../common/log.sh"
-source "$SCRIPT_DIR/../common/symlink.sh"
-source "$SCRIPT_DIR/../common/dot_env.sh"
-
-SKILLS_SOURCE="$REPO_ROOT/configs/skills"
-
-# nest-* skills are work-only — install them in work mode, prune them elsewhere.
-# Resolution is shared (script/common/dot_env.sh) so a STANDALONE run here agrees
-# with claude/setup.sh; previously this read the env only, so running it directly
-# on a work machine pruned every nest-* skill. When claude/setup.sh sources this,
-# it has already resolved and exported the same env — dot_export_env is idempotent.
-dot_export_env
-# if/fi, not `[[ ]] && x`: under `set -e` that list yields 1 when false, which
-# becomes the script's exit status if it lands last.
-if [[ "$DOT_ENV" == "work" ]]; then
-	IS_WORK_ENV=1
-else
-	IS_WORK_ENV=0
-fi
-
-ensure_skill_dir() {
-	local target_dir="$1"
-
-	# Legacy layout: the target itself was a symlink to the repo skills dir.
-	# Per-skill links through such a parent resolve INTO the repo and can
-	# replace real skill dirs with self-referential symlinks — dissolve it.
-	if [ -L "$target_dir" ]; then
-		rm "$target_dir"
-		info "Replaced legacy whole-dir symlink with real dir: $target_dir"
+# 1. local skills → managed copies in the global root (the CLI owns that directory, so copies, not symlinks)
+synced=0
+for src in "$LOCAL"/*/; do
+	[ -f "$src/SKILL.md" ] || continue # skips THIRD-PARTY.md and anything without a SKILL.md
+	name=$(basename "$src")
+	dst="$GLOBAL/$name"
+	if [ -L "$dst" ] || ! [ -f "$dst/SKILL.md" ] || ! diff -rq "$src" "$dst" >/dev/null 2>&1; then
+		rm -rf "$dst"
+		cp -a "$src" "$dst"
+		synced=$((synced + 1))
 	fi
+done
 
-	# Belt-and-braces: never operate on a target that resolves anywhere into
-	# this repo. Checked BEFORE mkdir -p, and against the whole REPO_ROOT, not
-	# just SKILLS_SOURCE: ~/.agents is a symlink to configs/agents, so the old
-	# SKILLS_SOURCE-only test waved it through and mkdir created a bogus
-	# configs/agents/skills/ full of links pointing back at configs/skills.
-	# Returns non-zero (caller skips) rather than `fail`ing — one repo-resolving
-	# target must not abort the projection into the other agent CLIs.
-	local probe resolved
-	probe=$([ -e "$target_dir" ] && echo "$target_dir" || dirname "$target_dir")
-	resolved=$(realpath "$probe" 2>/dev/null || echo "$probe")
-	if [[ "$resolved" == "$REPO_ROOT" || "$resolved" == "$REPO_ROOT"/* ]]; then
-		info "Skipping skills projection: $target_dir resolves into the repo ($resolved)"
-		return 1
-	fi
+# 2. Omarchy's skills into the global root as links to its tree
+for src in "$OMARCHY"/*/; do
+	[ -f "$src/SKILL.md" ] || continue
+	ln -sfn "$src" "$GLOBAL/$(basename "$src")"
+done
 
-	mkdir -p "$target_dir"
-}
-
-# Remove links left behind when a skill is deleted from the source. Linking is
-# additive, so without this a removed skill stays projected on every machine
-# that ever ran setup — and shows up as a broken symlink the agent CLIs still
-# enumerate. Only links that pointed into this repo's skills source are pruned,
-# so unrelated/broken links are never touched.
-prune_stale_skill_links() {
-	local target_dir="$1"
-	[ -d "$target_dir" ] || return 0
-
-	local entry link_dest
-	for entry in "$target_dir"/*; do
-		[ -L "$entry" ] || continue
-		if [ ! -e "$entry" ]; then
-			link_dest=$(readlink "$entry")
-			case "$link_dest" in
-			"$SKILLS_SOURCE"/*)
-				rm "$entry"
-				info "Pruned stale skill link: $entry"
-				;;
-			esac
+# 3. every skill in the global root, linked into the other three farms
+linked=0
+for skill in "$GLOBAL"/*/; do
+	[ -f "$skill/SKILL.md" ] || continue
+	name=$(basename "$skill")
+	for farm in "${FARMS[@]}"; do
+		mkdir -p "$farm"
+		target="$farm/$name"
+		if [ -d "$target" ] && [ ! -L "$target" ]; then
+			rm -rf "$target" # a copy left by an earlier install; the global root is the source now
 		fi
+		rm -f "$target"
+		ln -s "$skill" "$target"
 	done
-}
-
-link_shared_skills() {
-	local target_dir="$1"
-
-	# Guard rejected this target (resolves into the repo) — skip it, don't abort.
-	ensure_skill_dir "$target_dir" || return 0
-
-	prune_stale_skill_links "$target_dir"
-
-	local skill_dir skill_name
-	for skill_dir in "$SKILLS_SOURCE"/*; do
-		[ -d "$skill_dir" ] || continue
-		[ -f "$skill_dir/SKILL.md" ] || continue
-
-		skill_name=$(basename "$skill_dir")
-
-		# Work-only skills: skip outside work mode, and remove any link a
-		# previous (pre-gating or work-mode) run left behind.
-		if [[ "$skill_name" == nest-* && "$IS_WORK_ENV" != 1 ]]; then
-			if [ -L "$target_dir/$skill_name" ]; then
-				rm "$target_dir/$skill_name"
-				info "Pruned work-only skill: $target_dir/$skill_name"
-			fi
-			continue
-		fi
-
-		link_file "$skill_dir" "$target_dir/$skill_name"
+	linked=$((linked + 1))
+done
+# prune anything the farms carry that the global root does not
+for farm in "${FARMS[@]}"; do
+	for entry in "$farm"/*; do
+		[ -e "$entry" ] || continue
+		name=$(basename "$entry")
+		[ -d "$GLOBAL/$name" ] || rm -rf "$entry"
 	done
-}
+done
 
-if [ ! -d "$SKILLS_SOURCE" ]; then
-	fail "Shared skills source not found: $SKILLS_SOURCE"
-fi
-
-step "Linking shared agent skills"
-link_shared_skills "$HOME/.claude/skills"
-link_shared_skills "$HOME/.cursor/skills"
-link_shared_skills "$HOME/.codex/skills"
-link_shared_skills "$HOME/.agents/skills"
+broken=$(for farm in "$GLOBAL" "${FARMS[@]}"; do find "$farm" -maxdepth 1 -xtype l; done | wc -l)
+printf 'local skills synced: %s (of %s)\n' "$synced" "$(find "$LOCAL" -maxdepth 2 -name SKILL.md | wc -l)"
+printf 'skills in ~/.agents/skills: %s, linked into %s farms, %s broken links\n' "$linked" "${#FARMS[@]}" "$broken"
+ls "$GLOBAL" | tr '\n' ' '
+echo

@@ -130,20 +130,19 @@ workspace_names = [
 # switch_to_workspace), while the on-screen labels / number keys are 1..10
 # (Option+1..0). So number-key "N" == workspace id N-1, and number-key "0"
 # (Option+0) == id 9. Pinned homes below:
-#   cmux        -> "1" (id 0)
+#   slack       -> "1" (id 0)
 #   slack       -> "3" (id 2)
 #   fantastical -> "0" (id 9)
 # Browser, Finder, and other apps without a `workspace` rule open on the
 # current workspace (rift's default when auto_assign_windows can't match a pin).
 app_rules = [
   # --- Pinned app homes ---------------------------------------------------
-  # cmux pinned to "1", force-tiled. rift auto-floats it otherwise (it's an
+  # Electron apps pinned to "1" are force-tiled. rift auto-floats them otherwise (they're an
   # Electron app that restores its own bounds & relayouts async via Chromium,
   # which rift reads as float-like) — an explicit `floating = false` wins.
   # (If the old jitter / off-screen flash returns, set `floating = true`.)
-  { app_id = "com.cmuxterm.app", workspace = 0, floating = false },
   { app_id = "com.brave.Browser" },                                         # Browser -> opens on current workspace, tiled
-  # floating = false: Slack is Electron (same auto-float issue as cmux above) —
+  # floating = false: Slack is Electron (same auto-float issue as the rule above) —
   # without it rift floats the window and it hovers over the layout.
   { app_id = "com.tinyspeck.slackmacgap", workspace = 2, floating = false }, # Slack   -> "3", tiled
   { app_id = "com.flexibits.fantastical2.mac", workspace = 9, floating = true },  # Fantastical -> "0"
@@ -167,7 +166,7 @@ comb1 = "Option + Shift"
 # i3/sway keybinds using Option as $mod
 # Navigation: jkl; (i3 default)
 
-# Focus movement (vim-style, matches cmux's cmd+opt+hjkl pane focus).
+# Focus movement (vim-style, cmd+opt+hjkl pane focus).
 # In the scrolling layout, H/L is how you scroll along the column strip
 # (Option+J previously duplicated toggle_orientation — Option+E still does it.)
 "Option + H" = { move_focus = "left" }

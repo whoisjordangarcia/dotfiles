@@ -282,7 +282,7 @@ Claude Code IDE settings and configuration.
 ./bin/dot --system mac
 ```
 
-**Installs:** Homebrew + macOS defaults, 1Password, Git/SSH/GitHub CLI, Zsh, Neovim, Node, Tmux, Starship, Rift (tiling WM) + Ghostty, cmux, LazyGit, Claude/Codex/OpenCode + Agents, Fastfetch, Brave, Sunshine
+**Installs:** Homebrew + macOS defaults, 1Password, Git/SSH/GitHub CLI, Zsh, Neovim, Node, Tmux, Starship, Rift (tiling WM) + Ghostty, LazyGit, Claude/Codex/OpenCode + Agents, Fastfetch, Brave, Sunshine
 
 **Work variant** (`--work`): Same installer, same component list — `script/mac_components.sh` is the single source of truth. `WORK_ENV=1` only changes environment-specific config (work git email, etc.), not which components install.
 

@@ -9,6 +9,7 @@ import sys
 import termios
 import time
 import tty
+import urllib.request
 from collections import Counter, defaultdict, namedtuple
 from datetime import datetime, timedelta
 from functools import lru_cache
@@ -17,6 +18,10 @@ from pathlib import Path
 CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "ai-stats"
 CACHE = CACHE_DIR / "statusline.json"
 HISTORY = CACHE_DIR / "limits.log"
+OPENCODE_DB = Path.home() / ".local/share/opencode/opencode.db"
+OPENCODE_USAGE_URL = "https://opencode.ai/zen/go/v1/usage"
+OPENCODE_WINDOWS = (("rolling", "five_hour", "Opencode (5h)"), ("weekly", "seven_day", "Opencode (7d)"),
+                    ("monthly", "monthly", "Opencode (30d)"))
 PROJECTS = Path.home() / ".claude" / "projects"
 REFRESH_SECS = 30
 DAYS = 30
@@ -89,6 +94,31 @@ def load_limits():
         return json.loads(CACHE.read_text()).get("rate_limits") or {}, CACHE.stat().st_mtime
     except (OSError, ValueError):
         return {}, None
+
+
+_opencode_usage = (0.0, None)
+
+
+def fetch_opencode_usage(ttl=300):
+    """OpenCode Go's quota, from its API: nothing on disk tracks it (the binary has no rate-limit code at all).
+    Cached for `ttl` so the 30s TUI refresh doesn't hammer it; a failure is cached too, so offline stays quiet."""
+    global _opencode_usage
+    fetched, payload = _opencode_usage
+    if time.time() - fetched < ttl:
+        return payload
+    try:
+        con = sqlite3.connect(f"file:{OPENCODE_DB}?immutable=1", uri=True)
+        row = con.execute("SELECT value FROM credential WHERE integration_id = 'opencode-go'").fetchone()
+        con.close()
+        # Cloudflare 403s the default Python-urllib agent; any other name passes.
+        req = urllib.request.Request(OPENCODE_USAGE_URL, headers={"Authorization": f"Bearer {json.loads(row[0])['key']}",
+                                                                  "User-Agent": "ai-stats"})
+        with urllib.request.urlopen(req, timeout=3) as r:
+            payload = json.load(r)
+    except (sqlite3.Error, TypeError, KeyError, ValueError, OSError):
+        payload = None
+    _opencode_usage = (time.time(), payload)
+    return payload
 
 
 def load_history(now, span=7 * 86400):
@@ -265,26 +295,39 @@ def scan_codex(path):
 
 
 def scan_opencode(path):
-    """One opencode assistant message. The mirrored step-finish part file repeats these numbers — ignore it."""
+    """opencode2's SQLite store. `session_message` holds every message (the pre-v2 `message` table was migrated
+    into it); the project comes from the session row. immutable=1 skips the WAL, so a live turn may lag."""
     try:
-        e = json.loads(Path(path).read_text())
-        ts = datetime.fromtimestamp((e["time"]["created"]) / 1000).astimezone()
-    except (OSError, ValueError, TypeError, KeyError):
+        con = sqlite3.connect(f"file:{path}?immutable=1", uri=True)
+        rows = con.execute("SELECT m.id, m.session_id, s.directory, m.data FROM session_message m "
+                           "LEFT JOIN session_v2 s ON s.id = m.session_id WHERE m.type = 'assistant'").fetchall()
+        con.close()
+    except sqlite3.Error:
         return [], [], [], [], [], []
-    t = e.get("tokens")
-    if e.get("role") != "assistant" or not isinstance(t, dict):
-        return [], [], [], [], [], []
-    cache = t.get("cache") or {}
-    fresh = (t.get("input") or 0) + (cache.get("write") or 0)
-    output = t.get("output") or 0
-    if not fresh + output:
-        return [], [], [], [], [], []
-    cost = cost_usd(e.get("modelID") or "", {"input_tokens": t.get("input"), "output_tokens": output,
-                                             "cache_creation_input_tokens": cache.get("write"),
-                                             "cache_read_input_tokens": cache.get("read")})
-    return [Usage(f"opencode:{e.get('id')}", ts.timestamp(), ts.date(), ts.weekday(), ts.hour, "opencode",
-                  e.get("modelID") or "unknown", fresh + output, output, t.get("reasoning") or 0, cost, fresh, cache.get("read") or 0,
-                  f"opencode:{e.get('sessionID')}", "opencode", "", False, "opencode")], [], [], [], [], []
+    usage = []
+    for msg_id, session, cwd, raw in rows:
+        try:
+            e = json.loads(raw)
+            ts = datetime.fromtimestamp((e["time"]["created"]) / 1000).astimezone()
+        except (ValueError, TypeError, KeyError):
+            continue
+        t = e.get("tokens")
+        if not isinstance(t, dict):
+            continue
+        cache = t.get("cache") or {}
+        fresh = (t.get("input") or 0) + (cache.get("write") or 0)
+        output = t.get("output") or 0
+        if not fresh + output:
+            continue
+        model = (e.get("model") or {}).get("id") or "unknown"
+        # opencode prices every provider itself; our table only knows Anthropic, so it's the fallback.
+        cost = e.get("cost") or cost_usd(model, {"input_tokens": t.get("input"), "output_tokens": output,
+                                                 "cache_creation_input_tokens": cache.get("write"),
+                                                 "cache_read_input_tokens": cache.get("read")})
+        usage.append(Usage(f"opencode:{msg_id}", ts.timestamp(), ts.date(), ts.weekday(), ts.hour, "opencode",
+                           model, fresh + output, output, t.get("reasoning") or 0, cost, fresh, cache.get("read") or 0,
+                           f"opencode:{session}", *split_cwd(cwd), False, "opencode"))
+    return usage, [], [], [], [], []
 
 
 def scan_cursor(path):
@@ -317,7 +360,7 @@ def scan_cursor(path):
 SOURCES = (
     ("claude", PROJECTS, "**/*.jsonl", scan_file),
     ("codex", Path.home() / ".codex", "**/rollout-*.jsonl", scan_codex),
-    ("opencode", Path.home() / ".local/share/opencode/storage/message", "**/msg_*.json", scan_opencode),
+    ("opencode", Path.home() / ".local/share/opencode", "opencode.db", scan_opencode),
     ("cursor", Path.home() / ".cursor/projects", "*/sdk-agent-store/*/index.db", scan_cursor),
 )
 
@@ -532,6 +575,23 @@ def codex_limit_rows(data, now):
     return limit_rows(norm, now, labels={"five_hour": "Codex (5h)", "seven_day": "Codex (7d)"})
 
 
+def opencode_limit_rows(data, now):
+    """OpenCode Go's rolling/weekly/monthly windows onto the Claude keys; the monthly one gets no pace projection."""
+    usage = (data.get("opencode_limits") or {}).get("usage")
+    if not isinstance(usage, dict):
+        return []
+    norm = {}
+    for src, key, _ in OPENCODE_WINDOWS:
+        w = usage.get(src)
+        if not isinstance(w, dict) or w.get("percent") is None:
+            continue
+        try:
+            norm[key] = {"used_percentage": w["percent"], "resets_at": _stamp(w["resetsAt"]).timestamp()}
+        except (KeyError, TypeError, ValueError, AttributeError):
+            continue
+    return limit_rows(norm, now, labels={k: label for _, k, label in OPENCODE_WINDOWS})
+
+
 def agents_panel(data, days):
     agents = data["agents"]
     if not agents:
@@ -670,7 +730,7 @@ def load(days):
     _load_history.append((days, time.time() - now, sum(t[3] for t in data["timing"])))
     del _load_history[:-8]
     return {**data, "limits": load_limits(), "history": load_history(now), "loads": list(_load_history),
-            "today": today, "now": now}
+            "opencode_limits": fetch_opencode_usage(), "today": today, "now": now}
 
 
 def render(data, sel, metric="tokens", panel="models"):
@@ -686,11 +746,11 @@ def render(data, sel, metric="tokens", panel="models"):
     stamp = f"  {DIM}as of {fmt_duration(now - mtime)} ago{RESET}" if mtime is not None else ""
     out.append(f" {MAGENTA}{BOLD}Plan limits{RESET}{stamp}")
     out += limit_rows(limits, now) or empty("No data yet: limits are captured when a Claude Code session renders its statusline.")
-    codex_rows = codex_limit_rows(data, now)
-    out += codex_rows
+    shown = {"codex": codex_limit_rows(data, now), "opencode": opencode_limit_rows(data, now)}
+    out += shown["codex"] + shown["opencode"]
     missing = [t for t in ("codex", "opencode", "cursor") if t in data["agents"]]
     if missing:
-        absent = [t for t in missing if t != "codex" or not codex_rows]
+        absent = [t for t in missing if not shown.get(t)]
         if absent:
             out.append(f"  {DIM}{', '.join(absent)}: no live plan limits on disk"
                        f"{' (codex logs them only while a session window is open)' if 'codex' in absent else ''}{RESET}")

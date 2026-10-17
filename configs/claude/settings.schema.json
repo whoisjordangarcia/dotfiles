@@ -5324,6 +5324,10 @@
       "deprecated": true,
       "deprecationMessage": "managed settings only; ignored in user settings"
     },
+    "idleCompaction": {
+      "description": "Stop Claude Code from compacting a long conversation while your terminal session is idle",
+      "type": "boolean"
+    },
     "isolatePeerMachines": {
       "description": "Ask you before Claude messages one of your sessions on another machine",
       "type": "boolean"

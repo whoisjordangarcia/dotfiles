@@ -6,18 +6,27 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel-labs/agent-browser.git",
       "skillPath": "skills/agent-browser/SKILL.md",
-      "skillFolderHash": "b6f762bf402cdfaf6a06514e9ce4142ce3e4fb4c",
+      "skillFolderHash": "82def67855a0d2aad7794207951820fa5422fdb0",
       "installedAt": "2026-01-28T20:38:13.659Z",
-      "updatedAt": "2026-04-10T18:12:24.075Z"
+      "updatedAt": "2026-10-16T23:22:03.057Z"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/vercel-labs/skills.git",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "skillFolderHash": "76a98a285cb0434f3d39e1a873823556330e398b",
+      "installedAt": "2026-01-28T20:38:16.676Z",
+      "updatedAt": "2026-10-16T23:22:04.391Z"
     },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel-labs/agent-skills.git",
       "skillPath": "skills/react-best-practices/SKILL.md",
-      "skillFolderHash": "079b06a135401704ea94ab74c7c9d86c92ba259f",
+      "skillFolderHash": "343db72180d05814949fef7d46be96b5c6ee86b3",
       "installedAt": "2026-02-11T14:24:43.851Z",
-      "updatedAt": "2026-02-26T21:33:01.688Z"
+      "updatedAt": "2026-10-16T23:22:09.579Z"
     },
     "web-design-guidelines": {
       "source": "vercel-labs/agent-skills",
@@ -26,7 +35,7 @@
       "skillPath": "skills/web-design-guidelines/SKILL.md",
       "skillFolderHash": "3116f3e62dbd02b44a598b1aa690d2a8938e8f89",
       "installedAt": "2026-02-26T21:33:26.457Z",
-      "updatedAt": "2026-02-26T21:33:26.457Z"
+      "updatedAt": "2026-10-16T23:22:15.029Z"
     },
     "vercel-composition-patterns": {
       "source": "vercel-labs/agent-skills",
@@ -35,7 +44,16 @@
       "skillPath": "skills/composition-patterns/SKILL.md",
       "skillFolderHash": "bf90d0a4b83ea054653350f9c67f6de235d3a368",
       "installedAt": "2026-02-26T21:33:53.358Z",
-      "updatedAt": "2026-02-26T21:33:53.358Z"
+      "updatedAt": "2026-10-16T23:22:12.708Z"
+    },
+    "mobile-ios-design": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/wshobson/agents.git",
+      "skillPath": "plugins/ui-design/skills/mobile-ios-design/SKILL.md",
+      "skillFolderHash": "e8dac5ffb25fc4cf972db39df0cd2fb8eb1c59e3",
+      "installedAt": "2026-03-03T00:09:49.906Z",
+      "updatedAt": "2026-10-16T23:22:17.258Z"
     },
     "nest-db-query": {
       "source": "Nest-Genomics/ai-skills",
@@ -98,7 +116,7 @@
       "skillPath": "skills/gws-calendar/SKILL.md",
       "skillFolderHash": "62a27859dbdf798c1f7288d04750e743283a6b4f",
       "installedAt": "2026-04-09T00:16:44.586Z",
-      "updatedAt": "2026-04-09T00:16:44.586Z"
+      "updatedAt": "2026-10-16T23:22:19.038Z"
     },
     "gws-docs": {
       "source": "googleworkspace/cli",
@@ -107,7 +125,7 @@
       "skillPath": "skills/gws-docs/SKILL.md",
       "skillFolderHash": "455f7468d4a2e3b0b352fbd7ad0937354427af82",
       "installedAt": "2026-04-09T00:16:44.877Z",
-      "updatedAt": "2026-04-09T00:16:44.877Z"
+      "updatedAt": "2026-10-16T23:22:21.340Z"
     },
     "gws-sheets": {
       "source": "googleworkspace/cli",
@@ -116,7 +134,7 @@
       "skillPath": "skills/gws-sheets/SKILL.md",
       "skillFolderHash": "50758ea65d12833e48361aa541c0acaff0d96f67",
       "installedAt": "2026-04-09T00:16:45.171Z",
-      "updatedAt": "2026-04-09T00:16:45.171Z"
+      "updatedAt": "2026-10-16T23:22:23.420Z"
     }
   },
   "dismissed": {

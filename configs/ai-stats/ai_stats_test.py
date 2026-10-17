@@ -116,17 +116,38 @@ with tempfile.TemporaryDirectory() as tmp:
     rows = [plain(r) for r in cs.codex_limit_rows({"codex_limits": (limits[0][1], 0)}, now=1000)]
     check("codex: live window shown, expired one dropped", len(rows) == 1 and rows[0].startswith("  Codex (5h)"))
 
-    msg = root / "message" / "ses_1" / "msg_1.json"
-    msg.parent.mkdir(parents=True)
-    msg.write_text(json.dumps({"id": "msg_1", "sessionID": "ses_1", "role": "assistant", "modelID": "claude-opus-4-5",
-                               "time": {"created": 1769113117928}, "cost": 0,
-                               "tokens": {"input": 100, "output": 20, "reasoning": 5, "cache": {"read": 900, "write": 50}}}))
-    u, *_ = cs.scan_opencode(msg)
+    odb = root / "opencode.db"
+    con = sqlite3.connect(odb)
+    con.executescript("CREATE TABLE session_message(id, session_id, type, seq, time_created, time_updated, data);"
+                      "CREATE TABLE session_v2(id, directory);")
+    con.execute("INSERT INTO session_v2 VALUES ('ses_1', '/src/nest')")
+    con.execute("INSERT INTO session_message VALUES ('msg_1', 'ses_1', 'assistant', 1, 0, 0, ?)", (json.dumps(
+        {"model": {"id": "claude-opus-4-5", "providerID": "anthropic"}, "time": {"created": 1769113117928}, "cost": 0,
+         "tokens": {"input": 100, "output": 20, "reasoning": 5, "cache": {"read": 900, "write": 50}}}),))
+    con.execute("INSERT INTO session_message VALUES ('msg_2', 'ses_1', 'assistant', 2, 0, 0, ?)", (json.dumps(
+        {"model": {"id": "deepseek-v4.1-flash", "providerID": "opencode-go"}, "time": {"created": 1769113117928},
+         "cost": 0.0013, "tokens": {"input": 10, "output": 5, "reasoning": 0, "cache": {"read": 0, "write": 0}}}),))
+    con.execute("INSERT INTO session_message VALUES ('msg_3', 'ses_1', 'user', 3, 0, 0, ?)", (json.dumps(
+        {"time": {"created": 1769113117928}}),))
+    con.commit()
+    con.close()
+    u, *_ = cs.scan_opencode(odb)
+    check("opencode: user messages ignored", [r.key for r in u] == ["opencode:msg_1", "opencode:msg_2"])
     check("opencode: tokens summed, cache reads excluded", u[0].tokens == 170)
+    check("opencode: session and project carried", (u[0].session, u[0].project) == ("opencode:ses_1", "nest"))
     check("opencode: anthropic models get priced", round(u[0].cost, 6) == round(
         cs.cost_usd("claude-opus-4-5", {"input_tokens": 100, "output_tokens": 20,
                                         "cache_creation_input_tokens": 50, "cache_read_input_tokens": 900}), 6))
-    check("opencode: user messages ignored", cs.scan_opencode(msg.with_name("missing.json"))[0] == [])
+    check("opencode: its own cost used for unpriced models", (u[1].model, u[1].cost) == ("deepseek-v4.1-flash", 0.0013))
+    payload = {"usage": {"rolling": {"status": "ok", "percent": 12, "resetsAt": "1970-01-01T01:00:00.000Z"},
+                         "weekly": {"status": "ok", "percent": 62, "resetsAt": "1970-01-02T00:00:00.000Z"},
+                         "monthly": {"status": "ok", "percent": 41, "resetsAt": "1970-01-10T00:00:00.000Z"}}}
+    rows = [plain(r) for r in cs.opencode_limit_rows({"opencode_limits": payload}, now=1000)]
+    check("opencode: rolling/weekly/monthly become 5h/7d/30d rows",
+          [r[2:16].strip() for r in rows] == ["Opencode (5h)", "Opencode (7d)", "Opencode (30d)"])
+    check("opencode: percent and reset carried", "12.0%" in rows[0] and "resets in 43m" in rows[0])
+    check("opencode: no payload, no rows", cs.opencode_limit_rows({"opencode_limits": None}, now=1000) == [])
+    check("opencode: unreadable db degrades to nothing", cs.scan_opencode(root / "nope.db")[0] == [])
 
     db = root / "index.db"
     con = sqlite3.connect(db)

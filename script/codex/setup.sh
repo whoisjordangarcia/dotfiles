@@ -34,10 +34,9 @@ link_file "$SCRIPT_DIR/../../configs/codex/rules/default.rules" "$HOME/.codex/ru
 link_file "$SCRIPT_DIR/../../configs/codex/hooks.json" "$HOME/.codex/hooks.json"
 link_file "$SCRIPT_DIR/../../configs/codex/hooks/touchid-gate.py" "$HOME/.codex/hooks/touchid-gate.py"
 
-# NOTE: the cosmetic cmux integrations (cmux-dispatch.py + the shared
-# cmux_common/cmux-progress/cmux-pr scripts) are intentionally NOT wired here.
-# bbae320 deleted those scripts from configs/claude/scripts, so linking them
-# only produced dangling symlinks and a dispatcher that failed at runtime.
+# NOTE: the cosmetic terminal-pane integrations that used to live in
+# configs/claude/scripts (a pane dispatcher plus progress/pr helpers) were
+# removed with cmux; nothing here wires them, so there are no dangling symlinks.
 
 # Build the same macOS biometric helper used by Claude. Keeping the helper
 # shared (script/common/bioprompt.sh) gives both clients one Touch ID/YubiKey

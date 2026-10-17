@@ -1,0 +1,559 @@
+# Dotfiles agent reference
+
+The long form behind `AGENTS.md`: every trap, per-component check and platform note, in full. `AGENTS.md` keeps the
+rules and points here; read the section you need. It lives in the repo because it is repo knowledge — when it
+changes with the code, it changes here.
+
+<!-- Imported from dotfiles/CLAUDE.md for OpenCode on 2026-10-16. Edit here or in CLAUDE.md, not both. -->
+
+## Repository Overview
+
+Opinionated, cross-platform dotfiles supporting macOS, Linux (Fedora, Ubuntu, Arch), and WSL with personal/work environment configurations. Uses a modular, script-based architecture with symlink-based configuration management.
+
+### Target Systems
+
+These dotfiles are actively used across four environments:
+
+| System | Platform | Profile | Use Case |
+|--------|----------|---------|----------|
+| **Main desktop** | Arch Linux | `linux_arch` / personal | Primary dev machine — full setup with Hyprland, VPN split tunnel, all tools |
+| **Work laptop** | macOS | `mac` / work | Work environment — work git email, rift WM + SketchyBar |
+| **Personal laptop** | Arch Linux (omarchy) | `linux_omarchy` / personal | Omarchy base + dotfiles CLI/dev layer (omarchy-safe subset — see Omarchy notes) |
+| **LXC containers** | Ubuntu/Debian (homelab) | `linux_server` | Lightweight — tmux, neovim, zsh, git only (no desktop/GUI components) |
+
+> [!IMPORTANT]
+> `script/` also carries `linux_fedora` and `linux_ubuntu` profiles. **Nothing runs them.** Don't infer
+> from their existence that they're supported, and don't spend effort keeping them current.
+
+When adding new features, consider which systems they apply to. Desktop-specific configs (Hyprland, VPN, fonts) only belong in the full Arch/mac profiles. Core CLI tools (tmux, nvim, zsh, git) should work across all profiles including the server/LXC setup.
+
+## Orientation
+
+`boot.sh` (curl-able bootstrap) → `bin/dot` (CLI, system detection, `.dotconfig`) →
+`script/<system>_installation.sh` → `run_components` → `script/<component>/[<platform>/]setup.sh`.
+Configs live in `configs/<tool>/` and are symlinked home by `script/common/symlink.sh`.
+Run `./bin/dot -h` for the full command surface; read any `script/*/setup.sh` for the component pattern.
+
+Two things about that flow that reading one file won't tell you:
+
+- **Every platform's component list lives in its own `script/<system>_components.sh`** — a side-effect-free
+  file that *only* defines `component_installation`. It's the single source of truth shared by the matching
+  installer and `bin/dot`'s module-selection menu (which `source`s it). Edit the array there, never in an installer.
+- **Components run as child processes**, so one script's `set -e`/env changes stay contained — and they
+  only see *exported* variables (`DOT_*`, `WORK_ENV`, `DOT_SYMLINK_MODE`). They cannot share shell state
+  with each other, which is why `claude`/`codex` load nvm themselves instead of inheriting it from `node`.
+
+### Script Guidelines
+
+Only the two that aren't obvious from reading a neighbouring script:
+
+- **Export for sub-scripts**: configuration vars must be exported — components run as child processes and only see the exported environment
+- **Don't clobber `SCRIPT_DIR` in sourced libs**: shared files that get sourced (like `symlink.sh`) must use a private dir var (e.g. `_SYMLINK_LIB_DIR`) so they don't overwrite the caller's `SCRIPT_DIR`
+
+## Checks That Must Be Run
+
+### Claude Code Statusline
+
+The statusline lives at `configs/claude/statusline.sh` and has a regression test + visual demo:
+
+- `configs/claude/statusline_test.sh` — assertion-based tests (`✓/✗` output)
+- `configs/claude/statusline_demo.sh` — side-by-side "expect vs actual" renderings for every scenario
+
+**When modifying `configs/claude/statusline.sh`, always run both:**
+
+```bash
+bash configs/claude/statusline_test.sh   # must end with "All N tests passed"
+bash configs/claude/statusline_demo.sh   # visually confirm each variation still matches the expect line
+```
+
+If you add a new field, branch/PR/worktree case, or line-3 indicator, add a corresponding test in `statusline_test.sh` and a scenario in `statusline_demo.sh` before considering the change complete. The demo doubles as living documentation for every supported rendering.
+
+### Starship Prompt Info
+
+`configs/starship/prompt_info.sh` renders the repo/branch segment plus a GitHub PR
+indicator. **When modifying it, run:**
+
+```bash
+bash configs/starship/prompt_info_test.sh   # must end with "All N tests passed"
+```
+
+Two non-obvious constraints the tests pin:
+
+- **The PR hyperlink must be assembled in zsh, not in this script.** Starship's zsh
+  escaper mis-parses OSC 8 and closes its `%{…%}` region *mid-URL*, so the URL tail
+  gets counted as visible prompt width and wrecks wrapping/redraw. `prompt_info.sh`
+  emits `\001<url>\002 … \003` sentinels; `_starship_pr_prompt` in
+  `.zshrc-modules/.zshrc.init` swaps in the escapes with correct zero-width markers,
+  and exports `STARSHIP_PR_LINK` so a shell without it degrades to an unlinked
+  `● #1234` rather than a bare URL. (CSI colour codes are fine — only OSC is affected.)
+- **That rewrite must wrap starship's `PROMPT`, not run in a `precmd` hook.** Under
+  `promptsubst` starship sets `PROMPT='$(starship prompt …)'` — a *deferred*
+  substitution zsh re-evaluates on every redraw — and `prompt_starship_precmd` only
+  stashes `$?`/duration/jobs. A precmd hook therefore sees the literal `$(…)` string
+  and never the sentinels, silently doing nothing. `_starship_pr_prompt` stashes the
+  original `PROMPT` and evaluates it with `${(e)…}`, which also keeps starship's
+  upgrade-prone argument list out of this repo.
+- **The background `gh` refresh must have stdout on `/dev/null`.** Starship reads the
+  script's stdout until EOF, so a background job inheriting that pipe holds it open
+  for the whole network round-trip — turning the async refresh into a hard stall.
+
+Cache lives in `${XDG_CACHE_HOME:-~/.cache}/starship-pr/`, one file per repo+branch,
+300s TTL. The prompt only ever reads it.
+
+### Tmux Scripts
+
+Statusline/window-name scripts in `configs/tmux/scripts/` follow the same pattern: pure logic exposed via test hooks, with assertion-based tests alongside. **When modifying `smart_window_name.sh` or `claude_status.sh`, run:**
+
+```bash
+bash configs/tmux/scripts/smart_window_name_test.sh   # must end with "All N tests passed"
+bash configs/tmux/scripts/claude_status_test.sh       # must end with "All N tests passed"
+```
+
+`claude_status.sh` renders the Claude state dot in `status-left` (amber ● waiting / green ● churning / dim ○ idle); its `--classify`/`--render` flags test the mapping without a tmux server.
+
+### Brave Config
+
+`script/brave/` splits into a **read** half (`sync.sh` → `brave-sync`, safe while
+Brave runs) and a **write** half (`theme.sh` → `brave-theme`, which refuses while
+Brave runs — Brave rewrites Preferences on exit and would eat the edits).
+**When modifying anything under `script/brave/`, run:**
+
+```bash
+for t in script/brave/*_test.sh; do bash "$t"; done   # each must end with "All N tests passed"
+```
+
+The non-obvious rule: **a pref missing from the browser means "Brave is on the
+default", never "the user deleted it"** — so `snapshot` merges the tracked
+`prefs.txt` over the live read (live wins where the key exists). Without that,
+one prefs reset in the browser makes `brave-sync` silently rewrite the repo to
+the reset state, committing the damage as intent. Remove a pref by editing
+`configs/brave/prefs.txt`, not by syncing.
+
+### Touch ID Gate Patterns
+
+**When editing `configs/claude/hooks/gate_patterns.py` or `touchid-gate.py`, run:**
+
+```bash
+bash configs/claude/hooks/gate_test.sh   # must end with "All N tests passed"
+```
+
+It pins which commands trip the tripwire, each one's approval mode, the
+per-project scope resolution, and the force-push preview (against a throwaway
+diverged repo). Pure logic: bioprompt is never launched, so it's headless-safe.
+`configs/codex/hooks/touchid-gate.py` imports the same list — change the tuple
+shape and you must update both hooks.
+
+## Traps
+
+### Touch ID Command Gate (macOS)
+
+AI-initiated sensitive Bash commands require biometric approval via a Claude Code `PreToolUse` hook:
+
+- `configs/claude/hooks/touchid-gate.py` — pattern-matches sensitive commands (sudo, force push, prod AWS profiles, 1Password/keychain access, `curl | sh`, secrets-file reads) and pops an approval dialog. Approved → `allow`; denied → `deny`; biometrics unavailable → falls back to the normal permission prompt (`ask`). For a force push it also renders `git log` of the commits being pushed **and the ones the remote would lose** — the second list is the reason to look before approving.
+- `configs/claude/hooks/bioprompt.swift` — SwiftUI Liquid Glass approval dialog: the command rendered syntax-highlighted (colors parsed live from the Ghostty theme's dark variant) with Touch ID embedded inline via `LAAuthenticationView`. When biometrics are unavailable (clamshell mode) the same glass card shows Approve/Deny and the click approves outright — **no password step**, deliberately: the gate exists to catch unattended AI actions, and whoever is at the keyboard already has the shell. Built by `script/claude/setup.sh` into `~/Applications/BioPrompt.app` (`bioprompt-Info.plist`); `~/.local/bin/bioprompt` is an exec shim into the bundle so the hook keeps calling the same path.
+- **Two approval modes.** Each entry in `gate_patterns.py` is `(regex, label, mode)`. `"bio"` demands a Touch ID press or YubiKey tap; `"confirm"` shows the same dialog but the Approve button answers it (`bioprompt --confirm`, which skips the `LAContext` path entirely). Prod AWS is `confirm` — the point there is *seeing* the command, not proving who saw it.
+- **Per-project scopes.** `GLOBAL_PATTERNS` fire in every directory; `SCOPED_PATTERNS` are opted into per project by `configs/bioprompt/projects.conf` (symlinked to `~/.config/bioprompt/projects.conf` by `build_bioprompt`), keyed on the hook payload's `cwd`. Currently one scope, `git-write`, which gates `git commit`/`git push` in `~/projects/nest` and `~/dev/dotfiles`.
+  > [!IMPORTANT]
+  > Scoping only ever **adds**. A missing, unreadable, or typo'd config yields no extra scopes and leaves the global tripwires untouched — deliberately, so the failure mode is prompt fatigue rather than silent loss of the prod-AWS/secrets guards. Prefixes match on a path boundary (`~/dev/dot` ≠ `~/dev/dotfiles`), and globals are matched first so a `git push --force` inside a `git-write` project still gets the force-push label and its commit preview.
+- **YubiKey approval**: a FIDO2 user-presence assertion (libfido2, in `Brewfile.base`) races the other auth paths — a key tap approves, fastest in clamshell mode where Touch ID is unavailable. One-time setup per machine: `bioprompt --enroll` (stores credential id + public key only, under `~/.config/bioprompt/`; each approval verifies a signature over a fresh challenge).
+- Wired in the dedicated `settings.{work,personal}.json` files under `hooks.PreToolUse`. **Bootstrap order matters**: the `~/.claude/hooks` symlink must exist before the hook entry is live, or every Bash call is blocked (claude/setup.sh links it).
+- This is a tripwire, not a sandbox — pattern matching can be evaded; Claude Code's permission system remains the enforcement layer.
+
+### Claude Settings (dedicated work/personal files)
+
+`~/.claude/settings.json` comes from a **dedicated, complete per-environment
+file** — no base/overlay merge. `script/claude/setup.sh` **copies** (not
+symlinks) `configs/claude/settings.work.json` or `settings.personal.json`
+verbatim to `~/.claude/settings.json`. Work-only plugins
+(`nest-*@nest-genomics-skills`) and the `nest-genomics-skills` marketplace live
+only in `settings.work.json`, so personal machines never see them.
+
+**Environment selection lives in one place: `script/common/dot_env.sh`.** Source
+it and call `dot_export_env`; it sets `DOT_ENV` (`work`|`personal`) and aligns
+the `WORK_ENV`/`DOT_ENVIRONMENT` exports. Precedence:
+
+1. `WORK_ENV=1` — explicit override.
+2. non-empty `DOT_ENVIRONMENT` — how `bin/dot` drives component scripts.
+   (`bin/dot` exports `WORK_ENV=""` *empty* for personal, so an empty `WORK_ENV`
+   carries no signal — only `DOT_ENVIRONMENT` is authoritative there.)
+3. **`.dotconfig`'s `DOT_ENVIRONMENT`** — the standalone path.
+4. personal — safe default.
+
+> [!IMPORTANT]
+> Rule 3 is load-bearing. Component scripts are a documented **standalone**
+> install path (`./script/claude/setup.sh`) where `bin/dot` has exported nothing.
+> Without the fallback a work machine silently installs the **personal** config,
+> dropping the touchid-gate + prod-AWS tripwires and every `nest-*` plugin/skill
+> — a security regression that fails silently. `.dotconfig` is `source`d (in a
+> subshell, so it can't clobber caller vars), not grepped: a `grep|cut '"'` parse
+> mis-reads an unquoted `DOT_ENVIRONMENT=work` and falls right back into the bug.
+
+All three consumers (`claude/setup.sh`, `claude/sync-settings.sh`,
+`skills/setup.sh`) share it, so forward (setup) and reverse (sync) can't disagree
+about which machine this is. They previously had **three different** semantics.
+**When touching env resolution, run:**
+
+```bash
+bash script/common/dot_env_test.sh   # must end with "All N tests passed"
+```
+
+Each dedicated file is the **single source of truth** for its environment and
+holds the whole settings object (including runtime keys like `effortLevel`).
+Because setup.sh copies rather than merges, re-running it **overwrites** the live
+file — so capture live edits first:
+
+- **Forward**: `script/claude/setup.sh` → copies active file to `~/.claude/settings.json`.
+- **Reverse**: **`claude-settings-sync`** (alias for `script/claude/sync-settings.sh`)
+  copies the live file back into this env's dedicated file. 1:1 copy, no routing;
+  env resolved from `.dotconfig` (`DOT_ENVIRONMENT`) or `WORK_ENV=1`.
+
+The two files are **independent** — a setting you want on both machines must be
+made in both (review `git diff configs/claude/settings.*.json`). `nest-*` skills
+in `configs/skills/` are similarly projected by `script/skills/setup.sh` only in
+work mode (and pruned elsewhere).
+
+### Claude memory (one file, not a split) — changed 2026-10-16
+
+**`configs/agents/AGENTS.md` is the canonical global memory** — one file for every harness. `script/memory-sync.sh`
+symlinks the two paths a harness will actually read to it:
+
+| Path | Harness | Why that name |
+| --- | --- | --- |
+| `~/.claude/CLAUDE.md` | Claude Code, user scope | the only user-scope memory path it has; `~/.claude/AGENTS.md` is never read |
+| `~/.config/opencode/AGENTS.md` | OpenCode, global | its config dir's `AGENTS.md`, walked from the project root up |
+
+`script/claude/setup.sh` calls the script, so a fresh machine regenerates the links. `--check` reports broken links
+without writing; the zsh aliases are `memory-sync` / `memory-check` (the old `claude-sync`, which split live edits back
+into a base + overlay, was deleted with that split). Nothing is copied, so the two harnesses cannot drift.
+
+**Tested and rejected — OpenCode's `instructions` config key.** `"instructions": ["…"]` in `opencode.json` looks like
+the tidier answer (no symlink, any path). It is in the published schema ("additional paths supplying ambient
+instructions") and in the docs, but `opencode2` beta-17823 ignores it: `~/dev/…`, an absolute path and a
+project-relative path all failed to load, while the same content through `~/.config/opencode/AGENTS.md` loaded
+fine. Re-test before trusting it.
+
+The retired layout, for archaeology: `configs/claude/CLAUDE.md` (shared base) + `CLAUDE.{work,personal}.md` (overlay),
+joined at a `<!-- @dot-overlay:<env> -->` marker, with `script/claude/sync-claude.sh` splitting live edits back. The base
+and the personal overlay are gone; only `configs/agents/AGENTS.work.md` remains for a work machine's own additions.
+
+**Projects are `AGENTS.md` only** — no `CLAUDE.md` anywhere, and no `AGENTS.local.md` (neither harness reads that
+name; Claude Code's docs list it under "Not read", and OpenCode's loader only ever resolves `"AGENTS.md"`).
+
+**Tested 2026-10-16 on 2.1.287 — the "both files" override does not work here.** With a project holding both
+`CLAUDE.md` and `AGENTS.md`, only `CLAUDE.md` loaded. Same with `AGENTS.md` + `CLAUDE.local.md`. The documented
+escape hatch
+
+```json
+"pluginConfigs": { "cc-plugin-agents-md@builtin": { "options": { "instructionFiles": "claude-md-and-agents-md" } } }
+```
+
+was ignored under `cc-plugin-agents-md@builtin` **and** the legacy `agents-md@builtin` (the ID this build registers
+in `~/.claude.json` `pluginUsage`), and `claude -p` sessions confirmed it either way. Top-level `claudeMd` in user
+settings is a documented no-op (honoured only in managed/policy settings). The entries are left in
+`configs/claude/settings.{work,personal}.json` as forward-compatible intent, but **do not rely on them**: never put
+a `CLAUDE.md` or `CLAUDE.local.md` in a repo that depends on its `AGENTS.md`. Use `.claude/rules/*.md` instead —
+path-scoped rules load alongside `AGENTS.md`. Re-test if `/config` → Project instructions ever shows the override
+working.
+
+### Claude Code Themes (custom)
+
+Custom themes live in `configs/claude/themes/`, symlinked whole-dir to
+`~/.claude/themes` by `script/claude/setup.sh`. Unlike settings/CLAUDE.md, themes
+are **not** work/personal-gated — one dir, shared by both. Ships
+`catppuccin-mocha.json` (Mocha to match `bat`, rift borders, and the GTK cursor).
+
+**The slug is the FILENAME, not the `name` field.** `catppuccin-mocha.json`
+registers as `custom:catppuccin-mocha`; `name` is only the label shown in
+`/theme`. Select via `/theme`, or set `"theme": "custom:<slug>"` in **both**
+`settings.work.json` and `settings.personal.json` (they're independent files).
+
+> [!IMPORTANT]
+> **Selecting a custom theme silently disables `"theme": "auto"`.** They are
+> mutually exclusive by construction — the resolver is
+> `base = custom ? custom.base : (theme === "auto" ? detected : theme)`, so a
+> custom theme's `base` short-circuits detection and pins light-or-dark forever.
+> There is no `auto` value for `base` (the six listed below are the whole set),
+> and no `auto-ansi` theme. Both settings files therefore ship **`"theme": "auto"`**
+> — automatic light/dark is worth more day to day than a fixed palette, and
+> `custom:catppuccin-mocha` stays available via `/theme` when you want to pin one.
+>
+> `auto` resolves in three steps: an **OSC 11** query of the terminal's real
+> background color (`rgb:RRRR/GGGG/BBBB`), scored by relative luminance
+> (`0.2126r + 0.7152g + 0.0722b > 0.5` → light); then `COLORFGBG`'s last field
+> (`≤6` or `8` → dark); then `dark`. The OSC 11 path is why this works in Ghostty
+> and tmux, where `COLORFGBG` is unset — do not "fix" auto by exporting
+> `COLORFGBG`, and note that `statusline.sh` deliberately does no such detection
+> at all (it emits only theme-owned ANSI slots).
+>
+> Auto picks between the **built-in** `dark`/`light` — never the `*-ansi`
+> variants. So it adapts to light-vs-dark, not to your terminal's specific
+> palette. If you'd rather inherit that palette exactly, set `"theme":
+> "dark-ansi"` / `"light-ansi"`, at the cost of choosing the mode by hand.
+
+```json
+{"name": "Catppuccin Mocha", "base": "dark", "overrides": {"claude": "#fab387"}}
+```
+
+- `base` ∈ `dark`, `light`, `dark-ansi`, `light-ansi`, `dark-daltonized`, `light-daltonized`.
+- Colors: `#rrggbb`, `#rgb`, `rgb(r,g,b)`, `ansi256(n)`, or `ansi:<name>` where
+  `<name>` is one of exactly 16: `black`, `red`, `green`, `yellow`, `blue`,
+  `magenta`, `cyan`, `white` and their `…Bright` variants. **`ansi:` is a
+  membership test** — `ansi:orange` is silently dropped, not an error.
+- `overrides` merges over `base`, so a partial theme is fine — 72 keys available.
+
+> [!IMPORTANT]
+> **The loader is silently lossy.** An override with a misspelled key, an invalid
+> color, or a bogus `base` is **dropped with no error** — the theme just renders
+> wrong. Non-`.json` files in the dir are ignored by Claude Code (which is why the
+> preview script can live alongside the themes). Always run `--check`:
+
+```bash
+configs/claude/themes/theme_preview.py            # render every theme: swatches + mock UI
+configs/claude/themes/theme_preview.py --check    # validate; non-zero exit on problems
+```
+
+`theme_preview.py` re-implements an **undocumented** contract reverse-engineered
+from the Claude Code binary (`ghg()`/`JOe()`/`Wdi`/`Kpg`/`mhg`), so it **will
+drift on upgrades**. `theme_test.sh` pins it — a `--check` that passes a theme the
+loader would gut is worse than none, since it certifies the bug. **When modifying
+`theme_preview.py`, run:**
+
+```bash
+bash configs/claude/themes/theme_test.sh   # must end with "All N tests passed"
+```
+
+If it fails after a Claude Code upgrade, re-extract the contract:
+
+```bash
+V=~/.local/share/claude/versions/<version>
+strings -n 4 "$V" | grep -o 'function JOe(e).\{0,700\}'   # color validator
+strings -n 3 "$V" | grep -o 'Kpg=[^;]\{0,300\}'           # the 16 ansi names
+strings -n 3 "$V" | grep -o 'Wdi=\[[^]]*\]'               # valid `base` values
+```
+
+**Authoring rules** (reverse-engineered from the built-in themes — follow them or
+a new theme will look subtly off):
+
+- **Shimmer keys brighten additively** (~`+38`/channel, clamped at 255) — they are
+  *not* blended toward white. Built-in dark: `inactive` 153 → `inactiveShimmer` 193.
+- **`subtle` is darker than `inactive`** (built-in dark: 80 vs 153 grey), not the
+  reverse. `background` is a teal *accent* in both light and dark — not a fill.
+- **Diff fills need a monotonic chroma hierarchy**: `Dimmed` < normal < `Word`
+  (Mocha uses 0.12 / 0.25 / 0.55 mixed over `base`). Don't luminance-match the
+  built-in theme — its diffs are dark *saturated* colors, and mixing scales chroma
+  linearly, so a pastel palette like Catppuccin can never reach that saturation.
+  Chasing it inverts `Dimmed` and normal, collapsing the two into one shade.
+
+### Agent Skills
+
+Shared agent skills live in `configs/skills/` (one directory per skill, each with a `SKILL.md` plus optional `references/`, `templates/`). `script/skills/setup.sh` projects each skill into every agent CLI (`~/.claude/skills/`, `~/.cursor/skills/`, `~/.codex/skills/`) via per-skill symlinks, so **every skill committed here is version-controlled and syncs to all machines** — including the LXC server, which needs no `npx`/Node to use them. (`configs/claude/skills` is itself a symlink to `../skills` for backward compatibility.)
+
+**Adding a skill from the open ecosystem** (`npx skills`, browse at https://skills.sh):
+
+```bash
+
+# ALWAYS use --copy so real files land in the repo dir, not a symlink
+npx skills add <owner/repo@skill> --copy -a claude
+git add configs/skills/<skill> && git commit
+```
+
+> [!IMPORTANT]
+> **Never `npx skills add` without `--copy`.** A bare install symlinks the skill into `~/.claude/skills/<name>` pointing at the machine-local CLI store `~/.agents/skills/` (untracked). That commits a **broken symlink** that dangles on every other machine. `--copy` writes real files instead. (This is exactly how `prd/SKILL.md` ended up a dangling absolute symlink — `find -L configs/skills -type l` lists such breakage on both macOS and Linux.)
+
+Hand-authored skills are just a directory with a `SKILL.md`. Create one with `npx skills init <name>` inside `configs/skills/`, or by hand. Skills are public — never commit secrets, API keys, or real hostnames (see the Security section).
+
+### SD Card Backup (macOS, `StartOnMount`)
+
+`configs/sd-backup/sd-backup.sh` runs from a launchd agent
+(`com.nest.sd-backup`) and offers to copy photos off a camera card to
+`/Volumes/tank01/Photos and Videos/Camera Imports/YYYY/YYYY-MM/`, dated from
+each file's mtime. Nothing new on the card → no prompt at all. After a
+successful copy it opens the newest month in Finder, then offers to clear the
+card (Open card / Keep / Erase card); erasing also ejects, because "safe to
+remove" is only true once the volume is unmounted.
+**When modifying it, run:**
+
+```bash
+bash configs/sd-backup/sd_backup_test.sh   # must end with "All N tests passed"
+```
+
+The script exposes `--plan CARD DST` (print the `src<TAB>dst` copy plan) and
+`--copy PLANFILE CARD` (execute one) so the tests drive the real logic — and
+real rsync — without a card, a NAS, or launchd.
+
+Six things that are not recoverable from reading the source:
+
+- **A launchd agent may not read a removable volume, and is never prompted for
+  permission.** This is the reason the component has two halves. TCC blocks
+  `readdir` while still allowing `stat`, so the agent can *detect* a card it
+  cannot *read*; and because background jobs have no UI context, macOS denies
+  silently and permanently instead of asking. Measured from one agent, same
+  card, same second: a direct read returns `Operation not permitted` while a
+  read through the app bundle succeeds.
+- **An app bundle is what fixes it, because TCC keys on bundle identity** — the
+  removable-volume table lists `com.mitchellh.ghostty`, `dev.jordan.ghostmux`
+  and friends. A shell script can never be more than "bash". So `setup.sh`
+  builds `~/Applications/SDBackup.app` (`dev.jordan.sd-backup`) with
+  `osacompile`, which emits a real signed bundle with no Xcode; the agent
+  `open`s it, and the applet re-enters the script with `--run`. A child process
+  inherits the TCC identity of the app responsible for it, which is what buys
+  the access. **`osacompile` does not write a `CFBundleIdentifier`** — without
+  the PlistBuddy step there is no identity for TCC to key on.
+- **`StartOnMount` fires on *every* mount, and the job mounts a volume itself.**
+  launchd passes no argument saying *what* mounted, so the script scans
+  `/Volumes/*` for a `DCIM/` dir. Mounting tank01 to write the backup re-fires
+  the agent — `mkdir /tmp/sd-backup.lock` (atomic test-and-set) is what stops
+  it recursing, not politeness.
+- **launchd jobs don't get `NAS_SMB_URL`** — it's an interactive-zsh export from
+  `~/.zshrc-sec` (this repo is public and bans real IPs). The script `sed`s it
+  out of that file. No `~/.zshrc-sec` → it can't mount the NAS and says so.
+  `ensure_dest` waits for the **share**, then `mkdir -p`s the destination:
+  testing for the destination folder instead reports "could not mount" on a
+  perfectly mounted share, forever, because nothing ever creates that folder.
+- **Idempotency is the destination path, not an rsync flag.** Verified by test:
+  `--ignore-existing` *silently drops* a rolled-over `DSCF0648.JPG` holding a
+  different photo, and without it rsync *overwrites* the original — data loss
+  in both directions. (`Photos and Videos/_fujifilm-collisions-20260807` on the
+  NAS is what that failure looks like in practice.) So the bash plan pass owns
+  the decision (same name + different size → `-N` suffix) and rsync only ever
+  receives files it should copy. `--modify-window=2` is still required: the card
+  is FAT32 (2-second mtime granularity), which otherwise reads as "changed"
+  against SMB on every run.
+- **Dating comes from mtime, not EXIF** — there's no `exiftool` on these
+  machines. Fine for the Fuji, which sets mtime to capture time.
+- **The erase gate is a second `plan` run coming back empty**, not a separate
+  verifier. `plan` emits a file only when it is missing from the destination or
+  differs in size, so an empty plan *is* the proof that every media file on the
+  card is on the NAS at full size. Reusing it means the check can never drift
+  from the copier — do not replace it with a bespoke comparison. Erase only ever
+  deletes what `media_files` matches, so `.CTG` catalogs, `FFDB` and the `DCIM`
+  folders survive for the camera; the dialog's default button is the
+  non-destructive one so a stray Return cannot wipe a card.
+
+Both halves log to `/tmp/sd-backup.log`; the `--run` half `exec`s onto it
+because the applet captures stdout rather than showing it. `dbg` writes to
+**stderr** so that logging inside a function can't be swallowed by a `$(...)`
+capture of that function — which is how the closing Finder-open broke once.
+
+### T2 dGPU Power-Off — Deliberately Disabled, Do Not Re-Enable
+
+**The ~7.1W / 65C idle draw of the discrete GPU on the MacBookPro15,1 is a known,
+accepted cost. It is not an oversight waiting to be optimised.** `bin/dgpu-off`
+works — that is the problem. Powering the dGPU down through gmux hard-crashes the
+machine on the next S3 suspend, and `script/gpu-switch/linux/setup.sh` now *tears
+down* any previous install rather than creating one.
+
+> [!IMPORTANT]
+> This trap is specifically shaped to fool an agent. The repo contains a working
+> `bin/dgpu-off`, a ready `configs/systemd/dgpu-off.service`, and a dGPU that
+> `lspci` shows powered on driving zero connected outputs. Every surface signal
+> says "free battery, finish wiring this up". Re-enabling it costs a reboot and
+> a wedged suspend path. Read `bin/dgpu-off`'s header before touching anything
+> in `script/gpu-switch/`.
+
+Why it cannot work as written: cutting power via gmux does **not** remove the dGPU
+from the suspend path, because `amdgpu` stays bound and its PM callbacks still run.
+`amdgpu_pmops_suspend()` does honour `DRM_SWITCH_POWER_OFF` and bails early, but
+`amdgpu_pmops_suspend_noirq()` does not — it consults
+`amdgpu_acpi_should_gpu_reset()` (true for any non-APU on deep S3) and resets the
+ASIC regardless. Every config read on a depowered GPU returns `0xffffffff`, so the
+reset fails `-EINVAL` **in the noirq phase, which cannot be unwound**. `xhci_hcd`
+then fails to resume `-19`, taking the T2 bridge — keyboard, trackpad, Touch Bar —
+down with it, and the machine reboots.
+
+- **The failure does not look like a crash.** logind re-suspends on the next boot
+  with the lid still shut, so it presents as a plain lock screen. The only tell is
+  a fresh-boot signature (`ACPI: ... Battery Slot [BAT0] (battery present)`) in
+  `journalctl` seconds before a `PM: suspend entry`. Do not diagnose this from the
+  desktop; diagnose it from the journal.
+- **`DGPU_OFF_I_KNOW=1` is the guard**, added because the header alone did not stop
+  the script being run by hand once (2026-07-26). Unset, `bin/dgpu-off` refuses and
+  writes nothing. `dgpu_off_test.sh` pins that refusal.
+- **`configs/systemd/dgpu-off.service` is retained but installed by nothing.** It
+  exists only for the untested revisit plan in `bin/dgpu-off`'s header (assert `ON`
+  from `suspend-fix-t2.service` `Before=sleep.target` so the noirq reset finds a
+  live device, re-assert `OFF` `After=suspend.target`). Do not `systemctl enable`
+  it speculatively.
+- **`suspend-fix-t2.service` must stay enabled** — it is the recovery net that
+  restores the T2 stack after a failed suspend, and is independent of all the above.
+
+**When touching `bin/dgpu-off`, `script/gpu-switch/`, or anything under
+`configs/systemd/` for T2 sleep, run both:**
+
+```bash
+bash bin/dgpu_off_test.sh                    # must end with "All N tests passed"
+bash configs/systemd/t2_sleep_units_test.sh  # must end with "All N tests passed"
+```
+
+### Tmux Continuum Caveat
+
+**tmux-continuum auto-save relies on a `#(continuum_save.sh)` call embedded in `status-right`.**
+Any custom `status-right` set **after** `run '~/.tmux/plugins/tpm/tpm'` will overwrite continuum's hook and silently break auto-save. When customizing the statusline, always include:
+```bash
+#(~/.tmux/plugins/tmux-continuum/scripts/continuum_save.sh)
+```
+at the start of your `status-right` value. It produces no visible output — it purely triggers the save-interval check on each status bar refresh.
+
+- Save files live at `~/.local/share/tmux/resurrect/`
+- Manual save/restore: `<prefix> + S` (save) / `<prefix> + R` (restore)
+- Current auto-save interval: 1 minute (`@continuum-save-interval '1'`)
+
+### Secrets: Lazy 1Password Fetch
+
+`.zshrc.sec` is rendered from an environment-specific template (`.zshrc.sec.work.tpl` / `.zshrc.sec.personal.tpl`, selected by `WORK_ENV` in `script/zsh/setup.sh`). Two patterns:
+
+- **Injected** (`{{ op://... }}`): resolved at setup by `op inject` — plaintext at rest; only for low-sensitivity values.
+- **Lazy** (recommended): templates export only `*_REF="op://..."` references; the `opsec` helper (`.zshrc.functions`) runs `op read` at use-time, so 1Password prompts Touch ID when the secret is actually used and nothing sensitive sits on disk:
+  ```bash
+  ELASTIC_STG_API_KEY=$(opsec "$ELASTIC_STG_API_KEY_REF") some-command
+  ```
+
+## Platform-Specific Notes
+
+### macOS
+- **Menu Bar**: SketchyBar. Restart if frozen: `brew services restart sketchybar`
+- **Work variant**: no separate installer — `./bin/dot --system mac --work` runs `mac_installation.sh` with `WORK_ENV=1`/`DOT_ENVIRONMENT=work` exported, which only changes environment-specific config (work git email, etc.), not which components install
+
+### Arch Linux
+- **T2 MacBook Support**: requires manual `apple-bce` driver installation
+- **Kernel**: use `linux-t2` for MacBook hardware compatibility
+
+### Omarchy (personal Arch laptop)
+- **Detection**: `bin/dot` maps Arch + `~/.local/share/omarchy` → `linux_omarchy` profile
+- Omarchy owns `~/.config` app configs as **copies** it maintains via `omarchy refresh`/migrations. Those use `cp -f`/`sed -i`, which **follow symlinks** — after `omarchy update`, run `git status` here: a migration can write through a dotfiles symlink into this repo.
+- **Excluded on purpose** (see `script/linux_omarchy_components.sh` for the annotated list): `hypr/linux` + `theming/linux` + `rofi/linux` + `btop/linux` (HyDE-specific; `configs/hypr/hyprland.conf` sources `~/.local/share/hyde/` which doesn't exist on omarchy and would break the desktop), `vpn/linux` + `ufw/linux` (omarchy manages DNS via systemd-resolved and its own ufw rules), `dolphin/linux`/`brave/linux`. Package-level: no `podman-docker` (pacman `conflicts=docker` — installing it removes omarchy's docker stack), no `dnsmasq`/`ufw`.
+- **Hyprland**: `hypr/omarchy` links only the override files omarchy's `hyprland.conf` sources last (`bindings/looknfeel/input/autostart.conf` + `gpu-perf-*.conf`) from `configs/hypr-omarchy/`. **Never symlink `hyprland.conf` or `monitors.conf`.** Private webapp URLs go in `~/.config/hypr/bindings.local.conf` (seeded by setup, untracked, sourced by `bindings.conf`).
+- **Theme system**: never link over `~/.config/mako/config` or `~/.config/btop/themes/current.theme` — omarchy-owned symlinks into `~/.config/omarchy/current/theme/`. The ghostty config *does* follow `omarchy theme set`, via an optional `config-file = ?"~/.config/omarchy/current/theme/ghostty.conf"`. Two non-obvious parts: includes are applied after the whole parent file is parsed, so that line beats the `theme = dark:Rose Pine…` fallback no matter where it sits — and the fallback is what non-omarchy boxes (the Mac) still use, since `?` skips a missing file. `omarchy font set` is a `sed` over `~/.config/ghostty/config` whose regex only matches a **double-quoted** `font-family` value; leave the quotes on or ghostty is silently skipped while every other app changes font. `omarchy font current` reads its answer back out of `~/.config/waybar/style.css`, which is therefore the de-facto store of the current system font.
+
+### VPN Split Tunneling (AirVPN + WireGuard)
+
+Split-tunnel VPN that routes all traffic through AirVPN **except** configurable domains (streaming CDNs, etc.) which route directly. Scripts and rules live in `configs/vpn-split/`; `script/vpn/linux/setup.sh` wires them up.
+
+The bypass chain: **dnsmasq** intercepts DNS queries → adds resolved IPs to an **nftables** dynamic set → nftables marks matching packets with `fwmark 0x2` → **ip rule** routes marked packets through the main table (direct) instead of the WireGuard tunnel. Set entries auto-expire after 1 hour.
+
+- **Domain list is local only**: `~/.config/vpn-split/exclude-domains.txt` is never committed. The repo only contains `exclude-domains.example.txt` as a template.
+- **WireGuard config is not managed by dotfiles**: `/etc/wireguard/airvpn.conf` contains private keys and must be manually placed. Generate at https://airvpn.org/generator/ (WireGuard protocol).
+- **After editing domains**: run `vpn-gen-config` then `sudo systemctl restart dnsmasq` (or just `vpn-down && vpn-up`).
+
+## Security — No Sensitive Data in This Repository
+
+This is a **public dotfiles repository**. Never commit secrets, credentials, or machine-specific data.
+
+**Never commit or create files containing:**
+- Private keys (SSH, GPG, TLS) — `id_rsa`, `id_ed25519`, `*.pem`, `*.key`
+- API tokens, passwords, or authentication credentials
+- `.env` files with real values
+- IP addresses, hostnames, or network topology of real machines
+- Personal identifiers beyond what's already public (name, public email)
+
+**Safe patterns already in use — follow these:**
+- `.dotconfig` — generated at install time, gitignored; stores `DOT_NAME`, `DOT_EMAIL`, etc.
+- `configs/ssh/config` — uses `Include ~/.ssh/hosts.local` so real host aliases stay local
+- `configs/git/.gitconfig.template` — variable substitution (`DOT_EMAIL`, `DOT_YUBIKEY`) at install time
+- `.zshrc.sec` — gitignored file for secret shell exports, rendered from `.zshrc.sec.{personal,work}.tpl`; prefer lazy `op://` references + `opsec` over injected plaintext (see [Secrets: Lazy 1Password Fetch](#secrets-lazy-1password-fetch))
+
+**When adding new configurations:**
+- Use templates with `DOT_*` variable substitution for user-specific values
+- Use `Include` or `source` directives to load machine-specific files that are gitignored
+- Add any new sensitive file patterns to `.gitignore`
+- Prefer placeholder/example values over real ones in committed configs

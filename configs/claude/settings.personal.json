@@ -294,5 +294,12 @@
     ]
   },
   "cleanupPeriodDays": 90,
-  "maxProseWidth": 100
+  "maxProseWidth": 100,
+  "pluginConfigs": {
+    "cc-plugin-agents-md@builtin": {
+      "options": {
+        "instructionFiles": "claude-md-and-agents-md"
+      }
+    }
+  }
 }
