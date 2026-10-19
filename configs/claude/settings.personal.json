@@ -273,18 +273,6 @@
   "voice": {
     "enabled": true
   },
-  "mcpServers": {
-    "tavily": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "tavily-mcp@latest"
-      ],
-      "env": {
-        "TAVILY_API_KEY": "${TAVILY_API_KEY}"
-      }
-    }
-  },
   "spinnerVerbs": {
     "mode": "append",
     "verbs": [

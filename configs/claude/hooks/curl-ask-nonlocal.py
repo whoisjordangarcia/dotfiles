@@ -20,10 +20,7 @@ VALUE_FLAGS = {
 LOOPBACK = re.compile(r"^(localhost|127(\.\d+){3}|\[?::1\]?|0\.0\.0\.0)$", re.I)
 
 # Hosts curled often enough that a prompt is noise. Exact match, no subdomains.
-TRUSTED = {
-    "www.unknowncheats.me", "api.tarkov.dev", "github.com",
-    "raw.githubusercontent.com", "api.github.com",
-}
+TRUSTED = {"github.com", "raw.githubusercontent.com", "api.github.com"}
 
 # Modes where the user already chose "don't ask me"; a hook "ask" would override that.
 NO_PROMPT_MODES = {"auto"}
@@ -94,8 +91,8 @@ def demo():
     assert not is_local("curl https://evil.com/?r=http://localhost:1")
     assert not is_local('curl "$URL"')
     assert not is_local("curl http://localhost.evil.com")
-    assert is_local("curl -A x https://www.unknowncheats.me/forum/")
-    assert not is_local("curl https://www.unknowncheats.me.evil.com")
+    assert is_local("curl -A x https://api.github.com/repos/x/y")
+    assert not is_local("curl https://github.com.evil.com")
     assert not is_local("ls")  # no curl at all -> hook says ask, but `if` never fires it
     print("ok")
 

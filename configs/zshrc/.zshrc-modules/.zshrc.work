@@ -9,6 +9,9 @@ if (( $+commands[sfw] )); then
     alias pnpm='sfw pnpm'
 fi
 
+# Overrides the shared bypass-mode `cy`: the prod autoMode rules in settings.work.json only apply in auto mode.
+alias cy="CLAUDE_CODE_NO_FLICKER=1 claude --permission-mode auto"
+
 #export NEST_WT_EDITOR="zed"
 export NEST_REPO_ROOT="$HOME/projects/nest"
 export WT_BRANCH_PREFIX="jordan"

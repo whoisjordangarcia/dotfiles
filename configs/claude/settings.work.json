@@ -124,6 +124,17 @@
         "hooks": [
           {
             "type": "command",
+            "if": "Bash(curl *)",
+            "command": "python3 ~/.claude/hooks/curl-ask-nonlocal.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
             "command": "jq -r '.tool_input.command // \"\"' | grep -qiF 'prd-account-administrator-role' && printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"ask\",\"permissionDecisionReason\":\"Production AWS profile (prd-account-administrator-role) detected - confirm before running against prod.\"}}' || true",
             "statusMessage": "Checking for prod AWS profile"
           },

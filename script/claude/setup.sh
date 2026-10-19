@@ -73,6 +73,15 @@ if [ "$DOT_ENV" = "personal" ]; then
 	else
 		debug "Vercel MCP already registered"
 	fi
+	# Literal ${TAVILY_API_KEY}: Claude Code expands it at launch from the env .zshrc.sec exports,
+	# so the key never lands in ~/.claude.json.
+	if ! claude mcp get tavily &>/dev/null; then
+		claude mcp add-json --scope user tavily \
+			'{"command":"npx","args":["-y","tavily-mcp@latest"],"env":{"TAVILY_API_KEY":"${TAVILY_API_KEY}"}}'
+		success "Registered Tavily MCP"
+	else
+		debug "Tavily MCP already registered"
+	fi
 fi
 
 # The global memory is ONE file per machine (configs/agents/AGENTS.md, or AGENTS.work.md
