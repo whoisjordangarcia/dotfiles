@@ -63,8 +63,10 @@ left = 10
 bottom = 10
 right = 10
 
-# Per-display gap overrides for external monitor (27" LG UltraGear+)
-# Note: per-display gap overrides not supported yet in rift
+# Per-display gap overrides for external monitor (27" LG UltraGear+), keyed by
+# display UUID (`rift-cli query displays`). An override replaces the whole
+# outer (or inner) block for that display, so set all four sides.
+# [settings.layout.gaps.per_display."<uuid>".outer]
 # top = 10
 # left = 10
 # bottom = 10
@@ -152,7 +154,9 @@ app_rules = [
   { app_id = "com.cisco.secureclient.gui", floating = true },
   { app_id = "com.1password.1password", floating = true },
   { app_id = "com.timpler.screenstudio", floating = true },
-  { app_id = "us.zoom.xos", floating = true },                              # Zoom -> floating
+  # Zoom: tile only the meeting window; it resizes its share toolbar, mini video and popups itself.
+  { app_id = "us.zoom.xos", title_regex = "^Zoom Meeting$", floating = false },
+  { app_id = "us.zoom.xos", floating = true },
   # Dev tools: tile where you're working (not pinned to "1").
   { app_id = "com.apple.iphonesimulator" },
   { app_id = "com.apple.dt.Xcode" },
@@ -254,9 +258,8 @@ comb1 = "Option + Shift"
 "Option + Slash" = { exec = ["open", "-a", "1Password"] }
 
 # System
-# rift runs under brew services (homebrew.mxcl.rift), and hot_reload can't
-# see symlinked-config edits (acsandmann/rift#377), so this restart bind is
-# the reliable way to apply config changes. brew needs an absolute path:
+# rift runs under brew services (homebrew.mxcl.rift); hot_reload covers config
+# edits, this restart is for when rift itself wedges. brew needs an absolute path:
 # rift is spawned by launchd, whose minimal PATH lacks /opt/homebrew/bin.
 "Option + Shift + R" = { exec = ["sh", "-c", "/opt/homebrew/bin/brew services restart rift"] }
 "Option + Shift + D" = "debug"

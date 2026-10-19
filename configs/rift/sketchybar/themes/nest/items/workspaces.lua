@@ -172,13 +172,11 @@ for workspace_index = 1, max_workspaces do
 
 	workspace:subscribe("display_change", function()
 		-- Only workspace 1 triggers the display-change handler
-		-- The script debounces by pausing Rift's auto_assign_windows during
-		-- macOS display negotiation, then re-enables it for a single clean re-tile
+		-- The script waits out macOS display negotiation, then reloads sketchybar once
 		if workspace_index == 1 then
 			display_change_gen = display_change_gen + 1
 			local my_gen = display_change_gen
 
-			-- Fire the debounced display-change script (handles Rift auto-assign toggle)
 			sbar.exec(os.getenv("HOME") .. "/dev/dotfiles/configs/rift/display-change.sh", function()
 				if display_change_gen ~= my_gen then return end
 				refreshAllWorkspaces()
