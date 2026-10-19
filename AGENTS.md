@@ -59,8 +59,10 @@ Each test must end with "All N tests passed". `docs/agent-reference.md#checks-th
   — no merge, and re-running setup overwrites live edits (capture them first: `claude-settings-sync` copies back).
   Env resolution lives only in `script/common/dot_env.sh`; its `.dotconfig` fallback is load-bearing for the standalone
   install path. → `#claude-settings-dedicated-workpersonal-files`
-- **Global agent memory is one file**: `configs/agents/AGENTS.md` is canonical; `script/memory-sync.sh` symlinks
-  `~/.claude/CLAUDE.md` and `~/.config/opencode/AGENTS.md` to it (`--check` reports broken links;
+- **Global agent memory is one file per machine**: `configs/agents/AGENTS.md` (personal) or `AGENTS.work.md`
+  (work, picked by `dot_env.sh`) is canonical; per-machine facts go in `configs/agents/machines/<DOT_SYSTEM>.md`,
+  never the memory itself. `script/memory-sync.sh` symlinks `~/.claude/CLAUDE.md` and `~/.config/opencode/AGENTS.md`
+  to it (`--check` reports broken links;
   `script/claude/setup.sh` calls it). No copies, no base/overlay split, no dot-overlay marker. OpenCode's
   `instructions` config key looks like the tidier answer but is ignored by this build — don't switch to it.
   Projects are `AGENTS.md` only. **Tested on 2.1.287:** a project `CLAUDE.md`/`CLAUDE.local.md` suppresses the

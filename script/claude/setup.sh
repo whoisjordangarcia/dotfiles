@@ -75,11 +75,10 @@ if [ "$DOT_ENV" = "personal" ]; then
 	fi
 fi
 
-# The global memory is ONE file now: configs/agents/AGENTS.md, symlinked into every
-# place a harness reads it (~/.claude/CLAUDE.md for Claude Code's user scope,
-# ~/.config/opencode/AGENTS.md for OpenCode). script/memory-sync.sh is the single
-# generator; the old base + work/personal overlay split is gone, so there is no
-# dot-overlay marker and nothing to split back.
+# The global memory is ONE file per machine (configs/agents/AGENTS.md, or AGENTS.work.md
+# on work), symlinked into every place a harness reads it (~/.claude/CLAUDE.md for Claude
+# Code's user scope, ~/.config/opencode/AGENTS.md for OpenCode). script/memory-sync.sh is
+# the single generator; there is no dot-overlay marker and nothing to split back.
 if bash "$SCRIPT_DIR/../memory-sync.sh"; then
 	success "Linked the global memory from configs/agents/AGENTS.md"
 else

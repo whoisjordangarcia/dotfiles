@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# memory-sync — ONE memory file, shared by every harness. No copies, so no drift.
+# memory-sync — ONE memory file per machine, shared by every harness. No copies, so no drift.
 #
-#   ~/dev/dotfiles/configs/agents/AGENTS.md   canonical (git-tracked, the only file to edit)
+#   ~/dev/dotfiles/configs/agents/AGENTS.md   canonical (git-tracked, the only file to edit; AGENTS.work.md on work)
 #        │  memory-sync creates two symlinks to it
 #        ├── ~/.claude/CLAUDE.md              Claude Code's user-scope memory
 #        └── ~/.config/opencode/AGENTS.md     OpenCode's global memory
@@ -23,7 +23,15 @@ set -euo pipefail
 
 this="$(readlink -f -- "${BASH_SOURCE[0]}")"
 dotfiles="$(cd -- "$(dirname -- "$this")/.." && pwd)"
-src="$dotfiles/configs/agents/AGENTS.md"
+source "$dotfiles/script/common/dot_env.sh"
+dot_export_env
+# Work machines get their own memory: AGENTS.md describes the personal laptop, and the work rules
+# (prod AWS, git workflow, Linear) must never follow a personal machine around.
+if [ "$DOT_ENV" = "work" ]; then
+	src="$dotfiles/configs/agents/AGENTS.work.md"
+else
+	src="$dotfiles/configs/agents/AGENTS.md"
+fi
 
 [ -f "$src" ] || { echo "missing canonical memory: $src" >&2; exit 1; }
 
@@ -41,7 +49,7 @@ for link in "$HOME/.claude/CLAUDE.md" "$HOME/.config/opencode/AGENTS.md"; do
 		if [ -f "$link" ] && diff -q "$src" "$link" >/dev/null; then
 			echo "NOTE: $link is a copy that happens to match; memory-sync will replace it with a symlink"
 		else
-			echo "STALE: $link is not a symlink to configs/agents/AGENTS.md (run memory-sync)"
+			echo "STALE: $link is not a symlink to ${src#$dotfiles/} (run memory-sync)"
 		fi
 		rc=1
 		continue

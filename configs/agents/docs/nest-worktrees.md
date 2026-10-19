@@ -14,7 +14,7 @@ Call the binary directly with `--headless`:
 - Default setup is full and slow. Use `--setup install` for deps + husky only, or background the full run and tail the log.
 - Verify it exited rather than parked: `timeout 600 … ; echo "exit=$?"` (124 = hung).
 
-`wt remove` and `wt prune` take the same `--headless` flag.
+`wt remove` and `wt prune` have no `--headless` flag: they go headless on their own when stdin or stderr isn't a TTY (an agent's shell). Headless `wt remove` requires a target (`wt remove <name>`) and exits 1 without one.
 
 ## Why no pty wrapper
 
