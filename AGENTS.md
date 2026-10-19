@@ -69,8 +69,8 @@ Each test must end with "All N tests passed". `docs/agent-reference.md#checks-th
   for extra per-project rules. → `#claude-instructions-claudemd-workpersonal-split`
 - **Themes**: the slug is the *filename* (`custom:catppuccin-mocha`); picking one silently disables `"theme": "auto"`,
   so both settings files ship `auto`. Don't "fix" auto by exporting `COLORFGBG`. → `#claude-code-themes-custom`
-- **Agent skills**: `configs/skills/` is the canonical set, symlinked into each harness; work-only skills are projected
-  and pruned by `script/skills/setup.sh`. **Install with `--copy`** so real files land in the repo, not a symlink.
+- **Agent skills**: `configs/skills/` is the canonical set, symlinked into each harness; work-only (`nest-*`) and personal-only
+  skills are projected and pruned per env by `script/skills/setup.sh`. **Install with `--copy`** so real files land in the repo, not a symlink.
   → `#agent-skills`
 - **SD-card backup** (macOS `StartOnMount`) → `#sd-card-backup-macos-startonmount`
 - **T2 dGPU power-off is deliberately disabled — do not re-enable** → `#t2-dgpu-power-off--deliberately-disabled-do-not-re-enable`

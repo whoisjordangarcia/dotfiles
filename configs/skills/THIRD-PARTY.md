@@ -36,7 +36,7 @@ Sources are tracked with hashes in `configs/agents/.skill-lock.json`.
 `~/.claude/skills-disabled/` holds the marketing/CRO/SEO/design/process/AI set (aso-audit, social-content,
 copywriting, copy-editing, seo-audit, signup-flow-cro, paywall-upgrade-cro, analytics-tracking, mobile-ios-design,
 design-shotgun, code-review-advanced, grill-with-docs, grilling, teach, domain-modeling, babysit, find-skills,
-plan-ceo-review, office-hours, pre-commit-check, and the six `nest-*` work skills). They came from public
+plan-ceo-review, office-hours, pre-commit-check). They came from public
 marketplaces whose upstream each was installed from, and nothing on this machine used them; when one is wanted,
 find it with `npx skills find <query>` and install it rather than restoring a stale copy.
 
@@ -44,8 +44,10 @@ find it with `npx skills find <query>` and install it rather than restoring a st
 
 `configs/skills/` holds only skills written for this machine: `win11-vm`, `things3` (remote, via the Mac mini),
 `ida-vm`, `ralph-prd`, `daily-note`, `obsidian-vault`, `notes-cli` (Obsidian vault, Linux config path), plus
-`gws-*`. Omarchy's `omarchy` and `diagnose-crash` are not here at all — they are symlinked from
-`/usr/share/omarchy/default/agents/skills/`, so an Omarchy update lands on its own.
+`gws-*` and the `nest-*` work skills (synced on work machines only; `win11-vm`, `ida-vm`, `diagnose-crash` and
+`meal-planning` are personal-only — both lists live in `script/skills/setup.sh`). Omarchy's `omarchy` and `diagnose-crash`
+are not here at all — they are symlinked from `/usr/share/omarchy/default/agents/skills/`, so an Omarchy update
+lands on its own.
 
 Keep a skill description to one line of purpose plus triggers: every description is in the context of every session,
 and the whole set is ~8 KB.

@@ -33,11 +33,11 @@ skills() { command -v npx >/dev/null 2>&1; }
 
 case "${1:-}" in
 --list)
-	cd "$HOME" && npx -y skills ls -g
+	cd "$HOME" && npx -y skills@latest ls -g
 	exit
 	;;
 --update)
-	cd "$HOME" && npx -y skills update -g -y
+	cd "$HOME" && npx -y skills@latest update -g -y
 	exit
 	;;
 esac
@@ -55,19 +55,24 @@ if ! skills; then
 	echo "npx not found — install Node, or read $MANIFEST and fetch the skills by hand" >&2
 	exit 1
 fi
+# The CLI imports glob from fs/promises, which Node gained in 22.
+if [ "$(node -p 'process.versions.node.split(".")[0]')" -lt 22 ]; then
+	echo "skills CLI needs Node 22+, found $(node -v) — switch with nvm first" >&2
+	exit 1
+fi
 
 failed=()
 for pair in "${MANIFEST_SKILLS[@]}"; do
 	name=${pair%%:*}
 	source=${pair#*:}
 	printf '%-30s %s\n' "$name" "$source"
-	if ! (cd "$HOME" && npx -y skills add "$source" -g -a '*' --copy -y -s "$name"); then
+	if ! (cd "$HOME" && npx -y skills@latest add "$source" -g -a '*' --copy -y -s "$name"); then
 		failed+=("$name")
 	fi
 done
 
 echo
-(cd "$HOME" && npx -y skills ls -g) || true
+(cd "$HOME" && npx -y skills@latest ls -g) || true
 if [ ${#failed[@]} -gt 0 ]; then
 	echo "failed: ${failed[*]} — check the source in $MANIFEST" >&2
 	exit 1

@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{TITLE}}</title>
+<link rel="icon" type="image/png" href="https://www.nestgenomics.com/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    var root = document.documentElement;
+    var THEMES = ['nest','slate','forest','paper','dusk'];
+    var MODES  = ['light','dark','system'];
+    try {
+      var t = localStorage.getItem('nest-doc-theme');
+      if (t === 'light' || t === 'dark' || !t) t = 'nest';
+      if (THEMES.indexOf(t) === -1) t = 'nest';
+      root.setAttribute('data-theme', t);
+      var m = localStorage.getItem('nest-doc-mode');
+      if (MODES.indexOf(m) === -1) m = 'light';
+      root.setAttribute('data-mode', m);
+    } catch (e) {
+      root.setAttribute('data-theme', 'nest');
+      root.setAttribute('data-mode', 'light');
+    }
+  })();
+</script>
+<style>
+  :root {
+    --bg-light: #ffffff;
+    --bg-dark:  #0e0d0c;
+    --ink-light: #0a0a0a;
+    --ink-dark:  #f3ece4;
+    --accent:   #e65732;
+    --accent-2: #e78d32;
+    --accent-3: #a367c8;
+    --bg:  var(--bg-light);
+    --ink: var(--ink-light);
+    --ink-soft:    color-mix(in oklch, var(--ink) 62%, transparent);
+    --border:      color-mix(in oklch, var(--accent) 22%, transparent);
+    --hover:       color-mix(in oklch, var(--accent) 8%, transparent);
+    --peach:       color-mix(in oklch, var(--accent) 14%, transparent);
+    --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  html[data-theme="slate"]  { --bg-light:#f7f8fa; --bg-dark:#0d1220; --ink-light:#1a1f2e; --ink-dark:#e6ecff; --accent:#2563eb; --accent-2:#4f7cf5; --accent-3:#7e8fff; }
+  html[data-theme="forest"] { --bg-light:#fafaf6; --bg-dark:#0d1612; --ink-light:#0f1c15; --ink-dark:#e8f3ec; --accent:#2d6a4f; --accent-2:#52b788; --accent-3:#74c69d; }
+  html[data-theme="paper"]  { --bg-light:#fbf5e9; --bg-dark:#1f1810; --ink-light:#2a1f12; --ink-dark:#f4ecdf; --accent:#b04b1d; --accent-2:#c97e3b; --accent-3:#8c5a3a; }
+  html[data-theme="dusk"]   { --bg-light:#faf5fb; --bg-dark:#14111d; --ink-light:#2a1245; --ink-dark:#ece6f6; --accent:#a367c8; --accent-2:#b884d6; --accent-3:#e65732; }
+  html[data-mode="dark"] { --bg: var(--bg-dark); --ink: var(--ink-dark); }
+  @media (prefers-color-scheme: dark) {
+    html[data-mode="system"] { --bg: var(--bg-dark); --ink: var(--ink-dark); }
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 17px; line-height: 1.55; text-wrap: pretty;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .deck { position: relative; min-height: 100vh; }
+  .slide {
+    display: none;
+    padding: 80px 72px 96px;
+    max-width: 1100px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+  .slide.active {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .eyebrow {
+    font-family: var(--sans);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 24px;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(48px, 6vw, 88px);
+    line-height: 1.02;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    padding-bottom: 0.2em;
+    margin: 0 0 24px;
+    background: linear-gradient(105deg, var(--accent) 0%, var(--accent-2) 45%, var(--accent-3) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(36px, 4.5vw, 56px);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+  h3 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin: 32px 0 12px;
+  }
+  p { margin: 0 0 16px; }
+  .lead {
+    font-family: var(--serif);
+    font-size: clamp(20px, 2.2vw, 28px);
+    line-height: 1.35;
+    color: var(--ink);
+    margin-bottom: 32px;
+    max-width: 36ch;
+  }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+  .accent { color: var(--accent); }
+  strong { font-weight: 600; }
+  ul, ol { padding-left: 22px; margin: 0 0 20px; }
+  li { margin-bottom: 8px; }
+
+  .grid   { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 18px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 18px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+
+  .card {
+    background: var(--hover);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+  .card-accent { border-color: var(--accent); background: var(--peach); }
+  .card.card-accent .val { color: var(--accent); }
+  .card h4 { margin: 0 0 8px; font-size: 12px; color: var(--ink-soft); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+  .card .val { font-family: var(--serif); font-size: 44px; line-height: 1.05; letter-spacing: -0.02em; color: var(--ink); }
+  .card .sub { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 14.5px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--ink-soft); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+  td.num { font-family: var(--mono); text-align: right; }
+
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .bar-label { flex: 0 0 200px; font-size: 13px; color: var(--ink-soft); }
+  .bar-wrap { flex: 1; background: var(--hover); border-radius: 999px; height: 14px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%); border-radius: 999px; }
+  .bar-val { flex: 0 0 140px; text-align: right; font-family: var(--mono); font-size: 13px; color: var(--ink); }
+
+  pre, code.block {
+    background: color-mix(in oklch, var(--ink) 5%, var(--bg)); border: 1px solid color-mix(in oklch, var(--ink) 9%, transparent); border-radius: 8px;
+    padding: 14px 16px; font-size: 13.5px; overflow-x: auto; line-height: 1.55;
+    display: block; font-family: var(--mono);
+  }
+  code, code.inline { font-family: var(--mono); background: color-mix(in oklch, var(--ink) 7%, transparent); padding: 2px 6px; border-radius: 4px; font-size: 0.92em; }
+
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-family: var(--sans); font-size: 11px; font-weight: 600;
+    background: var(--peach); color: var(--accent);
+    border: 1px solid var(--border);
+    letter-spacing: 0.04em;
+  }
+
+  /* Editorial pull-quote — no box, no side-stripe.
+     Thin gradient hairline above, centered serif, italic orange emphasis. */
+  .callout {
+    margin: 48px auto;
+    padding: 0;
+    max-width: 56ch;
+    text-align: center;
+    font-family: var(--serif);
+    font-size: clamp(22px, 2.4vw, 32px);
+    line-height: 1.35;
+    letter-spacing: -0.005em;
+    color: var(--ink);
+    background: none;
+    border: 0;
+    border-radius: 0;
+    position: relative;
+  }
+  .callout::before {
+    content: "";
+    display: block;
+    width: 56px;
+    height: 1.5px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 50%, var(--accent-3) 100%);
+    margin: 0 auto 28px;
+    border-radius: 2px;
+  }
+  .callout strong {
+    color: var(--accent);
+    font-weight: 400;
+    font-style: italic;
+  }
+
+  /* Title slide gets reduced top/bottom padding (otherwise same flex centering as all slides) */
+  .slide.title-slide { padding: 0 72px; }
+  .title-slide .lead { max-width: 60ch; }
+  .title-slide .meta { margin-top: 56px; font-family: var(--mono); font-size: 13px; color: var(--ink-soft); }
+
+  /* Navigation chrome */
+  .slide-num {
+    position: fixed; top: 20px; right: 80px;
+    font-family: var(--mono); font-size: 12px; color: var(--ink-soft); z-index: 40;
+  }
+  .nav { position: fixed; bottom: 16px; right: 24px; display: flex; gap: 8px; z-index: 50; }
+  .nav button {
+    background: var(--bg); color: var(--ink); border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 999px; cursor: pointer;
+    font-family: var(--sans); font-size: 12px;
+    transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  }
+  .nav button:hover { background: var(--hover); border-color: var(--accent); color: var(--accent); }
+  .nav button[disabled] { opacity: 0.4; cursor: not-allowed; }
+  .nav button[disabled]:hover { background: var(--bg); border-color: var(--border); color: var(--ink); }
+  .footer {
+    position: fixed; bottom: 14px; left: 14px; right: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    font-family: var(--mono); font-size: 14px; color: var(--ink-soft); z-index: 40;
+  }
+  .footer .brand { color: var(--accent); }
+
+  /* Settings panel (top-right gear) — Theme + Mode only */
+  .doc-settings { position: fixed; top: 20px; right: 20px; z-index: 60; font-family: var(--sans); }
+  .doc-settings summary {
+    list-style: none; cursor: pointer; width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 999px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--ink-soft); font-size: 16px;
+    transition: background 160ms ease, color 160ms ease;
+  }
+  .doc-settings summary::-webkit-details-marker { display: none; }
+  .doc-settings summary:hover, .doc-settings[open] summary { background: var(--hover); color: var(--accent); }
+  .doc-settings .panel {
+    position: absolute; top: 44px; right: 0; width: 240px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+    padding: 6px; box-shadow: 0 12px 32px rgba(10,10,10,0.10);
+  }
+  .doc-settings .panel-section { padding: 10px 10px 12px; border-radius: 8px; }
+  .doc-settings .panel-section + .panel-section { border-top: 1px solid var(--border); margin-top: 2px; }
+  .doc-settings .panel-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 10px; }
+  .doc-settings .theme-options { display: flex; flex-wrap: wrap; gap: 8px; }
+  .doc-settings .theme-options button {
+    appearance: none; width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+    padding: 0; border: 2px solid transparent; background-clip: padding-box;
+    transition: transform 140ms ease;
+  }
+  .doc-settings .theme-options button:hover { transform: scale(1.1); }
+  .doc-settings .theme-options button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink); }
+  .doc-settings .theme-options [data-theme="nest"]   { background: linear-gradient(135deg, #e65732 0%, #e78d32 50%, #a367c8 100%); }
+  .doc-settings .theme-options [data-theme="slate"]  { background: linear-gradient(135deg, #2563eb 0%, #7e8fff 100%); }
+  .doc-settings .theme-options [data-theme="forest"] { background: linear-gradient(135deg, #2d6a4f 0%, #74c69d 100%); }
+  .doc-settings .theme-options [data-theme="paper"]  { background: linear-gradient(135deg, #b04b1d 0%, #c97e3b 100%); }
+  .doc-settings .theme-options [data-theme="dusk"]   { background: linear-gradient(135deg, #a367c8 0%, #c45567 100%); }
+  .doc-settings .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; color: var(--ink);
+  }
+  .doc-settings .switch {
+    appearance: none; border: 0; margin: 0; padding: 0; cursor: pointer;
+    width: 34px; height: 20px; border-radius: 999px;
+    background: color-mix(in oklch, var(--ink) 22%, transparent); position: relative;
+    transition: background 160ms ease;
+  }
+  .doc-settings .switch::after {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    transition: transform 160ms ease;
+  }
+  .doc-settings .switch[aria-pressed="true"] { background: var(--accent); }
+  .doc-settings .switch[aria-pressed="true"]::after { transform: translateX(14px); }
+  .doc-settings .mode-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .doc-settings .mode-options button {
+    appearance: none; border: 1px solid var(--border); background: var(--bg);
+    border-radius: 6px; padding: 8px 0; font-size: 12px; color: var(--ink);
+    cursor: pointer; font-family: inherit;
+    transition: background 140ms ease, border-color 140ms ease;
+  }
+  .doc-settings .mode-options button:hover { background: var(--hover); }
+  .doc-settings .mode-options button[aria-pressed="true"] { background: var(--peach); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+  /* Sidebar TOC (collapsible, scroll-spy active slide) */
+  .slide-toc {
+    position: fixed;
+    top: 80px;
+    left: 0;
+    width: 260px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    z-index: 30;
+    padding: 0 16px 0 28px;
+    font-family: var(--sans);
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    transition: width 320ms cubic-bezier(.2,.7,.2,1),
+                padding 320ms cubic-bezier(.2,.7,.2,1),
+                transform 320ms cubic-bezier(.2,.7,.2,1),
+                background 220ms ease,
+                border-color 220ms ease,
+                box-shadow 220ms ease,
+                border-radius 320ms ease;
+    border: 1px solid transparent;
+  }
+  .slide-toc summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0 14px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .slide-toc summary::-webkit-details-marker { display: none; }
+  .slide-toc-eyebrow {
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600;
+  }
+  .slide-toc-chevron { font-size: 16px; color: var(--accent); line-height: 1; transition: transform 220ms ease; }
+  .slide-toc:has(details:not([open])) .slide-toc-chevron { transform: rotate(180deg); }
+  .slide-toc nav ul { list-style: none; padding: 0; margin: 0; }
+  .slide-toc nav a {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 6px 10px; border-radius: 6px;
+    color: var(--ink); text-decoration: none;
+    transition: background 140ms ease, color 140ms ease;
+    line-height: 1.35;
+  }
+  .slide-toc nav a:hover { background: var(--hover); color: var(--accent); }
+  .slide-toc nav a[aria-current="true"] {
+    background: var(--hover); color: var(--accent); font-weight: 600;
+  }
+  .slide-toc nav a {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+  }
+  .slide-toc nav .num {
+    font-family: var(--mono); font-size: 10px; color: var(--ink-soft);
+    letter-spacing: 0.06em; opacity: 0.7;
+  }
+  .slide-toc nav .label {
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.3;
+    color: var(--ink);
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .slide-toc nav a[aria-current="true"] .label { color: var(--accent); }
+
+  /* Sidebar collapsed: shrink to floating chevron pill */
+  .slide-toc:has(details:not([open])) {
+    width: 40px;
+    padding: 0;
+    overflow: hidden;
+    transform: translateX(16px);
+    border-radius: 999px;
+    background: var(--bg);
+    border-color: var(--border);
+    box-shadow: 0 8px 22px rgba(10, 10, 10, 0.08);
+  }
+  .slide-toc:has(details:not([open])) summary {
+    justify-content: center;
+    padding: 10px 0;
+    margin: 0;
+    border-bottom: 0;
+  }
+  .slide-toc:has(details:not([open])) summary:hover { background: var(--hover); }
+  .slide-toc:has(details:not([open])) .slide-toc-eyebrow { display: none; }
+
+  .slide-toc[hidden] { display: none; }
+
+  /* Body shifts right when sidebar is expanded and visible (desktop only) */
+  @media (min-width: 1080px) {
+    body:has(.slide-toc:not([hidden]) details[open]) .deck { padding-left: 280px; transition: padding-left 320ms cubic-bezier(.2,.7,.2,1); }
+  }
+  @media (max-width: 1079px) {
+    .slide-toc {
+      top: 64px; left: 12px;
+      max-width: min(280px, calc(100vw - 24px));
+      max-height: calc(100vh - 80px);
+      padding: 6px 14px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(10,10,10,0.10);
+    }
+  }
+
+  /* Fullscreen button (in nav bar) */
+  .nav .fullscreen-btn { font-family: var(--mono); }
+  /* Hide chrome when in fullscreen for a clean presentation surface */
+  body:fullscreen .doc-settings,
+  body:fullscreen .slide-toc,
+  body:fullscreen .footer {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+  body:fullscreen .deck { padding-left: 0 !important; }
+
+  /* Slide outline / jump modal */
+  .outline-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: color-mix(in oklch, var(--bg) 80%, transparent);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    display: none; align-items: flex-start; justify-content: center;
+    padding: 80px 24px 24px;
+    overflow-y: auto;
+  }
+  .outline-overlay.open { display: flex; }
+  .outline {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; max-width: 720px; width: 100%;
+    box-shadow: 0 24px 64px rgba(10,10,10,0.18);
+  }
+  .outline h3 {
+    font-family: var(--sans); font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-soft);
+    margin: 0 0 16px;
+  }
+  .outline-list { list-style: none; padding: 0; margin: 0; }
+  .outline-list li { margin: 0; }
+  .outline-list a {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 10px 12px; border-radius: 6px;
+    color: var(--ink); text-decoration: none; cursor: pointer;
+    transition: background 140ms ease;
+    border-bottom: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
+  }
+  .outline-list a:last-child { border-bottom: 0; }
+  .outline-list a:hover, .outline-list a[aria-current="true"] {
+    background: var(--hover); color: var(--accent);
+  }
+  .outline-list .num {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-soft);
+    width: 28px; flex-shrink: 0;
+  }
+  .outline-list .title {
+    font-family: var(--serif); font-size: 18px; line-height: 1.3; flex: 1;
+  }
+  .outline-hint {
+    margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--ink-soft); font-family: var(--mono);
+  }
+  .outline-hint kbd {
+    display: inline-block; padding: 1px 6px; border: 1px solid var(--border);
+    border-radius: 3px; background: var(--hover); font-size: 11px;
+    margin: 0 2px;
+  }
+
+  /* Print = full PDF export, all slides revealed (block, not flex, to use full page height naturally) */
+  @media print {
+    .slide, .slide.active, .slide.title-slide.active {
+      display: block !important;
+      page-break-after: always;
+      min-height: 0;
+      padding: 48px 56px;
+    }
+    .slide-num, .nav, .footer, .doc-settings, .outline-overlay { display: none !important; }
+    body { background: white; color: black; }
+    h1 { color: black; -webkit-text-fill-color: black; background: none; }
+  }
+  /* Nest wordmark — inline at the far left of the footer, sized to match footer text */
+  .footer .nest-logo {
+    display: inline-flex;
+    align-items: flex-start;
+    height: 36px;            /* visible (cropped) height — clips bottom whitespace only */
+    overflow: hidden;
+    opacity: 0.9;
+    transition: opacity 160ms ease, transform 160ms ease;
+    text-decoration: none;
+    background: none;
+  }
+  .footer .nest-logo img {
+    height: 48px;            /* image's natural rendered height — bottom 12px clipped by parent */
+    width: auto;
+    display: block;
+  }
+  .footer .nest-logo:hover { opacity: 1; transform: scale(1.03); }
+  @media print { .footer .nest-logo { opacity: 1; } }
+</style>
+</head>
+<body>
+
+
+<details class="doc-settings" aria-label="Document settings">
+  <summary title="Document settings" aria-label="Document settings">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+  </summary>
+  <div class="panel" role="dialog" aria-label="Document settings">
+    <div class="panel-section">
+      <div class="panel-label">Contents</div>
+      <div class="toggle-row">
+        <span>Show sidebar</span>
+        <button type="button" class="switch" data-sidebar-toggle aria-pressed="true" aria-label="Toggle sidebar"></button>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-label">Theme</div>
+      <div class="theme-options" role="group" aria-label="Theme">
+        <button type="button" data-theme="nest"   aria-label="Nest"></button>
+        <button type="button" data-theme="slate"  aria-label="Slate"></button>
+        <button type="button" data-theme="forest" aria-label="Forest"></button>
+        <button type="button" data-theme="paper"  aria-label="Paper"></button>
+        <button type="button" data-theme="dusk"   aria-label="Dusk"></button>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-label">Mode</div>
+      <div class="mode-options" role="group" aria-label="Mode">
+        <button type="button" data-mode="light">Light</button>
+        <button type="button" data-mode="dark">Dark</button>
+        <button type="button" data-mode="system">System</button>
+      </div>
+    </div>
+  </div>
+</details>
+
+<aside class="slide-toc" aria-label="Slide navigation">
+  <details open>
+    <summary>
+      <span class="slide-toc-eyebrow">Slides</span>
+      <span class="slide-toc-chevron" aria-hidden="true">&lsaquo;</span>
+    </summary>
+    <nav><ul id="slide-toc-list"></ul></nav>
+  </details>
+</aside>
+
+<div class="outline-overlay" id="outline-overlay" role="dialog" aria-label="Slide outline" aria-hidden="true">
+  <div class="outline">
+    <h3>Jump to slide</h3>
+    <ul class="outline-list" id="outline-list"></ul>
+    <p class="outline-hint">
+      <kbd>Esc</kbd> close &middot; <kbd>↑</kbd><kbd>↓</kbd> move &middot; <kbd>Enter</kbd> jump &middot; <kbd>1</kbd>&ndash;<kbd>9</kbd> direct jump &middot; <kbd>O</kbd> toggle outline
+    </p>
+  </div>
+</div>
+
+<div class="deck">
+
+  <!-- TITLE SLIDE -->
+  <section class="slide active title-slide">
+    <p class="eyebrow">{{EYEBROW}}</p>
+    <h1>{{TITLE}}</h1>
+    <p class="lead">{{SUBTITLE}}</p>
+    <p class="meta">{{DATE}} &middot; {{AUTHOR}}</p>
+  </section>
+
+  {{SLIDES}}
+
+</div>
+
+<div class="slide-num"><span id="slide-num">1</span> / <span id="slide-total">1</span></div>
+<div class="nav">
+  <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Toggle fullscreen (f)" aria-label="Toggle fullscreen">⛶</button>
+  <button data-nav="prev" onclick="prev()">&larr; prev</button>
+  <button data-nav="next" onclick="next()">next &rarr;</button>
+</div>
+<div class="footer">
+  <a class="nest-logo" href="index.html" aria-label="Back to team docs"><img src="https://www.nestgenomics.com/logo.png" alt="Nest Genomics"></a>
+  <span>{{FOOTER_LEFT}}</span>
+</div>
+
+<script>
+  // --- Theme persistence (shared with long-form docs) ---
+  (function () {
+    var root = document.documentElement;
+    var btns = document.querySelectorAll('.doc-settings [data-theme]');
+    function apply(t) {
+      root.setAttribute('data-theme', t);
+      try { localStorage.setItem('nest-doc-theme', t); } catch (e) {}
+      btns.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.theme === t ? 'true' : 'false'); });
+    }
+    apply(root.getAttribute('data-theme') || 'nest');
+    btns.forEach(function (b) { b.addEventListener('click', function () { apply(b.dataset.theme); }); });
+  })();
+
+  // --- Mode persistence (shared with long-form docs) ---
+  (function () {
+    var root = document.documentElement;
+    var btns = document.querySelectorAll('.doc-settings [data-mode]');
+    function apply(m) {
+      root.setAttribute('data-mode', m);
+      try { localStorage.setItem('nest-doc-mode', m); } catch (e) {}
+      btns.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false'); });
+    }
+    apply(root.getAttribute('data-mode') || 'light');
+    btns.forEach(function (b) { b.addEventListener('click', function () { apply(b.dataset.mode); }); });
+  })();
+
+  // --- Slide navigation ---
+  const slides = document.querySelectorAll('.slide');
+  let current = 0;
+  document.getElementById('slide-total').textContent = slides.length;
+
+  function applySlide(n) {
+    var target = Math.max(0, Math.min(slides.length - 1, n));
+    if (target === current) return;
+    slides[current].classList.remove('active');
+    current = target;
+    slides[current].classList.add('active');
+    document.getElementById('slide-num').textContent = current + 1;
+    window.scrollTo(0, 0);
+    updateOutlineCurrent();
+    updateSidebarCurrent();
+    updateNavButtons();
+  }
+  function updateNavButtons() {
+    var prevBtn = document.querySelector('.nav button[data-nav="prev"]');
+    var nextBtn = document.querySelector('.nav button[data-nav="next"]');
+    if (prevBtn) prevBtn.disabled = (current === 0);
+    if (nextBtn) nextBtn.disabled = (current === slides.length - 1);
+  }
+  function go(n) {
+    var target = Math.max(0, Math.min(slides.length - 1, n));
+    if (target === current) return;
+    applySlide(target);
+    // pushState adds a real history entry so browser back/forward navigates slides
+    if (history.pushState) history.pushState({ slide: target }, '', '#' + (target + 1));
+  }
+  // Browser back/forward syncs slide from URL hash without pushing more history
+  window.addEventListener('popstate', function () {
+    var h = parseInt(location.hash.replace('#', ''), 10);
+    if (h > 0 && h <= slides.length) applySlide(h - 1);
+  });
+  function next() { go(current + 1); }
+  function prev() { go(current - 1); }
+
+  // --- Sidebar visibility toggle (settings → Contents → Show sidebar) ---
+  (function () {
+    var btn = document.querySelector('[data-sidebar-toggle]');
+    var sidebar = document.querySelector('.slide-toc');
+    if (!btn || !sidebar) return;
+    var saved;
+    try { saved = localStorage.getItem('nest-deck-sidebar-visible'); } catch (e) { saved = null; }
+    function apply(visible) {
+      if (visible) sidebar.removeAttribute('hidden');
+      else sidebar.setAttribute('hidden', '');
+      btn.setAttribute('aria-pressed', visible ? 'true' : 'false');
+      try { localStorage.setItem('nest-deck-sidebar-visible', visible ? 'visible' : 'hidden'); } catch (e) {}
+    }
+    apply(saved !== 'hidden');
+    btn.addEventListener('click', function () {
+      apply(btn.getAttribute('aria-pressed') !== 'true');
+    });
+  })();
+
+  // --- Sidebar TOC (collapsible, persists open/closed state, scroll-spy) ---
+  const sidebarToc = document.querySelector('.slide-toc');
+  const sidebarList = document.getElementById('slide-toc-list');
+  const sidebarDetails = sidebarToc.querySelector('details');
+
+  function buildSidebarToc() {
+    sidebarList.innerHTML = '';
+    slides.forEach(function (slide, i) {
+      var titleEl = slide.querySelector('h1, h2, h3');
+      var title = titleEl ? titleEl.textContent.trim() : 'Slide ' + (i + 1);
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.href = '#' + (i + 1);
+      a.dataset.index = i;
+      a.innerHTML = '<span class="num">' + (i + 1).toString().padStart(2, '0') + '</span><span class="label"></span>';
+      a.querySelector('.label').textContent = title;
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        go(parseInt(a.dataset.index, 10));
+      });
+      li.appendChild(a);
+      sidebarList.appendChild(li);
+    });
+    updateSidebarCurrent();
+  }
+  function updateSidebarCurrent() {
+    sidebarList.querySelectorAll('a').forEach(function (a) {
+      a.removeAttribute('aria-current');
+      if (parseInt(a.dataset.index, 10) === current) a.setAttribute('aria-current', 'true');
+    });
+  }
+  // Persist sidebar open/closed
+  (function () {
+    try {
+      var saved = localStorage.getItem('nest-deck-sidebar');
+      if (saved === 'closed') sidebarDetails.removeAttribute('open');
+    } catch (e) {}
+    sidebarDetails.addEventListener('toggle', function () {
+      try { localStorage.setItem('nest-deck-sidebar', sidebarDetails.open ? 'open' : 'closed'); } catch (e) {}
+    });
+  })();
+  buildSidebarToc();
+
+  // --- Fullscreen toggle ---
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen).call(document.documentElement);
+    } else {
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    }
+  }
+
+  // --- Outline modal (jump to any slide) ---
+  const overlay = document.getElementById('outline-overlay');
+  const outlineList = document.getElementById('outline-list');
+
+  function buildOutline() {
+    outlineList.innerHTML = '';
+    slides.forEach(function (slide, i) {
+      // Title comes from the slide's first h1, h2, or fallback to slide number
+      var titleEl = slide.querySelector('h1, h2, h3');
+      var title = titleEl ? titleEl.textContent.trim() : 'Slide ' + (i + 1);
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.href = '#' + (i + 1);
+      a.dataset.index = i;
+      a.innerHTML = '<span class="num">' + (i + 1).toString().padStart(2, '0') + '</span><span class="title"></span>';
+      a.querySelector('.title').textContent = title;
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        go(parseInt(a.dataset.index, 10));
+        closeOutline();
+      });
+      li.appendChild(a);
+      outlineList.appendChild(li);
+    });
+    updateOutlineCurrent();
+  }
+
+  function updateOutlineCurrent() {
+    outlineList.querySelectorAll('a').forEach(function (a) {
+      a.removeAttribute('aria-current');
+      if (parseInt(a.dataset.index, 10) === current) a.setAttribute('aria-current', 'true');
+    });
+  }
+
+  function openOutline() {
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+    var currentLink = outlineList.querySelector('a[aria-current="true"]');
+    if (currentLink) currentLink.focus();
+  }
+  function closeOutline() {
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+  function isOutlineOpen() { return overlay.classList.contains('open'); }
+
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) closeOutline();
+  });
+
+  buildOutline();
+
+  // --- Keyboard shortcuts ---
+  document.addEventListener('keydown', (e) => {
+    if (e.target && /^(input|textarea|select)$/i.test(e.target.tagName)) return;
+
+    // Outline-mode keys
+    if (isOutlineOpen()) {
+      if (e.key === 'Escape') { e.preventDefault(); closeOutline(); }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        var links = Array.from(outlineList.querySelectorAll('a'));
+        var focused = links.indexOf(document.activeElement);
+        var nextIdx = e.key === 'ArrowDown' ? focused + 1 : focused - 1;
+        if (nextIdx < 0) nextIdx = links.length - 1;
+        if (nextIdx >= links.length) nextIdx = 0;
+        if (links[nextIdx]) links[nextIdx].focus();
+      }
+      // Number keys still work to jump directly even with outline open
+      else if (/^[1-9]$/.test(e.key)) { e.preventDefault(); go(parseInt(e.key, 10) - 1); closeOutline(); }
+      else if (e.key === 'o' || e.key === 'O') { e.preventDefault(); closeOutline(); }
+      return;
+    }
+
+    // Slide-mode keys
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') { go(0); }
+    else if (e.key === 'End') { go(slides.length - 1); }
+    else if (/^[1-9]$/.test(e.key)) { e.preventDefault(); go(parseInt(e.key, 10) - 1); }
+    else if (e.key === 'o' || e.key === 'O' || e.key === 'Escape') { e.preventDefault(); openOutline(); }
+    else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullscreen(); }
+  });
+
+  // Initial nav-button state (prev disabled on title slide)
+  updateNavButtons();
+
+  // --- Deep-link to a slide via #N ---
+  (function () {
+    var hash = parseInt(location.hash.replace('#', ''), 10);
+    if (hash > 0 && hash <= slides.length) go(hash - 1);
+  })();
+</script>
+</body>
+</html>

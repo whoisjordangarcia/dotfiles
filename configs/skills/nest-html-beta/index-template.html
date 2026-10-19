@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nest team docs</title>
+<link rel="icon" type="image/png" href="https://www.nestgenomics.com/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    var root = document.documentElement;
+    var THEMES = ['nest','slate','forest','paper','dusk'];
+    var MODES  = ['light','dark','system'];
+    try {
+      root.setAttribute('data-width', localStorage.getItem('nest-doc-width') || 'narrow');
+      var t = localStorage.getItem('nest-doc-theme');
+      if (t === 'light' || t === 'dark' || !t) t = 'nest';
+      if (THEMES.indexOf(t) === -1) t = 'nest';
+      root.setAttribute('data-theme', t);
+      var m = localStorage.getItem('nest-doc-mode');
+      if (MODES.indexOf(m) === -1) m = 'light';
+      root.setAttribute('data-mode', m);
+    } catch (e) {
+      root.setAttribute('data-width', 'narrow');
+      root.setAttribute('data-theme', 'nest');
+      root.setAttribute('data-mode', 'light');
+    }
+  })();
+</script>
+<style>
+  :root {
+    --bg-light: #ffffff;
+    --bg-dark:  #0e0d0c;
+    --ink-light: #0a0a0a;
+    --ink-dark:  #f3ece4;
+    --accent:   #e65732;
+    --accent-2: #e78d32;
+    --accent-3: #a367c8;
+    --bg:  var(--bg-light);
+    --ink: var(--ink-light);
+    --ink-soft:    color-mix(in oklch, var(--ink) 62%, transparent);
+    --border:      color-mix(in oklch, var(--accent) 22%, transparent);
+    --hover:       color-mix(in oklch, var(--accent) 8%, transparent);
+    --peach:       color-mix(in oklch, var(--accent) 14%, transparent);
+    --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --content-width: 720px;
+  }
+  html[data-theme="slate"]  { --bg-light:#f7f8fa; --bg-dark:#0d1220; --ink-light:#1a1f2e; --ink-dark:#e6ecff; --accent:#2563eb; --accent-2:#4f7cf5; --accent-3:#7e8fff; }
+  html[data-theme="forest"] { --bg-light:#fafaf6; --bg-dark:#0d1612; --ink-light:#0f1c15; --ink-dark:#e8f3ec; --accent:#2d6a4f; --accent-2:#52b788; --accent-3:#74c69d; }
+  html[data-theme="paper"]  { --bg-light:#fbf5e9; --bg-dark:#1f1810; --ink-light:#2a1f12; --ink-dark:#f4ecdf; --accent:#b04b1d; --accent-2:#c97e3b; --accent-3:#8c5a3a; }
+  html[data-theme="dusk"]   { --bg-light:#faf5fb; --bg-dark:#14111d; --ink-light:#2a1245; --ink-dark:#ece6f6; --accent:#a367c8; --accent-2:#b884d6; --accent-3:#e65732; }
+  html[data-mode="dark"] { --bg: var(--bg-dark); --ink: var(--ink-dark); }
+  @media (prefers-color-scheme: dark) {
+    html[data-mode="system"] { --bg: var(--bg-dark); --ink: var(--ink-dark); }
+  }
+  html[data-width="narrow"] { --content-width: 720px; }
+  html[data-width="wide"]   { --content-width: 960px; }
+  html[data-width="full"]   { --content-width: 1200px; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  html, body { margin:0; padding:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:17px; line-height:1.6; text-wrap:pretty; -webkit-font-smoothing:antialiased; }
+  main { max-width: var(--content-width); margin: 0 auto; padding: 96px 28px 128px; transition: max-width 240ms ease; }
+  header { margin-bottom: 56px; }
+  .eyebrow { font-family: var(--sans); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 0 0 20px; }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(48px, 7vw, 88px); line-height: 1.02; letter-spacing: -0.01em; text-wrap: balance; padding-bottom: 0.2em; margin: 0 0 8px; background: linear-gradient(105deg, var(--accent) 0%, var(--accent-2) 45%, var(--accent-3) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(28px, 3.4vw, 36px); line-height: 1.1; text-wrap: balance; margin: 56px 0 16px; }
+  p { margin: 0 0 20px; }
+  .lede { font-family: var(--serif); font-size: clamp(22px, 2.4vw, 28px); line-height: 1.35; color: var(--ink); margin-bottom: 40px; }
+  .meta { font-size: 13px; color: var(--ink-soft); border-top: 1px solid var(--border); padding-top: 16px; margin-top: 24px; }
+  a { color: var(--accent); text-decoration: none; background-image: linear-gradient(var(--accent), var(--accent)); background-repeat: no-repeat; background-size: 100% 1px; background-position: 0 100%; transition: background-size 220ms ease; }
+  a:hover { background-size: 100% 2px; }
+  .accent { color: var(--accent); }
+  .dim { opacity: 0.5; }
+  footer { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-soft); }
+
+  .docs-list { list-style: none; padding: 0; margin: 32px 0; }
+  .docs-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    margin: 0;
+  }
+  .docs-list li:first-child {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "pill pill"
+      "title meta";
+    gap: 8px 16px;
+    align-items: center;
+    background: var(--hover);
+    border-radius: 8px;
+    padding: 12px 14px 16px;
+    margin: 0 -14px;
+  }
+  .docs-list li:first-child > a { grid-area: title; }
+  .docs-list li:first-child > .doc-meta { grid-area: meta; }
+  .docs-list li:first-child::before {
+    content: "Latest";
+    grid-area: pill;
+    justify-self: start;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--peach);
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+  .docs-list a {
+    font-family: var(--serif);
+    font-size: 22px;
+    line-height: 1.3;
+    flex: 1;
+    background-size: 0 1px;
+  }
+  .docs-list a:hover { background-size: 100% 1px; }
+  .docs-list .doc-meta {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: right;
+    line-height: 1.4;
+  }
+  .docs-list .doc-meta .meta-row { display: block; }
+  .docs-list .doc-meta .uploader { color: var(--accent); }
+  .docs-list .doc-meta .dim { opacity: 0.5; }
+
+  .doc-settings { position: fixed; top: 20px; right: 20px; z-index: 50; font-family: var(--sans); }
+  .doc-settings summary { list-style: none; cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); color: var(--ink-soft); font-size: 16px; transition: background 160ms ease, color 160ms ease; }
+  .doc-settings summary::-webkit-details-marker { display: none; }
+  .doc-settings summary:hover { background: var(--hover); color: var(--accent); }
+  .doc-settings[open] summary { background: var(--hover); color: var(--accent); }
+  .doc-settings .panel { position: absolute; top: 44px; right: 0; width: 240px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 6px; box-shadow: 0 12px 32px rgba(10, 10, 10, 0.10); }
+  .doc-settings .panel-section { padding: 10px 10px 12px; border-radius: 8px; }
+  .doc-settings .panel-section + .panel-section { border-top: 1px solid var(--border); margin-top: 2px; }
+  .doc-settings .panel-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 10px; }
+  .doc-settings .theme-options { display: flex; flex-wrap: wrap; gap: 8px; }
+  .doc-settings .theme-options button { appearance: none; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; padding: 0; border: 2px solid transparent; background-clip: padding-box; transition: transform 140ms ease; }
+  .doc-settings .theme-options button:hover { transform: scale(1.1); }
+  .doc-settings .theme-options button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink); }
+  .doc-settings .theme-options [data-theme="nest"]   { background: linear-gradient(135deg, #e65732 0%, #e78d32 50%, #a367c8 100%); }
+  .doc-settings .theme-options [data-theme="slate"]  { background: linear-gradient(135deg, #2563eb 0%, #7e8fff 100%); }
+  .doc-settings .theme-options [data-theme="forest"] { background: linear-gradient(135deg, #2d6a4f 0%, #74c69d 100%); }
+  .doc-settings .theme-options [data-theme="paper"]  { background: linear-gradient(135deg, #b04b1d 0%, #c97e3b 100%); }
+  .doc-settings .theme-options [data-theme="dusk"]   { background: linear-gradient(135deg, #a367c8 0%, #c45567 100%); }
+  .doc-settings .width-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .doc-settings .width-options button { appearance: none; border: 1px solid var(--border); background: var(--bg); border-radius: 6px; padding: 8px 0; font-size: 12px; color: var(--ink); cursor: pointer; font-family: inherit; transition: background 140ms ease; }
+  .doc-settings .width-options button:hover { background: var(--hover); }
+  .doc-settings .width-options button[aria-pressed="true"] { background: var(--peach); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    header, .content > * { opacity: 0; transform: translateY(12px); animation: rise 600ms cubic-bezier(.2,.7,.2,1) forwards; }
+    header { animation-delay: 60ms; }
+    .content > *:nth-child(1) { animation-delay: 180ms; }
+    .content > *:nth-child(2) { animation-delay: 240ms; }
+    .content > *:nth-child(3) { animation-delay: 300ms; }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+  }
+  /* Nest wordmark — top-left, scrolls with content (not fixed), no link underline */
+  .nest-logo {
+    position: absolute;
+    top: 24px;
+    left: 28px;
+    height: 48px;
+    width: auto;
+    display: block;
+    z-index: 40;
+    opacity: 0.9;
+    background: none !important;
+    text-decoration: none;
+    transition: opacity 160ms ease, transform 160ms ease;
+  }
+  .nest-logo img { height: 100%; width: auto; display: block; }
+  .nest-logo:hover { opacity: 1; transform: scale(1.03); background: none !important; }
+  @media print { .nest-logo { opacity: 1; } }
+  /* Inline logo replacing the eyebrow on the docs index */
+  .nest-logo-inline {
+    display: block;
+    height: 60px;
+    width: auto;
+    margin: 0 0 32px;
+  }
+</style>
+</head>
+<body>
+
+  <details class="doc-settings" aria-label="Document settings">
+    <summary title="Document settings" aria-label="Document settings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </summary>
+    <div class="panel" role="dialog" aria-label="Document settings">
+      <div class="panel-section">
+        <div class="panel-label">Layout</div>
+        <div class="width-options" role="group" aria-label="Content width">
+          <button type="button" data-width="narrow">Narrow</button>
+          <button type="button" data-width="wide">Wide</button>
+          <button type="button" data-width="full">Full</button>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">Theme</div>
+        <div class="theme-options" role="group" aria-label="Theme">
+          <button type="button" data-theme="nest"   aria-label="Nest"></button>
+          <button type="button" data-theme="slate"  aria-label="Slate"></button>
+          <button type="button" data-theme="forest" aria-label="Forest"></button>
+          <button type="button" data-theme="paper"  aria-label="Paper"></button>
+          <button type="button" data-theme="dusk"   aria-label="Dusk"></button>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">Mode</div>
+        <div class="width-options" role="group" aria-label="Mode">
+          <button type="button" data-mode="light">Light</button>
+          <button type="button" data-mode="dark">Dark</button>
+          <button type="button" data-mode="system">System</button>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <main>
+    <header>
+      <img class="nest-logo-inline" src="https://www.nestgenomics.com/logo.png" alt="Nest Genomics">
+      <h1>Team docs</h1>
+      <p class="lede">Latest summaries, plans, and write-ups from the team. The newest <span class="accent">{{COUNT}}</span> entries are listed below.</p>
+      <p class="meta">Last regenerated {{REGEN_DATE}} &middot; <a href="https://tst.yoda.nestgenomics.com/nest-docs/">tst.yoda.nestgenomics.com/nest-docs</a></p>
+    </header>
+
+    <section class="content">
+      <ul class="docs-list">
+        {{ROWS}}
+      </ul>
+
+    </section>
+
+    <footer>
+      Tailscale-restricted &middot; regenerated on every upload
+    </footer>
+  </main>
+
+<script>
+  // --- Dynamic relative time ("today" / "3 days ago" / "2 months ago") ---
+  // Computes from data-date="YYYY-MM-DD" so stale CloudFront caches still show correct values.
+  (function () {
+    var nodes = document.querySelectorAll('[data-date]');
+    var now = new Date();
+    function relative(iso) {
+      var d = new Date(iso + 'T00:00:00Z');
+      var nowUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      var days = Math.floor((nowUTC - d.getTime()) / 86400000);
+      if (days < 0) return 'in the future';
+      if (days === 0) return 'today';
+      if (days === 1) return '1 day ago';
+      if (days < 14) return days + ' days ago';
+      if (days < 60) return Math.floor(days / 7) + ' weeks ago';
+      if (days < 365) return Math.floor(days / 30) + ' months ago';
+      var years = Math.floor(days / 365);
+      return years === 1 ? '1 year ago' : years + ' years ago';
+    }
+    nodes.forEach(function (n) {
+      var iso = n.getAttribute('data-date');
+      if (iso) n.textContent = relative(iso);
+    });
+  })();
+  (function () {
+    var root = document.documentElement;
+    var buttons = document.querySelectorAll('.doc-settings [data-width]');
+    function apply(w) {
+      root.setAttribute('data-width', w);
+      try { localStorage.setItem('nest-doc-width', w); } catch (e) {}
+      buttons.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.width === w ? 'true' : 'false'); });
+    }
+    apply(root.getAttribute('data-width') || 'narrow');
+    buttons.forEach(function (b) { b.addEventListener('click', function () { apply(b.dataset.width); }); });
+  })();
+  (function () {
+    var root = document.documentElement;
+    var btns = document.querySelectorAll('.doc-settings [data-theme]');
+    function apply(t) {
+      root.setAttribute('data-theme', t);
+      try { localStorage.setItem('nest-doc-theme', t); } catch (e) {}
+      btns.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.theme === t ? 'true' : 'false'); });
+    }
+    apply(root.getAttribute('data-theme') || 'nest');
+    btns.forEach(function (b) { b.addEventListener('click', function () { apply(b.dataset.theme); }); });
+  })();
+  (function () {
+    var root = document.documentElement;
+    var btns = document.querySelectorAll('.doc-settings [data-mode]');
+    function apply(m) {
+      root.setAttribute('data-mode', m);
+      try { localStorage.setItem('nest-doc-mode', m); } catch (e) {}
+      btns.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false'); });
+    }
+    apply(root.getAttribute('data-mode') || 'light');
+    btns.forEach(function (b) { b.addEventListener('click', function () { apply(b.dataset.mode); }); });
+  })();
+</script>
+</body>
+</html>

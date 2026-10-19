@@ -24,12 +24,23 @@ OMARCHY=/usr/share/omarchy/default/agents/skills
 GLOBAL="$HOME/.agents/skills"
 FARMS=("$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.cursor/skills")
 
+source "$DOTFILES/script/common/dot_env.sh"
+dot_export_env
+mkdir -p "$GLOBAL"
+
 # 1. local skills → managed copies in the global root (the CLI owns that directory, so copies, not symlinks)
 synced=0
 for src in "$LOCAL"/*/; do
 	[ -f "$src/SKILL.md" ] || continue # skips THIRD-PARTY.md and anything without a SKILL.md
 	name=$(basename "$src")
 	dst="$GLOBAL/$name"
+	# Removing the copy leaves the farm links dangling; the prune below clears them.
+	case "$DOT_ENV:$name" in
+	personal:nest-* | work:win11-vm | work:ida-vm | work:diagnose-crash | work:meal-planning)
+		rm -rf "$dst"
+		continue
+		;;
+	esac
 	if [ -L "$dst" ] || ! [ -f "$dst/SKILL.md" ] || ! diff -rq "$src" "$dst" >/dev/null 2>&1; then
 		rm -rf "$dst"
 		cp -a "$src" "$dst"
@@ -59,16 +70,17 @@ for skill in "$GLOBAL"/*/; do
 	done
 	linked=$((linked + 1))
 done
-# prune anything the farms carry that the global root does not
+# prune dangling links only: a real dir the global root lacks is a skill installed some other way, not ours to delete
 for farm in "${FARMS[@]}"; do
 	for entry in "$farm"/*; do
-		[ -e "$entry" ] || continue
-		name=$(basename "$entry")
-		[ -d "$GLOBAL/$name" ] || rm -rf "$entry"
+		if [ -L "$entry" ] && [ ! -e "$entry" ]; then
+			rm "$entry"
+		fi
 	done
 done
 
-broken=$(for farm in "$GLOBAL" "${FARMS[@]}"; do find "$farm" -maxdepth 1 -xtype l; done | wc -l)
+# -exec test, not -xtype: BSD find (macOS) has no -xtype
+broken=$(for farm in "$GLOBAL" "${FARMS[@]}"; do find "$farm" -maxdepth 1 -type l ! -exec test -e {} \; -print; done | wc -l)
 printf 'local skills synced: %s (of %s)\n' "$synced" "$(find "$LOCAL" -maxdepth 2 -name SKILL.md | wc -l)"
 printf 'skills in ~/.agents/skills: %s, linked into %s farms, %s broken links\n' "$linked" "${#FARMS[@]}" "$broken"
 ls "$GLOBAL" | tr '\n' ' '

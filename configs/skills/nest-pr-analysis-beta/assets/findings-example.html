@@ -1,0 +1,90 @@
+<!--
+  findings-example.html — Reference structure for the Findings section
+  that gets substituted into __FINDINGS__ in dashboard-template.html.
+
+  IMPORTANT: This is window-specific content. The agent MUST regenerate
+  it from the actual data, not paste it verbatim. The numbers, names,
+  and recommendations below are illustrative only.
+
+  Style guide:
+  - 5–8 findings, each grounded in a specific number from the dashboard
+  - Use <span class="accent">number</span> for pull-quote numbers in serif accent
+  - Use <em> for the "lever" or "implication" sentence
+  - Process recommendations: actions the team takes (workflow changes, CODEOWNERS, Slack bots)
+  - Dashboard recommendations: charts/widgets to add to this dashboard
+  - Rank 1 (gold) / 2 (silver) / 3 (bronze) — pick 2–3 per rank, no more
+  - End with a "Pick one" callout: 1 process move + 1 dashboard move
+
+  All CSS classes (findings, finding-num, reco-table, medal, pick-one) are
+  already defined in dashboard-template.html — do not add new style rules.
+-->
+
+<h2 id="findings">Findings &amp; recommendations</h2>
+
+<p class="findings-lede">
+  ONE-PARAGRAPH FRAMING SENTENCE THAT NAMES THE CENTRAL INSIGHT.
+  Use <strong>strong+italic accent</strong> for the key claim.
+  Then a sentence on what the leverage actually is.
+</p>
+
+<div class="findings">
+  <article>
+    <span class="finding-num">01</span>
+    <h4>Headline that states the finding as a sentence</h4>
+    <p>
+      One- or two-sentence summary with specific numbers like
+      <span class="accent">5h</span> or <span class="accent">87%</span>.
+      End with an <em>italic lever sentence</em>.
+    </p>
+  </article>
+  <article>
+    <span class="finding-num">02</span>
+    <h4>Next finding, also as a sentence</h4>
+    <p>Numbers in <span class="accent">serif accent</span>. Areas/code paths in <code>monospace</code> when relevant.</p>
+  </article>
+  <!-- 3–8 total findings -->
+</div>
+
+<h3 class="reco-h3">Process changes</h3>
+<table class="reco-table">
+  <thead><tr><th class="reco-rank">Rank</th><th>Idea</th><th>Why</th><th>How</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="reco-rank"><span class="medal gold">1</span></td>
+      <td><strong>Idea name in bold</strong></td>
+      <td>Why it matters, grounded in a finding above.</td>
+      <td>Concrete first step. <em>Italics</em> for emphasis.</td>
+    </tr>
+    <tr>
+      <td class="reco-rank"><span class="medal silver">2</span></td>
+      <td><strong>Second idea</strong></td>
+      <td>Why.</td>
+      <td>How.</td>
+    </tr>
+    <tr>
+      <td class="reco-rank"><span class="medal bronze">3</span></td>
+      <td><strong>Third idea</strong></td>
+      <td>Why.</td>
+      <td>How.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 class="reco-h3">Dashboard improvements</h3>
+<table class="reco-table">
+  <thead><tr><th class="reco-rank">Rank</th><th>Idea</th><th>Why</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="reco-rank"><span class="medal gold">1</span></td>
+      <td><strong>Chart or widget name</strong></td>
+      <td>What insight it surfaces that the current dashboard doesn't.</td>
+      <td>Existing data; low effort. <em>Or:</em> needs new fetch; medium effort.</td>
+    </tr>
+    <!-- 3–8 ideas, ranked -->
+  </tbody>
+</table>
+
+<blockquote class="pick-one">
+  <p><strong>If you do one thing in process:</strong> the single highest-impact behavior change with a one-sentence justification.</p>
+  <p><strong>If you do one thing in the dashboard:</strong> the single highest-impact chart/widget to add.</p>
+</blockquote>
