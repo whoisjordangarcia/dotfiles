@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """PreToolUse hook: force a permission prompt for curl to any non-loopback host.
 
-Loopback curl is covered by the Bash(curl *localhost:*) allow rules, so this only
-needs to say "ask" for everything else. Fails closed: anything it cannot prove is
-loopback gets a prompt.
+Loopback-only curl is allowed here (no allow rules: a glob like *localhost* also
+matches evil.com/?r=localhost). Anything else asks, except in auto mode, where it
+stays silent so the auto-mode classifier reviews it. Fails closed: anything it
+cannot prove is loopback is never allowed.
 """
 import json
 import re
@@ -36,7 +37,7 @@ def host_of(token):
     return t.rsplit(":", 1)[0] if re.search(r":\d+$", t) else t
 
 
-def is_local(cmd):
+def is_local(cmd, trusted=True):
     """True only if every curl segment targets loopback and nothing else."""
     segments = re.split(r"&&|\|\||[;|\n]", cmd)
     saw_curl = False
@@ -58,7 +59,7 @@ def is_local(cmd):
             urls.append(tok)
         if not urls:
             return False  # URL from a variable or stdin - can't tell, so ask
-        if not all(LOOPBACK.match(h) or h.lower() in TRUSTED for h in map(host_of, urls)):
+        if not all(LOOPBACK.match(h) or (trusted and h.lower() in TRUSTED) for h in map(host_of, urls)):
             return False
     return saw_curl
 
@@ -69,13 +70,19 @@ def main():
     except Exception:
         payload = {}  # unparseable input -> fall through to ask
     cmd = payload.get("tool_input", {}).get("command", "")
-    if payload.get("permission_mode") in NO_PROMPT_MODES or is_local(cmd):
-        return  # silent: the loopback allow rules take it from here
+    if is_local(cmd, trusted=False):
+        decision("allow", "curl to loopback only")
+    elif payload.get("permission_mode") not in NO_PROMPT_MODES and not is_local(cmd):
+        decision("ask", "curl to a non-loopback host")
+    # else silent: auto mode -> classifier; trusted host -> normal permission flow
+
+
+def decision(kind, reason):
     print(json.dumps({
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
-            "permissionDecision": "ask",
-            "permissionDecisionReason": "curl to a non-loopback host",
+            "permissionDecision": kind,
+            "permissionDecisionReason": reason,
         }
     }))
 
@@ -93,6 +100,8 @@ def demo():
     assert not is_local("curl http://localhost.evil.com")
     assert is_local("curl -A x https://api.github.com/repos/x/y")
     assert not is_local("curl https://github.com.evil.com")
+    assert not is_local("curl -A x https://api.github.com/repos/x/y", trusted=False)
+    assert is_local("curl localhost:8770/status", trusted=False)
     assert not is_local("ls")  # no curl at all -> hook says ask, but `if` never fires it
     print("ok")
 

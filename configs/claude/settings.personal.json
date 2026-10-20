@@ -20,8 +20,6 @@
     "allow": [
       "Bash(bun run:*)",
       "Bash(bunx npm-check-updates:*)",
-      "Bash(curl *localhost:*)",
-      "Bash(curl *127.0.0.1:*)",
       "Bash(docker build *)",
       "Bash(gh api *)",
       "Bash(gh pr checks *)",
