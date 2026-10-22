@@ -59,6 +59,10 @@ defaults write NSGlobalDomain AppleKeyboardUIMode -int 2
 # Use 12-hour time format in menu bar clock
 defaults write com.apple.menuextra.clock AppleICUForce12HourTime -bool true
 
+# Auto-hide the native menu bar (SketchyBar takes its place), in fullscreen too
+defaults write NSGlobalDomain _HIHideMenuBar -bool true
+defaults write NSGlobalDomain AppleMenuBarVisibleInFullscreen -bool false
+
 # Expand save panel by default (no more clicking "More Options")
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
@@ -78,9 +82,6 @@ defaults write -g NSAutomaticWindowAnimationsEnabled -bool false
 
 # Move windows by dragging any part of the window with Ctrl+Cmd
 defaults write -g NSWindowShouldDragOnGesture -bool true
-
-# Autohide the menu bar (sketchybar replaces it)
-defaults write NSGlobalDomain _HIHideMenuBar -bool true
 
 # --- Finder ---
 
