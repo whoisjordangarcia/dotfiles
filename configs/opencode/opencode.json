@@ -1,5 +1,248 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "theme": "opencode",
-  "autoupdate": true
+  "autoupdate": true,
+  "providers": {
+    "win11-4090": {
+      "name": "Windows 4090 (local)",
+      "package": "aisdk:@ai-sdk/openai-compatible",
+      "settings": {
+        "baseURL": "http://127.0.0.1:8081/v1",
+        "apiKey": "sk-noauth"
+      },
+      "body": {
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "repeat_penalty": 1,
+        "dry_multiplier": 0
+      },
+      "models": {
+        "qwen": {
+          "modelID": "qwen",
+          "name": "qwen - base, best agent, 128K, medium effort",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 131072,
+            "output": 16384
+          },
+          "body": {
+            "temperature": 1.0,
+            "top_p": 0.95,
+            "top_k": 20,
+            "min_p": 0,
+            "presence_penalty": 0,
+            "reasoning_effort": "medium"
+          }
+        },
+        "qwen-xhigh": {
+          "modelID": "qwen-xhigh",
+          "name": "qwen-xhigh - base, best agent, 128K, xhigh effort",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 131072,
+            "output": 32768
+          },
+          "body": {
+            "temperature": 1.0,
+            "top_p": 0.95,
+            "top_k": 20,
+            "min_p": 0,
+            "presence_penalty": 0,
+            "reasoning_effort": "xhigh"
+          }
+        },
+        "heretic": {
+          "modelID": "heretic",
+          "name": "heretic - uncensored, 128K, medium effort",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 131072,
+            "output": 16384
+          },
+          "body": {
+            "temperature": 1.0,
+            "top_p": 0.95,
+            "top_k": 20,
+            "min_p": 0,
+            "presence_penalty": 0,
+            "reasoning_effort": "medium"
+          }
+        },
+        "heretic-xhigh": {
+          "modelID": "heretic-xhigh",
+          "name": "heretic-xhigh - uncensored, 128K, xhigh effort",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 131072,
+            "output": 32768
+          },
+          "body": {
+            "temperature": 1.0,
+            "top_p": 0.95,
+            "top_k": 20,
+            "min_p": 0,
+            "presence_penalty": 0,
+            "reasoning_effort": "xhigh"
+          }
+        },
+        "coletti": {
+          "modelID": "coletti",
+          "name": "coletti - uncensored, fast, 112K, medium effort",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 114688,
+            "output": 8192
+          },
+          "body": {
+            "temperature": 1.0,
+            "top_p": 0.95,
+            "top_k": 20,
+            "min_p": 0,
+            "presence_penalty": 0,
+            "reasoning_effort": "medium"
+          }
+        },
+        "coletti-xhigh": {
+          "modelID": "coletti-xhigh",
+          "name": "coletti-xhigh - uncensored, 112K, xhigh effort",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 114688,
+            "output": 32768
+          },
+          "body": {
+            "temperature": 1.0,
+            "top_p": 0.95,
+            "top_k": 20,
+            "min_p": 0,
+            "presence_penalty": 0,
+            "reasoning_effort": "xhigh"
+          }
+        },
+        "obliterated": {
+          "modelID": "obliterated",
+          "name": "obliterated - uncensored, 112K, medium effort",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 114688,
+            "output": 8192
+          },
+          "body": {
+            "temperature": 1.0,
+            "top_p": 0.95,
+            "top_k": 20,
+            "min_p": 0,
+            "presence_penalty": 0,
+            "reasoning_effort": "medium"
+          }
+        },
+        "huihui": {
+          "modelID": "huihui",
+          "name": "huihui - balanced, uncensored, 64K, no thinking",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 65536,
+            "output": 8192
+          },
+          "body": {
+            "temperature": 0.7,
+            "top_p": 0.8,
+            "top_k": 20,
+            "min_p": 0,
+            "presence_penalty": 1.5,
+            "reasoning_effort": "medium"
+          }
+        },
+        "hauhau": {
+          "modelID": "hauhau",
+          "name": "hauhau - lightweight, uncensored, 64K, no thinking",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 65536,
+            "output": 8192
+          },
+          "body": {
+            "temperature": 0.7,
+            "top_p": 0.8,
+            "top_k": 20,
+            "min_p": 0,
+            "presence_penalty": 1.5,
+            "reasoning_effort": "medium"
+          }
+        }
+      }
+    }
+  }
 }
