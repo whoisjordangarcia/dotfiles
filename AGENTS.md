@@ -47,8 +47,11 @@ reference doc.
 | `configs/claude/hooks/gate_patterns.py`, `touchid-gate.py` | `bash configs/claude/hooks/gate_test.sh` (the codex hook imports the same list — update both) |
 | env resolution (`script/common/dot_env.sh`) | `bash script/common/dot_env_test.sh` |
 | a component's `setup.sh` | read the neighbouring one; components follow one pattern |
+| `bin/dot` | `bash script/dot_test.sh` |
+| anything, before committing | `./bin/dot test` — every suite; exit 77 = skipped on this OS/hardware |
 
-Each test must end with "All N tests passed". `docs/agent-reference.md#checks-that-must-be-run` has what each test pins.
+Re-run a module without the TUI: `./bin/dot run <module>` (`./bin/dot run` lists them). Each test must end with
+"All N tests passed". `docs/agent-reference.md#checks-that-must-be-run` has what each test pins.
 
 ## Traps (one line each — full text in the reference doc)
 

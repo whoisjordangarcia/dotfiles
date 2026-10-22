@@ -363,7 +363,7 @@ DOT_NAME="Jordan Garcia"
 DOT_EMAIL="user@example.com"
 DOT_ENVIRONMENT="work|personal"
 DOT_SYSTEM="mac|linux_arch|..."
-DOT_YUBIKEY="ABC123..."  # Optional GPG key for git signing
+DOT_SIGNING_KEY="ssh-ed25519 AAAA..."  # Optional SSH public key for git signing (old name: DOT_YUBIKEY)
 ```
 
 ---
@@ -384,6 +384,17 @@ DOT_YUBIKEY="ABC123..."  # Optional GPG key for git signing
 ./bin/dot --reconfigure   # Re-run interactive setup
 ```
 
+Non-interactive (scripts and AI agents; the `dotfiles` skill drives these):
+
+```bash
+./bin/dot run                    # List this system's modules (system auto-detected if unset)
+./bin/dot run macos rift/mac     # Run specific modules, no prompts
+./bin/dot --work run             # Override personal/work (also --personal, --system <name>)
+./bin/dot test [filter]          # Run every *_test.sh (or paths matching filter)
+```
+
+A test suite that exits `77` is reported as skipped (wrong OS or hardware).
+
 ---
 
 ## Post-Installation
@@ -401,11 +412,17 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.zsh/plugins/zs
 git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/plugins/zsh-autosuggestions
 ```
 
-### YubiKey Git Signing (Optional)
-```bash
-gpg --list-secret-keys --keyid-format=long  # Find key ID
-# Provide during ./bin/dot -i or set manually
-```
+### Git Commit Signing via 1Password (Optional)
+
+Commits and tags are SSH-signed by 1Password (`op-ssh-sign`, Touch ID); the private key never leaves the vault.
+
+1. 1Password → Settings → Developer → **Use the SSH agent** (and "Integrate with 1Password CLI").
+2. Create or pick an SSH key item → **Copy public key**.
+3. GitHub → Settings → SSH and GPG keys → New SSH key → type **Signing Key** → paste.
+4. Put the public key in `.dotconfig` as `DOT_SIGNING_KEY="ssh-ed25519 AAAA..."` (or enter it during
+   `./bin/dot -i`), then `./bin/dot run git`.
+
+Blank `DOT_SIGNING_KEY` = signing is removed from the generated `~/.gitconfig`.
 
 ---
 

@@ -225,7 +225,7 @@ printf "\n\033[0;35m━━━ Uncommitted Lines (git diff vs HEAD) ━━━\033
 # counts in the JSON below must NOT appear; only the real git diff should.
 
 # Dirty repo: appended lines → "+N" insertions, no deletions
-LINES_ADD_REPO=$(mktemp -d -t statusline-lines.XXXXXX)
+LINES_ADD_REPO=$(mktemp -d "${TMPDIR:-/tmp}/statusline-lines.XXXXXX")
 (cd "$LINES_ADD_REPO" && git init -q -b main && printf 'a\nb\n' >f.txt \
   && git add f.txt && git -c user.email=t@t -c user.name=t commit -q -m init \
   && printf 'a\nb\nc\nd\ne\n' >f.txt) >/dev/null
@@ -237,7 +237,7 @@ assert_not_contains "ignores session lines_added" "$out" "+999"
 assert_not_contains "no deletions when only insertions" "$out" "-888"
 
 # Dirty repo: removed lines → "-N" deletions
-LINES_DEL_REPO=$(mktemp -d -t statusline-lines.XXXXXX)
+LINES_DEL_REPO=$(mktemp -d "${TMPDIR:-/tmp}/statusline-lines.XXXXXX")
 (cd "$LINES_DEL_REPO" && git init -q -b main && printf 'a\nb\nc\nd\n' >f.txt \
   && git add f.txt && git -c user.email=t@t -c user.name=t commit -q -m init \
   && printf 'a\nb\n' >f.txt) >/dev/null
@@ -247,7 +247,7 @@ out=$(run_statusline_plain "$LINES_DEL_INPUT")
 assert_contains "shows uncommitted deletions from git diff" "$out" "-2"
 
 # Clean repo: everything committed → no +/- even with session edits in JSON
-LINES_CLEAN_REPO=$(mktemp -d -t statusline-lines.XXXXXX)
+LINES_CLEAN_REPO=$(mktemp -d "${TMPDIR:-/tmp}/statusline-lines.XXXXXX")
 (cd "$LINES_CLEAN_REPO" && git init -q -b main && printf 'a\nb\n' >f.txt \
   && git add f.txt && git -c user.email=t@t -c user.name=t commit -q -m init) >/dev/null
 rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
@@ -401,7 +401,7 @@ assert_contains "light and dark backgrounds render identically" \
 printf "\n\033[0;35m━━━ Worktree/Branch Dedup ━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 # Fresh worktree repo where wt dir name matches branch (slash → dash)
-WT_REPO=$(mktemp -d -t statusline-wt.XXXXXX)
+WT_REPO=$(mktemp -d "${TMPDIR:-/tmp}/statusline-wt.XXXXXX")
 (cd "$WT_REPO" && git init -q -b main && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m init \
   && git checkout -q -b jordan/preview-pr \
   && git checkout -q -b main-tmp \
@@ -415,7 +415,7 @@ assert_contains "shows branch for matching worktree" "$out" "jordan/preview-pr"
 assert_not_contains "suppresses ⎇ label when wt ≈ branch" "$out" "⎇ jordan-preview-pr"
 
 # Differing worktree dir vs branch → ⎇ label stays
-WT_REPO2=$(mktemp -d -t statusline-wt.XXXXXX)
+WT_REPO2=$(mktemp -d "${TMPDIR:-/tmp}/statusline-wt.XXXXXX")
 (cd "$WT_REPO2" && git init -q -b main && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m init \
   && git checkout -q -b placeholder \
   && mkdir -p .claude/worktrees \
@@ -434,7 +434,7 @@ printf "\n\033[0;35m━━━ Long Name Truncation ━━━━━━━━━�
 
 # Non-worktree long cwd with no git: neither line carries the path any more.
 LONG_NAME="jordan-nes-3984-workflows-add-genetic-testing-decision-to-patient-list-and"
-LONG_DIR=$(mktemp -d -t "statusline-longXXXXXX")
+LONG_DIR=$(mktemp -d "${TMPDIR:-/tmp}/statusline-longXXXXXX")
 mkdir -p "$LONG_DIR/$LONG_NAME"
 LONG_CWD="$LONG_DIR/$LONG_NAME"
 INPUT_LONG_NAME='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"session_id":"test-long","cwd":"'"$LONG_CWD"'","context_window":{"used_percentage":0}}'
@@ -448,7 +448,7 @@ rm -rf "$LONG_DIR"
 
 # Worktree cwd WITHOUT git detection: path contains .worktrees/<name>, so line 2
 # should collapse to ⎇ NAME (icon + name, no path prefix or .worktrees/ segment).
-LONG_WT_ROOT=$(mktemp -d -t "statusline-wtpath.XXXXXX")
+LONG_WT_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/statusline-wtpath.XXXXXX")
 mkdir -p "$LONG_WT_ROOT/nest/.worktrees/$LONG_NAME"
 LONG_WT_CWD="$LONG_WT_ROOT/nest/.worktrees/$LONG_NAME"
 INPUT_LONG_WT='{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":0,"total_duration_ms":0},"session_id":"test-longwt","cwd":"'"$LONG_WT_CWD"'","context_window":{"used_percentage":0}}'
@@ -467,7 +467,7 @@ printf "\n\033[0;35m━━━ Worktree False-Positive ━━━━━━━━�
 # A plain (non-worktree) repo root must NOT be misflagged as a worktree.
 # Regression: --git-dir returns relative ".git", which never equals the
 # absolute --git-common-dir, so the repo was shown as "⎇ .git".
-PLAIN_REPO=$(mktemp -d -t statusline-plain.XXXXXX)
+PLAIN_REPO=$(mktemp -d "${TMPDIR:-/tmp}/statusline-plain.XXXXXX")
 (cd "$PLAIN_REPO" && git init -q -b main \
   && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m init) >/dev/null
 rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
@@ -482,7 +482,7 @@ printf "\n\033[0;35m━━━ Base Branch Detection ━━━━━━━━━�
 # HEAD wins. Remote-tracking refs are simulated with git update-ref.
 
 # Branch cut from main AFTER the release branch was cut → main is nearer.
-BASE_REPO=$(mktemp -d -t statusline-base.XXXXXX)
+BASE_REPO=$(mktemp -d "${TMPDIR:-/tmp}/statusline-base.XXXXXX")
 (cd "$BASE_REPO" && git init -q -b main \
   && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m A \
   && git update-ref refs/remotes/origin/release/2.15.0 HEAD \
@@ -498,7 +498,7 @@ assert_not_contains "older release branch not picked as base" "$out" "release/2.
 rm -rf "$BASE_REPO"
 
 # Branch cut from the release tip (which is ahead of main) → release is nearer.
-BASE_REPO2=$(mktemp -d -t statusline-base.XXXXXX)
+BASE_REPO2=$(mktemp -d "${TMPDIR:-/tmp}/statusline-base.XXXXXX")
 (cd "$BASE_REPO2" && git init -q -b main \
   && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m A \
   && git update-ref refs/remotes/origin/main HEAD \
@@ -514,7 +514,7 @@ rm -rf "$BASE_REPO2"
 
 printf "\n\033[0;35m━━━ PR Badge + CI Glyph ━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
-PR_REPO=$(mktemp -d -t statusline-pr.XXXXXX)
+PR_REPO=$(mktemp -d "${TMPDIR:-/tmp}/statusline-pr.XXXXXX")
 (cd "$PR_REPO" && git init -q -b jordan/pr-test \
   && git -c user.email=t@t -c user.name=t commit --allow-empty -q -m init) >/dev/null
 

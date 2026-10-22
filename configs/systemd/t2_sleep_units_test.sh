@@ -9,6 +9,12 @@
 # Run: bash configs/systemd/t2_sleep_units_test.sh
 set -uo pipefail
 
+# Only meaningful on the T2 MacBook running Linux; 77 = skipped (script/test.sh)
+if [[ "$(uname)" != Linux ]] || ! grep -qi mac /sys/class/dmi/id/product_name 2>/dev/null; then
+	echo "skip: not a T2 Mac running Linux"
+	exit 77
+fi
+
 DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 SUSPEND="$DIR/suspend-fix-t2.service"
 RESUME="$DIR/resume-fix-t2.service"

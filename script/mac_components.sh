@@ -5,7 +5,9 @@
 # edit here, never in the installers.
 #
 # For an environment-specific component, append it inside a guard, e.g.
-#   [[ "${WORK_ENV:-}" == "1" ]] && component_installation+=(some/work-only)
+#   if [[ "${WORK_ENV:-}" == "1" ]]; then component_installation+=(some/work-only); fi
+# (not `[[ … ]] && …`: false as the file's last line is a non-zero `source`
+# under the installers' `set -e`)
 
 component_installation=(
   apps/mac

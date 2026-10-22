@@ -19,7 +19,7 @@ fi
 
 DOT_NAME=${DOT_NAME:-}
 DOT_EMAIL=${DOT_EMAIL:-}
-DOT_YUBIKEY=${DOT_YUBIKEY:-}
+DOT_SIGNING_KEY=${DOT_SIGNING_KEY:-${DOT_YUBIKEY:-}} # DOT_YUBIKEY = old name
 
 if [ ! -d "$HOME/dev" ]; then
 	mkdir "$HOME/dev"
@@ -43,7 +43,7 @@ if [[ -f "$GITCONFIG_TEMPLATE" ]]; then
 	# Debug: Show what variables we have
 	debug "Debug: DOT_NAME='${DOT_NAME:-NOT_SET}'"
 	debug "Debug: DOT_EMAIL='${DOT_EMAIL:-NOT_SET}'"
-	debug "Debug: DOT_YUBIKEY='${DOT_YUBIKEY:-NOT_SET}'"
+	debug "Debug: DOT_SIGNING_KEY='${DOT_SIGNING_KEY:-NOT_SET}'"
 
 	# Configure sed for macOS (BSD) vs GNU differences
 	if sed --version >/dev/null 2>&1; then
@@ -67,14 +67,14 @@ if [[ -f "$GITCONFIG_TEMPLATE" ]]; then
 		debug "Replaced __DOT_EMAIL__ with: $DOT_EMAIL"
 	fi
 
-	if [[ -n "${DOT_YUBIKEY:-}" ]]; then
-		"${SED_INLINE[@]}" "s|__DOT_YUBIKEY__|${DOT_YUBIKEY}|g" "$GITCONFIG_TARGET"
-		success "Applied YubiKey: $DOT_YUBIKEY"
+	if [[ -n "${DOT_SIGNING_KEY:-}" ]]; then
+		"${SED_INLINE[@]}" "s|__DOT_SIGNING_KEY__|${DOT_SIGNING_KEY}|g" "$GITCONFIG_TARGET"
+		success "Applied SSH signing key (signed via 1Password)"
 	else
-		# Remove signing key + gpgsign sections if no YubiKey provided
-		"${SED_INLINE[@]}" '/signingkey = __DOT_YUBIKEY__/d' "$GITCONFIG_TARGET"
+		# Remove signing key + gpgsign sections if no signing key provided
+		"${SED_INLINE[@]}" '/signingkey = __DOT_SIGNING_KEY__/d' "$GITCONFIG_TARGET"
 		"${SED_INLINE[@]}" '/^\[commit\]$/,/^$/d;/^\[tag\]$/,/^$/d;/^\[gpg\]$/,/^$/d' "$GITCONFIG_TARGET"
-		info "No YubiKey provided - removed signing configuration"
+		info "No signing key provided - removed signing configuration"
 	fi
 
 	# op-ssh-sign lives inside the macOS app bundle; elsewhere fall back to

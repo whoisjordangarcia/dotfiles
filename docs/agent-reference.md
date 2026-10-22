@@ -549,7 +549,7 @@ This is a **public dotfiles repository**. Never commit secrets, credentials, or 
 **Safe patterns already in use — follow these:**
 - `.dotconfig` — generated at install time, gitignored; stores `DOT_NAME`, `DOT_EMAIL`, etc.
 - `configs/ssh/config` — uses `Include ~/.ssh/hosts.local` so real host aliases stay local
-- `configs/git/.gitconfig.template` — variable substitution (`DOT_EMAIL`, `DOT_YUBIKEY`) at install time
+- `configs/git/.gitconfig.template` — variable substitution (`DOT_EMAIL`, `DOT_SIGNING_KEY`) at install time
 - `.zshrc.sec` — gitignored file for secret shell exports, rendered from `.zshrc.sec.{personal,work}.tpl`; prefer lazy `op://` references + `opsec` over injected plaintext (see [Secrets: Lazy 1Password Fetch](#secrets-lazy-1password-fetch))
 
 **When adding new configurations:**

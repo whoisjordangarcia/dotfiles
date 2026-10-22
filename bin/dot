@@ -59,7 +59,9 @@ get_modules_from_script() {
 	# Each *_components.sh only defines the component_installation array, so we
 	# can source it for the real list instead of text-scraping the installer.
 	(
-		source "$components_file"
+		# `|| true`: a false trailing work guard (`[[ $WORK_ENV ]] && …+=(…)`)
+		# is the file's exit status and would otherwise trip `set -e`.
+		source "$components_file" || true
 		printf '%s\n' "${component_installation[@]}"
 	)
 }
@@ -155,13 +157,16 @@ interactive_module_selection() {
 		exit 0
 	fi
 
-	# Run selected modules
-	echo ""
-	header "Installing ${#SELECTED_MODULES[@]} modules"
+	run_modules "${SELECTED_MODULES[@]}"
+}
 
-	# Export configuration
-	load_config
-	export DOT_NAME DOT_EMAIL DOT_ENVIRONMENT DOT_SYSTEM DOT_YUBIKEY
+# Non-interactive core shared by `-m` and `run`: export config, run each module.
+run_modules() {
+	echo ""
+	header "Installing $# modules"
+
+	# Export configuration (callers load_config first)
+	export DOT_NAME DOT_EMAIL DOT_ENVIRONMENT DOT_SYSTEM DOT_SIGNING_KEY
 	export WORK_ENV=""
 	if [[ "$DOT_ENVIRONMENT" == "work" ]]; then
 		export WORK_ENV="1"
@@ -173,15 +178,16 @@ interactive_module_selection() {
 	fi
 
 	cd "$dotfilesDirectory"
-	for module in "${SELECTED_MODULES[@]}"; do
+	local module script_path
+	for module in "$@"; do
 		section "$module"
-		local script_path="./script/${module}/setup.sh"
+		script_path="./script/${module}/setup.sh"
 		if [[ -f "$script_path" ]]; then
 			# Run as a child process so a module's `set -e`/env changes
 			# stay contained (config is exported above)
 			bash "$script_path" || fail "Module '$module' failed"
 		else
-			info "Script for $module does not exist"
+			fail "Script for $module does not exist (try: dot run)"
 		fi
 	done
 
@@ -196,7 +202,9 @@ load_config() {
 	# (save_config, run_installation, -m, -c) routes through — so `set -u` can't
 	# kill a direct install (`dot --system mac --work`) on an unconfigured box.
 	# Empty, not DEFAULT_*: the `${DOT_NAME:-...}` fallbacks downstream still fire.
-	: "${DOT_NAME:=}" "${DOT_EMAIL:=}" "${DOT_ENVIRONMENT:=}" "${DOT_SYSTEM:=}" "${DOT_YUBIKEY:=}"
+	: "${DOT_NAME:=}" "${DOT_EMAIL:=}" "${DOT_ENVIRONMENT:=}" "${DOT_SYSTEM:=}"
+	# Back-compat: DOT_SIGNING_KEY was DOT_YUBIKEY (it was always an SSH signing key)
+	: "${DOT_SIGNING_KEY:=${DOT_YUBIKEY:-}}"
 	# Back-compat: the separate "<os>_work" installer was removed — WORK_ENV
 	# (derived from DOT_ENVIRONMENT) now drives work config. Normalize any
 	# stored "mac_work" etc. so old .dotconfig files keep resolving.
@@ -212,18 +220,18 @@ DOT_NAME="$DOT_NAME"
 DOT_EMAIL="$DOT_EMAIL"
 DOT_ENVIRONMENT="$DOT_ENVIRONMENT"
 DOT_SYSTEM="$DOT_SYSTEM"
-DOT_YUBIKEY="$DOT_YUBIKEY"
+DOT_SIGNING_KEY="$DOT_SIGNING_KEY"
 EOF
 	info "Configuration saved to $configFile"
 }
 
-# Pretty-print the resolved config (Name/Email/Environment/System/YubiKey).
+# Pretty-print the resolved config (Name/Email/Environment/System/Signing key).
 print_config_summary() {
 	printf "  ${GREEN}Name:${RESET}         %s\n" "${DOT_NAME:-not set}"
 	printf "  ${GREEN}Email:${RESET}        %s\n" "${DOT_EMAIL:-not set}"
 	printf "  ${GREEN}Environment:${RESET}  %s\n" "${DOT_ENVIRONMENT:-not set}"
 	printf "  ${GREEN}System:${RESET}       %s\n" "${DOT_SYSTEM:-not set}"
-	printf "  ${GREEN}YubiKey:${RESET}      %s\n" "${DOT_YUBIKEY:-not set}"
+	printf "  ${GREEN}Signing key:${RESET}  %s\n" "${DOT_SIGNING_KEY:-not set}"
 }
 
 get_available_installations() {
@@ -235,7 +243,8 @@ get_available_installations() {
 			installations+=("$install_name")
 		fi
 	done
-	printf '%s\n' "${installations[@]}"
+	# bash 3.2 (macOS /bin/bash) calls an empty "${arr[@]}" unbound under set -u
+	printf '%s\n' ${installations[@]+"${installations[@]}"}
 }
 
 auto_select_installation() {
@@ -243,7 +252,7 @@ auto_select_installation() {
 	local available_installations=($(get_available_installations))
 
 	# Try exact match first
-	for installation in "${available_installations[@]}"; do
+	for installation in ${available_installations[@]+"${available_installations[@]}"}; do
 		if [[ "$installation" == "$detected" ]]; then
 			echo "$installation"
 			return
@@ -252,7 +261,7 @@ auto_select_installation() {
 
 	# Try partial matches
 	local os_part=$(echo "$detected" | cut -d'_' -f1)
-	for installation in "${available_installations[@]}"; do
+	for installation in ${available_installations[@]+"${available_installations[@]}"}; do
 		if [[ "$installation" == *"$os_part"* ]]; then
 			echo "$installation"
 			return
@@ -368,9 +377,9 @@ interactive_setup() {
 		info "Install GPG and run: gpg --list-secret-keys --keyid-format=long"
 	fi
 	echo ""
-	prompt "YubiKey ID (for git signing): "
-	read input_yubikey
-	DOT_YUBIKEY="${input_yubikey:-${DOT_YUBIKEY}}"
+	prompt "Git signing SSH public key (1Password → key → Copy public key; blank = no signing): "
+	read input_signing_key
+	DOT_SIGNING_KEY="${input_signing_key:-${DOT_SIGNING_KEY}}"
 
 	# Auto-select installation. WORK_ENV (exported by run_installation) drives
 	# environment-specific config — there's no separate work installer.
@@ -403,7 +412,7 @@ run_installation() {
 	fi
 
 	# Export configuration for use by installation scripts
-	export DOT_NAME DOT_EMAIL DOT_ENVIRONMENT DOT_SYSTEM DOT_YUBIKEY
+	export DOT_NAME DOT_EMAIL DOT_ENVIRONMENT DOT_SYSTEM DOT_SIGNING_KEY
 	export WORK_ENV=""
 	if [[ "$DOT_ENVIRONMENT" == "work" ]]; then
 		export WORK_ENV="1"
@@ -438,6 +447,10 @@ displayUsageAndExit() {
 	echo "Installation Examples:"
 	echo "  dot -i                    # Interactive setup"
 	echo "  dot -m                    # Select specific modules to install"
+	echo "  dot run                   # List modules for this system (non-interactive)"
+	echo "  dot run macos rift/mac    # Run modules without prompts"
+	echo "  dot --work run            # Same, overriding the environment"
+	echo "  dot test [filter]         # Run every *_test.sh (or paths matching filter)"
 	echo "  dot --system mac --work   # Direct Mac work installation"
 	echo "  dot --system linux_ubuntu # Direct Ubuntu installation"
 	exit
@@ -452,8 +465,9 @@ CLI_DOT_ENVIRONMENT=""
 # Command-line choices must win over the persisted defaults in .dotconfig.
 # Keep them separate while parsing, then apply them after load_config below.
 apply_cli_overrides() {
-	[[ -n "$CLI_DOT_SYSTEM" ]] && DOT_SYSTEM="$CLI_DOT_SYSTEM"
-	[[ -n "$CLI_DOT_ENVIRONMENT" ]] && DOT_ENVIRONMENT="$CLI_DOT_ENVIRONMENT"
+	# `if`, not `&&`: a false test as the last command would trip `set -e`
+	if [[ -n "$CLI_DOT_SYSTEM" ]]; then DOT_SYSTEM="$CLI_DOT_SYSTEM"; fi
+	if [[ -n "$CLI_DOT_ENVIRONMENT" ]]; then DOT_ENVIRONMENT="$CLI_DOT_ENVIRONMENT"; fi
 }
 
 # Parse command line arguments
@@ -469,6 +483,31 @@ while [[ $# -gt 0 ]]; do
 		load_config
 		interactive_module_selection "$DOT_SYSTEM"
 		exit 0
+		;;
+	"run")
+		# Non-interactive: `dot run` lists this system's modules,
+		# `dot run <module>...` runs them (agents and scripts use this).
+		# Never prompts: the system comes from .dotconfig, else auto-detection;
+		# --work/--personal before `run` override the environment.
+		shift
+		load_config
+		apply_cli_overrides
+		[[ -n "$DOT_SYSTEM" ]] || DOT_SYSTEM=$(auto_select_installation)
+		[[ -n "$DOT_SYSTEM" ]] || fail "Could not detect the system; pass --system <name>"
+		: "${DOT_ENVIRONMENT:=personal}"
+		if [[ $# -eq 0 ]]; then
+			# WORK_ENV first so work-only guards in *_components.sh apply
+			if [[ "$DOT_ENVIRONMENT" == "work" ]]; then export WORK_ENV=1; fi
+			echo "# system=$DOT_SYSTEM environment=$DOT_ENVIRONMENT"
+			get_modules_from_script "$DOT_SYSTEM"
+			exit 0
+		fi
+		run_modules "$@"
+		exit 0
+		;;
+	"test")
+		shift
+		exec bash "$dotfilesDirectory/script/test.sh" "$@"
 		;;
 	"-i" | "--install")
 		FORCE_INTERACTIVE=1
@@ -496,7 +535,7 @@ while [[ $# -gt 0 ]]; do
 		echo "  Email: ${DOT_EMAIL:-not set}"
 		echo "  Environment: ${DOT_ENVIRONMENT:-not set}"
 		echo "  System: ${DOT_SYSTEM:-not set}"
-		echo "  YubiKey: ${DOT_YUBIKEY:-not set}"
+		echo "  Signing key: ${DOT_SIGNING_KEY:-not set}"
 		exit 0
 		;;
 	"--reset-config")

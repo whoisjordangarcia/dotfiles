@@ -1,7 +1,7 @@
 [user]
   name = __DOT_NAME__
   email = __DOT_EMAIL__
-	signingkey = __DOT_YUBIKEY__
+	signingkey = __DOT_SIGNING_KEY__
 
 [commit]
   gpgsign = true

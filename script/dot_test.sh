@@ -9,7 +9,7 @@ trap 'rm -rf "$FIXTURE"' EXIT
 mkdir -p "$FIXTURE/bin" "$FIXTURE/script/common"
 cp "$REPO_ROOT/bin/dot" "$FIXTURE/bin/dot"
 cp "$REPO_ROOT/script/common/log.sh" "$FIXTURE/script/common/log.sh"
-printf 'DOT_NAME="Test User"\nDOT_EMAIL="test@example.com"\nDOT_YUBIKEY=""\nDOT_SYSTEM="linux_arch"\nDOT_ENVIRONMENT="work"\n' >"$FIXTURE/.dotconfig"
+printf 'DOT_NAME="Test User"\nDOT_EMAIL="test@example.com"\nDOT_SIGNING_KEY=""\nDOT_SYSTEM="linux_arch"\nDOT_ENVIRONMENT="work"\n' >"$FIXTURE/.dotconfig"
 
 # No installation script exists in the fixture. That makes the direct install
 # fail safely after resolving its configuration, so no installer can run.
@@ -53,3 +53,30 @@ if [[ "$output" == *"unbound variable"* ]]; then
 	exit 1
 fi
 echo "✓ dot -m works with no .dotconfig present"
+
+# `dot run` is the non-interactive path agents use: it must list the system's
+# modules (honouring --work guards) and fail on an unknown module.
+printf 'DOT_SYSTEM="linux_arch"\nDOT_ENVIRONMENT="personal"\n' >"$FIXTURE/.dotconfig"
+printf 'component_installation=(git)\n[[ "${WORK_ENV:-}" == "1" ]] && component_installation+=(work-only)\n' \
+	>"$FIXTURE/script/linux_arch_components.sh"
+output=$(cd "$FIXTURE" && ./bin/dot run 2>&1)
+if [[ "$output" == *"system=linux_arch environment=personal"* && "$output" == *git* && "$output" != *work-only* ]]; then
+	echo "✓ dot run lists the configured system's modules"
+else
+	echo "✗ dot run listing is wrong"
+	echo "$output"
+	exit 1
+fi
+output=$(cd "$FIXTURE" && ./bin/dot --work run 2>&1)
+if [[ "$output" == *work-only* ]]; then
+	echo "✓ dot --work run includes work-only modules"
+else
+	echo "✗ dot --work run missed work-only modules"
+	echo "$output"
+	exit 1
+fi
+if (cd "$FIXTURE" && ./bin/dot run no-such-module >/dev/null 2>&1); then
+	echo "✗ dot run accepted an unknown module"
+	exit 1
+fi
+echo "✓ dot run fails on an unknown module"
