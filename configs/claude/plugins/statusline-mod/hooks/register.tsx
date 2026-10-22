@@ -181,7 +181,7 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // Rate is first chunk → last chunk, as in tok-speed; subagent steps are left out.
+  // Rate is first chunk → last chunk; subagent steps are left out.
   on('turn.step', async function* ($, e, next) {
     if (e.agentId) return yield* next(e)
     const st = { first: undefined as number | undefined, chars: 0, ticks: 0 }

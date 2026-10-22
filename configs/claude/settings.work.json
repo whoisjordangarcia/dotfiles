@@ -280,8 +280,7 @@
     "nest-release@nest-genomics-skills": true,
     "nest-slite@nest-genomics-skills": true,
     "nest-summary-html@nest-genomics-skills": true,
-    "nest-web-design-guidelines@nest-genomics-skills": true,
-    "tok-speed@dotfiles": false
+    "nest-web-design-guidelines@nest-genomics-skills": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {

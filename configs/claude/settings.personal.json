@@ -201,8 +201,7 @@
     "infracost@infracost": false,
     "ponytail@ponytail": true,
     "claude-security@claude-plugins-official": true,
-    "cloudflare@cloudflare": true,
-    "tok-speed@dotfiles": true
+    "cloudflare@cloudflare": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
