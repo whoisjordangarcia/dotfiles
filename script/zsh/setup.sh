@@ -53,7 +53,7 @@ if [ -f "$SECRETS_TPL" ]; then
 	else
 		info "1Password CLI not available or not connected. Skipping secrets injection."
 		info "Enable: 1Password app → Settings → Developer → 'Integrate with 1Password CLI',"
-		info "then re-run: ./script/zsh/setup.sh"
+		info "or over SSH run 'opu' (master password) first, then re-run: ./script/zsh/setup.sh"
 	fi
 fi
 

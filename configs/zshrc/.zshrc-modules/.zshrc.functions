@@ -241,6 +241,50 @@ opsec() {
   op read "$1"
 }
 
+# Over SSH nobody can answer the 1Password app's Touch ID prompt (it pops up on
+# the Mac's screen and op just waits), so use master-password sessions instead.
+# One-time per machine: `op account add` (asks for email, secret key, password).
+[[ -n "$SSH_CONNECTION" ]] && export OP_BIOMETRIC_UNLOCK_ENABLED=false
+
+# opu — unlock 1Password for this shell by typing the master password.
+# Session ends after 30 min idle / 12 h; locally the app's Touch ID covers it.
+opu() {
+  eval "$(op signin)"
+}
+
+# opload — export secrets by name from their *_REF reference (see opsec).
+# Usage:
+#   opload ANTHROPIC_API_KEY            # reads $ANTHROPIC_API_KEY_REF
+opload() {
+  local name refvar val
+  for name in "$@"; do
+    refvar="${name}_REF"
+    if [[ -z "${(P)refvar}" ]]; then
+      echo "opload: \$$refvar not set (add it to .zshrc.sec.*.tpl)" >&2
+      return 1
+    fi
+    val=$(op read "${(P)refvar}") || return 1
+    export "$name=$val"
+  done
+}
+
+# aiclaude — start Claude locked to the Homelab vault (UniFi, HA, NAS…).
+# Uses a service account that can only read that vault — 1Password enforces it
+# server-side. Its token lives in your Personal vault: you unlock (password over
+# SSH, Touch ID locally) to fetch it, then your own session is signed out, because
+# any same-user process — Claude included — can read a parent shell's env via `ps -E`.
+# Homelab vars resolve at launch (homelab.env); Claude can also `op read` other
+# Homelab items itself. --no-masking keeps Claude's TUI on a real TTY.
+# Caveat: an `opu` session left open in ANOTHER shell is still reachable — `op signout` there.
+aiclaude() {
+  local t
+  t=$(op read "op://Personal/Homelab service account/credential") || return 1
+  op signout 2>/dev/null
+  OP_SERVICE_ACCOUNT_TOKEN=$t op run --no-masking \
+    --env-file="$HOME/dev/dotfiles/configs/op/homelab.env" -- \
+    zsh -c 'unset ${(k)parameters[(I)OP_SESSION*]}; exec claude "$@"' aiclaude "$@"
+}
+
 # zma — fuzzy zmx session picker, adapted from the recipe in the zmx README
 # (https://github.com/neurosnap/zmx). `zmx attach` is an upsert, so:
 #   enter   attach to the highlighted session, or create one named after the
