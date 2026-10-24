@@ -1,0 +1,15 @@
+#!/bin/sh
+# Download the video on the page you're looking at in Brave (or a URL arg) via yt-dlp.
+# Video DownloadHelper has no CLI and its Chromium build refuses YouTube, so this
+# replaces it. Brave cookies are passed so logged-in/age-gated pages work.
+#   vdl            front Brave tab -> ~/Downloads
+#   vdl <url>      that URL
+#   vdl -x [url]   audio only (mp3)
+set -e
+audio=
+[ "$1" = "-x" ] && { audio="-x --audio-format mp3"; shift; }
+url="${1:-$(osascript -e 'tell application "Brave Browser" to get URL of active tab of front window')}"
+[ -n "$url" ] || { echo "vdl: no URL and no Brave tab" >&2; exit 1; }
+echo "vdl: $url" >&2
+# shellcheck disable=SC2086
+exec yt-dlp $audio --cookies-from-browser brave -P "$HOME/Downloads" "$url"
