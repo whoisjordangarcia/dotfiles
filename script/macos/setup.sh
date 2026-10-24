@@ -62,6 +62,8 @@ defaults write com.apple.menuextra.clock AppleICUForce12HourTime -bool true
 # Auto-hide the native menu bar (SketchyBar takes its place), in fullscreen too
 defaults write NSGlobalDomain _HIHideMenuBar -bool true
 defaults write NSGlobalDomain AppleMenuBarVisibleInFullscreen -bool false
+# The defaults write alone doesn't reach the running WindowServer; this applies it live
+osascript -e 'tell application "System Events" to set autohide menu bar of dock preferences to true' >/dev/null 2>&1 || true
 
 # Expand save panel by default (no more clicking "More Options")
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
