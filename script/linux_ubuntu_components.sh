@@ -13,6 +13,7 @@ component_installation=(
 	zmx/linux
 	node
 	lazygit/linux
+	opencode
 	starship
 	fastfetch
 	ssh

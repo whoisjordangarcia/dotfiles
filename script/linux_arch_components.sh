@@ -30,6 +30,7 @@ component_installation=(
 	ssh
 	codex
 	pi
+	opencode
 	claude
 	agents
 	dolphin/linux

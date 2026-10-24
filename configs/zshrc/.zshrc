@@ -45,6 +45,7 @@ unset CLAUDE_CODE_CHILD_SESSION CLAUDE_CODE_SESSION_ID
 typeset -U path PATH
 
 # defaults
+export OPENCODE_DISABLE_FREE_MODELS=1
 source ~/.zshrc-modules/.zshrc.history
 source ~/.zshrc-modules/.zshrc.init
 source ~/.zshrc-modules/.zshrc.plugins

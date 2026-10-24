@@ -35,6 +35,7 @@ component_installation=(
 	ssh
 	codex
 	pi
+	opencode
 	claude
 	agents
 	# T2 MacBook Touch Bar (no-ops on non-T2 hardware)
