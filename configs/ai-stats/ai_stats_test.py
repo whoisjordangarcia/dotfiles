@@ -88,7 +88,7 @@ with tempfile.TemporaryDirectory() as tmp:
     data.update(limits=({"seven_day": {"used_percentage": 50, "resets_at": 1000 + 3.5 * 86400}}, 990), now=1000, history=[], today=today)
     js = cs.summary(data)
     check("json: week pace projected to reset", js["limits"]["seven_day"]["projected_percentage"] == 100)
-    check("json: today and week totals", js["today"] == js["week"] and js["today"]["tokens"] == 215)
+    check("json: today, week and month totals", js["today"] == js["week"] == js["month"] and js["today"]["tokens"] == 215)
     check("json: cache age in seconds", js["limits_age_secs"] == 10)
     for panel in cs.PANELS:
         check(f"panel renders: {panel}", len(cs.render(data, cs.DAYS - 1, "cost", panel)) > 10)

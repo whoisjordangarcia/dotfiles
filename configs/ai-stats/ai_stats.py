@@ -804,7 +804,7 @@ def render(data, sel, metric="tokens", panel="models"):
 
 
 def summary(data):
-    """The --json payload: current limits with pace, plus today's and the last 7 days' tokens and cost."""
+    """The --json payload: current limits with pace, plus tokens and cost for today, the last 7 days and the calendar month."""
     now = data["now"]
     limits, mtime = data["limits"]
     out = {}
@@ -824,7 +824,8 @@ def summary(data):
                 "cost_usd": round(sum(sum(d["cost"].values()) for d in days), 2)}
 
     return {"limits": out, "limits_age_secs": None if mtime is None else round(now - mtime),
-            "today": totals(data["per_day"][-1:]), "week": totals(data["per_day"][-7:])}
+            "today": totals(data["per_day"][-1:]), "week": totals(data["per_day"][-7:]),
+            "month": totals(data["per_day"][-data["today"].day:])}
 
 
 def bench():
@@ -870,7 +871,7 @@ def main():
         bench()
         return
     if "--json" in sys.argv[1:]:
-        print(json.dumps(summary(load(7))))
+        print(json.dumps(summary(load(max(7, datetime.now().day)))))
         return
     days, metric, panel = DAYS, 0, 0
     if not sys.stdin.isatty() or not sys.stdout.isatty():

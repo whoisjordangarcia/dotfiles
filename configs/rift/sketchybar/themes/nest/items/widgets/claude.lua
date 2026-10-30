@@ -71,6 +71,7 @@ local session_row = style.row(bracket.name, "󰔟", "Session 5h")
 local week_row = style.row(bracket.name, "󰃭", "Week")
 local today_row = style.row(bracket.name, "󰃶", "Today")
 local week_spend_row = style.row(bracket.name, "󰄫", "Week spend")
+local month_spend_row = style.row(bracket.name, "󰸗", "Month spend")
 
 local function limit_color(pct)
 	if pct >= 80 then
@@ -79,6 +80,15 @@ local function limit_color(pct)
 		return colors.yellow
 	end
 	return colors.chrome.label
+end
+
+local function money(period)
+	if type(period) ~= "table" or type(period.cost_usd) ~= "number" then
+		return "$—"
+	elseif period.cost_usd >= 1000 then
+		return string.format("$%.1fk", period.cost_usd / 1000)
+	end
+	return string.format("$%.0f", period.cost_usd)
 end
 
 local function tokens(n)
@@ -100,6 +110,33 @@ local function limit_text(limit)
 	return text
 end
 
+-- Clicking the 7d item steps through these; the last shows all three.
+local COST_VIEWS = { { "today" }, { "week" }, { "month" }, { "today", "week", "month" } }
+local COST_LABELS = { today = "d", week = "w", month = "m" }
+local cost_view = 1
+local last_stats
+
+local function cost_text(stats)
+	local parts = {}
+	for _, key in ipairs(COST_VIEWS[cost_view]) do
+		table.insert(parts, COST_LABELS[key] .. " " .. money(stats[key]))
+	end
+	return table.concat(parts, " · ")
+end
+
+local function render_week(stats)
+	local seven_day = (type(stats.limits) == "table" and stats.limits or {}).seven_day
+	local cost = cost_text(stats)
+	if type(seven_day) == "table" and type(seven_day.used_percentage) == "number" then
+		week:set({ label = {
+			string = string.format("7d %s %.0f%% · %s", meter(seven_day.used_percentage), seven_day.used_percentage, cost),
+			color = limit_color(seven_day.used_percentage),
+		} })
+	else
+		week:set({ label = { string = cost, color = colors.with_alpha(colors.text, 0.3) } })
+	end
+end
+
 local function spend_text(period)
 	if type(period) ~= "table" or type(period.cost_usd) ~= "number" then
 		return "—"
@@ -117,9 +154,7 @@ claude:subscribe({ "routine", "forced", "system_woke" }, function()
 		end
 
 		local limits = type(stats.limits) == "table" and stats.limits or {}
-		local session, seven_day = limits.five_hour, limits.seven_day
-		local today = type(stats.today) == "table" and stats.today or {}
-		local cost = type(today.cost_usd) == "number" and string.format("$%.0f", today.cost_usd) or "$—"
+		local session = limits.five_hour
 		local faded = colors.with_alpha(colors.text, 0.3)
 
 		if type(session) == "table" and type(session.used_percentage) == "number" then
@@ -131,19 +166,14 @@ claude:subscribe({ "routine", "forced", "system_woke" }, function()
 			claude:set({ label = { string = "—", color = faded } })
 		end
 
-		if type(seven_day) == "table" and type(seven_day.used_percentage) == "number" then
-			week:set({ label = {
-				string = string.format("7d %s %.0f%% · %s", meter(seven_day.used_percentage), seven_day.used_percentage, cost),
-				color = limit_color(seven_day.used_percentage),
-			} })
-		else
-			week:set({ label = { string = cost, color = faded } })
-		end
+		last_stats = stats
+		render_week(stats)
 
 		session_row:set({ label = { string = limit_text(limits.five_hour) } })
-		week_row:set({ label = { string = limit_text(week) } })
+		week_row:set({ label = { string = limit_text(limits.seven_day) } })
 		today_row:set({ label = { string = spend_text(stats.today) } })
 		week_spend_row:set({ label = { string = spend_text(stats.week) } })
+		month_spend_row:set({ label = { string = spend_text(stats.month) } })
 	end)
 end)
 
@@ -161,5 +191,12 @@ claude:subscribe("mouse.clicked", function()
 	end
 end)
 claude:subscribe("mouse.exited.global", hide_details)
+
+week:subscribe("mouse.clicked", function()
+	cost_view = cost_view % #COST_VIEWS + 1
+	if last_stats then
+		render_week(last_stats)
+	end
+end)
 
 sbar.add("item", "widgets.claude.spacer", { position = POS, width = 4, drawing = POS == "left" })
