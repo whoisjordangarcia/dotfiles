@@ -1,7 +1,7 @@
 -- Uniform pixel scale for the whole bar. SketchyBar has no scale factor of its
 -- own, so on a 4K panel driven at 1x (no HiDPI mode — the 120Hz refresh is only
 -- available at native resolution) every literal in the themes renders half the
--- intended physical size. Wrapping the four entry points every item routes
+-- intended physical size. Wrapping the entry points every item routes
 -- through beats editing ~120 literals across both themes.
 --
 -- Override per-invocation with SKETCHYBAR_SCALE=1 (e.g. on the built-in 2x
@@ -25,6 +25,10 @@ function M.query(flag)
 end
 
 M.scale = tonumber(os.getenv("SKETCHYBAR_SCALE")) or (M.query("--height") or BASE_HEIGHT) / BASE_HEIGHT
+
+-- Query at load, before any sbar.exec provider exists: SbarLua ignores SIGCHLD,
+-- so a later pclose can block until every child (cpu_load never) exits.
+M.notch = M.query("--notch") == 1
 
 -- Extra multiplier for font sizes (`size`) only, on top of `scale`: matching the
 -- menu bar's height leaves the themes' 11-13px text too small to read.
@@ -77,6 +81,17 @@ function M.install(bar)
 			end
 			return orig(table.unpack(args, 1, n))
 		end
+	end
+
+	-- item:set is a C method that bypasses bar.set, so it needs its own wrap.
+	local add = bar.add
+	bar.add = function(...)
+		local item = add(...)
+		local set = item.set
+		item.set = function(self, props)
+			return set(self, M.scale_props(props))
+		end
+		return item
 	end
 end
 

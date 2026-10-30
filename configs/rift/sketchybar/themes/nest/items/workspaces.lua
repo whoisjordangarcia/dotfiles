@@ -122,7 +122,7 @@ for workspace_index = 1, max_workspaces do
 			padding_right = 8,
 			color = colors.subtext,
 			highlight_color = colors.text,
-			font = "sketchybar-app-font:Regular:14.0",
+			font = { family = "sketchybar-app-font", style = "Regular", size = 14.0 },
 			y_offset = -1,
 		},
 		padding_right = 1,
@@ -172,7 +172,7 @@ for workspace_index = 1, max_workspaces do
 
 	workspace:subscribe("display_change", function()
 		-- Only workspace 1 triggers the display-change handler
-		-- The script waits out macOS display negotiation, then reloads sketchybar once
+		-- The script waits out macOS display negotiation, then reloads sketchybar if the displays changed
 		if workspace_index == 1 then
 			display_change_gen = display_change_gen + 1
 			local my_gen = display_change_gen

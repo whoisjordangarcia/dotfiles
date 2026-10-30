@@ -23,17 +23,19 @@ function M.attach(item, opts)
 		popup = { align = "center", height = style.height },
 	})
 
-	style.header(bracket.name, opts.icon, opts.title)
+	-- Process names are longer than the field-name popups this style was built
+	-- for, so this popup is wider and its name column takes 0.72, not 0.6.
+	-- max_chars counts the rank glyph and its two spaces, and must fit the
+	-- column at the scaled font or the name runs into the value.
+	local width = 320
+	style.header(bracket.name, opts.icon, opts.title):set({ width = width })
 
 	local rows = {}
 	for i = 1, row_count do
 		rows[i] = style.row(bracket.name, rank_glyph[i], "")
-		-- Process names are longer than the field-name popups this style was
-		-- built for, so give the name column more room (0.72 vs the default
-		-- 0.6) to stop "WindowServer"/"screencapture" from clipping.
 		rows[i]:set({
-			icon = { max_chars = 18, width = style.width * 0.72 },
-			label = { width = style.width * 0.28 },
+			icon = { max_chars = 26, width = width * 0.72 },
+			label = { width = width * 0.28 },
 		})
 	end
 

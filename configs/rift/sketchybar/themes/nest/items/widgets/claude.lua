@@ -17,7 +17,7 @@ end
 -- Centred, except with a notched laptop display active, where the centre is
 -- under the notch: then it follows front_app on the left. Decided at load;
 -- display-change.sh reloads the bar on hotplug.
-local POS = require("scale").query("--notch") == 1 and "left" or "center"
+local POS = require("scale").notch and "left" or "center"
 
 -- Gap from front_app, which sits just before it on the left.
 sbar.add("item", "widgets.claude.lead", { position = POS, width = 10, drawing = POS == "left" })

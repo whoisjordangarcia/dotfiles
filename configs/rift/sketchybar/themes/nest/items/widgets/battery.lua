@@ -60,10 +60,11 @@ power:subscribe({ "routine", "power_source_change", "system_woke" }, function()
 		end
 
 		local amps = tonumber(milliamps)
+		local watts = string.format("%.1fW", math.abs(amps) * tonumber(millivolts) / 1e6)
 		power:set({
-			drawing = true,
+			drawing = watts ~= "0.0W",
 			label = {
-				string = string.format("%.1fW", math.abs(amps) * tonumber(millivolts) / 1e6),
+				string = watts,
 				color = amps > 0 and colors.green or colors.chrome.label,
 			},
 		})
@@ -114,7 +115,7 @@ battery:subscribe({ "routine", "power_source_change", "system_woke" }, function(
 
 		battery:set({
 			icon = { string = icon, color = color },
-			label = { string = label },
+			label = { string = label, drawing = charge ~= 100 },
 		})
 	end)
 end)

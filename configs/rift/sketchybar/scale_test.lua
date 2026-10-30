@@ -36,20 +36,31 @@ check("does not mutate its input", props.height == 30)
 
 local calls = {}
 local fake = {}
+local item_mt = {
+	__index = {
+		set = function(self, props)
+			calls.item_set = { self = self, props = props }
+		end,
+	},
+}
 for _, name in ipairs({ "bar", "default", "add", "set" }) do
 	fake[name] = function(...)
 		calls[name] = table.pack(...)
-		return "item"
+		return setmetatable({ name = "foo" }, item_mt)
 	end
 end
 scale.install(fake)
 
-check("add: passes through non-table args", fake.add("item", "foo", { height = 20 }) == "item")
+local item = fake.add("item", "foo", { height = 20 })
+check("add: returns the item", item.name == "foo")
 check("add: name arg untouched", calls.add[2] == "foo")
 check("add: props scaled", calls.add[3].height == 40)
 check("add: arity preserved", calls.add.n == 3)
 fake.bar({ height = 30 })
 check("bar: props scaled", calls.bar[1].height == 60)
+item:set({ icon = { width = 100 } })
+check("item:set: props scaled", calls.item_set.props.icon.width == 200)
+check("item:set: receives the item", calls.item_set.self == item)
 
 -- font_scale boosts font sizes only, never geometry.
 scale.font_scale = 1.5

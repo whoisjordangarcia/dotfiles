@@ -22,7 +22,9 @@ sbar.bar({
 -- calls the sketchybar CLI directly, outside scale.lua's wrapper).
 local scale = require("scale").scale
 local bar_h = math.floor(30 * scale + 0.5)
-sbar.exec("killall menubar_swap >/dev/null 2>&1; $CONFIG_DIR/helpers/menubar_swap/bin/menubar_swap "
+-- Not killall: matching by name also kills an overlapping reload's --notch/
+-- --height query. Anchored so it can't match the sh -c wrapping this line.
+sbar.exec("pkill -f '^[^ ]*/menubar_swap [0-9]' >/dev/null 2>&1; $CONFIG_DIR/helpers/menubar_swap/bin/menubar_swap "
 	.. (bar_h + 10) .. " 0 " .. -(bar_h + 6) .. " &")
 
 -- rift can't see the bar, so hand it the top gap: bar height + the usual 10px.
