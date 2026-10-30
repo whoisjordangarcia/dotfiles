@@ -18,6 +18,8 @@ from pathlib import Path
 CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "ai-stats"
 CACHE = CACHE_DIR / "statusline.json"
 HISTORY = CACHE_DIR / "limits.log"
+# The last --json payload, for readers that can't afford a run of their own (OpenCode's statusline-mod plugin).
+SUMMARY = CACHE_DIR / "summary.json"
 OPENCODE_DB = Path.home() / ".local/share/opencode/opencode.db"
 OPENCODE_USAGE_URL = "https://opencode.ai/zen/go/v1/usage"
 OPENCODE_WINDOWS = (("rolling", "five_hour", "Opencode (5h)"), ("weekly", "seven_day", "Opencode (7d)"),
@@ -871,7 +873,12 @@ def main():
         bench()
         return
     if "--json" in sys.argv[1:]:
-        print(json.dumps(summary(load(max(7, datetime.now().day)))))
+        payload = json.dumps(summary(load(max(7, datetime.now().day))))
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = SUMMARY.with_name(f"{SUMMARY.name}.{os.getpid()}")
+        tmp.write_text(payload)
+        os.replace(tmp, SUMMARY)
+        print(payload)
         return
     days, metric, panel = DAYS, 0, 0
     if not sys.stdin.isatty() or not sys.stdout.isatty():

@@ -1,8 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import { collectBaseRef, collectBranchDiff, collectCi, collectGit, collectNodeApps, collectPr, osc8Supported } from './statusline/collect'
-import { ciGlyph, KNOWN_APPS, nodeAppUrl } from './statusline/render'
+import { appRows, collectBaseRef, collectBranchDiff, collectCi, collectGit, collectNodeApps, collectPr, osc8Supported } from './statusline/collect'
+import { ciGlyph, nodeAppUrl } from './statusline/render'
 import type { Apps } from '../types'
 import type { Io, Shared } from './statusline/types'
 
@@ -36,21 +36,6 @@ const mod = {
   turnTimer: undefined as { cancel: () => void } | undefined,
   /** The main agent's current reply stream, for the live tok/s estimate. */
   stream: undefined as { first?: number; chars: number; ticks: number } | undefined,
-}
-
-// A set-up checkout (node_modules present) lists every app it holds, running or not, so a down one shows;
-// anywhere else only what is running. Running apps the list doesn't know follow, as found. Nothing
-// running at all means no rows.
-async function appRows(io: Io, cwd: string, running: string[]): Promise<Apps> {
-  const ports = new Map(running.map(e => [e.slice(0, e.lastIndexOf(':')), e.slice(e.lastIndexOf(':') + 1)]))
-  const rows: Apps = []
-  if (await io.exists(`${cwd}/node_modules`)) {
-    for (const [name, dir] of Object.entries(KNOWN_APPS)) {
-      if (await io.exists(`${cwd}/${dir}`)) rows.push({ name, port: ports.get(name) })
-    }
-  }
-  for (const [name, port] of ports) if (!rows.some(r => r.name === name)) rows.push({ name, port })
-  return rows.some(r => r.port) ? rows : []
 }
 
 function ioFor($: EngineInterface): Io {

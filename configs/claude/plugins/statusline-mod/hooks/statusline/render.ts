@@ -115,7 +115,7 @@ function prBadge(pr: Pr, ci: string, opts: Opts) {
   return badge
 }
 
-function line2(s: State, opts: Opts) {
+export function line2(s: State, opts: Opts) {
   const g = s.git
   const branch = g?.branch ?? ''
   let isWorktree = g?.isWorktree ?? false

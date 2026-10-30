@@ -38,3 +38,5 @@ success "OpenCode 2 installed: $(opencode2 --version 2>/dev/null || echo unknown
 
 mkdir -p "$HOME/.config/opencode"
 link_file "$SCRIPT_DIR/../../configs/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
+mkdir -p "$HOME/.config/opencode/plugins"
+link_file "$SCRIPT_DIR/../../configs/opencode/plugins/statusline-mod" "$HOME/.config/opencode/plugins/statusline-mod"
