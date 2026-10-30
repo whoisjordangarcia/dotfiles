@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto'
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, utimesSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-import { collectBaseRef, collectCi, collectGit, collectNodeApps, collectPr, osc8Supported } from '../hooks/statusline/collect.ts'
+import { collectBaseRef, collectBranchDiff, collectCi, collectGit, collectNodeApps, collectPr, osc8Supported } from '../hooks/statusline/collect.ts'
 import { fromPayload } from '../hooks/statusline/payload.ts'
 import { ciGlyph, render } from '../hooks/statusline/render.ts'
 import type { Io, Shared, State } from '../hooks/statusline/types.ts'
@@ -106,6 +106,14 @@ else if (cwd && existsSync(cwd)) {
     const baseFile = `${GIT_DIR}/${key}_base`
     if (age(baseFile) < 600) state.baseRef = readFileSync(baseFile, 'utf8')
     else write(baseFile, (state.baseRef = await collectBaseRef(io, cwd, branch)))
+    const diffFile = `${GIT_DIR}/${key}_diff.json`
+    if (state.baseRef !== branch) {
+      if (age(diffFile) < 10) state.branchDiff = JSON.parse(readFileSync(diffFile, 'utf8')) ?? undefined
+      else {
+        state.branchDiff = await collectBranchDiff(io, cwd, state.baseRef)
+        write(diffFile, JSON.stringify(state.branchDiff ?? null))
+      }
+    }
 
     const prFile = `${PR_DIR}/${md5(`${cwd}:${branch}`)}`
     await swr(prFile, 120, 'pr', cwd, branch)

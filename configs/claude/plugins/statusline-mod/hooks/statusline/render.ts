@@ -152,7 +152,12 @@ function line2(s: State, opts: Opts) {
     : ''
   const web = g?.web ?? ''
   const link = (path: string, text: string) => (web ? oscLink(`${web}${path}`, text, opts) : text)
-  const base = branch && s.baseRef && s.baseRef !== branch ? link(`/compare/${s.baseRef}...${branch}`, `${DIM}← ${DIM}${s.baseRef}${RESET}`) : ''
+  const d = s.branchDiff
+  // Dimmed whole: the bright +/- further along is uncommitted work, which this already counts.
+  const diff =
+    d && d.files > 0 ? ` ${DIM}${[`${d.files}f`, d.added > 0 ? `+${d.added}` : '', d.removed > 0 ? `-${d.removed}` : ''].filter(Boolean).join(' ')}${RESET}` : ''
+  const base =
+    branch && s.baseRef && s.baseRef !== branch ? link(`/compare/${s.baseRef}...${branch}`, `${DIM}← ${DIM}${s.baseRef}${RESET}${diff}`) : ''
   const age =
     g && g.commitEpoch > 0 && opts.now - g.commitEpoch < 18000 ? link(`/commit/${g.sha}`, formatCommitAge(opts.now - g.commitEpoch)) : ''
   const branchText = link(`/tree/${branch}`, `${ACCENT}${truncate(branch, 45)}${RESET}`)

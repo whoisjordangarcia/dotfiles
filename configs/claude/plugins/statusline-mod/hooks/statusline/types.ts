@@ -24,6 +24,8 @@ export type Git = {
   web: string
 }
 
+export type Diff = { files: number; added: number; removed: number }
+
 export type Pr = { url: string; state: string; draft: boolean; review: string }
 
 /** `spin` through a turn, `est` while its text streams, `rate` once a reply has finished; `blocked` while a tool waits on the person. */
@@ -42,6 +44,8 @@ export type State = {
   cwd: string
   git?: Git
   baseRef: string
+  /** Against `baseRef`'s merge-base, uncommitted work included. */
+  branchDiff?: Diff
   pr?: Pr
   /** CI glyph as rendered (ANSI included); empty for none. */
   ci: string
@@ -51,7 +55,7 @@ export type State = {
 }
 
 /** What the mod collects for the statusLine command; `cwd` is the directory it was collected in. */
-export type Shared = Pick<State, 'cwd' | 'git' | 'baseRef' | 'pr' | 'ci' | 'nodeApps' | 'speed'> & { osc8?: boolean }
+export type Shared = Pick<State, 'cwd' | 'git' | 'baseRef' | 'branchDiff' | 'pr' | 'ci' | 'nodeApps' | 'speed'> & { osc8?: boolean }
 
 export type Opts = {
   /** 0 = unknown: nothing is shed or clamped. */

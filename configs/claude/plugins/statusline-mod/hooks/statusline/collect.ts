@@ -1,4 +1,4 @@
-import type { Git, Io, Pr } from './types'
+import type { Diff, Git, Io, Pr } from './types'
 
 const out = async (io: Io, argv: string[], cwd: string) => (await io.run(argv, cwd)).stdout.trim()
 
@@ -24,6 +24,18 @@ export function osc8Supported(v: TermVars, tmuxClientTerm: string) {
   )
 }
 
+/** " N files changed, A insertions(+), D deletions(-)": any count may be absent. */
+function shortstat(text: string): Diff {
+  const n = (re: RegExp) => Number(text.match(re)?.[1] ?? 0)
+  return { files: n(/([0-9]+) files? changed/), added: n(/([0-9]+) insertion/), removed: n(/([0-9]+) deletion/) }
+}
+
+/** The branch's whole diff against where it left `baseRef`, uncommitted work included: what its PR would show. */
+export async function collectBranchDiff(io: Io, cwd: string, baseRef: string): Promise<Diff | undefined> {
+  const mb = baseRef && (await out(io, ['git', 'merge-base', `origin/${baseRef}`, 'HEAD'], cwd))
+  return mb ? shortstat(await out(io, ['git', 'diff', '--shortstat', mb], cwd)) : undefined
+}
+
 /** Git state of `cwd`, or undefined when `cwd` is not a repo root (as statusline.sh checks). */
 export async function collectGit(io: Io, cwd: string): Promise<Git | undefined> {
   if (!cwd || !(await io.exists(`${cwd}/.git`))) return undefined
@@ -46,10 +58,7 @@ export async function collectGit(io: Io, cwd: string): Promise<Git | undefined> 
   const upstream = await out(io, ['git', 'rev-list', '--left-right', '--count', 'HEAD...@{upstream}'], cwd)
   if (upstream) [ahead, behind] = upstream.split(/\s+/).map(n => Number(n) || 0) as [number, number]
 
-  // " N files changed, A insertions(+), D deletions(-)": either count may be absent.
-  const shortstat = await out(io, ['git', 'diff', '--shortstat', 'HEAD'], cwd)
-  const added = Number(shortstat.match(/([0-9]+) insertion/)?.[1] ?? 0)
-  const removed = Number(shortstat.match(/([0-9]+) deletion/)?.[1] ?? 0)
+  const { added, removed } = shortstat(await out(io, ['git', 'diff', '--shortstat', 'HEAD'], cwd))
 
   const [epoch = '', sha = ''] = (await out(io, ['git', 'log', '-1', '--format=%ct %H'], cwd)).split(' ')
   const commitEpoch = Number(epoch) || 0
@@ -120,7 +129,7 @@ function inProject(text: string, cwd: string) {
 
 /** Node servers listening from inside `cwd`, as sorted "name:port" entries, one per name. */
 export async function collectNodeApps(io: Io, cwd: string) {
-  const lsof = (await io.run(['lsof', '-iTCP', '-sTCP:LISTEN', '-P', '-n'], cwd)).stdout
+  const lsof = (await io.run(['lsof', '-a', '-c', 'node', '-iTCP', '-sTCP:LISTEN', '-P', '-n'], cwd)).stdout
   const listening = [
     ...new Set(
       lsof

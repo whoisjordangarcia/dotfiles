@@ -35,7 +35,7 @@ test('draws a set-up checkout\'s apps above the prompt: running as links, unmapp
   on('process.run', (_$, e) => {
     const [cmd, ...args] = (e as { argv: string[] }).argv
     const stdout =
-      cmd === 'lsof' && args[0] === '-iTCP'
+      cmd === 'lsof' && args.includes('-iTCP')
         ? 'COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME\nnode 4242 nest 20u IPv6 0x1 0t0 TCP *:3113 (LISTEN)\nnode 5151 nest 20u IPv6 0x2 0t0 TCP *:47123 (LISTEN)\nnode 6161 nest 20u IPv6 0x3 0t0 TCP *:6006 (LISTEN)\n'
       : cmd === 'ps' && args[1] === '4242' ? `node ${cwd}/apps/frontend/yoda/dev.server.js\n`
       : cmd === 'ps' && args[1] === '6161' ? `node ${cwd}/node_modules/.bin/storybook dev\n`

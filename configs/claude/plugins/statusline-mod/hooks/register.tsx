@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import { collectBaseRef, collectCi, collectGit, collectNodeApps, collectPr, osc8Supported } from './statusline/collect'
+import { collectBaseRef, collectBranchDiff, collectCi, collectGit, collectNodeApps, collectPr, osc8Supported } from './statusline/collect'
 import { ciGlyph, KNOWN_APPS, nodeAppUrl } from './statusline/render'
 import type { Apps } from '../types'
 import type { Io, Shared } from './statusline/types'
@@ -14,7 +14,7 @@ const apps = atom({ plugin: 'statusline-mod', key: 'apps' } as const, [] as Apps
 
 // Each source on its own lifetime, so the 1s statusLine refresh never waits on the slow ones: git moves
 // as you work; the base branch, PR and CI rarely do (and cost a network call or a dozen git runs).
-const TTL_MS = { git: 3000, base: 600_000, pr: 120_000, ci: 60_000, node: 30_000, osc8: 60_000 }
+const TTL_MS = { git: 3000, diff: 3000, base: 600_000, pr: 120_000, ci: 60_000, node: 30_000, osc8: 60_000 }
 const POLL_MS = 1000
 
 const SPIN = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
@@ -27,7 +27,7 @@ const mod = {
   id: '',
   // speed starts empty, not absent: the statusLine then holds its tok/s row from the first draw.
   shared: { cwd: '', baseRef: '', ci: '', nodeApps: [], speed: {} } as Shared,
-  fetched: { git: -Infinity, base: -Infinity, pr: -Infinity, ci: -Infinity, node: -Infinity, osc8: -Infinity },
+  fetched: { git: -Infinity, diff: -Infinity, base: -Infinity, pr: -Infinity, ci: -Infinity, node: -Infinity, osc8: -Infinity },
   /** The branch the PR, CI and base were fetched for. */
   branch: '',
   isRefreshing: false,
@@ -84,8 +84,9 @@ async function refresh($: EngineInterface) {
     const cwd = await $.session.cwd()
     if (cwd !== s.cwd) {
       s.cwd = cwd
-      mod.fetched = { ...mod.fetched, git: -Infinity, base: -Infinity, pr: -Infinity, ci: -Infinity, node: -Infinity }
+      mod.fetched = { ...mod.fetched, git: -Infinity, diff: -Infinity, base: -Infinity, pr: -Infinity, ci: -Infinity, node: -Infinity }
       s.git = undefined
+      s.branchDiff = undefined
       s.nodeApps = []
       await update($, apps, () => [])
     }
@@ -97,8 +98,9 @@ async function refresh($: EngineInterface) {
     const branch = s.git?.branch ?? ''
     if (branch !== mod.branch) {
       mod.branch = branch
-      mod.fetched.base = mod.fetched.pr = mod.fetched.ci = -Infinity
+      mod.fetched.base = mod.fetched.diff = mod.fetched.pr = mod.fetched.ci = -Infinity
       s.baseRef = ''
+      s.branchDiff = undefined
       s.pr = undefined
       s.ci = ''
     }
@@ -107,6 +109,10 @@ async function refresh($: EngineInterface) {
     if (branch && now - mod.fetched.base >= TTL_MS.base) {
       s.baseRef = await collectBaseRef(io, cwd, branch)
       mod.fetched.base = now
+    }
+    if (s.baseRef && s.baseRef !== branch && now - mod.fetched.diff >= TTL_MS.diff) {
+      s.branchDiff = await collectBranchDiff(io, cwd, s.baseRef)
+      mod.fetched.diff = now
     }
     if (branch && now - mod.fetched.pr >= TTL_MS.pr) {
       const pr = await collectPr(io, cwd, branch)
