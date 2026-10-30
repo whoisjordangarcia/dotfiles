@@ -12,8 +12,6 @@ local function meter(pct)
 	return string.rep("▰", filled) .. string.rep("▱", METER_SEGMENTS - filled)
 end
 
--- Two items, not one label: SketchyBar colours a label as a whole, so the 5h
--- and week meters need separate items to warn independently.
 -- Centred, except with a notched laptop display active, where the centre is
 -- under the notch: then it follows front_app on the left. Decided at load;
 -- display-change.sh reloads the bar on hotplug.
@@ -34,14 +32,7 @@ local claude = sbar.add("item", "widgets.claude", {
 		color = colors.chrome.icon,
 		padding_right = 2,
 	},
-	label = {
-		string = "—",
-		font = {
-			family = settings.font.numbers,
-			size = 11.0,
-		},
-		color = colors.chrome.label,
-	},
+	label = { drawing = false },
 	background = { drawing = false },
 	-- The stats script parses transcripts (1-3 s); don't poll it harder.
 	update_freq = 300,
@@ -147,25 +138,11 @@ end
 claude:subscribe({ "routine", "forced", "system_woke" }, function()
 	sbar.exec(STATS, function(stats)
 		if type(stats) ~= "table" then
-			local faded = colors.with_alpha(colors.text, 0.3)
-			claude:set({ label = { string = "—", color = faded } })
-			week:set({ label = { string = "—", color = faded } })
+			week:set({ label = { string = "—", color = colors.with_alpha(colors.text, 0.3) } })
 			return
 		end
 
 		local limits = type(stats.limits) == "table" and stats.limits or {}
-		local session = limits.five_hour
-		local faded = colors.with_alpha(colors.text, 0.3)
-
-		if type(session) == "table" and type(session.used_percentage) == "number" then
-			claude:set({ label = {
-				string = string.format("5h %s %.0f%%", meter(session.used_percentage), session.used_percentage),
-				color = limit_color(session.used_percentage),
-			} })
-		else
-			claude:set({ label = { string = "—", color = faded } })
-		end
-
 		last_stats = stats
 		render_week(stats)
 
