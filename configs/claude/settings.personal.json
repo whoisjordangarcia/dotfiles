@@ -187,18 +187,10 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "claude-md-management@claude-plugins-official": false,
-    "claude-mem@thedotmack": false,
-    "code-review@claude-plugins-official": false,
     "code-simplifier@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": false,
-    "context7@claude-plugins-official": false,
     "explanatory-output-style@claude-plugins-official": true,
     "impeccable@impeccable": true,
     "superpowers@superpowers-marketplace": true,
-    "swift-lsp@claude-plugins-official": false,
-    "typescript-lsp@claude-plugins-official": false,
-    "infracost@infracost": false,
     "ponytail@ponytail": true,
     "claude-security@claude-plugins-official": true,
     "cloudflare@cloudflare": true
