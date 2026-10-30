@@ -40,3 +40,7 @@ mkdir -p "$HOME/.config/opencode"
 link_file "$SCRIPT_DIR/../../configs/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
 mkdir -p "$HOME/.config/opencode/plugins"
 link_file "$SCRIPT_DIR/../../configs/opencode/plugins/statusline-mod" "$HOME/.config/opencode/plugins/statusline-mod"
+
+if [ -d "/Applications/Rex Beta.app" ]; then
+	python3 "$SCRIPT_DIR/../../configs/opencode/rex-themes.py"
+fi
