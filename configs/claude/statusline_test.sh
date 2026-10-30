@@ -512,6 +512,28 @@ out=$(run_statusline_plain "$INPUT_BASE_REL")
 assert_contains "branch cut from release shows release as base" "$out" "← release/2.16.0"
 rm -rf "$BASE_REPO2"
 
+# Branch diff: a committed new file (+3) plus an uncommitted edit (+1) → 2f +4 against the base.
+DIFF_REPO=$(mktemp -d "${TMPDIR:-/tmp}/statusline-base.XXXXXX")
+(cd "$DIFF_REPO" && git init -q -b main && printf '1\n' >a.txt && git add a.txt \
+  && git -c user.email=t@t -c user.name=t commit -q -m A \
+  && git update-ref refs/remotes/origin/main HEAD \
+  && git checkout -q -b jordan/diff && printf '1\n2\n3\n' >b.txt && git add b.txt \
+  && git -c user.email=t@t -c user.name=t commit -q -m B \
+  && printf '1\n2\n' >a.txt) >/dev/null
+rm -rf /tmp/claude-statusline-git-cache /tmp/claude-statusline-pr-cache
+INPUT_DIFF='{"model":{"display_name":"x"},"cost":{"total_cost_usd":0},"session_id":"test-diff","cwd":"'"$DIFF_REPO"'","context_window":{"used_percentage":5}}'
+out=$(run_statusline_plain "$INPUT_DIFF")
+assert_contains "branch diff counts committed and uncommitted work" "$out" "← main 2f +4"
+assert_not_contains "branch diff omits a zero deletion count" "$out" "2f +4 -"
+assert_contains "uncommitted +/- still shown on its own" "$out" "⋮ +1"
+out=$(run_statusline "$INPUT_DIFF")
+assert_contains "branch diff is dimmed" "$out" "$(printf '\033[0;2;39m2f +4')"
+(cd "$DIFF_REPO" && git checkout -q -- a.txt && git checkout -q main) >/dev/null
+rm -rf /tmp/claude-statusline-git-cache
+out=$(run_statusline_plain "$INPUT_DIFF")
+assert_not_contains "no branch diff on the base branch itself" "$out" "f +"
+rm -rf "$DIFF_REPO"
+
 printf "\n\033[0;35m━━━ PR Badge + CI Glyph ━━━━━━━━━━━━━━━━━━━━\033[0m\n"
 
 PR_REPO=$(mktemp -d "${TMPDIR:-/tmp}/statusline-pr.XXXXXX")

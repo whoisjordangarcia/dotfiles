@@ -103,6 +103,15 @@ header "2. Repo with uncommitted changes (+/- mirrors git diff, resets on commit
 expect "webapp ⋮ 🌿 main ⋮ +4 -2"
 run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000,"total_lines_added":42,"total_lines_removed":7},"session_id":"demo-2","cwd":"'"$REPO_DIRTY"'","context_window":{"context_window_size":200000,"used_percentage":70,"current_usage":{"input_tokens":80000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":50000}}}'
 
+# ─── 2b. Feature branch diff against its base ───────────────────
+clear_caches
+# origin/main is faked with update-ref; the branch commits a new file and leaves work.txt edited.
+(cd "$REPO_DIRTY" && git update-ref refs/remotes/origin/main HEAD && git checkout -q -b jordan/feature \
+  && printf 'a\nb\nc\n' >new.txt && git add new.txt && git commit -q -m feature)
+header "2b. Feature branch (dim Nf +A -R = whole branch vs base; bright +/- = uncommitted)"
+expect "webapp ⋮ jordan/feature ← main 2f +7 -2 ⋮ +4 -2"
+run '{"model":{"display_name":"Claude Opus 4.6"},"cost":{"total_cost_usd":1.23,"total_duration_ms":300000},"session_id":"demo-2b","cwd":"'"$REPO_DIRTY"'","context_window":{"context_window_size":200000,"used_percentage":70}}'
+
 # ─── 3. Worktree, name ≈ branch (slash/dash) ────────────────────
 clear_caches
 REPO2="$DEMO_DIR/nest"
@@ -413,4 +422,4 @@ expect "24 cols (tiny) — even essentials overflow → hard clamp with …"
 run_cols 24 "$WIDTH_JSON"
 
 printf '\033[0;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
-printf '\033[0;32m✓ Demo complete — %d variations shown\033[0m\n\n' 28
+printf '\033[0;32m✓ Demo complete — %d variations shown\033[0m\n\n' 29
