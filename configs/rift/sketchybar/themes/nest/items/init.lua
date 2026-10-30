@@ -3,7 +3,7 @@
 -- the whole config load and wedging the bar.
 local items = {
 	"items.workspaces",
-	"items.front_app",
+	-- "items.front_app",
 	"items.calendar",
 	-- "items.media",
 	"items.widgets",

@@ -3,3 +3,4 @@ all:
 	(cd menus && $(MAKE)) >/dev/null
 	(cd appearance_mode && $(MAKE)) >/dev/null
 	(cd menubar_swap && $(MAKE)) >/dev/null
+	(cd app_strip && $(MAKE)) >/dev/null
