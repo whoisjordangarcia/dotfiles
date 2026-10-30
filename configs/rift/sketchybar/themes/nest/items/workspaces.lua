@@ -78,9 +78,10 @@ local indicator = nil
 local indicator_placed = false
 
 -- The focus ring is one item drawn over the pills that glides to the focused
--- pill. It sits after the last workspace and takes no layout space: padding
--- pulls it back over its target, and padding_left + width + padding_right
--- stays 0, also mid-animation since all three ease along the same curve.
+-- pill. It sits after the last workspace and takes no layout space: the item
+-- is width 0 with the ring drawn by its label (sketchybar still advances by a
+-- non-zero item width, whatever the padding), and padding_left pulls it back
+-- over its target while padding_right cancels that out.
 -- Positions come from sketchybar's own layout, in drawn px, so they are
 -- divided by scale before scale_props multiplies them back.
 -- Uses item:query() rather than shelling out to `sketchybar --query`: the CLI
@@ -96,15 +97,15 @@ local function placeIndicator(workspace_index)
 			local width = rect.size[1] / scale.scale
 			local props = {
 				padding_left = -distance,
-				width = width,
-				padding_right = distance - width,
+				padding_right = distance,
+				label = { width = width },
 			}
 			if indicator_placed then
 				sbar.animate("tanh", 18, function()
 					indicator:set(props)
 				end)
 			else
-				props.background = { drawing = true }
+				props.label.drawing = true
 				indicator:set(props)
 				indicator_placed = true
 			end
@@ -302,14 +303,19 @@ indicator = sbar.add("item", "workspace.indicator", {
 	padding_left = 0,
 	padding_right = 0,
 	icon = { drawing = false },
-	label = { drawing = false },
-	background = {
+	label = {
 		drawing = false,
-		color = colors.transparent,
-		border_width = active_border_width,
-		border_color = active_border_color,
-		corner_radius = 8,
-		height = pill_height,
+		string = "",
+		padding_left = 0,
+		padding_right = 0,
+		background = {
+			drawing = true,
+			color = colors.transparent,
+			border_width = active_border_width,
+			border_color = active_border_color,
+			corner_radius = 8,
+			height = pill_height,
+		},
 	},
 })
 
