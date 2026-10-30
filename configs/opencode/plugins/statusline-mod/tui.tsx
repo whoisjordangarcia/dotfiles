@@ -26,8 +26,23 @@ const POLL_MS = 1000
 const AI_STATS = `${process.env.XDG_CACHE_HOME || `${process.env.HOME}/.cache`}/ai-stats`
 const LIMITS_POLL_MS = 10_000
 
+// The plan is the logged-in account's rate-limit tier from ~/.claude.json (e.g. `default_claude_max_5x`); the
+// plugin runs in OpenCode's launchd service, so a shell env var wouldn't reach it. An unrecognised tier keeps Ultra.
+// `multiplier` splits the week meter into that many cells; `session` is whether the plan has a 5h window.
+type Tier = { name: string; multiplier: number; session: boolean }
+const PLANS: [RegExp, Tier][] = [
+  [/max_20x/, { name: 'Max 20x', multiplier: 20, session: true }],
+  [/max_5x/, { name: 'Max 5x', multiplier: 5, session: true }],
+  [/pro/, { name: 'Pro', multiplier: 1, session: true }],
+]
 // Ultra: no 5h window, and a week worth 10x the base plan's.
-const PLAN = { name: 'Ultra', multiplier: 10 }
+const ULTRA: Tier = { name: 'Ultra', multiplier: 10, session: false }
+const CLAUDE_JSON = `${process.env.HOME}/.claude.json`
+
+function planFor(account: any): Tier {
+  const tier = String(account?.userRateLimitTier ?? account?.organizationRateLimitTier ?? '')
+  return PLANS.find(([re]) => re.test(tier))?.[1] ?? ULTRA
+}
 
 // $/MTok (input, output, cache read), first prefix match wins: ai-stats' PRICES (configs/ai-stats/ai_stats.py).
 const PRICES: [string, number, number, number][] = [
@@ -149,19 +164,30 @@ async function readJson(file: string) {
   }
 }
 
-type Usage = { week?: Limit; limitsMtime: number; costs: [string, number][]; costMtime: number }
+type Usage = { plan: Tier; session?: Limit; week?: Limit; limitsMtime: number; costs: [string, number][]; costMtime: number }
+
+function limit(w: any): Limit | undefined {
+  return typeof w?.used_percentage === 'number' ? { pct: w.used_percentage, resets: w.resets_at ? String(w.resets_at) : '' } : undefined
+}
 
 const [usage, setUsage] = createSignal<Usage>()
 async function readUsage() {
-  const [statusline, summary] = await Promise.all([readJson(`${AI_STATS}/statusline.json`), readJson(`${AI_STATS}/summary.json`)])
-  const w = statusline?.data?.rate_limits?.seven_day
+  const [statusline, summary, claude] = await Promise.all([
+    readJson(`${AI_STATS}/statusline.json`),
+    readJson(`${AI_STATS}/summary.json`),
+    readJson(CLAUDE_JSON),
+  ])
+  const plan = planFor(claude?.data?.oauthAccount)
+  const rates = statusline?.data?.rate_limits
   // ai-stats' week is the last 7 days; its month is the calendar month.
   const costs = (['today', 'week', 'month'] as const).flatMap(key => {
     const cost = summary?.data?.[key]?.cost_usd
     return typeof cost === 'number' ? [[key, cost] as [string, number]] : []
   })
   setUsage({
-    week: typeof w?.used_percentage === 'number' ? { pct: w.used_percentage, resets: w.resets_at ? String(w.resets_at) : '' } : undefined,
+    plan,
+    session: plan.session ? limit(rates?.five_hour) : undefined,
+    week: limit(rates?.seven_day),
     limitsMtime: statusline?.mtime ?? 0,
     costs,
     costMtime: summary?.mtime ?? 0,
@@ -495,21 +521,20 @@ function Plan() {
 
   const plan = createMemo(() => {
     const u = usage()
-    if (!u || (!u.week && !u.costs.length)) return undefined
+    if (!u || (!u.session && !u.week && !u.costs.length)) return undefined
     const now = Math.floor(Date.now() / 1000)
     const stale = (mtime: number) => (now - mtime >= 900 ? age(now - mtime) : '')
-    const w = u.week
-    // A window whose reset has passed has started over; the cache can't say how far.
-    const reset = !!w && Number(w.resets) > 0 && Number(w.resets) <= now
+    const meter = (w: Limit, span: string, used: string, segments?: number) => {
+      // A window whose reset has passed has started over; the cache can't say how far.
+      const reset = Number(w.resets) > 0 && Number(w.resets) <= now
+      return { span, reset, segments, used, fraction: w.pct / 100, role: meterRole(round(w.pct)), resets: reset ? '' : until(w.resets, now) }
+    }
+    const windows = [
+      u.session && meter(u.session, '5h', `${round(u.session.pct)}% of 5h`),
+      u.week && meter(u.week, '7d', `${((u.week.pct * u.plan.multiplier) / 100).toFixed(1)}x of ${u.plan.multiplier}x`, u.plan.multiplier),
+    ].filter(w => !!w)
     return {
-      week: w && {
-        reset,
-        fraction: w.pct / 100,
-        role: meterRole(round(w.pct)),
-        used: `${((w.pct * PLAN.multiplier) / 100).toFixed(1)}x of ${PLAN.multiplier}x`,
-        resets: reset ? '' : until(w.resets, now),
-        stale: stale(u.limitsMtime),
-      },
+      limits: windows.length ? { name: u.plan.name, windows, stale: stale(u.limitsMtime) } : undefined,
       costs: u.costs.map(([key, cost]) => ({ key, cost: money.format(cost) })),
       costStale: stale(u.costMtime),
     }
@@ -519,14 +544,18 @@ function Plan() {
     <Show when={plan()}>
       {p => (
         <box gap={1}>
-          <Show when={p().week}>
-            {w => (
+          <Show when={p().limits}>
+            {l => (
               <box>
-                <Title title="Plan" aside={`${PLAN.name}${w().stale ? ` · ${w().stale} ago` : ''}`} />
-                <Show when={!w().reset} fallback={<Row label="7d window reset" />}>
-                  <Meter fraction={w().fraction} role={w().role} segments={PLAN.multiplier} />
-                  <Row label={w().used} labelFg={color(w().role)} value={w().resets ? `resets in ${w().resets}` : undefined} valueFg={color('muted')} />
-                </Show>
+                <Title title="Plan" aside={`${l().name}${l().stale ? ` · ${l().stale} ago` : ''}`} />
+                <For each={l().windows}>
+                  {w => (
+                    <Show when={!w.reset} fallback={<Row label={`${w.span} window reset`} />}>
+                      <Meter fraction={w.fraction} role={w.role} segments={w.segments} />
+                      <Row label={w.used} labelFg={color(w.role)} value={w.resets ? `resets in ${w.resets}` : undefined} valueFg={color('muted')} />
+                    </Show>
+                  )}
+                </For>
               </box>
             )}
           </Show>
