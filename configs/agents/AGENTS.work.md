@@ -32,6 +32,7 @@ A comment is **load-bearing** when deleting it costs a competent reader somethin
 
 - **NEVER touch production.** No writes, mutations, deploys, deletes, or reindexing against any prod resource, ever.
 - **Ask before even *reading* prod** (CloudWatch, ES, DB, S3). `prd-account-administrator-role` and prod profiles need explicit per-instance approval. Investigate in stg/tst/dev by default.
+- **Use `management-account-administrator-role` only when a task cannot be done without it.** Default to the env profile (`tst-`/`stg-account-administrator-role`). When management is genuinely required (Terraform state backend, Route53), say why before asking me to log into it.
 
 ## Git workflow
 
@@ -40,7 +41,7 @@ A comment is **load-bearing** when deleting it costs a competent reader somethin
 - **Feature work happens in worktrees off the latest `release/*`, never `main`.** Keep the main working copy on the current active `release/X.Y.Z`.
 - Auto-merging on the Nest repo uses `--merge`; the repo rejects squash merges.
 - **A failing pre-commit hook means fix the underlying issue.** Never `--no-verify`.
-- **Any PR action — opening, marking ready, labelling, listing or reporting, stacking, or new commits landing on an open PR — read `~/.claude/docs/nest-prs.md` first.** In short: run `nest-sequester-review` locally and open the PR only after a clean pass (every push to an open PR burns GitHub Actions runners); at most 4 open PRs; `agent-approved` only after a clean pass with fixes pushed; report PRs as link + title + Linear link + base branch; propose a stack, never start one.
+- **Any PR action — opening, marking ready, labelling, listing or reporting, stacking, or new commits landing on an open PR — read `~/.claude/docs/nest-prs.md` first.** In short: run `nest-sequester-review` locally and open the PR only after a clean pass (every push to an open PR burns GitHub Actions runners); at most 4 open PRs; `sequester-approved` only from a clean pass with fixes pushed; report PRs as link + title + Linear link + base branch; propose a stack, never start one.
 
 ## Linear
 
