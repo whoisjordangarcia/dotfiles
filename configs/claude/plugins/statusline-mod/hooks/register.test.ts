@@ -65,3 +65,25 @@ test('draws a set-up checkout\'s apps above the prompt: running as links, unmapp
   expect(json).toContain('"href":"http://localhost:8025"')
   expect(json).toContain('"href":"http://localhost:6006"')
 })
+
+test('draws nothing above the prompt while every app in a set-up checkout is down', async ($, on) => {
+  mock.clock(on)
+  const cwd = '/work/nest'
+  on('session.start', () => ({ cwd }) as never)
+  on('session.id', () => ({ value: 'sid' }) as never)
+  on('session.cwd', () => ({ value: cwd }) as never)
+  on('env.get', () => ({ value: undefined }) as never)
+  on('fs.write', () => ({ value: undefined }) as never)
+  const present = ['package.json', 'node_modules', 'apps/frontend/yoda', 'apps/backend/client-api', 'docker-compose.shared.yml']
+  on('fs.exists', (_$, e) => ({ value: present.some(p => (e as { path: string }).path === `${cwd}/${p}`) }) as never)
+  on('process.run', () => ({ value: { exitCode: 1, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }) as never)
+  on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'Text', children: [] }) as never)
+
+  await $.session.start({ cwd } as never)
+  const tree = await $.ui.render({
+    surface: 'terminal', component: 'AbovePrompt', requestId: 'r',
+    props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 120 },
+  } as never)
+
+  expect(tree).toMatchObject({ type: 'Text', children: [] })
+})

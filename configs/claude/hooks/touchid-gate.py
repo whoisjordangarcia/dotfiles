@@ -36,6 +36,15 @@ from gate_patterns import patterns_for
 BIOPROMPT = os.environ.get("BIOPROMPT", os.path.expanduser("~/.local/bin/bioprompt"))
 PROMPT_TIMEOUT_SECS = 90
 
+# Gates that auto mode's own classifier covers with a named block rule ("Git
+# Destructive", "Irreversible Local Destruction"), and judges with context the
+# regex lacks — whose branch, whether the agent created the path. Plain curl is
+# the same trade: the classifier tells a local review-session call from an
+# exfiltration, and curl-ask-nonlocal.py already goes quiet in auto for that
+# reason; an "ask" here outranked it. Secrets, prod and `curl | sh` stay gated:
+# there the point is proving a human approved it.
+AUTO_MODE_DEFERS = {"git force push", "recursive delete of home/root path", "curl (network call)"}
+
 
 def force_push_preview(cwd: str) -> str:
     """What the force push would publish, and what it would drop off the remote.
@@ -112,6 +121,9 @@ def main() -> None:
     if hit is None:
         sys.exit(0)  # no opinion — normal permission flow
     matched, mode = hit
+
+    if matched in AUTO_MODE_DEFERS and data.get("permission_mode") == "auto":
+        sys.exit(0)
 
     # "ask" wants no dialog — just make sure the command is surfaced rather than
     # auto-approved. Checked before the darwin guard: it needs no bioprompt, so

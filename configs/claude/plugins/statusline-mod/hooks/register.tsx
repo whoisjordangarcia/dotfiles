@@ -39,7 +39,8 @@ const mod = {
 }
 
 // A set-up checkout (node_modules present) lists every app it holds, running or not, so a down one shows;
-// anywhere else only what is running. Running apps the list doesn't know follow, as found.
+// anywhere else only what is running. Running apps the list doesn't know follow, as found. Nothing
+// running at all means no rows.
 async function appRows(io: Io, cwd: string, running: string[]): Promise<Apps> {
   const ports = new Map(running.map(e => [e.slice(0, e.lastIndexOf(':')), e.slice(e.lastIndexOf(':') + 1)]))
   const rows: Apps = []
@@ -54,7 +55,7 @@ async function appRows(io: Io, cwd: string, running: string[]): Promise<Apps> {
     }
   }
   for (const [name, port] of ports) if (!rows.some(r => r.name === name)) rows.push({ name, port })
-  return rows
+  return rows.some(r => r.port) ? rows : []
 }
 
 function ioFor($: EngineInterface): Io {

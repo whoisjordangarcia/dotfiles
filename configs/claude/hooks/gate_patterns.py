@@ -48,7 +48,6 @@ GLOBAL_PATTERNS = [
 # Opt-in extras, switched on per project in ~/.config/bioprompt/projects.conf.
 SCOPED_PATTERNS = {
     "git-write": [
-        (r"\bgit\s+commit\b", "git commit", "bio"),
         (r"\bgit\s+push\b", "git push", "ask"),
     ],
 }
