@@ -94,10 +94,14 @@ export async function collectBaseRef(io: Io, cwd: string, branch: string) {
 }
 
 export async function collectPr(io: Io, cwd: string, branch: string): Promise<Pr> {
-  const json = await out(io, ['gh', 'pr', 'view', branch, '--json', 'url,state,isDraft,reviewDecision'], cwd)
+  const json = await out(io, ['gh', 'pr', 'view', branch, '--json', 'url,state,isDraft,reviewDecision,latestReviews'], cwd)
   try {
     const p = JSON.parse(json)
-    return { url: p.url ?? '', state: p.state ?? '', draft: p.isDraft === true, review: p.reviewDecision ?? '' }
+    // reviewDecision is empty unless branch protection requires reviews, so fall back to each reviewer's latest.
+    const states: string[] = (p.latestReviews ?? []).map((r: { state?: string }) => r.state ?? '')
+    const review =
+      p.reviewDecision || (states.includes('CHANGES_REQUESTED') ? 'CHANGES_REQUESTED' : states.includes('APPROVED') ? 'APPROVED' : '')
+    return { url: p.url ?? '', state: p.state ?? '', draft: p.isDraft === true, review }
   } catch {
     return { url: '', state: '', draft: false, review: '' }
   }
@@ -105,18 +109,19 @@ export async function collectPr(io: Io, cwd: string, branch: string): Promise<Pr
 
 export async function collectCi(io: Io, cwd: string, branch: string): Promise<'' | 'fail' | 'pending' | 'pass'> {
   // gh exits non-zero while checks are pending; its JSON is still on stdout.
-  const json = await out(io, ['gh', 'pr', 'checks', branch, '--json', 'name,state,conclusion'], cwd)
-  let checks: { state?: string; conclusion?: string }[]
+  // `bucket` is gh's own rollup of each check's state; `pr checks` has no `conclusion` field.
+  const json = await out(io, ['gh', 'pr', 'checks', branch, '--json', 'name,bucket'], cwd)
+  let checks: { bucket?: string }[]
   try {
     checks = JSON.parse(json)
   } catch {
     return ''
   }
   if (!Array.isArray(checks) || !checks.length) return ''
-  const count = (f: (c: { state?: string; conclusion?: string }) => boolean) => checks.filter(f).length
-  if (count(c => ['FAILURE', 'CANCELLED', 'TIMED_OUT'].includes(c.conclusion ?? ''))) return 'fail'
-  if (count(c => ['PENDING', 'QUEUED', 'IN_PROGRESS'].includes(c.state ?? ''))) return 'pending'
-  if (count(c => ['SUCCESS', 'NEUTRAL', 'SKIPPED'].includes(c.conclusion ?? ''))) return 'pass'
+  const any = (...buckets: string[]) => checks.some(c => buckets.includes(c.bucket ?? ''))
+  if (any('fail', 'cancel')) return 'fail'
+  if (any('pending')) return 'pending'
+  if (any('pass', 'skipping')) return 'pass'
   return ''
 }
 
