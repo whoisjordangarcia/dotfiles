@@ -30,13 +30,12 @@ test('draws a set-up checkout\'s apps above the prompt: running as links, unmapp
   on('session.cwd', () => ({ value: cwd }) as never)
   on('env.get', () => ({ value: undefined }) as never)
   on('fs.write', () => ({ value: undefined }) as never)
-  const present = ['package.json', 'node_modules', 'apps/frontend/yoda', 'apps/backend/client-api', 'docker-compose.shared.yml']
+  const present = ['package.json', 'node_modules', 'apps/frontend/yoda', 'apps/backend/client-api']
   on('fs.exists', (_$, e) => ({ value: present.some(p => (e as { path: string }).path === `${cwd}/${p}`) }) as never)
   on('process.run', (_$, e) => {
     const [cmd, ...args] = (e as { argv: string[] }).argv
     const stdout =
-      cmd === 'lsof' && args[0] === '-tiTCP:8025' ? '57617\n'
-      : cmd === 'lsof' && args[0] === '-iTCP'
+      cmd === 'lsof' && args[0] === '-iTCP'
         ? 'COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME\nnode 4242 nest 20u IPv6 0x1 0t0 TCP *:3113 (LISTEN)\nnode 5151 nest 20u IPv6 0x2 0t0 TCP *:47123 (LISTEN)\nnode 6161 nest 20u IPv6 0x3 0t0 TCP *:6006 (LISTEN)\n'
       : cmd === 'ps' && args[1] === '4242' ? `node ${cwd}/apps/frontend/yoda/dev.server.js\n`
       : cmd === 'ps' && args[1] === '6161' ? `node ${cwd}/node_modules/.bin/storybook dev\n`
@@ -62,7 +61,6 @@ test('draws a set-up checkout\'s apps above the prompt: running as links, unmapp
   expect(json).not.toContain('47123')
   expect(json).toContain('client-api')
   expect(json).toContain('down')
-  expect(json).toContain('"href":"http://localhost:8025"')
   expect(json).toContain('"href":"http://localhost:6006"')
 })
 
@@ -74,7 +72,7 @@ test('draws nothing above the prompt while every app in a set-up checkout is dow
   on('session.cwd', () => ({ value: cwd }) as never)
   on('env.get', () => ({ value: undefined }) as never)
   on('fs.write', () => ({ value: undefined }) as never)
-  const present = ['package.json', 'node_modules', 'apps/frontend/yoda', 'apps/backend/client-api', 'docker-compose.shared.yml']
+  const present = ['package.json', 'node_modules', 'apps/frontend/yoda', 'apps/backend/client-api']
   on('fs.exists', (_$, e) => ({ value: present.some(p => (e as { path: string }).path === `${cwd}/${p}`) }) as never)
   on('process.run', () => ({ value: { exitCode: 1, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }) as never)
   on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'Text', children: [] }) as never)

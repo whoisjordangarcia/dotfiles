@@ -48,11 +48,6 @@ async function appRows(io: Io, cwd: string, running: string[]): Promise<Apps> {
     for (const [name, dir] of Object.entries(KNOWN_APPS)) {
       if (await io.exists(`${cwd}/${dir}`)) rows.push({ name, port: ports.get(name) })
     }
-    // Mailpit runs in the shared Docker stack, whose proxy (not node) holds the port, so the port is probed.
-    if (await io.exists(`${cwd}/docker-compose.shared.yml`)) {
-      const up = (await io.run(['lsof', '-tiTCP:8025', '-sTCP:LISTEN'], cwd)).exitCode === 0
-      rows.push({ name: 'mailpit', port: up ? '8025' : undefined })
-    }
   }
   for (const [name, port] of ports) if (!rows.some(r => r.name === name)) rows.push({ name, port })
   return rows.some(r => r.port) ? rows : []
