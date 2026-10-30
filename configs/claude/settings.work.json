@@ -260,7 +260,6 @@
     "explanatory-output-style@claude-plugins-official": true,
     "impeccable@impeccable": true,
     "mattpocock-skills@claude-plugins-official": false,
-    "ponytail@ponytail": true,
     "superpowers@superpowers-marketplace": true,
     "swift-lsp@claude-plugins-official": false,
     "typescript-lsp@claude-plugins-official": false,
@@ -287,12 +286,6 @@
       "source": {
         "source": "github",
         "repo": "pbakaus/impeccable"
-      }
-    },
-    "ponytail": {
-      "source": {
-        "source": "github",
-        "repo": "DietrichGebert/ponytail"
       }
     },
     "superpowers-marketplace": {

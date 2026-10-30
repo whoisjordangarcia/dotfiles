@@ -191,7 +191,6 @@
     "explanatory-output-style@claude-plugins-official": true,
     "impeccable@impeccable": true,
     "superpowers@superpowers-marketplace": true,
-    "ponytail@ponytail": true,
     "claude-security@claude-plugins-official": true,
     "cloudflare@cloudflare": true
   },
@@ -212,12 +211,6 @@
       "source": {
         "source": "github",
         "repo": "infracost/claude-skills"
-      }
-    },
-    "ponytail": {
-      "source": {
-        "source": "github",
-        "repo": "DietrichGebert/ponytail"
       }
     },
     "cloudflare": {
