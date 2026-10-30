@@ -15,6 +15,7 @@ local widgets = {
 	"items.widgets.memory",
 	"items.widgets.cpu",
 	"items.widgets.claude",
+	"items.widgets.reviews",
 }
 
 for _, mod in ipairs(widgets) do
