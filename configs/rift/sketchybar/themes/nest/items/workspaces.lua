@@ -76,6 +76,10 @@ local shown_strip = {}
 local highlighted = nil
 local indicator = nil
 local indicator_placed = false
+-- Last state pushed per pill, and where the ring last moved to: every app or
+-- window switch refreshes all ten pills, and most of them haven't changed.
+local applied = {}
+local ring_at = nil
 
 -- The focus ring is one item drawn over the pills that glides to the focused
 -- pill. It sits after the last workspace and takes no layout space: the item
@@ -100,6 +104,12 @@ local function placeIndicator(workspace_index)
 				padding_right = distance,
 				label = { width = width },
 			}
+			-- Animating to where the ring already sits still redraws 18 frames.
+			local at = distance .. ":" .. width
+			if indicator_placed and at == ring_at then
+				return
+			end
+			ring_at = at
 			if indicator_placed then
 				sbar.animate("tanh", 18, function()
 					indicator:set(props)
@@ -155,7 +165,9 @@ local function applyWorkspaceState(workspace_index, ws_data, focused_index)
 		icon = { padding_right = no_app and 8 or 7 },
 		label = { drawing = not no_app },
 	}
-	if strip and strip ~= shown_strip[workspace_index] then
+	local state = tostring(visible) .. ":" .. tostring(no_app)
+	local new_strip = strip and strip ~= shown_strip[workspace_index]
+	if new_strip then
 		shown_strip[workspace_index] = strip
 		local width = tile_px + (tile_px - overlap) * (#windows - 1)
 		props.label = {
@@ -166,7 +178,10 @@ local function applyWorkspaceState(workspace_index, ws_data, focused_index)
 			background = { image = { string = strip, scale = scale.scale / strip_unit } },
 		}
 	end
-	workspaces[workspace_index]:set(props)
+	if new_strip or applied[workspace_index] ~= state then
+		applied[workspace_index] = state
+		workspaces[workspace_index]:set(props)
+	end
 
 	-- A workspace that just appeared pops in: the pill grows to full height and
 	-- its number rises. Not on the first refresh after load (was_visible still
@@ -265,38 +280,31 @@ for workspace_index = 1, max_workspaces do
 	})
 
 	workspaces[workspace_index] = workspace
-
-	workspace:subscribe("rift_workspace_changed", function(env)
-		-- Only workspace 1 refreshes; the refresh updates every pill and the ring.
-		if workspace_index == 1 then
-			refreshAllWorkspaces()
-		end
-	end)
-
-	-- front_app_switched: rift sends no event when focus moves within a workspace,
-	-- and the dimmed/active icons follow the focused window.
-	workspace:subscribe({ "rift_windows_changed", "front_app_switched" }, function(env)
-		-- Only workspace 1 triggers the refresh to avoid 10 simultaneous queries.
-		-- The gen counter handles any remaining races from rapid events.
-		if workspace_index == 1 then
-			refreshAllWorkspaces()
-		end
-	end)
-
-	workspace:subscribe("display_change", function()
-		-- Only workspace 1 triggers the display-change handler
-		-- The script waits out macOS display negotiation, then reloads sketchybar if the displays changed
-		if workspace_index == 1 then
-			display_change_gen = display_change_gen + 1
-			local my_gen = display_change_gen
-
-			sbar.exec(os.getenv("HOME") .. "/dev/dotfiles/configs/rift/display-change.sh", function()
-				if display_change_gen ~= my_gen then return end
-				refreshAllWorkspaces()
-			end)
-		end
-	end)
 end
+
+-- Only workspace 1 subscribes: one refresh updates every pill and the ring, and
+-- each subscribed item costs a delivery and a Lua callback per event.
+workspaces[1]:subscribe("rift_workspace_changed", function(env)
+	refreshAllWorkspaces()
+end)
+
+-- front_app_switched: rift sends no event when focus moves within a workspace,
+-- and the dimmed/active icons follow the focused window.
+-- The gen counter handles any races from rapid events.
+workspaces[1]:subscribe({ "rift_windows_changed", "front_app_switched" }, function(env)
+	refreshAllWorkspaces()
+end)
+
+-- The script waits out macOS display negotiation, then reloads sketchybar if the displays changed
+workspaces[1]:subscribe("display_change", function()
+	display_change_gen = display_change_gen + 1
+	local my_gen = display_change_gen
+
+	sbar.exec(os.getenv("HOME") .. "/dev/dotfiles/configs/rift/display-change.sh", function()
+		if display_change_gen ~= my_gen then return end
+		refreshAllWorkspaces()
+	end)
+end)
 
 indicator = sbar.add("item", "workspace.indicator", {
 	width = 0,

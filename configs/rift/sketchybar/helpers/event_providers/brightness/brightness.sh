@@ -34,9 +34,13 @@ read_brightness() {
 
 sketchybar --add event "$EVENT_NAME"
 
+# Orphan guard target, resolved once (see temp_sensor.sh): `kill -0` is a
+# builtin, a per-cycle pgrep is a fork plus a process-table walk.
+SKETCHYBAR_PID=$(pgrep -x sketchybar | head -1)
+
 while true; do
   # Orphan guard: don't outlive sketchybar.
-  pgrep -qx sketchybar || exit 0
+  kill -0 "$SKETCHYBAR_PID" 2>/dev/null || exit 0
 
   brightness=$(read_brightness)
   brightness="${brightness:-0}"
