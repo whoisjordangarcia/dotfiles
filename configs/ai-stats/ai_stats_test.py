@@ -3,12 +3,15 @@ import importlib.util
 import json
 import re
 import sqlite3
+import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 spec = importlib.util.spec_from_file_location("ai_stats", Path(__file__).with_name("ai_stats.py"))
 cs = importlib.util.module_from_spec(spec)
+# Registered so pickle can find the row namedtuples by module name, as it finds __main__'s in a real run.
+sys.modules[spec.name] = cs
 spec.loader.exec_module(cs)
 
 passed = 0
@@ -94,6 +97,31 @@ with tempfile.TemporaryDirectory() as tmp:
         check(f"panel renders: {panel}", len(cs.render(data, cs.DAYS - 1, "cost", panel)) > 10)
     check("window has one slot per day", len(data["per_day"]) == cs.DAYS)
     check("range length follows the argument", len(cs.aggregate(Path(tmp), today, 90)["per_day"]) == 90)
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    (root / "p").mkdir()
+    transcript = root / "p" / "a.jsonl"
+    transcript.write_text(reply("c1", "claude-opus-5", 10))
+    cs.SCAN_CACHE = root / "scan-cache.pickle"
+    cs._scanned.clear()
+    cs.aggregate(root, today)
+    cs.save_scan_cache()
+    cs._scanned.clear()
+    cs.load_scan_cache()
+    check("scan cache: parsed files survive into a fresh process", list(cs._scanned) == [transcript])
+    check("scan cache: warm entries are reused, not re-parsed", cs.aggregate(root, today)["timing"][0][3] == 0)
+    transcript.unlink()
+    cs.save_scan_cache()
+    cs._scanned.clear()
+    cs.load_scan_cache()
+    check("scan cache: deleted transcripts are pruned on save", not cs._scanned)
+    cs.SCAN_CACHE.write_bytes(cs.pickle.dumps((("stale",), {transcript: None})))
+    cs.load_scan_cache()
+    check("scan cache: another version's cache is ignored", not cs._scanned)
+    cs.SCAN_CACHE.write_bytes(b"truncated")
+    cs.load_scan_cache()
+    check("scan cache: an unreadable cache starts cold", not cs._scanned)
 
 with tempfile.TemporaryDirectory() as tmp:
     root = Path(tmp)

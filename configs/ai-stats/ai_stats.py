@@ -2,6 +2,7 @@
 """ai-stats: interactive TUI of Claude plan limits, usage, cost, skills and activity. --json for bar widgets."""
 import json
 import os
+import pickle
 import re
 import select
 import sqlite3
@@ -20,6 +21,8 @@ CACHE = CACHE_DIR / "statusline.json"
 HISTORY = CACHE_DIR / "limits.log"
 # The last --json payload, for readers that can't afford a run of their own (OpenCode's statusline-mod plugin).
 SUMMARY = CACHE_DIR / "summary.json"
+# _scanned across processes: every --json run is a fresh one, and a cold 30-day parse costs ~1.5s CPU and 250MB.
+SCAN_CACHE = CACHE_DIR / "scan-cache.pickle"
 OPENCODE_DB = Path.home() / ".local/share/opencode/opencode.db"
 OPENCODE_USAGE_URL = "https://opencode.ai/zen/go/v1/usage"
 OPENCODE_WINDOWS = (("rolling", "five_hour", "Opencode (5h)"), ("weekly", "seven_day", "Opencode (7d)"),
@@ -377,6 +380,33 @@ def is_skill(name):
 _scanned = {}
 
 
+def _scan_cache_tag():
+    """Parsed rows are only as good as the scanners that made them, so any edit to this file starts over."""
+    return sys.version_info[:2], Path(__file__).stat().st_mtime_ns
+
+
+def load_scan_cache():
+    if _scanned:
+        return
+    try:
+        tag, entries = pickle.loads(SCAN_CACHE.read_bytes())
+    except Exception:  # missing, truncated or unpicklable: unpickling raises far more than OSError
+        return
+    if tag == _scan_cache_tag():
+        _scanned.update(entries)
+
+
+def save_scan_cache():
+    entries = {p: v for p, v in _scanned.items() if p.exists()}
+    try:
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = SCAN_CACHE.with_name(f"{SCAN_CACHE.name}.{os.getpid()}")
+        tmp.write_bytes(pickle.dumps((_scan_cache_tag(), entries), pickle.HIGHEST_PROTOCOL))
+        os.replace(tmp, SCAN_CACHE)
+    except OSError:
+        pass
+
+
 def aggregate(root, today, days=DAYS, sources=None):
     cutoff = time.time() - (days + 1) * 86400
     usage, lines, skills, tools, prompts = {}, {}, {}, {}, {}
@@ -728,7 +758,10 @@ _load_history = []
 
 def load(days):
     today, now = datetime.now().date(), time.time()
+    load_scan_cache()
     data = aggregate(PROJECTS, today, days, SOURCES)
+    if any(t[3] for t in data["timing"]):
+        save_scan_cache()
     _load_history.append((days, time.time() - now, sum(t[3] for t in data["timing"])))
     del _load_history[:-8]
     return {**data, "limits": load_limits(), "history": load_history(now), "loads": list(_load_history),
