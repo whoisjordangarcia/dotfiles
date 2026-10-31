@@ -199,6 +199,24 @@
         },
         "gpt-4o-fast": {
           "disabled": true
+        },
+        "gpt-6.1-sol-ultrafast": {
+          "disabled": true
+        },
+        "gpt-6-astra-ultrafast": {
+          "disabled": true
+        },
+        "gpt-6.1-sol-fast": {
+          "disabled": true
+        },
+        "gpt-6.1-terra-fast": {
+          "disabled": true
+        },
+        "gpt-6-astra-fast": {
+          "disabled": true
+        },
+        "gpt-6-luna-fast": {
+          "disabled": true
         }
       }
     },

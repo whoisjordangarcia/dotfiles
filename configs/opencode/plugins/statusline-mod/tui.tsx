@@ -3,7 +3,7 @@ import { execFile } from 'node:child_process'
 import { realpathSync } from 'node:fs'
 import { access, readFile, stat } from 'node:fs/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { type Accessor, createMemo, createSignal, For, type JSX, onCleanup, Show } from 'solid-js'
+import { type Accessor, createEffect, createMemo, createSignal, For, type JSX, onCleanup, Show } from 'solid-js'
 
 import type { Apps } from '../../../claude/plugins/statusline-mod/types'
 import type { Diff, Git, Io, Limit, Pr, State } from '../../../claude/plugins/statusline-mod/hooks/statusline/types'
@@ -519,18 +519,113 @@ function Sidebar(props: { sessionID: string }) {
   )
 }
 
-// The plan's limits and spend are Claude's: shown only while the session runs on the Claude Agent provider.
+// Each provider's plan meters follow the session's model. Claude's come from Claude Code's statusline cache;
+// Go's and ChatGPT's are fetched from their usage APIs with the credentials OpenCode stores.
 const CLAUDE_PROVIDER = 'claude-agent'
+const OPENCODE_DB = `${process.env.XDG_DATA_HOME || `${process.env.HOME}/.local/share`}/opencode/opencode.db`
+const GO_USAGE_URL = 'https://opencode.ai/zen/go/v1/usage'
+// Unofficial, as Codex's own /status reads it: rate_limit.{primary,secondary}_window.
+const CHATGPT_USAGE_URL = 'https://chatgpt.com/backend-api/wham/usage'
+const QUOTA_TTL_MS = 300_000
+
+type Quota = { name: string; windows: { span: string; limit: Limit }[]; note?: string }
+
+/** OpenCode's stored credential for an integration, read-only; undefined off Bun or without one. */
+async function credential(integration: string): Promise<any> {
+  try {
+    const { Database } = await import('bun:sqlite')
+    const db = new Database(OPENCODE_DB, { readonly: true })
+    try {
+      const row = db
+        .query('SELECT value FROM credential WHERE integration_id = ? AND (active IS NULL OR active = 1) ORDER BY time_updated DESC LIMIT 1')
+        .get(integration) as { value: string } | null
+      return row ? JSON.parse(row.value) : undefined
+    } finally {
+      db.close()
+    }
+  } catch {
+    return undefined
+  }
+}
+
+function epoch(t: unknown) {
+  const n = typeof t === 'number' ? (t > 1e12 ? t / 1000 : t) : typeof t === 'string' ? Date.parse(t) / 1000 : NaN
+  return Number.isFinite(n) ? String(Math.floor(n)) : ''
+}
+
+const pctOf = (n: number) => Math.max(0, Math.min(100, n))
+
+async function goQuota(): Promise<Quota | undefined> {
+  const cred = await credential('opencode-go')
+  if (!cred?.key) return undefined
+  const res = await fetch(GO_USAGE_URL, {
+    headers: { Authorization: `Bearer ${cred.key}`, 'User-Agent': 'statusline-mod' },
+    signal: AbortSignal.timeout(5000),
+  })
+  const name = 'OpenCode Go'
+  if (res.status === 401) {
+    const code = (await res.json().catch(() => undefined))?.error?.code
+    return { name, windows: [], note: code === 'api_key_expired' ? 'API key expired · /connect a new one' : 'API key rejected · /connect again' }
+  }
+  if (!res.ok) return undefined
+  const usage = (await res.json())?.usage ?? {}
+  const windows = ([['rolling', '5h'], ['weekly', '7d'], ['monthly', '30d']] as const).flatMap(([key, span]) => {
+    const w = usage[key]
+    return typeof w?.percent === 'number' ? [{ span, limit: { pct: pctOf(w.percent), resets: epoch(w.resetsAt) } }] : []
+  })
+  return { name, windows }
+}
+
+async function chatgptQuota(): Promise<Quota | undefined> {
+  const cred = await credential('openai')
+  // An API key has no plan; only a ChatGPT sign-in does.
+  if (cred?.type !== 'oauth' || !cred.access) return undefined
+  // Never refreshed here: rotating the token would sign OpenCode out. It refreshes on its next GPT request.
+  if (typeof cred.expires === 'number' && cred.expires <= Date.now()) return { name: 'ChatGPT', windows: [], note: 'sign-in stale · refreshes on next reply' }
+  const headers: Record<string, string> = { Authorization: `Bearer ${cred.access}`, 'User-Agent': 'statusline-mod' }
+  if (cred.metadata?.accountID) headers['ChatGPT-Account-Id'] = cred.metadata.accountID
+  const res = await fetch(CHATGPT_USAGE_URL, { headers, signal: AbortSignal.timeout(5000) })
+  if (!res.ok) return undefined
+  const d = await res.json()
+  const plan = typeof d?.plan_type === 'string' ? d.plan_type : ''
+  const name = plan ? `ChatGPT ${plan[0]!.toUpperCase()}${plan.slice(1)}` : 'ChatGPT'
+  const windows = [d?.rate_limit?.primary_window, d?.rate_limit?.secondary_window].flatMap(w => {
+    if (typeof w?.used_percent !== 'number') return []
+    const secs = Number(w.limit_window_seconds) || 0
+    const span = secs && secs < 86400 ? `${Math.round(secs / 3600)}h` : secs ? `${Math.round(secs / 86400)}d` : 'window'
+    return [{ span, limit: { pct: pctOf(w.used_percent), resets: epoch(w.reset_at) } }]
+  })
+  return { name, windows }
+}
+
+const FETCHERS: Record<string, () => Promise<Quota | undefined>> = { 'opencode-go': goQuota, openai: chatgptQuota }
+const [quotas, setQuotas] = createSignal<Record<string, Quota | undefined>>({})
+const quotaFetched: Record<string, number> = {}
+
+async function refreshQuota(provider: string) {
+  const fetcher = FETCHERS[provider]
+  if (!fetcher || Date.now() - (quotaFetched[provider] ?? -Infinity) < QUOTA_TTL_MS) return
+  quotaFetched[provider] = Date.now()
+  const q = await fetcher().catch(() => undefined)
+  setQuotas(all => ({ ...all, [provider]: q }))
+}
 
 function Plan(props: { sessionID: string }) {
   const context = usePlugin()
   const color = useColor()
   const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+  const provider = () => context.data.session.get(props.sessionID)?.model?.providerID as string | undefined
+
+  createEffect(() => {
+    const p = provider()
+    if (!p || !FETCHERS[p]) return
+    void refreshQuota(p)
+    const timer = setInterval(() => void refreshQuota(p), 60_000)
+    onCleanup(() => clearInterval(timer))
+  })
 
   const plan = createMemo(() => {
-    if (context.data.session.get(props.sessionID)?.model?.providerID !== CLAUDE_PROVIDER) return undefined
-    const u = usage()
-    if (!u || (!u.session && !u.week && !u.costs.length)) return undefined
+    const p = provider()
     const now = Math.floor(Date.now() / 1000)
     const stale = (mtime: number) => (now - mtime >= 900 ? age(now - mtime) : '')
     const meter = (w: Limit, span: string, used: string, segments?: number) => {
@@ -538,12 +633,27 @@ function Plan(props: { sessionID: string }) {
       const reset = Number(w.resets) > 0 && Number(w.resets) <= now
       return { span, reset, segments, used, fraction: w.pct / 100, role: meterRole(round(w.pct)), resets: reset ? '' : until(w.resets, now) }
     }
+
+    if (p && FETCHERS[p]) {
+      const q = quotas()[p]
+      if (!q || (!q.windows.length && !q.note)) return undefined
+      return {
+        limits: { name: q.name, note: q.note, windows: q.windows.map(w => meter(w.limit, w.span, `${round(w.limit.pct)}% of ${w.span}`)) },
+        costs: [],
+        costStale: '',
+      }
+    }
+
+    if (p !== CLAUDE_PROVIDER) return undefined
+    const u = usage()
+    if (!u || (!u.session && !u.week && !u.costs.length)) return undefined
+    const limitsStale = stale(u.limitsMtime)
     const windows = [
       u.session && meter(u.session, '5h', `${round(u.session.pct)}% of 5h`),
       u.week && meter(u.week, '7d', `${((u.week.pct * u.plan.multiplier) / 100).toFixed(1)}x of ${u.plan.multiplier}x`, u.plan.multiplier),
     ].filter(w => !!w)
     return {
-      limits: windows.length ? { name: u.plan.name, windows, stale: stale(u.limitsMtime) } : undefined,
+      limits: windows.length ? { name: `${u.plan.name}${limitsStale ? ` · ${limitsStale} ago` : ''}`, note: undefined, windows } : undefined,
       costs: u.costs.map(([key, cost]) => ({ key, cost: money.format(cost) })),
       costStale: stale(u.costMtime),
     }
@@ -556,7 +666,8 @@ function Plan(props: { sessionID: string }) {
           <Show when={p().limits}>
             {l => (
               <box>
-                <Title title="Plan" aside={`${l().name}${l().stale ? ` · ${l().stale} ago` : ''}`} />
+                <Title title="Plan" aside={l().name} />
+                <Show when={l().note}>{note => <Row label={note()} labelFg={color('warning')} />}</Show>
                 <For each={l().windows}>
                   {w => (
                     <Show when={!w.reset} fallback={<Row label={`${w.span} window reset`} />}>
