@@ -17,6 +17,7 @@ alias ca="CLAUDE_CODE_NO_FLICKER=1 claude --enable-auto-mode"
 alias cb="CLAUDE_CODE_NO_FLICKER=1 claude --bare"
 alias claude-otel="CLAUDE_CODE_NO_FLICKER=1 CLAUDE_CODE_ENABLE_TELEMETRY=1 OTEL_LOGS_EXPORTER=console OTEL_LOG_RAW_API_BODIES=file:$HOME/claude-otel-logs claude"
 alias colo="codex --dangerously-bypass-approvals-and-sandbox"
+alias oc="opencode2"
 alias update-claude="curl -fsSL https://claude.ai/install.sh | bash"
 # Point each harness's global memory at the one canonical file
 # (configs/agents/AGENTS.md) via symlinks; `--check` reports broken links without writing
