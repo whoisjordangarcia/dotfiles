@@ -214,3 +214,6 @@ autoload -Uz compinit && compinit -C
 # instance, so an unset session silently spawns a second browser ("default") alongside
 # whatever a script pinned. Added 2026-08-30.
 export AGENT_BROWSER_SESSION=main
+
+# opencode
+export PATH="$HOME/.opencode/bin:$PATH"
