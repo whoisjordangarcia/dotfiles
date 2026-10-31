@@ -305,8 +305,12 @@ function Meter(props: { fraction: number; role: Role; segments?: number }) {
     if (!w) return []
     const n = props.segments ?? 1
     const f = Math.max(0, Math.min(1, props.fraction))
-    const size = n > 1 ? Math.max(1, Math.floor((w - (n - 1)) / n)) : w
+    // The columns left after the gaps, spread so the cells together span the full width.
+    const room = Math.max(n, w - (n - 1))
+    const base = Math.floor(room / n)
+    const extra = room - base * n
     return Array.from({ length: n }, (_, i) => {
+      const size = base + (i < extra ? 1 : 0)
       const filled = Math.round(size * Math.max(0, Math.min(1, f * n - i)))
       return { filled: '━'.repeat(filled), empty: '━'.repeat(size - filled), gap: i < n - 1 ? ' ' : '' }
     })
@@ -515,11 +519,16 @@ function Sidebar(props: { sessionID: string }) {
   )
 }
 
-function Plan() {
+// The plan's limits and spend are Claude's: shown only while the session runs on the Claude Agent provider.
+const CLAUDE_PROVIDER = 'claude-agent'
+
+function Plan(props: { sessionID: string }) {
+  const context = usePlugin()
   const color = useColor()
   const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
   const plan = createMemo(() => {
+    if (context.data.session.get(props.sessionID)?.model?.providerID !== CLAUDE_PROVIDER) return undefined
     const u = usage()
     if (!u || (!u.session && !u.week && !u.costs.length)) return undefined
     const now = Math.floor(Date.now() / 1000)
@@ -615,7 +624,7 @@ export default Plugin.define({
     const timer = setInterval(() => void readUsage(), LIMITS_POLL_MS)
     // Prepended so it takes the place of the built-in opencode.sidebar.context, which cli.json turns off.
     const sidebar = context.ui.slot({ prepend: 'sidebar.content', render: ({ sessionID }) => <Sidebar sessionID={sessionID} /> })
-    const footer = context.ui.slot({ append: 'sidebar.footer', render: () => <Plan /> })
+    const footer = context.ui.slot({ append: 'sidebar.footer', render: ({ sessionID }) => <Plan sessionID={sessionID} /> })
     const composer = context.ui.slot({ append: 'session.composer.top', render: ({ sessionID }) => <GitLine sessionID={sessionID} /> })
     return () => {
       clearInterval(timer)
