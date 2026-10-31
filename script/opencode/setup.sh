@@ -41,6 +41,10 @@ link_file "$SCRIPT_DIR/../../configs/opencode/opencode.json" "$HOME/.config/open
 mkdir -p "$HOME/.config/opencode/plugins"
 link_file "$SCRIPT_DIR/../../configs/opencode/plugins/statusline-mod" "$HOME/.config/opencode/plugins/statusline-mod"
 
+# The background service doesn't inherit the shell's env, so .zshrc's export never reaches it: hide the
+# free opencode/opencode-go models on the service itself.
+opencode service set env OPENCODE_DISABLE_FREE_MODELS 1 || warn "couldn't set OPENCODE_DISABLE_FREE_MODELS on the opencode service"
+
 if [ -d "/Applications/Rex Beta.app" ]; then
 	python3 "$SCRIPT_DIR/../../configs/opencode/rex-themes.py"
 fi
