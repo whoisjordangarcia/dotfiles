@@ -244,5 +244,53 @@
         }
       }
     }
+  },
+  "mcp": {
+    "servers": {
+      "cloudflare": {
+        "type": "remote",
+        "url": "https://mcp.cloudflare.com/mcp"
+      },
+      "cloudflare-docs": {
+        "type": "remote",
+        "url": "https://docs.mcp.cloudflare.com/mcp"
+      },
+      "cloudflare-bindings": {
+        "type": "remote",
+        "url": "https://bindings.mcp.cloudflare.com/mcp"
+      },
+      "cloudflare-builds": {
+        "type": "remote",
+        "url": "https://builds.mcp.cloudflare.com/mcp"
+      },
+      "cloudflare-observability": {
+        "type": "remote",
+        "url": "https://observability.mcp.cloudflare.com/mcp"
+      },
+      "chrome-devtools": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "chrome-devtools-mcp@latest",
+          "--no-usage-statistics",
+          "--no-performance-crux"
+        ],
+        "environment": {
+          "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1"
+        }
+      },
+      "tavily": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "tavily-mcp@latest"
+        ],
+        "environment": {
+          "TAVILY_API_KEY": "{env:TAVILY_API_KEY}"
+        }
+      }
+    }
   }
 }
