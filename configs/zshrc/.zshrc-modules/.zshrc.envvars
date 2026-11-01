@@ -49,5 +49,15 @@ export DO_NOT_TRACK=true
 # Cmd+clickable. Harmless on terminals that already support hyperlinks.
 export FORCE_HYPERLINK=1
 
+# ==============================================================================
+#  Google Workspace CLI (gws)
+# ==============================================================================
+
+# Without this, gws uses the macOS keyring. From a non-interactive shell the
+# keyring is locked ("User interaction is not allowed"), and gws responds by
+# DELETING ~/.config/gws/credentials.enc, silently dropping auth to "none".
+# Store credentials in an encrypted file instead so a bare `gws` call is safe.
+export GOOGLE_WORKSPACE_CLI_KEYRING_BACKEND=file
+
 # export AGENT_BROWSER_PROVIDER=ios
 # export AGENT_BROWSER_IOS_DEVICE="iPhone 16 Pro"
