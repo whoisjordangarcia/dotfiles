@@ -58,9 +58,18 @@ pass "every windows component has a setup.sh"
 
 [ -f "$REPO_ROOT/script/windows_installation.sh" ] || die "script/windows_installation.sh is missing"
 bash -n "$REPO_ROOT/script/windows_installation.sh" || die "windows_installation.sh has a syntax error"
-grep -qx 'export MSYS=winsymlinks:nativestrict' "$REPO_ROOT/script/windows_installation.sh" ||
-	die "windows_installation.sh must export MSYS=winsymlinks:nativestrict (real symlinks or a loud failure)"
-pass "installer is valid bash and forces native symlinks"
+pass "installer is valid bash"
+
+# Native symlinks are exported by symlink.sh so every entry point gets them
+# (dot -i, dot run, dot -m, or a setup.sh run directly).
+got=$(cd "$REPO_ROOT" && env -u MSYS -u CYGWIN OSTYPE=msys bash -c 'source script/common/symlink.sh >/dev/null 2>&1; printf "%s|%s" "${MSYS:-}" "${CYGWIN:-}"')
+[[ "$got" == "winsymlinks:nativestrict|winsymlinks:nativestrict" ]] ||
+	die "symlink.sh must export MSYS and CYGWIN=winsymlinks:nativestrict on Git Bash/Cygwin" "got: '$got'"
+pass "symlink.sh exports native-symlink vars on msys"
+
+got=$(cd "$REPO_ROOT" && env -u MSYS -u CYGWIN OSTYPE=darwin23 bash -c 'source script/common/symlink.sh >/dev/null 2>&1; printf "%s|%s" "${MSYS:-}" "${CYGWIN:-}"')
+[[ "$got" == "|" ]] || die "symlink.sh must not export MSYS/CYGWIN on other platforms" "got: '$got'"
+pass "symlink.sh exports nothing on darwin"
 
 OSTYPE=msys
 got=$(auto_select_installation)

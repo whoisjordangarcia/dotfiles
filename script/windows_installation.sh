@@ -7,10 +7,7 @@ source "$SCRIPT_DIR/common/log.sh"
 source "$SCRIPT_DIR/common/run_components.sh"
 source "$SCRIPT_DIR/windows_components.sh"
 
-# Real NTFS symlinks or a loud failure — never MSYS's default of silently copying
-# files, which would break "edit the repo and the live config changes".
-# Needs Windows Developer Mode (bootstrap.ps1 checks it before getting here).
-export MSYS=winsymlinks:nativestrict
+# Native symlinks (MSYS/CYGWIN=winsymlinks:nativestrict) are exported by script/common/symlink.sh.
 
 run_components "${component_installation[@]}"
 

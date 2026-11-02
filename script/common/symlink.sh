@@ -5,6 +5,13 @@ _SYMLINK_LIB_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 source "$_SYMLINK_LIB_DIR/log.sh"
 
+# Git Bash / Cygwin: make `ln -s` create real NTFS symlinks or fail loudly, never silently copy the file
+# (which would break "edit the repo and the live config changes"). Needs Windows Developer Mode.
+# Done here, not in the installer, so `dot run`, `dot -m` and a directly-run setup.sh get it too.
+case "$OSTYPE" in
+msys* | cygwin*) export MSYS=winsymlinks:nativestrict CYGWIN=winsymlinks:nativestrict ;;
+esac
+
 # Resolve a path from a git worktree to the equivalent path in the main repo.
 # Prevents symlinks from pointing into worktrees that may be deleted later.
 _resolve_to_main_worktree() {
