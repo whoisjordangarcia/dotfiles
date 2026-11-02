@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Second, userspace tailscaled on the personal tailnet, beside the system Tailscale app on
+  the work tailnet. Rex reaches its kudu-opah hosts through com.nest.rex-bridge (the unix-socket
+  bridge, rex-bridge.py). Userspace mode never touches the TUN or system DNS, which is
+  why it can coexist with the system app.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.nest.ts-rex</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>exec /opt/homebrew/bin/tailscaled --tun=userspace-networking --statedir="$HOME/.local/share/ts-rex" --socket="$HOME/.local/share/ts-rex/tailscaled.sock" --port=0</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/ts-rex.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/ts-rex.log</string>
+</dict>
+</plist>

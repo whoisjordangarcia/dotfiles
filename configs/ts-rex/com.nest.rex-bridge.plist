@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.nest.rex-bridge</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>-I</string>
+        <string>/Users/nest/dev/dotfiles/configs/ts-rex/rex-bridge.py</string>
+        <string>proxmox-rex.kudu-opah.ts.net</string>
+        <string>macmini-rex.kudu-opah.ts.net</string>
+        <string>terminal-code-rex.kudu-opah.ts.net</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/rex-bridge.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/rex-bridge.log</string>
+</dict>
+</plist>
