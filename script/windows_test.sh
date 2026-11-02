@@ -80,4 +80,13 @@ output=$(cd "$FIXTURE" && ./bin/dot --system windows run 2>&1)
 	die "dot --system windows run did not list the windows modules" "$output"
 pass "dot --system windows run lists the windows modules"
 
+# --- line endings ------------------------------------------------------------
+# Git for Windows checks out CRLF by default; bash cannot run CRLF scripts.
+
+for f in bin/dot script/windows_installation.sh script/windows_components.sh script/windows_test.sh; do
+	eol=$(git -C "$REPO_ROOT" check-attr eol -- "$f" | awk '{print $NF}')
+	[[ "$eol" == "lf" ]] || die "$f must be forced to LF in .gitattributes" "git reports eol: $eol"
+done
+pass "shell scripts and bin/dot are forced to LF on checkout"
+
 echo "All $PASSED tests passed"

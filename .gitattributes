@@ -1,0 +1,5 @@
+# Shell scripts must be LF everywhere. Git for Windows defaults to core.autocrlf=true,
+# which would check them out as CRLF and bash would fail with $'\r': command not found.
+*.sh        text eol=lf
+bin/dot     text eol=lf
+.dotconfig  text eol=lf
