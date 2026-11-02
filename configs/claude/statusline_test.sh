@@ -18,6 +18,11 @@ export STATUSLINE_COLS="${STATUSLINE_COLS:-300}"
 # key tap and fail headless). Statusline git calls are read-only, unaffected.
 export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
 
+# The statusline saves any payload carrying rate limits to $XDG_CACHE_HOME/ai-stats, which ai-stats and
+# the sketchybar widget read as the real plan limits; the fixtures' 85%/88% must not land there.
+XDG_CACHE_HOME=$(mktemp -d "${TMPDIR:-/tmp}/statusline-cache.XXXXXX")
+export XDG_CACHE_HOME
+
 # Running the suite from inside a zmx session would prepend "zmx <name>" to
 # line 2 and break every line-2 assertion. Unset here (not per-`env -u` call)
 # so all ~8 bespoke `env` invocations below inherit the clean state; the zmx
