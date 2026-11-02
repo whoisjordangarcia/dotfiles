@@ -27,6 +27,7 @@ MANIFEST_SKILLS=(
 	"gws-calendar:googleworkspace/cli"
 	"gws-docs:googleworkspace/cli"
 	"gws-sheets:googleworkspace/cli"
+	"stageshow:benjitaylor/skills"
 )
 
 skills() { command -v npx >/dev/null 2>&1; }

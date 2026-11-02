@@ -28,6 +28,7 @@ skills from this repo as symlinks (see `script/skills/setup.sh`); the CLI's inst
 | `mobile-ios-design` | `wshobson/agents` | iOS HIG / SwiftUI reference |
 | `gws-calendar`, `gws-docs`, `gws-sheets` | `googleworkspace/cli` | Google Workspace; the full generated set lives in `configs/gws/` and is refreshed with `gws generate-skills` |
 | `reverse-engineer-anything` | REA's own skill (ships with the `rea` MCP) | reversing binaries with REA — re-pull from the REA install if it goes missing |
+| `stageshow` | `benjitaylor/skills` | faux product UI stills, cursor-story animations, bento grids (React kit; needs Node ≥20.19 + Chrome to film) |
 
 Sources are tracked with hashes in `configs/agents/.skill-lock.json`.
 
