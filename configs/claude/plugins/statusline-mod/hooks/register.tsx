@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import { appRows, collectBaseRef, collectBranchDiff, collectCi, collectGit, collectNodeApps, collectPr, osc8Supported } from './statusline/collect'
+import { appRows, collectBaseRef, collectBranchDiff, collectCi, collectGit, collectPr, nodeAppsIn, osc8Supported, scanListeners } from './statusline/collect'
 import { ciGlyph, nodeAppUrl } from './statusline/render'
 import type { Apps } from '../types'
 import type { Io, Shared } from './statusline/types'
@@ -15,7 +15,32 @@ const apps = atom({ plugin: 'statusline-mod', key: 'apps' } as const, [] as Apps
 // Each source on its own lifetime, so the 1s statusLine refresh never waits on the slow ones: git moves
 // as you work; the base branch, PR and CI rarely do (and cost a network call or a dozen git runs).
 const TTL_MS = { git: 3000, diff: 3000, base: 600_000, pr: 120_000, ci: 60_000, node: 30_000, osc8: 60_000 }
+// Between turns the tree mostly changes by hand, so git and the diff are polled this much less often.
+const IDLE_FACTOR = 5
 const POLL_MS = 1000
+
+// Collected once for every session on the machine, per checkout (and branch) where the answer depends on
+// one: with dozens of sessions open, each running its own git and lsof was most of the machine's load.
+const SHARED = `${DIR}/shared`
+
+/** `collect`'s value as some session last stored it under `key`, collecting afresh once it is `ttl` old.
+ * A stale entry is re-stamped before collecting, so the other sessions keep reading it meanwhile
+ * instead of all collecting at once. */
+async function shared<T>($: EngineInterface, key: string, ttl: number, collect: () => Promise<T>): Promise<T> {
+  const path = `${SHARED}/${encodeURIComponent(key)}.json`
+  const now = await $.clock.now()
+  let held: { at: number; value: T } | undefined
+  try {
+    held = JSON.parse(String(await $.fs.read(path)))
+  } catch {
+    // Missing, or caught mid-write: collect.
+  }
+  if (held && now - held.at < ttl) return held.value
+  if (held) await $.fs.write(path, JSON.stringify({ at: now, value: held.value }))
+  const value = await collect()
+  await $.fs.write(path, JSON.stringify({ at: await $.clock.now(), value }))
+  return value
+}
 
 const SPIN = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
 // The statusLine re-reads once a second; 250ms keeps each read on a fresh frame without busy writes.
@@ -76,8 +101,9 @@ async function refresh($: EngineInterface) {
       await update($, apps, () => [])
     }
 
-    if (now - mod.fetched.git >= TTL_MS.git) {
-      s.git = await collectGit(io, cwd)
+    const idle = mod.turnTimer ? 1 : IDLE_FACTOR
+    if (now - mod.fetched.git >= TTL_MS.git * idle) {
+      s.git = await shared($, `git:${cwd}`, TTL_MS.git * idle, () => collectGit(io, cwd))
       mod.fetched.git = now
     }
     const branch = s.git?.branch ?? ''
@@ -92,26 +118,27 @@ async function refresh($: EngineInterface) {
     await write($)
 
     if (branch && now - mod.fetched.base >= TTL_MS.base) {
-      s.baseRef = await collectBaseRef(io, cwd, branch)
+      s.baseRef = await shared($, `base:${cwd}:${branch}`, TTL_MS.base, () => collectBaseRef(io, cwd, branch))
       mod.fetched.base = now
     }
-    if (s.baseRef && s.baseRef !== branch && now - mod.fetched.diff >= TTL_MS.diff) {
-      s.branchDiff = await collectBranchDiff(io, cwd, s.baseRef)
+    if (s.baseRef && s.baseRef !== branch && now - mod.fetched.diff >= TTL_MS.diff * idle) {
+      const base = s.baseRef
+      s.branchDiff = await shared($, `diff:${cwd}:${base}`, TTL_MS.diff * idle, () => collectBranchDiff(io, cwd, base))
       mod.fetched.diff = now
     }
     if (branch && now - mod.fetched.pr >= TTL_MS.pr) {
-      const pr = await collectPr(io, cwd, branch)
+      const pr = await shared($, `pr:${cwd}:${branch}`, TTL_MS.pr, () => collectPr(io, cwd, branch))
       s.pr = pr.url ? pr : undefined
       mod.fetched.pr = now
     }
     // CI only matters while the PR is open.
     if (s.pr?.state === 'OPEN' && now - mod.fetched.ci >= TTL_MS.ci) {
-      s.ci = ciGlyph(await collectCi(io, cwd, branch))
+      s.ci = ciGlyph(await shared($, `ci:${cwd}:${branch}`, TTL_MS.ci, () => collectCi(io, cwd, branch)))
       mod.fetched.ci = now
     }
     // The lsof scan is skipped unless this looks like a Node project or an earlier scan found apps.
     if (now - mod.fetched.node >= TTL_MS.node && (s.nodeApps.length || (await io.exists(`${cwd}/package.json`)))) {
-      s.nodeApps = await collectNodeApps(io, cwd)
+      s.nodeApps = nodeAppsIn(await shared($, 'listeners', TTL_MS.node, () => scanListeners(io)), cwd)
       mod.fetched.node = now
       const rows = await appRows(io, cwd, s.nodeApps)
       if (JSON.stringify(rows) !== JSON.stringify(await read($, apps))) await update($, apps, () => rows)

@@ -134,9 +134,13 @@ function inProject(text: string, cwd: string) {
   return i >= 0 && !NESTED_WORKTREE.test(text.slice(i + cwd.length))
 }
 
-/** Node servers listening from inside `cwd`, as sorted "name:port" entries, one per name. */
-export async function collectNodeApps(io: Io, cwd: string) {
-  const lsof = (await io.run(['lsof', '-a', '-c', 'node', '-iTCP', '-sTCP:LISTEN', '-P', '-n'], cwd)).stdout
+/** A node process listening on TCP, with what tells which checkout it belongs to. */
+export type Listener = { port: string; args: string; cwd: string }
+
+/** Every node server listening on the machine, in three processes however many there are: each lsof
+ * walks every process's open files, so one per server cost seconds under load. */
+export async function scanListeners(io: Io): Promise<Listener[]> {
+  const lsof = (await io.run(['lsof', '-a', '-c', 'node', '-iTCP', '-sTCP:LISTEN', '-P', '-n'])).stdout
   const listening = [
     ...new Set(
       lsof
@@ -145,19 +149,37 @@ export async function collectNodeApps(io: Io, cwd: string) {
         .filter(c => c[0] === 'node' && /^[0-9]+$/.test(c[1] ?? ''))
         .map(c => `${c[1]} ${c[8] ?? ''}`),
     ),
-  ].sort()
+  ]
+    .map(row => {
+      const [pid = '', addr = ''] = row.split(' ')
+      return { pid, port: addr.match(/[0-9]+$/)?.[0] ?? '' }
+    })
+    .filter(l => l.port)
+  if (!listening.length) return []
 
+  const pids = [...new Set(listening.map(l => l.pid))].join(',')
+  const args = new Map<string, string>()
+  for (const line of (await io.run(['ps', '-p', pids, '-o', 'pid=,args='])).stdout.split('\n')) {
+    const m = line.match(/^\s*([0-9]+)\s+(.*)$/)
+    if (m) args.set(m[1]!, m[2]!.trim())
+  }
+  const cwds = new Map<string, string>()
+  let pid = ''
+  for (const line of (await io.run(['lsof', '-a', '-d', 'cwd', '-p', pids, '-Fpn'])).stdout.split('\n')) {
+    if (line.startsWith('p')) pid = line.slice(1)
+    else if (line.startsWith('n/')) cwds.set(pid, line.slice(1))
+  }
+  return listening.map(l => ({ port: l.port, args: args.get(l.pid) ?? '', cwd: cwds.get(l.pid) ?? '' }))
+}
+
+/** Node servers listening from inside `cwd`, as sorted "name:port" entries, one per name. */
+export async function collectNodeApps(io: Io, cwd: string) {
+  return nodeAppsIn(await scanListeners(io), cwd)
+}
+
+export function nodeAppsIn(listeners: Listener[], cwd: string) {
   const entries: string[] = []
-  for (const row of listening) {
-    const [pid, addr = ''] = row.split(' ') as [string, string?]
-    const port = addr.match(/[0-9]+$/)?.[0]
-    if (!port) continue
-    const args = (await io.run(['ps', '-p', pid, '-o', 'args='], cwd)).stdout.trim()
-    const procCwd =
-      (await io.run(['lsof', '-p', pid, '-a', '-d', 'cwd', '-Fn'], cwd)).stdout
-        .split('\n')
-        .find(l => l.startsWith('n/'))
-        ?.slice(1) ?? ''
+  for (const { port, args, cwd: procCwd } of listeners) {
     // Only apps belonging to the current project directory, and not to a worktree nested inside it.
     if (!inProject(args, cwd) && !inProject(procCwd, cwd)) continue
     const combined = `${args} ${procCwd}`
