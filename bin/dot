@@ -45,6 +45,8 @@ detect_system() {
 			*) distro="unknown" ;;
 			esac
 		fi
+	elif [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then
+		os_name="windows"
 	else
 		os_name="unknown"
 	fi
