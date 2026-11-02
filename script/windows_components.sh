@@ -6,7 +6,7 @@
 #
 # Side-effect-free: it only defines component_installation. Add a component here
 # in the same change that adds its script/<component>/setup.sh (windows_test.sh
-# enforces it). Design: docs/superpowers/specs/2026-11-02-windows-native-design.md
+# enforces it). Design: docs/windows-native.md
 
 component_installation=(
 	git

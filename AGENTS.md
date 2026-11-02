@@ -82,11 +82,12 @@ Re-run a module without the TUI: `./bin/dot run <module>` (`./bin/dot run` lists
 - **tmux continuum**: tmux server version skew breaks the plugin; pin per platform → `#tmux-continuum-caveat`
 - **Secrets**: 1Password items are fetched lazily, never written into the repo → `#secrets-lazy-1password-fetch`
 - **Platform notes** (macOS / Arch / Omarchy / AirVPN split tunneling) → `#platform-specific-notes`
+- **Windows (Git Bash)**: `.gitattributes` forces LF on `*.sh` and `bin/dot` — never remove it, Git for Windows would check scripts out as CRLF and bash dies on `$'\r'`. `MSYS=winsymlinks:nativestrict` needs Developer Mode. Tested only for detection/structure off-Windows: registry, winget and hardware behaviour need a manual run on the PC.
 
 ## Platform notes
 
-Four environments: main Arch desktop (full), work macOS laptop, personal Arch/Omarchy laptop (omarchy-safe subset),
-server LXC (tmux/nvim/zsh/git only). Desktop-only config (Hyprland, VPN, fonts) belongs to the desktop profiles;
+Five environments: main Arch desktop (full), work macOS laptop, personal Arch/Omarchy laptop (omarchy-safe subset),
+server LXC (tmux/nvim/zsh/git only), Windows PC (`windows` profile under Git Bash: a curated subset — see `docs/windows-native.md`). Desktop-only config (Hyprland, VPN, fonts) belongs to the desktop profiles;
 core CLI tools must work everywhere. Per-platform details: `docs/agent-reference.md#platform-specific-notes`.
 
 ## Docs

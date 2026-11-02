@@ -12,7 +12,7 @@ Opinionated, cross-platform dotfiles supporting macOS, Linux (Fedora, Ubuntu, Ar
 
 ### Target Systems
 
-These dotfiles are actively used across four environments:
+These dotfiles are actively used across five environments:
 
 | System | Platform | Profile | Use Case |
 |--------|----------|---------|----------|
@@ -20,6 +20,7 @@ These dotfiles are actively used across four environments:
 | **Work laptop** | macOS | `mac` / work | Work environment — work git email, rift WM + SketchyBar |
 | **Personal laptop** | Arch Linux (omarchy) | `linux_omarchy` / personal | Omarchy base + dotfiles CLI/dev layer (omarchy-safe subset — see Omarchy notes) |
 | **LXC containers** | Ubuntu/Debian (homelab) | `linux_server` | Lightweight — tmux, neovim, zsh, git only (no desktop/GUI components) |
+| **Desktop PC** | Windows (Git Bash) | `windows` / personal | Ryzen 9 5900X + RTX 4090. Curated subset only (Git/CLI, Claude/agents, glazeWM + Windows Terminal, Windows tweaks, hardware tooling). Not a mirror of the mac/Arch profiles: no zsh, tmux, ghostty, neovim or starship. Design: `docs/windows-native.md` |
 
 > [!IMPORTANT]
 > `script/` also carries `linux_fedora` and `linux_ubuntu` profiles. **Nothing runs them.** Don't infer
