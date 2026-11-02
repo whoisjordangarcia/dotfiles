@@ -1,7 +1,12 @@
 {
   "$schema": "./settings.schema.json",
   "env": {
+    "AGENT_BROWSER_ALLOWED_DOMAINS": "localhost,127.0.0.1,localhost.localstack.cloud,dev.portal.nestgenomics.com,dev.app.nestgenomics.com,dev.api.nestgenomics.com,dev.api-internal.nestgenomics.com,dev.yoda.nestgenomics.com,dev.auth.nestgenomics.com,dev.ws.nestgenomics.com,dev.r.nestgenomics.com,dev.admin.nestgenomics.com,dev.partner-api.nestgenomics.com,dev.partner-auth.nestgenomics.com,tst.portal.nestgenomics.com,tst.app.nestgenomics.com,tst.api.nestgenomics.com,tst.api-internal.nestgenomics.com,tst.yoda.nestgenomics.com,tst.auth.nestgenomics.com,tst.ws.nestgenomics.com,tst.r.nestgenomics.com,tst.admin.nestgenomics.com,tst.partner-api.nestgenomics.com,tst.partner-auth.nestgenomics.com,stg.portal.nestgenomics.com,stg.app.nestgenomics.com,stg.api.nestgenomics.com,stg.api-internal.nestgenomics.com,stg.yoda.nestgenomics.com,stg.auth.nestgenomics.com,stg.ws.nestgenomics.com,stg.r.nestgenomics.com,stg.admin.nestgenomics.com,stg.partner-api.nestgenomics.com,stg.partner-auth.nestgenomics.com,stg.nestgenomics.com,*.preview.tst.nestgenomics.com,assets.nestgenomics.com,*.frontegg.com,*.posthog.com,*.google.com,*.googleapis.com,*.gstatic.com,*.rive.app,*.fastenhealth.com,*.s3.amazonaws.com,*.s3.us-east-1.amazonaws.com,github.com,*.github.com,*.githubusercontent.com,linear.app,*.linear.app",
+    "AGENT_BROWSER_CONTENT_BOUNDARIES": "1",
     "AGENT_BROWSER_IDLE_TIMEOUT_MS": "1800000",
+    "AGENT_BROWSER_MAX_OUTPUT": "20000",
+    "AGENT_BROWSER_SCREENSHOT_FORMAT": "jpeg",
+    "AGENT_BROWSER_SCREENSHOT_QUALITY": "70",
     "CLAUDE_CODE_PLUGIN_DIRS": "~/dev/dotfiles/configs/claude/plugins/statusline-mod",
     "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1",
     "DISABLE_BUG_COMMAND": "1",
