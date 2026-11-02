@@ -94,11 +94,25 @@ def fmt_duration(secs):
 
 
 def load_limits():
-    """Return (rate_limits, cache mtime); ({}, None) until a session has rendered its statusline."""
+    """Return (rate_limits, cache mtime); ({}, None) until a session has rendered its statusline.
+
+    Claude Code can stop sending rate_limits while the cache file lives on, so a window whose reset has
+    passed, or a cache no session has refreshed for a day, is dropped rather than shown as current."""
     try:
-        return json.loads(CACHE.read_text()).get("rate_limits") or {}, CACHE.stat().st_mtime
+        limits, mtime = json.loads(CACHE.read_text()).get("rate_limits") or {}, CACHE.stat().st_mtime
     except (OSError, ValueError):
         return {}, None
+    now = time.time()
+    if now - mtime > 86400:
+        return {}, mtime
+
+    def expired(v):
+        try:
+            return float(v["resets_at"]) <= now
+        except (KeyError, TypeError, ValueError):
+            return False
+
+    return {k: v for k, v in limits.items() if not (isinstance(v, dict) and expired(v))}, mtime
 
 
 _opencode_usage = (0.0, None)
