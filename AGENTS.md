@@ -48,6 +48,7 @@ reference doc.
 | env resolution (`script/common/dot_env.sh`) | `bash script/common/dot_env_test.sh` |
 | a component's `setup.sh` | read the neighbouring one; components follow one pattern |
 | `bin/dot` | `bash script/dot_test.sh` |
+| `script/windows_*`, `.gitattributes`, `detect_system` in `bin/dot` | `bash script/windows_test.sh` |
 | anything, before committing | `./bin/dot test` — every suite; exit 77 = skipped on this OS/hardware |
 
 Re-run a module without the TUI: `./bin/dot run <module>` (`./bin/dot run` lists them). Each test must end with
@@ -82,13 +83,17 @@ Re-run a module without the TUI: `./bin/dot run <module>` (`./bin/dot run` lists
 - **tmux continuum**: tmux server version skew breaks the plugin; pin per platform → `#tmux-continuum-caveat`
 - **Secrets**: 1Password items are fetched lazily, never written into the repo → `#secrets-lazy-1password-fetch`
 - **Platform notes** (macOS / Arch / Omarchy / AirVPN split tunneling) → `#platform-specific-notes`
-- **Windows (Git Bash)**: `.gitattributes` forces LF on `*.sh` and `bin/dot` — never remove it, Git for Windows would check scripts out as CRLF and bash dies on `$'\r'`. `MSYS=winsymlinks:nativestrict` needs Developer Mode. Tested only for detection/structure off-Windows: registry, winget and hardware behaviour need a manual run on the PC.
+- **Windows (Git Bash)**: `.gitattributes` forces LF on `*.sh`/`bin/dot`/`configs/git/**` — never remove it (Git for
+  Windows would check scripts out CRLF and bash dies on `$'\r'`); only `git` is wired up so far and nothing has run on
+  Windows yet. → `#windows-git-bash`
 
 ## Platform notes
 
 Five environments: main Arch desktop (full), work macOS laptop, personal Arch/Omarchy laptop (omarchy-safe subset),
-server LXC (tmux/nvim/zsh/git only), Windows PC (`windows` profile under Git Bash: a curated subset — see `docs/windows-native.md`). Desktop-only config (Hyprland, VPN, fonts) belongs to the desktop profiles;
-core CLI tools must work everywhere. Per-platform details: `docs/agent-reference.md#platform-specific-notes`.
+server LXC (tmux/nvim/zsh/git only), and a Windows PC (`windows` profile under Git Bash) that is a *planned* curated
+subset — only `git` is wired up today; see `docs/windows-native.md`. Desktop-only config (Hyprland, VPN, fonts) belongs
+to the desktop profiles; core CLI tools must work everywhere. Per-platform details:
+`docs/agent-reference.md#platform-specific-notes`.
 
 ## Docs
 

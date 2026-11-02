@@ -1,6 +1,6 @@
 # Windows-native profile — design
 
-Date: 2026-11-02 · Status: approved design, awaiting spec review
+Date: 2026-11-02 · Status: design approved; rollout step 1 landed (profile slot, installer, LF rules, CI workflow); steps 2–7 are not implemented. This file is canonical.
 
 ## Goal
 
@@ -31,8 +31,8 @@ Fresh box flow: `bootstrap.ps1` → winget installs Git for Windows (ships bash)
 
 Reused unchanged: `symlink.sh`, `dot_env.sh`, `run_components`, `log.sh`, the test runner.
 
-Symlinks: export `MSYS=winsymlinks:nativestrict` so `ln -s` makes real NTFS symlinks and fails loudly rather than
-silently copying. Requires Developer Mode, which `bootstrap.ps1` checks first. Claude settings stay a *copy*, as on
+Symlinks: `script/common/symlink.sh` exports `MSYS`/`CYGWIN=winsymlinks:nativestrict` so `ln -s` makes real NTFS
+symlinks and fails loudly rather than silently copying. Requires Developer Mode, which `bootstrap.ps1` will check first. Claude settings stay a *copy*, as on
 macOS.
 
 ## Checklist groups (bootstrap UX)
@@ -115,7 +115,8 @@ the audit only records the result). Board, CPU and RAM-kit model are read from t
 
 ## Error handling
 
-Modules run independently: one failure is reported at the end and does not abort the rest. Hard stops: Developer
+Today `dot run`/`run_components` stop at the first failing module. The independent-modules behaviour below is
+planned for `bootstrap.ps1`: one failure is reported at the end and does not abort the rest. Hard stops: Developer
 Mode off, no network for winget. Admin-tier groups without elevation are skipped with a message, not partially run.
 
 ## Security
@@ -130,8 +131,9 @@ The author's machine is a Mac, so Windows behaviour cannot be exercised locally.
 
 - **Bash tests (run on Mac/Linux):** `detect_system` with `OSTYPE=msys` returns `windows`; every entry in
   `windows_components.sh` has a `setup.sh`; every checklist group maps only to existing components.
-- **CI (new — the repo has none today):** a `windows-latest` GitHub Actions job parses every `.ps1` and runs the
-  suite under Git Bash; a second job runs `./bin/dot test` on `macos-latest`/`ubuntu-latest`.
+- **CI (added in rollout step 1, never yet executed by a runner):** `.github/workflows/test.yml` has a `suites` job
+  that runs `script/test.sh` on `macos-latest`/`ubuntu-latest`, and a `windows` job on `windows-latest` that runs
+  `script/windows_test.sh` under Git Bash plus a PowerShell parse check. The full suite does not run under Git Bash yet.
 - **Manual:** one real run on the PC for registry, winget and Afterburner behaviour.
 
 Required checks from `AGENTS.md` still apply: `bash script/dot_test.sh` for the `bin/dot` change, `./bin/dot test`
@@ -150,4 +152,14 @@ before committing.
 ## Related, separate from this spec
 
 Drift fix on the Mac (shipped 2026-11-02): `~/.claude/CLAUDE.md` and OpenCode `AGENTS.md` re-linked via
-`memory-sync`; Mac-only instructions moved to `configs/agents/machines/mac.md`.
+`memory-sync`; Mac-only instructions moved to `configs/agents/machines/mac.md`, now a committed file.
+
+## Known risks for step 2
+
+- `script/git/setup.sh` runs `rm -f ~/.gitconfig` first, destroying an existing config; it is reachable today via
+  `bin/dot --system windows -i`. Back up or merge instead.
+- `configs/git/.gitconfig.template` hardcodes `pager = bat` and `editor = nvim`; neovim is excluded on Windows.
+- `configs/git/` CRLF is now covered by `.gitattributes` (`configs/git/** text eol=lf`); keep new template dirs covered.
+- CI: add `timeout-minutes` to the jobs, and use `git ls-files '*.ps1'` instead of a recursive `Get-ChildItem` for the
+  PowerShell parse step once `bootstrap.ps1` exists.
+- Pin `actions/checkout` to a commit SHA rather than a mutable tag.

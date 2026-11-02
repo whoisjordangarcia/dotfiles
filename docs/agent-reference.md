@@ -8,7 +8,7 @@ changes with the code, it changes here.
 
 ## Repository Overview
 
-Opinionated, cross-platform dotfiles supporting macOS, Linux (Fedora, Ubuntu, Arch), and WSL with personal/work environment configurations. Uses a modular, script-based architecture with symlink-based configuration management.
+Opinionated, cross-platform dotfiles supporting macOS, Linux (Fedora, Ubuntu, Arch), WSL, and Windows (Git Bash) with personal/work environment configurations. Uses a modular, script-based architecture with symlink-based configuration management.
 
 ### Target Systems
 
@@ -20,7 +20,7 @@ These dotfiles are actively used across five environments:
 | **Work laptop** | macOS | `mac` / work | Work environment — work git email, rift WM + SketchyBar |
 | **Personal laptop** | Arch Linux (omarchy) | `linux_omarchy` / personal | Omarchy base + dotfiles CLI/dev layer (omarchy-safe subset — see Omarchy notes) |
 | **LXC containers** | Ubuntu/Debian (homelab) | `linux_server` | Lightweight — tmux, neovim, zsh, git only (no desktop/GUI components) |
-| **Desktop PC** | Windows (Git Bash) | `windows` / personal | Ryzen 9 5900X + RTX 4090. Curated subset only (Git/CLI, Claude/agents, glazeWM + Windows Terminal, Windows tweaks, hardware tooling). Not a mirror of the mac/Arch profiles: no zsh, tmux, ghostty, neovim or starship. Design: `docs/windows-native.md` |
+| **Desktop PC** | Windows (Git Bash) | `windows` / personal | Ryzen 9 5900X + RTX 4090. Planned curated subset (today only the `git` component is wired up; never run on Windows yet): Git/CLI, Claude/agents, glazeWM + Windows Terminal, Windows tweaks, hardware tooling. No zsh, tmux, ghostty, neovim or starship. Design: `docs/windows-native.md` |
 
 > [!IMPORTANT]
 > `script/` also carries `linux_fedora` and `linux_ubuntu` profiles. **Nothing runs them.** Don't infer
@@ -526,6 +526,28 @@ at the start of your `status-right` value. It produces no visible output — it 
 - **Excluded on purpose** (see `script/linux_omarchy_components.sh` for the annotated list): `hypr/linux` + `theming/linux` + `rofi/linux` + `btop/linux` (HyDE-specific; `configs/hypr/hyprland.conf` sources `~/.local/share/hyde/` which doesn't exist on omarchy and would break the desktop), `vpn/linux` + `ufw/linux` (omarchy manages DNS via systemd-resolved and its own ufw rules), `dolphin/linux`/`brave/linux`. Package-level: no `podman-docker` (pacman `conflicts=docker` — installing it removes omarchy's docker stack), no `dnsmasq`/`ufw`.
 - **Hyprland**: `hypr/omarchy` links only the override files omarchy's `hyprland.conf` sources last (`bindings/looknfeel/input/autostart.conf` + `gpu-perf-*.conf`) from `configs/hypr-omarchy/`. **Never symlink `hyprland.conf` or `monitors.conf`.** Private webapp URLs go in `~/.config/hypr/bindings.local.conf` (seeded by setup, untracked, sourced by `bindings.conf`).
 - **Theme system**: never link over `~/.config/mako/config` or `~/.config/btop/themes/current.theme` — omarchy-owned symlinks into `~/.config/omarchy/current/theme/`. The ghostty config *does* follow `omarchy theme set`, via an optional `config-file = ?"~/.config/omarchy/current/theme/ghostty.conf"`. Two non-obvious parts: includes are applied after the whole parent file is parsed, so that line beats the `theme = dark:Rose Pine…` fallback no matter where it sits — and the fallback is what non-omarchy boxes (the Mac) still use, since `?` skips a missing file. `omarchy font set` is a `sed` over `~/.config/ghostty/config` whose regex only matches a **double-quoted** `font-family` value; leave the quotes on or ghostty is silently skipped while every other app changes font. `omarchy font current` reads its answer back out of `~/.config/waybar/style.css`, which is therefore the de-facto store of the current system font.
+
+### Windows (Git Bash)
+
+The `windows` profile targets the Ryzen 9 5900X + RTX 4090 desktop PC. It is a *planned* curated subset: today only
+the `git` component is wired up, `bootstrap.ps1`, the tweak modules, the hardware group and the BIOS audit do not exist
+yet, and nothing here has ever run on a Windows machine. Design and rollout: `docs/windows-native.md`.
+
+- **Profile slot**: `detect_system` in `bin/dot` maps `OSTYPE=msys*|cygwin*` to `windows`, which selects
+  `script/windows_installation.sh` and `script/windows_components.sh`.
+- **LF line endings are load-bearing**: `.gitattributes` forces LF on `*.sh`, `bin/dot` and `configs/git/**`. Never
+  remove it: Git for Windows defaults to `core.autocrlf=true`, so scripts would check out as CRLF and bash dies on
+  `$'\r'`. `configs/git/.gitconfig.template` is covered because `script/git/setup.sh` parses it with `sed`.
+- **Native symlinks**: the guard in `script/common/symlink.sh` exports `MSYS`/`CYGWIN=winsymlinks:nativestrict` so
+  `ln -s` makes real NTFS symlinks or fails loudly instead of silently copying. It needs Windows Developer Mode, and
+  because it lives in `symlink.sh` it applies to `dot -i`, `dot run`, `dot -m` and a directly-run `setup.sh` alike.
+- **What is tested off-Windows**: only detection and structure (`bash script/windows_test.sh`). Registry, winget and
+  hardware behaviour does not exist yet and will need a manual run on the PC.
+- **Known risks for the next plan**:
+  - `script/git/setup.sh` runs `rm -f ~/.gitconfig` first, which destroys an existing config. It is reachable today via
+    `bin/dot --system windows -i`.
+  - Its template hardcodes `pager = bat` and `editor = nvim`, but neovim is excluded on Windows.
+  - CI (`.github/workflows/test.yml`) has never been executed by a runner.
 
 ### VPN Split Tunneling (AirVPN + WireGuard)
 
