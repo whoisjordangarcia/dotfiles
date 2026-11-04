@@ -1,7 +1,17 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "theme": "opencode",
-  "autoupdate": true,
+  "autoupdate": false,
+  "skills": [
+    "~/dev/notes/.claude/skills"
+  ],
+  "permissions": [
+    {
+      "action": "doom_loop",
+      "resource": "*",
+      "effect": "ask"
+    }
+  ],
   "providers": {
     "openai": {
       "models": {
@@ -559,6 +569,19 @@
         "environment": {
           "TAVILY_API_KEY": "{env:TAVILY_API_KEY}"
         }
+      },
+      "rea": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "rea-agents@6.3.0",
+          "mcp"
+        ],
+        "environment": {
+          "GHIDRA_INSTALL_DIR": "/opt/ghidra"
+        },
+        "disabled": false
       }
     }
   }
