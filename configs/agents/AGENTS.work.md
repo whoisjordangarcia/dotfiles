@@ -52,6 +52,10 @@ A comment is **load-bearing** when deleting it costs a competent reader somethin
 
 - **In a Rex terminal, track multi-step work in `rexpad` so I can see where you are at a glance.** Before starting, write the plan and open the pane (`rexpad` skill, or `rexpad skill show`); tick off each item the moment it finishes.
 
+## Showing visuals — show-image, show-html
+
+- **In a Rex terminal, show me anything visual in a pane instead of pointing me at a file.** Image or screenshot → `show-image`, captured at 2x. HTML file or URL → `show-html`. Both take keyboard focus, so skip them for screenshots you take to check your own work.
+
 ## Pointers
 
 Read the target when the task hits the trigger, not before.
