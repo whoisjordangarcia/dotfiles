@@ -48,6 +48,10 @@ A comment is **load-bearing** when deleting it costs a competent reader somethin
 - Default assignee Jordan (`f1ba83f4-dd6c-40f9-9d87-e6a77e52b91b`).
 - **Set new tickets to `Backlog` as part of creation.** A genuinely critical ticket may stay in `Triage`, but say so and confirm rather than leaving it there silently.
 
+## Progress — rexpad
+
+- **In a Rex terminal, track multi-step work in `rexpad` so I can see where you are at a glance.** Before starting, write the plan and open the pane (`rexpad` skill, or `rexpad skill show`); tick off each item the moment it finishes.
+
 ## Pointers
 
 Read the target when the task hits the trigger, not before.
