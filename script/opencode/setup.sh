@@ -36,6 +36,15 @@ info "Installing OpenCode 2 (@opencode-ai/cli@next)..."
 npm i -g @opencode-ai/cli@next -f
 success "OpenCode 2 installed: $(opencode2 --version 2>/dev/null || echo unknown)"
 
+# `browse` MCP CLI, referenced by mcp.servers.browse in opencode.json. Only the CLI is installed here;
+# the browser extension is added by hand from the Chrome Web Store, then paired with `browse install`.
+if ! command -v browse &>/dev/null; then
+	npm install -g @opencode/browse
+	success "Installed browse CLI (add the extension from the Chrome Web Store, then run: browse install)"
+else
+	debug "browse CLI already installed"
+fi
+
 mkdir -p "$HOME/.config/opencode"
 link_file "$SCRIPT_DIR/../../configs/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
 mkdir -p "$HOME/.config/opencode/plugins"

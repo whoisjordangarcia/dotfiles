@@ -82,6 +82,26 @@ if [ "$DOT_ENV" = "personal" ]; then
 	else
 		debug "Tavily MCP already registered"
 	fi
+	# browse (OpenCode's browser MCP): drives the user's real browser through an extension. The CLI is
+	# an npm package; the extension itself is added by hand from the Chrome Web Store, then paired with
+	# `browse install`. Registered here directly (not via `browse install -a claude-code`) so setup
+	# never opens a browser or waits for pairing.
+	if command -v npm &>/dev/null; then
+		if ! command -v browse &>/dev/null; then
+			npm install -g @opencode/browse
+			success "Installed browse CLI (add the extension from the Chrome Web Store, then run: browse install)"
+		else
+			debug "browse CLI already installed"
+		fi
+		if ! claude mcp get browse &>/dev/null; then
+			claude mcp add --scope user browse -- browse mcp
+			success "Registered browse MCP"
+		else
+			debug "browse MCP already registered"
+		fi
+	else
+		warn "npm not found — skipping browse MCP"
+	fi
 fi
 
 # The global memory is ONE file per machine (configs/agents/AGENTS.md, or AGENTS.work.md
