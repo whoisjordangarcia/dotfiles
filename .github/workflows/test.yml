@@ -16,13 +16,19 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      # The statusline renderer is TypeScript run directly by node, which needs >= 22.18.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - name: Run every suite
         run: bash script/test.sh
 
   windows:
     runs-on: windows-latest
+    timeout-minutes: 10
     defaults:
       run:
         shell: bash # Git Bash, the same shell the profile targets

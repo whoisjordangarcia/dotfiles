@@ -13,6 +13,22 @@ STATUSLINE="${STATUSLINE:-$SCRIPT_DIR/plugins/statusline-mod/cli/statusline.sh}"
 # width-specific tests below override STATUSLINE_COLS per-invocation.
 export STATUSLINE_COLS="${STATUSLINE_COLS:-300}"
 
+# The width assertions count characters, and bash counts bytes outside a UTF-8 locale (a bare CI
+# shell, cron, `env -i`): every ▰ and ⋮ would then measure 3 wide. Pick a UTF-8 locale if there is none.
+case "${LC_ALL:-${LC_CTYPE:-${LANG:-}}}" in
+*UTF-8* | *utf8*) ;;
+*)
+    # Captured first: `locale -a | grep -q` dies of SIGPIPE under pipefail when grep exits early.
+    locales=$(locale -a 2>/dev/null || true)
+    for loc in C.UTF-8 en_US.UTF-8; do
+        if grep -qix -e "$loc" -e "${loc/UTF-8/utf8}" <<<"$locales"; then
+            export LC_ALL="$loc"
+            break
+        fi
+    done
+    ;;
+esac
+
 # Hermetic git: ignore global/system config so scratch-repo commits don't
 # inherit commit.gpgsign (a YubiKey-signing setup would hang the suite on a
 # key tap and fail headless). Statusline git calls are read-only, unaffected.

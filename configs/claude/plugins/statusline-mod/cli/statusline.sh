@@ -2,7 +2,15 @@
 # The statusLine command (linked as ~/.claude/statusline.sh). Every process started here is paid on
 # every refresh, so only builtins run before the renderer.
 IFS= read -r -d '' input
-ts="$HOME/dev/dotfiles/configs/claude/plugins/statusline-mod/cli/statusline.ts"
+# Find statusline.ts with builtins: beside this file (run directly, or from a clone anywhere — CI), then the
+# standard checkout (the live path: this file is reached through the ~/.claude/statusline.sh symlink).
+# Only a clone somewhere else pays for a readlink.
+ts="${BASH_SOURCE[0]%/*}/statusline.ts"
+[ -f "$ts" ] || ts="$HOME/dev/dotfiles/configs/claude/plugins/statusline-mod/cli/statusline.ts"
+if [ ! -f "$ts" ] && [ -L "${BASH_SOURCE[0]}" ]; then
+  link=$(readlink "${BASH_SOURCE[0]}")
+  ts="${link%/*}/statusline.ts"
+fi
 
 # bun starts in ~6ms against node's ~90ms. Node needs ≥ 22.18 to run .ts, and a session's PATH can lead
 # with an older nvm node (a project's .nvmrc), so Homebrew's comes before PATH's.

@@ -1,5 +1,5 @@
 import type { Apps } from '../../types'
-import { KNOWN_APPS } from './render'
+import { KNOWN_APPS } from './render.ts'
 import type { Diff, Git, Io, Pr } from './types'
 
 const out = async (io: Io, argv: string[], cwd: string) => (await io.run(argv, cwd)).stdout.trim()

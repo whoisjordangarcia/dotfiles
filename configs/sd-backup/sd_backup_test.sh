@@ -5,6 +5,12 @@
 # Run: bash configs/sd-backup/sd_backup_test.sh
 set -u
 
+# sd-backup.sh is macOS-only (launchd StartOnMount, BSD stat, osascript); 77 = skipped (script/test.sh)
+if [[ "$(uname)" != Darwin ]]; then
+    echo "skip: sd-backup is macOS-only"
+    exit 77
+fi
+
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 SUT="$SCRIPT_DIR/sd-backup.sh"
 
