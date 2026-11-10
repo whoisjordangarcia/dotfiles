@@ -12,7 +12,8 @@
 #        ├── ~/.codex/skills              Codex
 #        └── ~/.cursor/skills             Cursor
 #
-# OpenCode reads ~/.agents/skills directly. Omarchy's own two skills (omarchy, diagnose-crash) stay symlinked to
+# ~/.agents is a real directory, never a link into this repo (checked below). OpenCode reads ~/.agents/skills
+# directly. Omarchy's own two skills (omarchy, diagnose-crash) stay symlinked to
 # /usr/share/omarchy/default/agents/skills so an Omarchy update lands on its own.
 # Third-party skills are fetched with script/skills/install.sh — never vendored in the dotfiles.
 set -euo pipefail
@@ -27,6 +28,15 @@ FARMS=("$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.cursor/skills")
 source "$DOTFILES/script/common/dot_env.sh"
 dot_export_env
 mkdir -p "$GLOBAL"
+
+# Never sync into the repo. If ~/.agents (or ~/.agents/skills) is a symlink into the dotfiles, the copies below
+# and every `npx skills add` land in the working tree. script/agents/setup.sh converts the old symlink.
+case "$(cd -- "$GLOBAL" && pwd -P)/" in
+"$(cd -- "$DOTFILES" && pwd -P)"/*)
+    echo "skills: $GLOBAL resolves inside the dotfiles repo — run ./bin/dot run agents to convert ~/.agents to a real directory" >&2
+    exit 1
+    ;;
+esac
 
 # 1. local skills → managed copies in the global root (the CLI owns that directory, so copies, not symlinks)
 synced=0
@@ -80,8 +90,9 @@ for farm in "${FARMS[@]}"; do
 done
 
 # -exec test, not -xtype: BSD find (macOS) has no -xtype
-broken=$(for farm in "$GLOBAL" "${FARMS[@]}"; do find "$farm" -maxdepth 1 -type l ! -exec test -e {} \; -print; done | wc -l)
-printf 'local skills synced: %s (of %s)\n' "$synced" "$(find "$LOCAL" -maxdepth 2 -name SKILL.md | wc -l)"
+# tr: BSD wc pads its count with spaces
+broken=$(for farm in "$GLOBAL" "${FARMS[@]}"; do find "$farm" -maxdepth 1 -type l ! -exec test -e {} \; -print; done | wc -l | tr -d ' ')
+printf 'local skills synced: %s (of %s)\n' "$synced" "$(find "$LOCAL" -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
 printf 'skills in ~/.agents/skills: %s, linked into %s farms, %s broken links\n' "$linked" "${#FARMS[@]}" "$broken"
 ls "$GLOBAL" | tr '\n' ' '
 echo

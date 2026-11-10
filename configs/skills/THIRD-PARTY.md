@@ -27,7 +27,6 @@ skills from this repo as symlinks (see `script/skills/setup.sh`); the CLI's inst
 | `web-design-guidelines` | `vercel-labs/agent-skills` | UI review guidelines (trythefit) |
 | `mobile-ios-design` | `wshobson/agents` | iOS HIG / SwiftUI reference |
 | `gws-calendar`, `gws-docs`, `gws-sheets` | `googleworkspace/cli` | Google Workspace; the full generated set lives in `configs/gws/` and is refreshed with `gws generate-skills` |
-| `reverse-engineer-anything` | REA's own skill (ships with the `rea` MCP) | reversing binaries with REA — re-pull from the REA install if it goes missing |
 | `stageshow` | `benjitaylor/skills` | faux product UI stills, cursor-story animations, bento grids (React kit; needs Node ≥20.19 + Chrome to film) |
 
 Sources are tracked with hashes in `configs/agents/.skill-lock.json`.
@@ -40,6 +39,12 @@ design-shotgun, code-review-advanced, grill-with-docs, grilling, teach, domain-m
 plan-ceo-review, office-hours, pre-commit-check). They came from public
 marketplaces whose upstream each was installed from, and nothing on this machine used them; when one is wanted,
 find it with `npx skills find <query>` and install it rather than restoring a stale copy.
+
+## Tool-shipped skills (kept here so every machine gets them)
+
+`reverse-engineer-anything` (ships with the `rea` MCP) and `rex` (the stub from `rex skill setup`) are committed in
+`configs/skills/` like local skills. They are not on skills.sh, so the manifest cannot fetch them. The repo copy wins
+on every sync: after upgrading REA or Rex, copy the new skill over the one here and commit it.
 
 ## Local skills (kept here on purpose)
 

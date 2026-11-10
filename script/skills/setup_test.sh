@@ -52,4 +52,16 @@ done
 [ -f "$TEST_HOME/.claude/skills/win11-vm/SKILL.md" ] || fail "win11-vm missing in personal mode"
 echo "✓ switching to personal removes nest-* skills; personal-only skills synced"
 
-echo "All skills setup tests passed"
+# ~/.agents linked into the repo (the old layout): refuse, and write nothing into the working tree.
+rm -rf "$TEST_HOME"
+mkdir -p "$TEST_HOME"
+ln -s "$REPO_ROOT/configs/agents" "$TEST_HOME/.agents"
+before=$(git -C "$REPO_ROOT" status --porcelain -- configs/agents)
+if env -u WORK_ENV HOME="$TEST_HOME" DOT_ENVIRONMENT=personal "$REPO_ROOT/script/skills/setup.sh" >/dev/null 2>&1; then
+	fail "setup.sh synced into a ~/.agents that is a symlink into the repo"
+fi
+[ "$before" = "$(git -C "$REPO_ROOT" status --porcelain -- configs/agents)" ] || fail "setup.sh wrote into configs/agents"
+[ -d "$TEST_HOME/.claude/skills" ] && fail "setup.sh linked farms before refusing"
+echo "✓ refuses to sync when ~/.agents resolves inside the repo"
+
+echo "All 5 tests passed"
