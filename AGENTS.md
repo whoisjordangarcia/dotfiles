@@ -31,7 +31,8 @@ Two things reading one file won't tell you:
   sourced lib (use a private `_…_DIR`).
 
 `script/` also carries `linux_fedora` and `linux_ubuntu` profiles: **nothing runs them** — don't infer support from
-their existence. Full target-system matrix: `docs/agent-reference.md#repository-overview`.
+their existence. Detection never picks them (Debian/Ubuntu → `linux_server`; an unknown distro → no profile, by
+design: there is no fuzzy fallback). `unused/` holds parked configs and modules; its README has the rule. Full target-system matrix: `docs/agent-reference.md#repository-overview`.
 
 ## Checks that must be run
 
@@ -40,19 +41,22 @@ reference doc.
 
 | Change | Run |
 |---|---|
-| `configs/claude/statusline.sh` | `bash configs/claude/statusline_test.sh` then `statusline_demo.sh` (add a test + scenario per new field/case) |
+| `configs/claude/plugins/statusline-mod/` (the statusline) | `bash configs/claude/statusline_test.sh` then `statusline_demo.sh` (add a test + scenario per new field/case). Runtime imports need the `.ts` suffix: Bun resolves a bare `./render`, Node does not, and Node is the fallback on every box without Bun |
 | `configs/starship/prompt_info.sh` | `bash configs/starship/prompt_info_test.sh` |
 | `configs/tmux/scripts/smart_window_name.sh`, `claude_status.sh` | their `*_test.sh` |
 | anything under `script/brave/` | `for t in script/brave/*_test.sh; do bash "$t"; done` |
 | `configs/claude/hooks/gate_patterns.py`, `touchid-gate.py` | `bash configs/claude/hooks/gate_test.sh` (the codex hook imports the same list — update both) |
 | env resolution (`script/common/dot_env.sh`) | `bash script/common/dot_env_test.sh` |
 | a component's `setup.sh` | read the neighbouring one; components follow one pattern |
-| `bin/dot` | `bash script/dot_test.sh` |
+| `bin/dot`, any `script/*_components.sh` | `bash script/dot_test.sh` (also pins system detection and that every listed component has a `setup.sh`) |
+| `script/git/setup.sh`, `configs/git/.gitconfig.template` | `bash script/git/setup_test.sh` |
+| `script/skills/setup.sh`, `script/agents/setup.sh` | `bash script/skills/setup_test.sh` |
 | `script/windows_*`, `.gitattributes`, `detect_system` in `bin/dot` | `bash script/windows_test.sh` |
 | anything, before committing | `./bin/dot test` — every suite; exit 77 = skipped on this OS/hardware |
 
 Re-run a module without the TUI: `./bin/dot run <module>` (`./bin/dot run` lists them). Each test must end with
-"All N tests passed". `docs/agent-reference.md#checks-that-must-be-run` has what each test pins.
+"All N tests passed" and be named `*_test.sh` (the runner globs that; `test_*.sh` is never run). Tests must pass in
+a bare shell too — no global git identity, no UTF-8 locale, a clone outside `~/dev/dotfiles` — because that is CI. `docs/agent-reference.md#checks-that-must-be-run` has what each test pins.
 
 ## Traps (one line each — full text in the reference doc)
 
@@ -75,7 +79,9 @@ Re-run a module without the TUI: `./bin/dot run <module>` (`./bin/dot run` lists
   for extra per-project rules. → `#claude-instructions-claudemd-workpersonal-split`
 - **Themes**: the slug is the *filename* (`custom:catppuccin-mocha`); picking one silently disables `"theme": "auto"`,
   so both settings files ship `auto`. Don't "fix" auto by exporting `COLORFGBG`. → `#claude-code-themes-custom`
-- **Agent skills**: `configs/skills/` is the canonical set, symlinked into each harness; work-only (`nest-*`) and personal-only
+- **Agent skills**: `configs/skills/` is the canonical set, *copied* into `~/.agents/skills` and symlinked from there
+  into each harness. `~/.agents` must be a real directory — as a symlink into `configs/agents` every sync and every
+  `npx skills add` landed in the repo (`script/agents/setup.sh` converts it, `script/skills/setup.sh` refuses to run); work-only (`nest-*`) and personal-only
   skills are projected and pruned per env by `script/skills/setup.sh`. **Install with `--copy`** so real files land in the repo, not a symlink.
   → `#agent-skills`
 - **SD-card backup** (macOS `StartOnMount`) → `#sd-card-backup-macos-startonmount`

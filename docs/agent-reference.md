@@ -55,12 +55,12 @@ Only the two that aren't obvious from reading a neighbouring script:
 
 ### Claude Code Statusline
 
-The statusline lives at `configs/claude/statusline.sh` and has a regression test + visual demo:
+The statusline is the `statusline-mod` plugin (`configs/claude/plugins/statusline-mod/`; `cli/statusline.sh` is linked as `~/.claude/statusline.sh` and runs `cli/statusline.ts` with Bun, else Node ≥ 22.18). It has a regression test + visual demo:
 
 - `configs/claude/statusline_test.sh` — assertion-based tests (`✓/✗` output)
 - `configs/claude/statusline_demo.sh` — side-by-side "expect vs actual" renderings for every scenario
 
-**When modifying `configs/claude/statusline.sh`, always run both:**
+**When modifying anything under `configs/claude/plugins/statusline-mod/`, always run both:**
 
 ```bash
 bash configs/claude/statusline_test.sh   # must end with "All N tests passed"
@@ -348,7 +348,7 @@ a new theme will look subtly off):
 
 ### Agent Skills
 
-Shared agent skills live in `configs/skills/` (one directory per skill, each with a `SKILL.md` plus optional `references/`, `templates/`). `script/skills/setup.sh` projects each skill into every agent CLI (`~/.claude/skills/`, `~/.cursor/skills/`, `~/.codex/skills/`) via per-skill symlinks, so **every skill committed here is version-controlled and syncs to all machines** — including the LXC server, which needs no `npx`/Node to use them. (`configs/claude/skills` is itself a symlink to `../skills` for backward compatibility.)
+Shared agent skills live in `configs/skills/` (one directory per skill, each with a `SKILL.md` plus optional `references/`, `templates/`). `script/skills/setup.sh` copies each skill into `~/.agents/skills/` (a real directory, never a symlink into this repo) and links it from there into every agent CLI (`~/.claude/skills/`, `~/.cursor/skills/`, `~/.codex/skills/`), so **every skill committed here is version-controlled and syncs to all machines** — including the LXC server, which needs no `npx`/Node to use them. (`configs/claude/skills` is itself a symlink to `../skills` for backward compatibility.)
 
 **Adding a skill from the open ecosystem** (`npx skills`, browse at https://skills.sh):
 

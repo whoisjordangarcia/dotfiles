@@ -30,8 +30,9 @@ This will automatically clone/update the repo, fetch latest changes, and run int
 ### Interactive Installation (Recommended)
 
 ```bash
-git clone https://github.com/whoisjordangarcia/dotfiles.git
-cd dotfiles
+# Clone to ~/dev/dotfiles: the Claude settings and plugin paths assume that location (boot.sh uses it too)
+git clone https://github.com/whoisjordangarcia/dotfiles.git ~/dev/dotfiles
+cd ~/dev/dotfiles
 ./bin/dot -i              # Interactive setup
 ```
 
@@ -39,7 +40,7 @@ cd dotfiles
 
 ```bash
 ./bin/dot --system mac --work         # Direct installation
-./bin/dot --system linux_ubuntu --personal
+./bin/dot --system linux_server --personal
 ```
 
 ### Headless Server / Proxmox / LXC
@@ -267,8 +268,6 @@ Claude Code IDE settings and configuration.
 | `configs/opencode/` | OpenCode settings |
 | `configs/fastfetch/` | System info display |
 | `configs/pyright/` | Python type checking |
-| `configs/i3/` | i3 window manager (Fedora) |
-| `configs/sway/` | Sway compositor |
 | `configs/glazeWM/` | GlazeWM (Windows) |
 | `configs/man/` | Custom man pages for dotfiles |
 
@@ -296,7 +295,12 @@ Claude Code IDE settings and configuration.
 
 **Pacman packages:** zsh, starship, tmux, ripgrep, eza, zoxide, wl-clipboard, fzf, jq, bat, dysk, htop, btop, ttf-jetbrains-mono-nerd, mangohud, darktable, podman, yubikey-manager, github-cli
 
-### Ubuntu (`linux_ubuntu`)
+### Ubuntu (`linux_ubuntu`) and Fedora (`linux_fedora`) — unmaintained
+
+> [!WARNING]
+> No machine runs these two profiles any more. They are never auto-detected (Debian and Ubuntu resolve to
+> `linux_server`; Fedora resolves to nothing) and only run with an explicit `--system`. Expect them to be stale.
+
 
 ```bash
 ./bin/dot --system linux_ubuntu
@@ -312,9 +316,18 @@ Claude Code IDE settings and configuration.
 
 **Installs:** Git/Zsh/Vim/Tmux, i3wm, Polybar, LazyGit, Fonts, Starship, Fastfetch, Brave
 
-### Headless Server / Proxmox / LXC (`server/`)
+### Headless Server / Proxmox / LXC
 
-Standalone, bash-based — **not** part of the `bin/dot` flow. No desktop, no zsh.
+Two ways to set up a server, pick by how much you want on it:
+
+| | `linux_server` profile | `server/` standalone |
+|---|---|---|
+| Run with | `./bin/dot --system linux_server` (auto-detected on Debian/Ubuntu) | `server-init.sh` one-liner below |
+| Shell | zsh + starship, the same modules as the laptops | bash (`bashrc`, `aliases`) |
+| Installs | apt packages, git, zsh, neovim starter, tmux, zmx, fastfetch, Claude + agents | git, curl, vim, neovim, tmux, htop, Claude Code |
+| Use when | a box you work on (the homelab LXCs) | a throwaway or minimal host |
+
+The standalone path is bash-based and **not** part of the `bin/dot` flow:
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/whoisjordangarcia/dotfiles/main/server-init.sh)
@@ -333,6 +346,7 @@ dotfiles/
 ├── boot.sh                    # Remote bootstrap script
 ├── server-init.sh             # Headless server one-liner bootstrap
 ├── server/                    # Bash config for servers/Proxmox/LXC (see server/README.md)
+├── unused/                    # Parked configs/modules nothing installs any more (see unused/README.md)
 ├── script/
 │   ├── common/
 │   │   ├── log.sh            # Logging utilities (section, step, info, success, fail)
