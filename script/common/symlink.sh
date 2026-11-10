@@ -111,7 +111,7 @@ link_file() {
 			info "Overridden."
 			;;
 		[Bb])
-			DATE_SUFFIX=$(date +%Y%m%d)
+			DATE_SUFFIX=$(date +%Y%m%d-%H%M%S) # to the second: a same-day rerun must not land on the earlier backup
 			mv "$target" "${target}_${DATE_SUFFIX}.bak" && ln -s "$source" "$target"
 			info "Backed up and linked."
 			;;
@@ -158,7 +158,7 @@ link_file() {
 			info "Overridden."
 			;;
 		[Bb])
-			DATE_SUFFIX=$(date +%Y%m%d)
+			DATE_SUFFIX=$(date +%Y%m%d-%H%M%S) # to the second: a same-day rerun must not land on the earlier backup
 			mv "$target" "${target}_${DATE_SUFFIX}.bak" && ln -s "$source" "$target"
 			info "Backed up and linked."
 			;;

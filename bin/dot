@@ -28,21 +28,30 @@ detect_system() {
 		os_name="mac"
 	elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 		os_name="linux"
-		# Detect Linux distribution
-		if [ -f /etc/os-release ]; then
-			. /etc/os-release
-			case "$ID" in
-			ubuntu) distro="ubuntu" ;;
-			fedora) distro="fedora" ;;
-			arch)
+		distro="unknown"
+		# DOT_OS_RELEASE / DOT_OMARCHY_DIR let dot_test.sh drive this against fixtures.
+		local os_release="${DOT_OS_RELEASE:-/etc/os-release}"
+		if [ -f "$os_release" ]; then
+			# Read in a subshell: os-release also sets NAME, VERSION, … which must not leak
+			# into dot. ID_LIKE covers derivatives (CachyOS, EndeavourOS, Mint, Pop!_OS).
+			local ids
+			ids=$(
+				. "$os_release" 2>/dev/null
+				echo "${ID:-} ${ID_LIKE:-}"
+			)
+			case " $ids " in
+			*" arch "*)
 				# Omarchy is Arch under the hood (ID=arch) — detect its install dir
-				if [[ -d "$HOME/.local/share/omarchy" ]]; then
+				if [[ -d "${DOT_OMARCHY_DIR:-$HOME/.local/share/omarchy}" ]]; then
 					distro="omarchy"
 				else
 					distro="arch"
 				fi
 				;;
-			*) distro="unknown" ;;
+			# The only maintained apt profile is the headless server one (the LXC). The
+			# ubuntu and fedora desktop profiles are unmaintained: never auto-selected,
+			# still reachable with an explicit --system.
+			*" debian "* | *" ubuntu "*) distro="server" ;;
 			esac
 		fi
 	elif [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then
@@ -253,18 +262,12 @@ auto_select_installation() {
 	local detected=$(detect_system)
 	local available_installations=($(get_available_installations))
 
-	# Try exact match first
+	# Exact match only ("mac_" and "windows_" carry no distro). There is deliberately no
+	# fuzzy fallback: matching any "linux*" installer sent Debian and every unknown
+	# distro to linux_arch (first alphabetically), i.e. pacman on an apt box.
+	detected="${detected%_}"
 	for installation in ${available_installations[@]+"${available_installations[@]}"}; do
 		if [[ "$installation" == "$detected" ]]; then
-			echo "$installation"
-			return
-		fi
-	done
-
-	# Try partial matches
-	local os_part=$(echo "$detected" | cut -d'_' -f1)
-	for installation in ${available_installations[@]+"${available_installations[@]}"}; do
-		if [[ "$installation" == *"$os_part"* ]]; then
 			echo "$installation"
 			return
 		fi
@@ -341,6 +344,11 @@ interactive_setup() {
 	local auto_installation=$(auto_select_installation)
 	local suggested_env="personal"
 
+	# No guessing: an unrecognised OS used to fall back to the mac installer.
+	if [[ -z "$auto_installation" ]]; then
+		fail "No installation profile for this system ($detected_system). Pick one: dot --system <name> (dot -l lists them)"
+	fi
+
 	# Smart environment detection based on existing git config
 	if [[ "$(git config user.email 2>/dev/null)" == *"@nestgenomics.com" ]]; then
 		suggested_env="work"
@@ -385,7 +393,7 @@ interactive_setup() {
 
 	# Auto-select installation. WORK_ENV (exported by run_installation) drives
 	# environment-specific config — there's no separate work installer.
-	DOT_SYSTEM="${auto_installation:-mac}"
+	DOT_SYSTEM="$auto_installation"
 
 	# Clean summary
 	echo ""
@@ -454,7 +462,7 @@ displayUsageAndExit() {
 	echo "  dot --work run            # Same, overriding the environment"
 	echo "  dot test [filter]         # Run every *_test.sh (or paths matching filter)"
 	echo "  dot --system mac --work   # Direct Mac work installation"
-	echo "  dot --system linux_ubuntu # Direct Ubuntu installation"
+	echo "  dot --system linux_server # Direct server (Debian/Ubuntu) installation"
 	exit
 }
 
@@ -483,6 +491,7 @@ while [[ $# -gt 0 ]]; do
 		;;
 	"-m" | "--modules")
 		load_config
+		apply_cli_overrides
 		interactive_module_selection "$DOT_SYSTEM"
 		exit 0
 		;;
@@ -504,6 +513,9 @@ while [[ $# -gt 0 ]]; do
 			get_modules_from_script "$DOT_SYSTEM"
 			exit 0
 		fi
+		# Never prompt: an existing file where a symlink goes is moved aside
+		# (<name>_<timestamp>.bak) instead of asking Override/Backup/Skip.
+		export DOT_SYMLINK_MODE="${DOT_SYMLINK_MODE:-backup}"
 		run_modules "$@"
 		exit 0
 		;;

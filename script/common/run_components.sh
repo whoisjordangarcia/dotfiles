@@ -20,7 +20,9 @@ run_components() {
 		if [[ -f "$script_path" ]]; then
 			bash "$script_path" || fail "Component '$component' failed"
 		else
-			warn "Script for $component does not exist."
+			# Same as `dot run`: a listed component that cannot run is an error, not a
+			# warning that scrolls past in a full install (dot_test.sh pins every profile).
+			fail "Component '$component' has no setup.sh ($script_path)"
 		fi
 	done
 }
