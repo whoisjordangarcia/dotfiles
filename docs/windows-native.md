@@ -156,10 +156,10 @@ Drift fix on the Mac (shipped 2026-11-02): `~/.claude/CLAUDE.md` and OpenCode `A
 
 ## Known risks for step 2
 
-- `script/git/setup.sh` runs `rm -f ~/.gitconfig` first, destroying an existing config; it is reachable today via
-  `bin/dot --system windows -i`. Back up or merge instead.
-- `configs/git/.gitconfig.template` hardcodes `pager = bat` and `editor = nvim`; neovim is excluded on Windows.
+- Fixed 2026-11-09: `script/git/setup.sh` now moves a `~/.gitconfig` it did not generate to
+  `~/.gitconfig_<timestamp>.bak`, and drops `pager = bat` / falls back from `editor = nvim` to `vim` when the tool is
+  not on PATH (`script/git/setup_test.sh`). Still unverified on a real Windows box.
 - `configs/git/` CRLF is now covered by `.gitattributes` (`configs/git/** text eol=lf`); keep new template dirs covered.
-- CI: add `timeout-minutes` to the jobs, and use `git ls-files '*.ps1'` instead of a recursive `Get-ChildItem` for the
+- CI: `timeout-minutes` is set on both jobs. Still to do: use `git ls-files '*.ps1'` instead of a recursive `Get-ChildItem` for the
   PowerShell parse step once `bootstrap.ps1` exists.
 - Pin `actions/checkout` to a commit SHA rather than a mutable tag.
