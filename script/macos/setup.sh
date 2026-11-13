@@ -25,6 +25,18 @@ else
   success "Touch ID enabled for sudo."
 fi
 
+# --- Privacy / telemetry ---
+# Apple's analytics daemons (analyticsd, CloudTelemetryService, UsageTrackingAgent,
+# ReportCrash) are SIP-protected and always run; these settings stop them uploading.
+# Share Mac Analytics + Share with app developers (System Settings > Privacy > Analytics)
+sudo defaults write "/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist" AutoSubmit -bool false
+sudo defaults write "/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist" ThirdPartyDataSubmit -bool false
+# Personalised Apple ads
+defaults write com.apple.AdLib allowApplePersonalizedAdvertising -bool false
+defaults write com.apple.AdLib allowIdentifierForAdvertising -bool false
+# Improve Siri & Dictation (2 = opted out)
+defaults write com.apple.assistant.support "Siri Data Sharing Opt-In Status" -int 2
+
 # --- Keyboard & Input ---
 
 # Disable press-and-hold for keys in favor of key repeat (essential for Neovim)

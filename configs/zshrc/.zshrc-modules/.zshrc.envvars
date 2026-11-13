@@ -39,6 +39,14 @@ export HOMEBREW_AUTOREMOVE=1
 # See https://consoledonottrack.com
 export DO_NOT_TRACK=true
 
+# Per-tool opt-outs for CLIs that don't (reliably) honor DO_NOT_TRACK. gh's own
+# `telemetry` config key was still "enabled" on the Mac mini with DO_NOT_TRACK set.
+export GH_TELEMETRY=false
+export VERCEL_TELEMETRY_DISABLED=1
+export NEXT_TELEMETRY_DISABLED=1
+export TURBO_TELEMETRY_DISABLED=1
+export WRANGLER_SEND_METRICS=false
+
 # ==============================================================================
 #  Terminal hyperlinks (OSC 8)
 # ==============================================================================
