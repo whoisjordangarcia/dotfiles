@@ -11,8 +11,21 @@ source "$SCRIPT_DIR/../common/log.sh"
 # documents them as a single component.
 # =============================================================================
 
-# Some tweaks below need root (mdutil, pam.d)
-sudo -v
+# HEADLESS: this module must never stop for input — no password prompt, no Touch ID
+# sheet, no TCC "would like to control/access" dialog. So:
+#   - root steps check their state WITHOUT sudo first and only escalate when a change
+#     is needed, via `as_root`, which uses sudo only if it's already authorised
+#     (`sudo -n`: cached ticket or NOPASSWD) and otherwise warns and skips;
+#   - nothing here may touch another app's sandbox container or drive an app via
+#     AppleScript (both raise TCC dialogs).
+as_root() {
+  if sudo -n true 2>/dev/null; then
+    sudo "$@"
+  else
+    warn "Skipped (needs sudo; run 'sudo -v' first to apply): $*"
+    return 0
+  fi
+}
 
 # --- Touch ID for sudo ---
 
@@ -21,16 +34,32 @@ if [ -f /etc/pam.d/sudo_local ] && grep -q "pam_tid.so" /etc/pam.d/sudo_local; t
   debug "Touch ID for sudo already enabled. Skipping."
 else
   step "Enabling Touch ID for sudo..."
-  echo "auth       sufficient     pam_tid.so" | sudo tee /etc/pam.d/sudo_local >/dev/null
-  success "Touch ID enabled for sudo."
+  if sudo -n true 2>/dev/null; then
+    echo "auth       sufficient     pam_tid.so" | sudo tee /etc/pam.d/sudo_local >/dev/null
+    success "Touch ID enabled for sudo."
+  else
+    warn "Skipped Touch ID for sudo (needs sudo; run 'sudo -v' first)"
+  fi
 fi
 
 # --- Privacy / telemetry ---
 # Apple's analytics daemons (analyticsd, CloudTelemetryService, UsageTrackingAgent,
 # ReportCrash) are SIP-protected and always run; these settings stop them uploading.
 # Share Mac Analytics + Share with app developers (System Settings > Privacy > Analytics)
-sudo defaults write "/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist" AutoSubmit -bool false
-sudo defaults write "/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist" ThirdPartyDataSubmit -bool false
+DIAG_PLIST="/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist"
+# The plist becomes root-only (0600) once root has written it, so an unprivileged read
+# can't verify it. Unreadable + no sudo = assume a previous run set it; stay quiet.
+for key in AutoSubmit ThirdPartyDataSubmit; do
+  if [ -r "$DIAG_PLIST" ] && [ "$(defaults read "$DIAG_PLIST" "$key" 2>/dev/null)" = "0" ]; then
+    debug "Diagnostics $key already off."
+  elif sudo -n true 2>/dev/null; then
+    sudo defaults write "$DIAG_PLIST" "$key" -bool false
+  elif [ -r "$DIAG_PLIST" ]; then
+    warn "Skipped diagnostics $key=false (needs sudo; run 'sudo -v' first)"
+  else
+    debug "Diagnostics plist is root-only; can't verify $key without sudo. Skipping."
+  fi
+done
 # Personalised Apple ads
 defaults write com.apple.AdLib allowApplePersonalizedAdvertising -bool false
 defaults write com.apple.AdLib allowIdentifierForAdvertising -bool false
@@ -74,8 +103,8 @@ defaults write com.apple.menuextra.clock AppleICUForce12HourTime -bool true
 # Auto-hide the native menu bar (SketchyBar takes its place), in fullscreen too
 defaults write NSGlobalDomain _HIHideMenuBar -bool true
 defaults write NSGlobalDomain AppleMenuBarVisibleInFullscreen -bool false
-# The defaults write alone doesn't reach the running WindowServer; this applies it live
-osascript -e 'tell application "System Events" to set autohide menu bar of dock preferences to true' >/dev/null 2>&1 || true
+# Takes effect at next login. (Applying it live needs `osascript` → System Events, which
+# raises a TCC Automation dialog, so it's deliberately not done here.)
 
 # Expand save panel by default (no more clicking "More Options")
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
@@ -161,7 +190,9 @@ defaults write com.apple.screencapture disable-shadow -bool true
 # --- Security ---
 
 # Enable the application firewall
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on >/dev/null
+if ! /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null | grep -q enabled; then
+  as_root /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on >/dev/null
+fi
 
 # Require password immediately after sleep/screensaver
 defaults write com.apple.screensaver askForPassword -int 1
@@ -177,14 +208,9 @@ defaults write com.apple.ActivityMonitor IconType -int 5
 defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage"
 defaults write com.apple.ActivityMonitor SortDirection -int 0
 
-# TextEdit: use plain text by default. TextEdit is sandboxed, so this writes into its
-# app container, which macOS blocks unless the terminal has App Management / Full Disk
-# Access — "Could not write domain …/Containers/com.apple.TextEdit". Skip when already
-# set, and warn rather than abort the whole module under `set -e`.
-if [ "$(defaults read com.apple.TextEdit RichText 2>/dev/null)" != "0" ]; then
-  defaults write com.apple.TextEdit RichText -int 0 2>/dev/null ||
-    warn "Couldn't set TextEdit plain-text default (grant the terminal App Management in Privacy & Security, or set it in TextEdit > Settings)"
-fi
+# TextEdit plain-text default is NOT set here: TextEdit is sandboxed, and writing its
+# container prefs raises a TCC "access data from other apps" dialog (and fails without
+# App Management). Set it once by hand in TextEdit > Settings > Format: Plain Text.
 
 # Prevent Photos from opening when plugging in devices
 defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
@@ -194,7 +220,9 @@ defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true
 
 # Disable Spotlight (replaced by Raycast)
 defaults write com.apple.Spotlight "NSStatusItem Visible Item-0" -bool false
-sudo mdutil -a -i off 2>/dev/null || true
+if mdutil -s / 2>/dev/null | grep -q "Indexing enabled"; then
+  as_root mdutil -a -i off >/dev/null 2>&1 || true
+fi
 
 # Free up Cmd+Space for Raycast: disable the Spotlight search hotkey (id 64)
 /usr/libexec/PlistBuddy -c "Set :AppleSymbolicHotKeys:64:enabled false" \
