@@ -177,8 +177,14 @@ defaults write com.apple.ActivityMonitor IconType -int 5
 defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage"
 defaults write com.apple.ActivityMonitor SortDirection -int 0
 
-# TextEdit: use plain text by default
-defaults write com.apple.TextEdit RichText -int 0
+# TextEdit: use plain text by default. TextEdit is sandboxed, so this writes into its
+# app container, which macOS blocks unless the terminal has App Management / Full Disk
+# Access — "Could not write domain …/Containers/com.apple.TextEdit". Skip when already
+# set, and warn rather than abort the whole module under `set -e`.
+if [ "$(defaults read com.apple.TextEdit RichText 2>/dev/null)" != "0" ]; then
+  defaults write com.apple.TextEdit RichText -int 0 2>/dev/null ||
+    warn "Couldn't set TextEdit plain-text default (grant the terminal App Management in Privacy & Security, or set it in TextEdit > Settings)"
+fi
 
 # Prevent Photos from opening when plugging in devices
 defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
