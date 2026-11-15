@@ -1,0 +1,74 @@
+# Rex pane resume: record what each Rex pane is running, and when Rex restores
+# the pane after a server or machine restart, run it again in the new shell.
+# A claude command comes back with `--resume <chat>`; the chat id is written by
+# ~/.claude/hooks/rex-resume-track.py.
+#
+# State: <dir>/panes/<block> holds the recording shell's pid, its cwd and, while
+# a command runs, the alias-expanded command.
+
+[[ -o interactive && -n $REX_BLOCK ]] || return 0
+# Only the pane's own shell, whose parent is login. A nested zsh, or the shell
+# Claude starts to snapshot your environment, must neither record nor replay.
+[[ $(ps -o comm= -p $PPID 2>/dev/null) == *login ]] || return 0
+
+typeset -g _rex_resume_state=${REX_RESUME_STATE_DIR:-$HOME/.local/state/rex-resume}
+typeset -g _rex_resume_file=$_rex_resume_state/panes/${REX_BLOCK#block:}
+[[ -d ${_rex_resume_file:h} ]] || mkdir -p ${_rex_resume_file:h}
+
+_rex_resume_preexec() { print -r -- "$$"$'\n'"$PWD"$'\n'"$3" >| $_rex_resume_file }
+_rex_resume_precmd() { print -r -- "$$"$'\n'"$PWD" >| $_rex_resume_file }
+
+# Prints the claude command with any --resume/--continue replaced by this
+# pane's chat, or the command unchanged when it isn't claude or no chat is known.
+_rex_resume_claude() {
+  local cmd=$1 chat_file=$_rex_resume_state/claude/${REX_BLOCK#block:}
+  local -a words=(${(z)cmd}) out=()
+  local i=1
+  while (( i <= $#words )) && [[ $words[i] =~ '^[A-Za-z_][A-Za-z0-9_]*=' ]]; do
+    out+=$words[i]; (( i++ ))
+  done
+  if [[ $words[i] != claude || ! -s $chat_file ]]; then
+    print -r -- $cmd
+    return
+  fi
+  out+=claude; (( i++ ))
+  while (( i <= $#words )); do
+    case $words[i] in
+      --resume|-r) [[ -n $words[i+1] && $words[i+1] != -* ]] && (( i++ )) ;;
+      --resume=*|--continue|-c) ;;
+      *) out+=$words[i] ;;
+    esac
+    (( i++ ))
+  done
+  print -r -- "${out[*]} --resume $(<$chat_file)"
+}
+
+typeset -g _rex_resume_cmd=
+if [[ -s $_rex_resume_file ]]; then
+  () {
+    local -a lines=("${(@f)$(<$_rex_resume_file)}")
+    # The same pid means `exec zsh` in this shell, not a restore.
+    (( ${#lines} >= 3 )) && [[ $lines[1] != $$ ]] || return
+    [[ -d $lines[2] ]] && cd -- $lines[2]
+    _rex_resume_cmd=$(_rex_resume_claude "${(F)lines[3,-1]}")
+  }
+elif [[ -s $_rex_resume_state/claude/${REX_BLOCK#block:} ]]; then
+  # A pane Rex started with claude as its command never ran this shell before.
+  _rex_resume_cmd=$(_rex_resume_claude claude)
+fi
+
+if [[ -n $_rex_resume_cmd ]]; then
+  _rex_resume_line_init() {
+    add-zle-hook-widget -d line-init _rex_resume_line_init
+    BUFFER=$_rex_resume_cmd
+    _rex_resume_cmd=
+    zle accept-line
+  }
+  autoload -Uz add-zle-hook-widget
+  zle -N _rex_resume_line_init
+  add-zle-hook-widget line-init _rex_resume_line_init
+fi
+
+autoload -Uz add-zsh-hook
+add-zsh-hook preexec _rex_resume_preexec
+add-zsh-hook precmd _rex_resume_precmd

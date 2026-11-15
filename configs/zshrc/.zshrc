@@ -217,3 +217,6 @@ export AGENT_BROWSER_SESSION=main
 
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
+
+# Rex: rerun what each pane was running after Rex restores it
+source ~/.zshrc-modules/.zshrc.rex-resume
