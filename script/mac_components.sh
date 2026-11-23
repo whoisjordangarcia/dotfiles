@@ -26,6 +26,7 @@ component_installation=(
   starship
   rift/mac
   ghostty/mac
+  rex
   # code
   lazygit/mac
   claude
