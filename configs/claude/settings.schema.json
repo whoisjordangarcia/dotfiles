@@ -2402,7 +2402,7 @@
         }
       },
       "propertyNames": {
-        "pattern": "^[A-Z_][A-Z0-9_]*$"
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
       },
       "additionalProperties": {
         "type": "string",
@@ -4668,9 +4668,7 @@
     },
     "voiceEnabled": {
       "type": "boolean",
-      "description": "Legacy alias for voice.enabled; prefer the voice object. Requires a Claude.ai account. See https://code.claude.com/docs/en/settings#available-settings",
-      "deprecated": true,
-      "deprecationMessage": "Deprecated since v2.1.92, when the `voice` object replaced it. Claude Code still reads it so older settings files keep working, but new configurations should set `voice.enabled`."
+      "description": "Legacy alias for voice.enabled; prefer the voice object. Requires a Claude.ai account. See https://code.claude.com/docs/en/settings#available-settings"
     },
     "wslInheritsWindowsSettings": {
       "type": "boolean",
@@ -5305,9 +5303,21 @@
       "deprecated": true,
       "deprecationMessage": "managed settings only; ignored in user settings"
     },
+    "disableRemotePreviewScripts": {
+      "description": "Turn off scripts in the Browser pane's HTML previews in the desktop app's SSH and WSL sessions",
+      "type": "boolean",
+      "deprecated": true,
+      "deprecationMessage": "managed settings only; ignored in user settings"
+    },
     "enableWorkflows": {
       "description": "Turn dynamic workflows on or off against your plan's default",
       "type": "boolean"
+    },
+    "enforceAnthropicSignIn": {
+      "description": "Require a claude.ai login on Anthropic's API, or an Enterprise Admin Console sign-in",
+      "type": "boolean",
+      "deprecated": true,
+      "deprecationMessage": "managed settings only; ignored in user settings"
     },
     "feedbackDrafts": {
       "description": "Control whether Claude queues feedback drafts for you to review",
@@ -5325,7 +5335,7 @@
       "deprecationMessage": "managed settings only; ignored in user settings"
     },
     "idleCompaction": {
-      "description": "Stop Claude Code from compacting a long conversation while your terminal session is idle",
+      "description": "Stop Claude Code from compacting a long conversation that you've stepped away from",
       "type": "boolean"
     },
     "isolatePeerMachines": {
@@ -5420,6 +5430,10 @@
         "object",
         "string"
       ]
+    },
+    "sshHostCommands": {
+      "description": "Add SSH connections whose host comes from a command to the Desktop environment selector",
+      "type": "array"
     },
     "subagentPromptCacheTtl": {
       "description": "Choose the prompt cache lifetime for subagents and other requests outside the main conversation",
